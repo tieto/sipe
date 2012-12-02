@@ -230,7 +230,8 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 		}
 
 		cal->auth = g_new0(HttpConnAuth, 1);
-		cal->auth->use_negotiate = SIPE_CORE_PUBLIC_FLAG_IS(KRB5);
+		cal->auth->use_negotiate =
+			(sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_KERBEROS);
 
 		/* user specified email login? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);

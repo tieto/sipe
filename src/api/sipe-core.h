@@ -86,11 +86,18 @@ struct sipe_file_transfer {
 struct sipe_backend_private;
 
 /**
+ * SIP transport authentication scheme
+ */
+#define SIPE_AUTHENTICATION_TYPE_UNSET     0
+#define SIPE_AUTHENTICATION_TYPE_NTLM      1
+#define SIPE_AUTHENTICATION_TYPE_KERBEROS  2
+#define SIPE_AUTHENTICATION_TYPE_NEGOTIATE 3 /* internal use only */
+#define SIPE_AUTHENTICATION_TYPE_TLS_DSK   4
+
+/**
  * Flags
  */
-#define SIPE_CORE_FLAG_KRB5    0x00000001 /* user enabled Kerberos 5     */
-#define SIPE_CORE_FLAG_SSO     0x00000002 /* user enabled Single-Sign On */
-#define SIPE_CORE_FLAG_TLS_DSK 0x00000004 /* user enabled TLS-DSK        */
+#define SIPE_CORE_FLAG_SSO     0x00000001 /* user enabled Single-Sign On */
 
 #define SIPE_CORE_FLAG_IS(flag)    \
 	((sipe_public->flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
@@ -284,6 +291,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public);
  */
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     guint transport,
+				     guint authentication,
 				     const gchar *server,
 				     const gchar *port);
 void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public);

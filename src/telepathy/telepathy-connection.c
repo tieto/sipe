@@ -172,6 +172,7 @@ static gboolean connect_to_core(SipeConnection *self,
 
 	if (sipe_public) {
 		struct sipe_backend_private *telepathy_private = &self->private;
+		guint authentication_type;
 
 		/* initialize backend private data */
 		sipe_public->backend_private    = telepathy_private;
@@ -199,17 +200,16 @@ static gboolean connect_to_core(SipeConnection *self,
 					telepathy_private->cache_dir);
 
 		/* map option list to flags - default is NTLM */
-		SIPE_CORE_FLAG_UNSET(KRB5);
-		SIPE_CORE_FLAG_UNSET(TLS_DSK);
+		authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
 #ifdef HAVE_LIBKRB5
 		if (sipe_strequal(self->authentication, "krb5")) {
 			SIPE_DEBUG_INFO_NOFORMAT("connect_to_core: KRB5 selected");
-			SIPE_CORE_FLAG_SET(KRB5);
+			authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
 		} else
 #endif
 		if (sipe_strequal(self->authentication, "tls-dsk")) {
 			SIPE_DEBUG_INFO_NOFORMAT("connect_to_core: TLS-DSK selected");
-			SIPE_CORE_FLAG_SET(TLS_DSK);
+			authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
 		}
 
 		/* @TODO: add parameter for SSO */
@@ -217,6 +217,7 @@ static gboolean connect_to_core(SipeConnection *self,
 
 		sipe_core_transport_sip_connect(sipe_public,
 						self->transport,
+						authentication_type,
 						self->server,
 						self->port);
 

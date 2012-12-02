@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010,2012 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -462,16 +462,16 @@ http_conn_process_input_message(HttpConn *http_conn,
 		if (http_conn->auth && http_conn->auth->use_negotiate)
 			auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
 		if (auth_hdr) {
-			auth_type = AUTH_TYPE_NEGOTIATE;
+			auth_type = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
 			auth_name = "Negotiate";
-		} else {
+		} else
 #endif
+		{
 			auth_hdr = sipmsg_find_auth_header(msg, "NTLM");
-			auth_type = AUTH_TYPE_NTLM;
+			auth_type = SIPE_AUTHENTICATION_TYPE_NTLM;
 			auth_name = "NTLM";
-#ifdef HAVE_SSPI
 		}
-#endif
+
 		if (!auth_hdr) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);

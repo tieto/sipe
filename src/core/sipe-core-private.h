@@ -47,6 +47,7 @@ struct sipe_core_private {
 	struct sip_transport *transport;
 	const struct sip_service_data *service_data;
 	guint transport_type;
+	guint authentication_type;
 
 	/* Account information */
 	gchar *username;

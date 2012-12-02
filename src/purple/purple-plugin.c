@@ -260,7 +260,8 @@ static void sipe_purple_login(PurpleAccount *account)
 	gchar *login_domain = NULL;
 	gchar *login_account = NULL;
 	const gchar *errmsg;
-	guint type;
+	guint transport_type;
+	guint authentication_type;
 	struct sipe_backend_private *purple_private;
 
 	/* username format: <username>,[<optional login>] */
@@ -310,13 +311,11 @@ static void sipe_purple_login(PurpleAccount *account)
 
 	sipe_purple_chat_setup_rejoin(purple_private);
 
-	/* map option list to flags - default is NTLM */
-	SIPE_CORE_FLAG_UNSET(KRB5);
-	SIPE_CORE_FLAG_UNSET(TLS_DSK);
-	SIPE_CORE_FLAG_UNSET(SSO);
+	/* map option list to type - default is NTLM */
+	authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	if (sipe_strequal(auth, "krb5")) {
-		SIPE_CORE_FLAG_SET(KRB5);
+		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
 	} else
 #endif
 #ifndef HAVE_SSPI
@@ -325,12 +324,13 @@ static void sipe_purple_login(PurpleAccount *account)
 	 *        So ignore configuration setting for now.
 	 */
 	if (sipe_strequal(auth, "tls-dsk")) {
-		SIPE_CORE_FLAG_SET(TLS_DSK);
+		authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
 	}
 #endif
 
 	/* @TODO: is this correct?
 	   "sso" is only available when Kerberos/SSPI support is compiled in */
+	SIPE_CORE_FLAG_UNSET(SSO);
 	if (purple_account_get_bool(account, "sso", TRUE))
 		SIPE_CORE_FLAG_SET(SSO);
 
@@ -342,15 +342,16 @@ static void sipe_purple_login(PurpleAccount *account)
 
 	username_split = g_strsplit(purple_account_get_string(account, "server", ""), ":", 2);
 	if (sipe_strequal(transport, "auto")) {
-		type = (username_split[0] == NULL) ?
+		transport_type = (username_split[0] == NULL) ?
 			SIPE_TRANSPORT_AUTO : SIPE_TRANSPORT_TLS;
 	} else if (sipe_strequal(transport, "tls")) {
-		type = SIPE_TRANSPORT_TLS;
+		transport_type = SIPE_TRANSPORT_TLS;
 	} else {
-		type = SIPE_TRANSPORT_TCP;
+		transport_type = SIPE_TRANSPORT_TCP;
 	}
 	sipe_core_transport_sip_connect(sipe_public,
-					type,
+					transport_type,
+					authentication_type,
 					username_split[0],
 					username_split[0] ? username_split[1] : NULL);
 	g_strfreev(username_split);

@@ -139,7 +139,7 @@ static void sipe_auth_free(struct sip_auth *auth)
 	g_free(auth->target);
 	auth->target = NULL;
 	auth->version = 0;
-	auth->type = AUTH_TYPE_UNSET;
+	auth->type = SIPE_AUTHENTICATION_TYPE_UNSET;
 	auth->retries = 0;
 	auth->expires = 0;
 	g_free(auth->gssapi_data);
@@ -181,11 +181,11 @@ static gchar *auth_header_version(struct sip_auth *auth)
 }
 
 static const gchar *const auth_type_to_protocol[] = {
-	NULL,       /* AUTH_TYPE_UNSET     */
-	"NTLM",     /* AUTH_TYPE_NTLM      */
-	"Kerberos", /* AUTH_TYPE_KERBEROS  */
-	NULL,       /* AUTH_TYPE_NEGOTIATE */
-	"TLS-DSK",  /* AUTH_TYPE_TLS_DSK   */
+	NULL,       /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+	"NTLM",     /* SIPE_AUTHENTICATION_TYPE_NTLM      */
+	"Kerberos", /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
+	NULL,       /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
+	"TLS-DSK",  /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
 };
 #define AUTH_PROTOCOLS (sizeof(auth_type_to_protocol)/sizeof(gchar *))
 
@@ -248,7 +248,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		}
 
 		/* For TLS-DSK the "password" is a certificate */
-		if (auth->type == AUTH_TYPE_TLS_DSK) {
+		if (auth->type == SIPE_AUTHENTICATION_TYPE_TLS_DSK) {
 			password = sipe_certificate_tls_dsk_find(sipe_private,
 								 auth->target);
 
@@ -362,7 +362,8 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 	 *
 	 * Start the authentication handshake if NTLM is selected.
 	 */
-	} else if ((auth->type == AUTH_TYPE_NTLM) && !auth->gssapi_data) {
+	} else if ((auth->type == SIPE_AUTHENTICATION_TYPE_NTLM) &&
+		   !auth->gssapi_data) {
 		ret = start_auth_handshake(auth);
 
 	/*
@@ -428,7 +429,7 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 			g_free(auth->realm);
 			auth->realm = g_strndup(param, end - param);
 		} else if (g_str_has_prefix(hdr, "sts-uri=\"")) {
-			/* Only used with AUTH_TYPE_TLS_DSK */
+			/* Only used with SIPE_AUTHENTICATION_TYPE_TLS_DSK */
 			g_free(auth->sts_uri);
 			auth->sts_uri = g_strndup(param, end - param);
 		} else if (g_str_has_prefix(hdr, "targetname=\"")) {
@@ -453,7 +454,7 @@ static void sign_outgoing_message(struct sipe_core_private *sipe_private,
 	struct sip_transport *transport = sipe_private->transport;
 	gchar *buf;
 
-	if (transport->registrar.type == AUTH_TYPE_UNSET) {
+	if (transport->registrar.type == SIPE_AUTHENTICATION_TYPE_UNSET) {
 		return;
 	}
 
@@ -894,15 +895,7 @@ static const gchar *get_auth_header(struct sipe_core_private *sipe_private,
 				    struct sip_auth *auth,
 				    struct sipmsg *msg)
 {
-	auth->type = AUTH_TYPE_NTLM;
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-	if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
-		auth->type = AUTH_TYPE_KERBEROS;
-	}
-#endif
-	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
-		auth->type = AUTH_TYPE_TLS_DSK;
-	}
+	auth->type     = sipe_private->authentication_type;
 	auth->protocol = auth_type_to_protocol[auth->type];
 
 	return(sipmsg_find_auth_header(msg, auth->protocol));
@@ -1531,7 +1524,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					auth_hdr = sipmsg_find_header(msg, "Proxy-Authenticate");
 					if (auth_hdr) {
 						guint i;
-						transport->proxy.type = AUTH_TYPE_UNSET;
+						transport->proxy.type = SIPE_AUTHENTICATION_TYPE_UNSET;
 						for (i = 0; i < AUTH_PROTOCOLS; i++) {
 							const gchar *protocol = auth_type_to_protocol[i];
 							if (protocol &&
@@ -1542,7 +1535,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 								break;
 							}
 						}
-						if (transport->proxy.type == AUTH_TYPE_UNSET)
+						if (transport->proxy.type == SIPE_AUTHENTICATION_TYPE_UNSET)
 							SIPE_DEBUG_ERROR("Unknown proxy authentication: %s", auth_hdr);
 						fill_auth(auth_hdr, &transport->proxy);
 					}
@@ -1829,10 +1822,13 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     guint transport,
+				     guint authentication,
 				     const gchar *server,
 				     const gchar *port)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	sipe_private->authentication_type = authentication;
 
 	/*
 	 * Initializing the certificate sub-system will trigger the generation
@@ -1842,7 +1838,7 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 	 *
 	 * This is currently only needed if the user has selected TLS-DSK.
 	 */
-	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK))
+	if (sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_TLS_DSK)
 		sipe_certificate_init(sipe_private);
 
 	if (server) {

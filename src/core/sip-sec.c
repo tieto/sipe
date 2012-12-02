@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -91,11 +91,11 @@ sip_sec_create_context(guint type,
 
 	/* Map authentication type to module initialization hook & name */
 	static sip_sec_create_context_func const auth_to_hook[] = {
-		sip_sec_create_context__NONE,      /* AUTH_TYPE_UNSET     */
-		sip_sec_create_context__NTLM,      /* AUTH_TYPE_NTLM      */
-		sip_sec_create_context__Kerberos,  /* AUTH_TYPE_KERBEROS  */
-		sip_sec_create_context__Negotiate, /* AUTH_TYPE_NEGOTIATE */
-		sip_sec_create_context__TLS_DSK,   /* AUTH_TYPE_TLS_DSK   */
+		sip_sec_create_context__NONE,      /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+		sip_sec_create_context__NTLM,      /* SIPE_AUTHENTICATION_TYPE_NTLM      */
+		sip_sec_create_context__Kerberos,  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
+		sip_sec_create_context__Negotiate, /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
+		sip_sec_create_context__TLS_DSK,   /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
 	};
 
 	context = (*(auth_to_hook[type]))(type);
