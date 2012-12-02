@@ -251,6 +251,7 @@ static void sipe_purple_login(PurpleAccount *account)
 {
 	PurpleConnection *gc   = purple_account_get_connection(account);
 	const gchar *username  = purple_account_get_username(account);
+	const gchar *password  = purple_connection_get_password(gc);
 	const gchar *email     = purple_account_get_string(account, "email", NULL);
 	const gchar *email_url = purple_account_get_string(account, "email_url", NULL);
 	const gchar *transport = purple_account_get_string(account, "transport", "auto");
@@ -263,6 +264,43 @@ static void sipe_purple_login(PurpleAccount *account)
 	guint transport_type;
 	guint authentication_type;
 	struct sipe_backend_private *purple_private;
+	gboolean sso = TRUE;
+
+	/* map option list to type - default is NTLM */
+	authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+	if (sipe_strequal(auth, "krb5")) {
+		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
+	} else
+#endif
+#ifndef HAVE_SSPI
+	/*
+	 * @TODO: SSL handshake support isn't implemented in sip-sec-sspi.c.
+	 *        So ignore configuration setting for now.
+	 */
+	if (sipe_strequal(auth, "tls-dsk")) {
+		authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
+	}
+#endif
+
+	/* @TODO: is this correct?
+	   "sso" is only available when Kerberos/SSPI support is compiled in */
+	sso = purple_account_get_bool(account, "sso", TRUE);
+
+	/* Password required? */
+	if (sipe_core_transport_sip_requires_password(authentication_type,
+						      sso) &&
+	    (!password || !strlen(password))) {
+#if PURPLE_VERSION_CHECK(3,0,0)
+		purple_connection_error(
+#else
+		purple_connection_error_reason(
+#endif
+					       gc,
+					       PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+					       _("Password required"));
+		return;
+	}
 
 	/* username format: <username>,[<optional login>] */
 	SIPE_DEBUG_INFO("sipe_purple_login: username '%s'", username);
@@ -284,7 +322,7 @@ static void sipe_purple_login(PurpleAccount *account)
 
 	sipe_public = sipe_core_allocate(username_split[0],
 					 login_domain, login_account,
-					 purple_connection_get_password(gc),
+					 password,
 					 email,
 					 email_url,
 					 &errmsg);
@@ -311,27 +349,8 @@ static void sipe_purple_login(PurpleAccount *account)
 
 	sipe_purple_chat_setup_rejoin(purple_private);
 
-	/* map option list to type - default is NTLM */
-	authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-	if (sipe_strequal(auth, "krb5")) {
-		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
-	} else
-#endif
-#ifndef HAVE_SSPI
-	/*
-	 * @TODO: SSL handshake support isn't implemented in sip-sec-sspi.c.
-	 *        So ignore configuration setting for now.
-	 */
-	if (sipe_strequal(auth, "tls-dsk")) {
-		authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
-	}
-#endif
-
-	/* @TODO: is this correct?
-	   "sso" is only available when Kerberos/SSPI support is compiled in */
 	SIPE_CORE_FLAG_UNSET(SSO);
-	if (purple_account_get_bool(account, "sso", TRUE))
+	if (sso)
 		SIPE_CORE_FLAG_SET(SSO);
 
 	gc->proto_data = sipe_public;
@@ -517,16 +536,8 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 #if PURPLE_VERSION_CHECK(3,0,0)
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
 #endif
-	/*
-	 * NOTE: Do *NOT* add OPT_PROTO_PASSWORD_OPTIONAL here, because it
-	 *       breaks the "ask for password" functionality for non-Kerberos
-	 *       users when Kerberos is compiled in!
-	 *
-	 * Kerberos users: I know this sucks. If you don't like it, then
-	 * please improve libpurple to make this a run-time feature instead
-	 * of a compile-time feature.
-	 */
-	OPT_PROTO_CHAT_TOPIC,
+	OPT_PROTO_CHAT_TOPIC |
+	OPT_PROTO_PASSWORD_OPTIONAL,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
 	NO_BUDDY_ICONS,				/* icon_spec */

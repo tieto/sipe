@@ -70,6 +70,7 @@ typedef struct _SipeConnection {
 	gchar *server;
 	gchar *port;
 	guint  transport;
+	guint  authentication_type;
 	gchar *user_agent;
 	gchar *authentication;
 	gboolean is_disconnecting;
@@ -172,7 +173,6 @@ static gboolean connect_to_core(SipeConnection *self,
 
 	if (sipe_public) {
 		struct sipe_backend_private *telepathy_private = &self->private;
-		guint authentication_type;
 
 		/* initialize backend private data */
 		sipe_public->backend_private    = telepathy_private;
@@ -199,25 +199,12 @@ static gboolean connect_to_core(SipeConnection *self,
 			SIPE_DEBUG_INFO("connect_to_core: created cache directory %s",
 					telepathy_private->cache_dir);
 
-		/* map option list to flags - default is NTLM */
-		authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
-#ifdef HAVE_LIBKRB5
-		if (sipe_strequal(self->authentication, "krb5")) {
-			SIPE_DEBUG_INFO_NOFORMAT("connect_to_core: KRB5 selected");
-			authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
-		} else
-#endif
-		if (sipe_strequal(self->authentication, "tls-dsk")) {
-			SIPE_DEBUG_INFO_NOFORMAT("connect_to_core: TLS-DSK selected");
-			authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
-		}
-
 		/* @TODO: add parameter for SSO */
 		SIPE_CORE_FLAG_UNSET(SSO);
 
 		sipe_core_transport_sip_connect(sipe_public,
 						self->transport,
-						authentication_type,
+						self->authentication_type,
 						self->server,
 						self->port);
 
@@ -302,8 +289,24 @@ static gboolean start_connecting(TpBaseConnection *base,
 	tp_base_connection_change_status(base, TP_CONNECTION_STATUS_CONNECTING,
 					 TP_CONNECTION_STATUS_REASON_REQUESTED);
 
-	/* we need a password */
-	if (self->password)
+	/* map option list to flags - default is NTLM */
+	self->authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+#ifdef HAVE_LIBKRB5
+	if (sipe_strequal(self->authentication, "krb5")) {
+		SIPE_DEBUG_INFO_NOFORMAT("start_connecting: KRB5 selected");
+		self->authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
+	} else
+#endif
+	if (sipe_strequal(self->authentication, "tls-dsk")) {
+		SIPE_DEBUG_INFO_NOFORMAT("start_connecting: TLS-DSK selected");
+		self->authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
+	}
+
+	/* Only ask for a password when required */
+	/* @TODO: add parameter for SSO */
+	if (!sipe_core_transport_sip_requires_password(self->authentication_type,
+						       FALSE) ||
+	    (self->password && strlen(self->password)))
 		rc = connect_to_core(self, error);
 	else {
 		SIPE_DEBUG_INFO_NOFORMAT("SipeConnection::start_connecting: requesting password from user");

@@ -1820,6 +1820,15 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 					SIPE_CORE_PUBLIC);
 }
 
+/*
+ * NOTE: this function can be called before sipe_core_allocate()!
+ */
+gboolean sipe_core_transport_sip_requires_password(guint authentication,
+						   gboolean sso)
+{
+	return(sip_sec_requires_password(authentication, sso));
+}
+
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     guint transport,
 				     guint authentication,

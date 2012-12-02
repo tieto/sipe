@@ -231,6 +231,11 @@ sip_sec_create_context__tls_dsk(SIPE_UNUSED_PARAMETER guint type)
 	return((SipSecContext) context);
 }
 
+gboolean sip_sec_password__tls_dsk(void)
+{
+	return(TRUE);
+}
+
 /*
   Local Variables:
   mode: c

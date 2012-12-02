@@ -287,6 +287,19 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 void sipe_core_deallocate(struct sipe_core_public *sipe_public);
 
 /**
+ * Check if SIP authentication scheme requires a password
+ *
+ * NOTE: this can be called *BEFORE* @c sipe_core_allocate()!
+ *
+ * @param authentication SIP transport authentication type
+ * @param sso            TRUE if user selected Single-Sign On
+ *
+ * @return TRUE if password is required
+ */
+gboolean sipe_core_transport_sip_requires_password(guint authentication,
+						   gboolean sso);
+
+/**
  * Connect to SIP server
  */
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,

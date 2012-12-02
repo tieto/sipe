@@ -1895,6 +1895,11 @@ sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER guint type)
 	return((SipSecContext) context);
 }
 
+gboolean sip_sec_password__ntlm(void)
+{
+	return(TRUE);
+}
+
 void sip_sec_init__ntlm(void)
 {
 #ifdef HAVE_LANGINFO_CODESET

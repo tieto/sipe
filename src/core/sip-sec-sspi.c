@@ -339,6 +339,12 @@ sip_sec_create_context__sspi(guint type)
 	return((SipSecContext) context);
 }
 
+gboolean sip_sec_password__sspi(void)
+{
+	/* SSPI supports Single-Sign On */
+	return(FALSE);
+}
+
 /* Utility Functions */
 
 /**

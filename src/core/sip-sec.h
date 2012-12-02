@@ -141,6 +141,17 @@ int sip_sec_verify_signature(SipSecContext context,
 			     const char *signature_hex);
 
 /**
+ * Check if authentication scheme requires a password
+ *
+ * @param type authentication type
+ * @param sso  TRUE if user selected Single-Sign On
+ *
+ * @return TRUE if password is required
+ */
+gboolean sip_sec_requires_password(guint authentication,
+				   gboolean sso);
+
+/**
  * Initialize & destroy functions for sip-sec.
  * Should be called on loading and unloading of the core.
  */
