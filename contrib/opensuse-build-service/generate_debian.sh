@@ -13,18 +13,23 @@ version=$(ls pidgin-sipe-*.tar.gz | sed 's/^pidgin-sipe-//;s/.tar.gz$//')
 [ -z "${version}" ] && abort "can't find pidgin-sipe archive"
 [ -e debian ]       && abort "directory 'debian' - already exists"
 
+# Copy latest source archive
+cp pidgin-sipe-${version}.tar.gz pidgin-sipe_${version}.orig.tar.gz
+
 # Extract contrib/debian directory from release
 tar --strip-components=2 --wildcards -xvf \
     pidgin-sipe-${version}.tar.gz \
     "*/contrib/debian" || cleanup "tar failed"
 [ -e debian ]          || cleanup "directory 'debian' - does not exist"
 
-# Create debian archive
-tar cfz pidgin-sipe_${version}-1.debian.tar.gz debian || cleanup "can't create tar archive"
+# Have the contents changed?
+if tar 2>/dev/null -df pidgin-sipe_${version}-1.debian.tar.gz; then
+    echo "contrib/debian is unchanged - not updating .debian.tar.gz."
+else
+    # Update debian archive
+    tar cfz pidgin-sipe_${version}-1.debian.tar.gz debian || cleanup "can't create tar archive"
+fi
 rm -rf debian
-
-# Copy latest source archive
-cp pidgin-sipe-${version}.tar.gz pidgin-sipe_${version}.orig.tar.gz
 
 # Update .dsc files
 for p in \
