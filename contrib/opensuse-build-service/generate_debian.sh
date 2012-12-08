@@ -13,15 +13,11 @@ version=$(ls pidgin-sipe-*.tar.gz | sed 's/^pidgin-sipe-//;s/.tar.gz$//')
 [ -z "${version}" ] && abort "can't find pidgin-sipe archive"
 [ -e debian ]       && abort "directory 'debian' - already exists"
 
-# Setup temporary directory
-mkdir debian || cleanup "can't generate temporary directory"
-for f in \
-    changelog \
-    control \
-    rules; \
-do \
-    mv debian.${f} debian/${f} || cleanup "can't copy Debian file ${f}"; \
-done
+# Extract contrib/debian directory from release
+tar --strip-components=2 --wildcards -xvf \
+    pidgin-sipe-${version}.tar.gz \
+    "*/contrib/debian" || cleanup "tar failed"
+[ -e debian ]          || cleanup "directory 'debian' - does not exist"
 
 # Create debian archive
 tar cfz pidgin-sipe_${version}-1.debian.tar.gz debian || cleanup "can't create tar archive"
