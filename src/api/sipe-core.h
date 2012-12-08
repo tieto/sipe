@@ -411,6 +411,15 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public);
 
 /**
+ * Initiates a call with given phone number
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @parem phone_number (in) a mobile or landline phone number, i.e. +46123456
+ */
+void sipe_core_media_phone_call(struct sipe_core_public *sipe_public,
+				const gchar *phone_number);
+
+/**
  * Checks voice quality by making a call to the test service
  *
  * @param sipe_public (in) SIPE core data.

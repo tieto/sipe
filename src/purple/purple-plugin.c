@@ -866,6 +866,48 @@ static void sipe_purple_join_conference_cb(PurpleConnection *gc,
 }
 
 #ifdef HAVE_VV
+
+static void sipe_purple_phone_call_cb(PurpleConnection *gc,
+				      PurpleRequestFields *fields)
+{
+	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
+
+	if (entries) {
+		PurpleRequestField *field = entries->data;
+		const char *id = purple_request_field_get_id(field);
+		const char *value = purple_request_field_string_get_value(field);
+
+		if (!sipe_strequal(id, "phoneNumber"))
+			return;
+
+		sipe_core_media_phone_call(PURPLE_GC_TO_SIPE_CORE_PUBLIC, value);
+	}
+}
+
+static void sipe_purple_phone_call(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	PurpleRequestFields *fields;
+	PurpleRequestFieldGroup *group;
+	PurpleRequestField *field;
+
+	fields = purple_request_fields_new();
+	group = purple_request_field_group_new(NULL);
+	purple_request_fields_add_group(fields, group);
+
+	field = purple_request_field_string_new("phoneNumber", _("Phone number"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+
+	purple_request_fields(gc,
+		_("Call a phone number"),
+		_("Call a phone number"),
+		NULL,
+		fields,
+		_("_Call"), G_CALLBACK(sipe_purple_phone_call_cb),
+		_("_Cancel"), NULL,
+		purple_connection_get_account(gc), NULL, NULL, gc);
+}
+
 static void sipe_purple_test_call(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
@@ -944,6 +986,9 @@ static GList *sipe_purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 	menu = g_list_prepend(menu, act);
 
 #ifdef HAVE_VV
+	act = purple_plugin_action_new(_("Call a phone number..."), sipe_purple_phone_call);
+	menu = g_list_prepend(menu, act);
+
 	act = purple_plugin_action_new(_("Test call"), sipe_purple_test_call);
 	menu = g_list_prepend(menu, act);
 #endif
