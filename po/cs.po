@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Jakub Adam <jakub.adam@ktknet.cz>, 2011.
+# Jakub Adam <jakub.adam@ktknet.cz>, 2011-2012.
 # Stefan Becker <chemobejk@gmail.com>, 2011.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2012-12-06 11:44+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2012-12-06 20:53+0000\n"
+"Last-Translator: Jakub Adam <jakub.adam@ktknet.cz>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -126,7 +126,7 @@ msgstr "Vyhledání kontaktu selhalo"
 
 #: ../src/core/sipe-buddy.c:863
 msgid "Invalid contact search query"
-msgstr ""
+msgstr "Chybný vyhledávací dotaz"
 
 #: ../src/core/sipe-buddy.c:1536
 #, c-format
@@ -249,7 +249,7 @@ msgstr "Nepodařilo se připojit ke konferenci"
 #: ../src/core/sipe-conf.c:382
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
-msgstr ""
+msgstr "\"%s\" není platná adresa konference"
 
 #: ../src/core/sipe-conf.c:911
 msgid ""
@@ -511,7 +511,7 @@ msgstr "Chyba při vytváření video proudu"
 
 #: ../src/core/sipe-media.c:839
 msgid "Audio Test Service is not available."
-msgstr ""
+msgstr "Služba zkušební hovor není k dispozici."
 
 #: ../src/core/sipe-media.c:1067
 msgid "User unavailable"
@@ -847,7 +847,7 @@ msgstr "Zpráva"
 
 #: ../src/purple/purple-plugin.c:301
 msgid "Password required"
-msgstr ""
+msgstr "Je vyžadováno heslo"
 
 #: ../src/purple/purple-plugin.c:360
 msgid "Connecting"
@@ -911,7 +911,7 @@ msgid ""
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
-msgstr ""
+msgstr "Zadejte adresu konference, kterou jste obdrželi v pozvánce.\n\nPlatné adresy bývají ve tvaru:\nmeet:sip:uzivatel@spolecnost.cz;gruu;opaque=app:conf:focus:id:abcdef1234\nnebo\nhttps://meet.spolecnost.cz/uzivatel/abcdef1234"
 
 #: ../src/purple/purple-plugin.c:820
 msgid "_Join"
@@ -927,7 +927,7 @@ msgstr "Hledání kontaktů..."
 
 #: ../src/purple/purple-plugin.c:850
 msgid "Test call"
-msgstr ""
+msgstr "Zkušební hovor"
 
 #: ../src/purple/purple-plugin.c:854
 msgid "Join scheduled conference..."

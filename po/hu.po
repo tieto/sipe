@@ -12,8 +12,8 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2012-12-06 11:45+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2012-12-07 07:38+0000\n"
+"Last-Translator: Laszlo Pal <vlad@vlad.hu>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -125,7 +125,7 @@ msgstr "Kapcsolat keresés meghiúsult"
 
 #: ../src/core/sipe-buddy.c:863
 msgid "Invalid contact search query"
-msgstr ""
+msgstr "Érvénytelen kapcsolat keresési lekérdezés"
 
 #: ../src/core/sipe-buddy.c:1536
 #, c-format
@@ -248,7 +248,7 @@ msgstr "Nem sikerült csatlakozni a konferenciához"
 #: ../src/core/sipe-conf.c:382
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
-msgstr ""
+msgstr "A következő URI nem valós konferencia cím: \"%s\""
 
 #: ../src/core/sipe-conf.c:911
 msgid ""
@@ -510,7 +510,7 @@ msgstr "A videó adatfolyam létrehozása nem sikerült"
 
 #: ../src/core/sipe-media.c:839
 msgid "Audio Test Service is not available."
-msgstr ""
+msgstr "Hang tesztelési szolgáltatás nem elérhető"
 
 #: ../src/core/sipe-media.c:1067
 msgid "User unavailable"
@@ -846,7 +846,7 @@ msgstr "Üzenet"
 
 #: ../src/purple/purple-plugin.c:301
 msgid "Password required"
-msgstr ""
+msgstr "Jelszó megadása kötelező"
 
 #: ../src/purple/purple-plugin.c:360
 msgid "Connecting"
@@ -910,7 +910,7 @@ msgid ""
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
-msgstr ""
+msgstr "Add meg a megbeszélés helyére vonatkozó hivatkozást a meghívóból.⏎ ⏎ Egy valós hivatkozás formátuma valami ehhez hasonló⏎ meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234⏎ or⏎ https://meet.company.com/someone/abcdef1234"
 
 #: ../src/purple/purple-plugin.c:820
 msgid "_Join"
@@ -926,7 +926,7 @@ msgstr "Kapcsolatok Keresése..."
 
 #: ../src/purple/purple-plugin.c:850
 msgid "Test call"
-msgstr ""
+msgstr "Teszt hívás"
 
 #: ../src/purple/purple-plugin.c:854
 msgid "Join scheduled conference..."
