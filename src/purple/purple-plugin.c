@@ -969,7 +969,12 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
-	purple_account_option_set_masked(option, TRUE);
+#if PURPLE_VERSION_CHECK(3,0,0)
+	purple_account_option_string_set_masked(
+#else
+	purple_account_option_set_masked(
+#endif
+					 option, TRUE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/** Example (federated domain): company.com      (i.e. ocschat@company.com)
