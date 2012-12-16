@@ -1,4 +1,4 @@
-version 1.14.0 "Buddy photo & ADFS support, Web Ticket Optimizations" (2012-XX-XX)
+version 1.14.0 "Buddy photo & ADFS support, Web Ticket Optimizations" (2012-12-16)
 	- Feature #3585364: Add support for Web Ticket authentication using ADFS (Stefan Becker)
 	  * special thanks to user bhakta79 for the hard work taking logs
 	- Feature #3578132: Kerberos configuration should be passwordless (Stefan Becker)
