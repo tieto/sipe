@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010,2012 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -68,7 +68,7 @@ struct http_conn_struct {
 	char *url;
 	char *body;
 	char *content_type;
-	const gchar *additional_headers;
+	gchar *additional_headers;
 	HttpConnAuth *auth;
 	HttpConnCallback callback;
 	void *data;
@@ -104,6 +104,7 @@ http_conn_clone(HttpConn* http_conn)
 	res->url = g_strdup(http_conn->url);
 	res->body = g_strdup(http_conn->body);
 	res->content_type = g_strdup(http_conn->content_type);
+	res->additional_headers = g_strdup(http_conn->additional_headers);
 	res->auth = http_conn->auth;
 	res->callback = http_conn->callback;
 	res->data = http_conn->data;
@@ -131,6 +132,7 @@ http_conn_free(HttpConn* http_conn)
 	g_free(http_conn->url);
 	g_free(http_conn->body);
 	g_free(http_conn->content_type);
+	g_free(http_conn->additional_headers);
 
 	if (http_conn->sec_ctx) {
 		sip_sec_destroy_context(http_conn->sec_ctx);
@@ -321,7 +323,7 @@ http_conn_create(struct sipe_core_public *sipe_public,
 	http_conn->url = url;
 	http_conn->body = g_strdup(body);
 	http_conn->content_type = g_strdup(content_type);
-	http_conn->additional_headers = additional_headers;
+	http_conn->additional_headers = g_strdup(additional_headers);
 	http_conn->auth = auth;
 	http_conn->callback = callback;
 	http_conn->data = data;
@@ -460,16 +462,16 @@ http_conn_process_input_message(HttpConn *http_conn,
 		if (http_conn->auth && http_conn->auth->use_negotiate)
 			auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
 		if (auth_hdr) {
-			auth_type = AUTH_TYPE_NEGOTIATE;
+			auth_type = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
 			auth_name = "Negotiate";
-		} else {
+		} else
 #endif
+		{
 			auth_hdr = sipmsg_find_auth_header(msg, "NTLM");
-			auth_type = AUTH_TYPE_NTLM;
+			auth_type = SIPE_AUTHENTICATION_TYPE_NTLM;
 			auth_name = "NTLM";
-#ifdef HAVE_SSPI
 		}
-#endif
+
 		if (!auth_hdr) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
@@ -526,7 +528,6 @@ http_conn_process_input_message(HttpConn *http_conn,
 	/* Other response */
 	else {
 		const char *set_cookie_hdr;
-		const char *content_type = sipmsg_find_header(msg, "Content-Type");
 		http_conn->retries = 0;
 
 		/* Set cookies.
@@ -560,7 +561,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		}
 
 		if (http_conn->callback) {
-			(*http_conn->callback)(msg->response, msg->body, content_type, http_conn, http_conn->data);
+			(*http_conn->callback)(msg->response, msg->body, msg->headers, http_conn, http_conn->data);
 		}
 	}
 }

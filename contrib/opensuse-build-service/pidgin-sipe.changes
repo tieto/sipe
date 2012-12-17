@@ -1,12 +1,17 @@
 -------------------------------------------------------------------
-Sun Aug 19 09:03:00 UTC 2012 - chemobejk@gmail.com
+Sun Dec 16 14:28:00 UTC 2012 - chemobejk@gmail.com
 
-- Update to version 1.13.3
+- Update to version 1.14.0
 
 -------------------------------------------------------------------
-Sun Jun 10 12:54:00 UTC 2012 - chemobejk@gmail.com
+Sun Sep 16 19:06:03 UTC 2012 - zaitor@opensuse.org
 
-- Update to version 1.13.2
+- Update to version 1.13.3:
+  + Fixed OpenBSD build issue.
+  + Support Lync 2010 meet URLs.
+  + Revert to legacy MSOC protocol on Lync FT invitation.
+  + Fix broken busy->available status switch.
+  + Updated translations.
 
 -------------------------------------------------------------------
 Mon Apr  9 18:51:47 UTC 2012 - dimstar@opensuse.org

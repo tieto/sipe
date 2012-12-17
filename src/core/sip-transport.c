@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -113,6 +113,7 @@ struct sip_transport {
 	gboolean reregister_set;     /* whether reregister timer set */
 	gboolean reauthenticate_set; /* whether reauthenticate timer set */
 	gboolean subscribed;         /* whether subscribed to events, except buddies presence */
+	gboolean deregister;         /* whether in deregistration */
 };
 
 /* Keep in sync with sipe_transport_type! */
@@ -138,7 +139,7 @@ static void sipe_auth_free(struct sip_auth *auth)
 	g_free(auth->target);
 	auth->target = NULL;
 	auth->version = 0;
-	auth->type = AUTH_TYPE_UNSET;
+	auth->type = SIPE_AUTHENTICATION_TYPE_UNSET;
 	auth->retries = 0;
 	auth->expires = 0;
 	g_free(auth->gssapi_data);
@@ -180,11 +181,11 @@ static gchar *auth_header_version(struct sip_auth *auth)
 }
 
 static const gchar *const auth_type_to_protocol[] = {
-	NULL,       /* AUTH_TYPE_UNSET     */
-	"NTLM",     /* AUTH_TYPE_NTLM      */
-	"Kerberos", /* AUTH_TYPE_KERBEROS  */
-	NULL,       /* AUTH_TYPE_NEGOTIATE */
-	"TLS-DSK",  /* AUTH_TYPE_TLS_DSK   */
+	NULL,       /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+	"NTLM",     /* SIPE_AUTHENTICATION_TYPE_NTLM      */
+	"Kerberos", /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
+	NULL,       /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
+	"TLS-DSK",  /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
 };
 #define AUTH_PROTOCOLS (sizeof(auth_type_to_protocol)/sizeof(gchar *))
 
@@ -201,12 +202,21 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				      struct sip_auth *auth,
 				      struct sipmsg *msg)
 {
+	struct sip_transport *transport = sipe_private->transport;
 	gchar *ret;
 	gchar *gssapi_data = NULL;
 	gchar *sign_str;
 	gchar *gssapi_str;
 	gchar *opaque_str;
 	gchar *version_str;
+
+	/*
+	 * If transport is de-registering when we reach this point then we
+	 * are in the middle of the previous authentication context setup
+	 * attempt. So we shouldn't try another attempt.
+	 */
+	if (transport->deregister)
+		return NULL;
 
 	/* Create security context or handshake continuation? */
 	if (auth->gssapi_context) {
@@ -238,7 +248,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		}
 
 		/* For TLS-DSK the "password" is a certificate */
-		if (auth->type == AUTH_TYPE_TLS_DSK) {
+		if (auth->type == SIPE_AUTHENTICATION_TYPE_TLS_DSK) {
 			password = sipe_certificate_tls_dsk_find(sipe_private,
 								 auth->target);
 
@@ -263,7 +273,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				}
 
 				/* we can't authenticate the message yet */
-				sipe_private->transport->auth_incomplete = TRUE;
+				transport->auth_incomplete = TRUE;
 
 				return(NULL);
 			} else {
@@ -352,7 +362,8 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 	 *
 	 * Start the authentication handshake if NTLM is selected.
 	 */
-	} else if ((auth->type == AUTH_TYPE_NTLM) && !auth->gssapi_data) {
+	} else if ((auth->type == SIPE_AUTHENTICATION_TYPE_NTLM) &&
+		   !auth->gssapi_data) {
 		ret = start_auth_handshake(auth);
 
 	/*
@@ -418,7 +429,7 @@ static void fill_auth(const gchar *hdr, struct sip_auth *auth)
 			g_free(auth->realm);
 			auth->realm = g_strndup(param, end - param);
 		} else if (g_str_has_prefix(hdr, "sts-uri=\"")) {
-			/* Only used with AUTH_TYPE_TLS_DSK */
+			/* Only used with SIPE_AUTHENTICATION_TYPE_TLS_DSK */
 			g_free(auth->sts_uri);
 			auth->sts_uri = g_strndup(param, end - param);
 		} else if (g_str_has_prefix(hdr, "targetname=\"")) {
@@ -443,7 +454,7 @@ static void sign_outgoing_message(struct sipe_core_private *sipe_private,
 	struct sip_transport *transport = sipe_private->transport;
 	gchar *buf;
 
-	if (transport->registrar.type == AUTH_TYPE_UNSET) {
+	if (transport->registrar.type == SIPE_AUTHENTICATION_TYPE_UNSET) {
 		return;
 	}
 
@@ -583,7 +594,8 @@ static void transactions_remove(struct sipe_core_private *sipe_private,
 
 		if (trans->msg) sipmsg_free(trans->msg);
 		if (trans->payload) {
-			(*trans->payload->destroy)(trans->payload->data);
+			if (trans->payload->destroy)
+				(*trans->payload->destroy)(trans->payload->data);
 			g_free(trans->payload);
 		}
 		g_free(trans->key);
@@ -694,7 +706,7 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 			method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
-			sipe_backend_network_ip_address(),
+			sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
 			transport->connection->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
@@ -883,15 +895,7 @@ static const gchar *get_auth_header(struct sipe_core_private *sipe_private,
 				    struct sip_auth *auth,
 				    struct sipmsg *msg)
 {
-	auth->type = AUTH_TYPE_NTLM;
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-	if (SIPE_CORE_PUBLIC_FLAG_IS(KRB5)) {
-		auth->type = AUTH_TYPE_KERBEROS;
-	}
-#endif
-	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK)) {
-		auth->type = AUTH_TYPE_TLS_DSK;
-	}
+	auth->type     = sipe_private->authentication_type;
 	auth->protocol = auth_type_to_protocol[auth->type];
 
 	return(sipmsg_find_auth_header(msg, auth->protocol));
@@ -924,7 +928,7 @@ static void sip_transport_default_contact(struct sipe_core_private *sipe_private
 	sipe_private->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
 						sipe_private->username,
 						transport->connection->client_port,
-						sipe_backend_network_ip_address(),
+						sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
 						TRANSPORT_DESCRIPTOR);
 }
 
@@ -994,22 +998,21 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 				if (!transport->reauthenticate_set) {
 					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
-					guint reauth_timeout;
+					guint reauth_timeout = transport->registrar.expires;
 
 					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
 
-					if (transport->registrar.type == AUTH_TYPE_KERBEROS && transport->registrar.expires > 0) {
-						/* assuming normal Kerberos ticket expiration of about 8-10 hours */
-						reauth_timeout = transport->registrar.expires - 300;
-					} else {
-						/* NTLM: we have to reauthenticate as our security token expires
-						after eight hours (be five minutes early) */
-						reauth_timeout = (8 * 3600) - 300;
+					/* Does authentication scheme provide valid expiration time? */
+					if (reauth_timeout <= (5 * 60)) {
+						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: no expiration time - using default of 8 hours");
+						reauth_timeout = 8 * 60 * 60;
 					}
+
+					/* schedule reauthentication 5 minutes before expiration */
 					sipe_schedule_seconds(sipe_private,
 							      action_name,
 							      NULL,
-							      reauth_timeout,
+							      reauth_timeout - 5 * 60,
 							      do_reauthenticate_cb,
 							      NULL);
 					g_free(action_name);
@@ -1205,17 +1208,18 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				const char *auth_hdr;
 
 				SIPE_DEBUG_INFO("process_register_response: REGISTER retries %d", transport->registrar.retries);
+
+				if (transport->reauthenticate_set) {
+					SIPE_DEBUG_ERROR_NOFORMAT("process_register_response: RE-REGISTER rejected, triggering re-authentication");
+					do_reauthenticate_cb(sipe_private, NULL);
+					return TRUE;
+				}
+
 				if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
 					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 								      _("Authentication failed"));
-					return TRUE;
-				}
-
-				if (transport->reauthenticate_set) {
-					SIPE_DEBUG_ERROR_NOFORMAT("process_register_response: RE-REGISTER rejected, triggering re-authentication");
-					do_reauthenticate_cb(sipe_private, NULL);
 					return TRUE;
 				}
 
@@ -1334,6 +1338,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 		}
 	}
 
+	transport->deregister      = deregister;
 	transport->auth_incomplete = FALSE;
 
 	uuid = get_uuid(sipe_private);
@@ -1343,7 +1348,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 				    "Allow-Events: presence\r\n"
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
 				    "%s",
-			      sipe_backend_network_ip_address(),
+			      sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
 			      transport->connection->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,
@@ -1519,7 +1524,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					auth_hdr = sipmsg_find_header(msg, "Proxy-Authenticate");
 					if (auth_hdr) {
 						guint i;
-						transport->proxy.type = AUTH_TYPE_UNSET;
+						transport->proxy.type = SIPE_AUTHENTICATION_TYPE_UNSET;
 						for (i = 0; i < AUTH_PROTOCOLS; i++) {
 							const gchar *protocol = auth_type_to_protocol[i];
 							if (protocol &&
@@ -1530,7 +1535,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 								break;
 							}
 						}
-						if (transport->proxy.type == AUTH_TYPE_UNSET)
+						if (transport->proxy.type == SIPE_AUTHENTICATION_TYPE_UNSET)
 							SIPE_DEBUG_ERROR("Unknown proxy authentication: %s", auth_hdr);
 						fill_auth(auth_hdr, &transport->proxy);
 					}
@@ -1815,12 +1820,24 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 					SIPE_CORE_PUBLIC);
 }
 
+/*
+ * NOTE: this function can be called before sipe_core_allocate()!
+ */
+gboolean sipe_core_transport_sip_requires_password(guint authentication,
+						   gboolean sso)
+{
+	return(sip_sec_requires_password(authentication, sso));
+}
+
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     guint transport,
+				     guint authentication,
 				     const gchar *server,
 				     const gchar *port)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	sipe_private->authentication_type = authentication;
 
 	/*
 	 * Initializing the certificate sub-system will trigger the generation
@@ -1830,7 +1847,7 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 	 *
 	 * This is currently only needed if the user has selected TLS-DSK.
 	 */
-	if (SIPE_CORE_PUBLIC_FLAG_IS(TLS_DSK))
+	if (sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_TLS_DSK)
 		sipe_certificate_init(sipe_private);
 
 	if (server) {

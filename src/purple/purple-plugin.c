@@ -192,6 +192,18 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 			NULL,
 			TRUE);
 
+	/* In a call */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			sipe_purple_activity_to_token(SIPE_ACTIVITY_ON_PHONE),
+			sipe_core_activity_description(SIPE_ACTIVITY_ON_PHONE),
+			FALSE);
+
+	/* In a conference call  */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			sipe_purple_activity_to_token(SIPE_ACTIVITY_IN_CONF),
+			sipe_core_activity_description(SIPE_ACTIVITY_IN_CONF),
+			FALSE);
+
 	/* Away */
 	/* Goes first in the list as
 	 * purple picks the first status with the AWAY type
@@ -239,6 +251,7 @@ static void sipe_purple_login(PurpleAccount *account)
 {
 	PurpleConnection *gc   = purple_account_get_connection(account);
 	const gchar *username  = purple_account_get_username(account);
+	const gchar *password  = purple_connection_get_password(gc);
 	const gchar *email     = purple_account_get_string(account, "email", NULL);
 	const gchar *email_url = purple_account_get_string(account, "email_url", NULL);
 	const gchar *transport = purple_account_get_string(account, "transport", "auto");
@@ -248,8 +261,46 @@ static void sipe_purple_login(PurpleAccount *account)
 	gchar *login_domain = NULL;
 	gchar *login_account = NULL;
 	const gchar *errmsg;
-	guint type;
+	guint transport_type;
+	guint authentication_type;
 	struct sipe_backend_private *purple_private;
+	gboolean sso = TRUE;
+
+	/* map option list to type - default is NTLM */
+	authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+	if (sipe_strequal(auth, "krb5")) {
+		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
+	} else
+#endif
+#ifndef HAVE_SSPI
+	/*
+	 * @TODO: SSL handshake support isn't implemented in sip-sec-sspi.c.
+	 *        So ignore configuration setting for now.
+	 */
+	if (sipe_strequal(auth, "tls-dsk")) {
+		authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
+	}
+#endif
+
+	/* @TODO: is this correct?
+	   "sso" is only available when Kerberos/SSPI support is compiled in */
+	sso = purple_account_get_bool(account, "sso", TRUE);
+
+	/* Password required? */
+	if (sipe_core_transport_sip_requires_password(authentication_type,
+						      sso) &&
+	    (!password || !strlen(password))) {
+#if PURPLE_VERSION_CHECK(3,0,0)
+		purple_connection_error(
+#else
+		purple_connection_error_reason(
+#endif
+					       gc,
+					       PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+					       _("Password required"));
+		return;
+	}
 
 	/* username format: <username>,[<optional login>] */
 	SIPE_DEBUG_INFO("sipe_purple_login: username '%s'", username);
@@ -271,7 +322,7 @@ static void sipe_purple_login(PurpleAccount *account)
 
 	sipe_public = sipe_core_allocate(username_split[0],
 					 login_domain, login_account,
-					 purple_connection_get_password(gc),
+					 password,
 					 email,
 					 email_url,
 					 &errmsg);
@@ -298,27 +349,8 @@ static void sipe_purple_login(PurpleAccount *account)
 
 	sipe_purple_chat_setup_rejoin(purple_private);
 
-	/* map option list to flags - default is NTLM */
-	SIPE_CORE_FLAG_UNSET(KRB5);
-	SIPE_CORE_FLAG_UNSET(TLS_DSK);
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-	if (sipe_strequal(auth, "krb5")) {
-		SIPE_CORE_FLAG_SET(KRB5);
-	} else
-#endif
-#ifndef HAVE_SSPI
-	/*
-	 * @TODO: SSL handshake support isn't implemented in sip-sec-sspi.c.
-	 *        So ignore configuration setting for now.
-	 */
-	if (sipe_strequal(auth, "tls-dsk")) {
-		SIPE_CORE_FLAG_SET(TLS_DSK);
-	}
-#endif
-
-	/* @TODO: is this correct?
-	   "sso" is only available when Kerberos/SSPI support is compiled in */
-	if (purple_account_get_bool(account, "sso", TRUE))
+	SIPE_CORE_FLAG_UNSET(SSO);
+	if (sso)
 		SIPE_CORE_FLAG_SET(SSO);
 
 	gc->proto_data = sipe_public;
@@ -329,15 +361,16 @@ static void sipe_purple_login(PurpleAccount *account)
 
 	username_split = g_strsplit(purple_account_get_string(account, "server", ""), ":", 2);
 	if (sipe_strequal(transport, "auto")) {
-		type = (username_split[0] == NULL) ?
+		transport_type = (username_split[0] == NULL) ?
 			SIPE_TRANSPORT_AUTO : SIPE_TRANSPORT_TLS;
 	} else if (sipe_strequal(transport, "tls")) {
-		type = SIPE_TRANSPORT_TLS;
+		transport_type = SIPE_TRANSPORT_TLS;
 	} else {
-		type = SIPE_TRANSPORT_TCP;
+		transport_type = SIPE_TRANSPORT_TCP;
 	}
 	sipe_core_transport_sip_connect(sipe_public,
-					type,
+					transport_type,
+					authentication_type,
 					username_split[0],
 					username_split[0] ? username_split[1] : NULL);
 	g_strfreev(username_split);
@@ -416,9 +449,9 @@ static void sipe_purple_keep_alive(PurpleConnection *gc)
 }
 
 static void sipe_purple_alias_buddy(PurpleConnection *gc, const char *name,
-				    SIPE_UNUSED_PARAMETER const char *alias)
+				    const char *alias)
 {
-	sipe_core_group_set_user(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name);
+	sipe_core_group_set_alias(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, alias);
 }
 
 static void sipe_purple_group_rename(PurpleConnection *gc,
@@ -503,7 +536,8 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 #if PURPLE_VERSION_CHECK(3,0,0)
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
 #endif
-	OPT_PROTO_CHAT_TOPIC,
+	OPT_PROTO_CHAT_TOPIC |
+	OPT_PROTO_PASSWORD_OPTIONAL,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
 	NO_BUDDY_ICONS,				/* icon_spec */
@@ -694,6 +728,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 	};
 
 	sipe_core_buddy_search(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			       NULL,
 			       given_name,
 			       surname,
 			       email,
@@ -750,6 +785,14 @@ static void sipe_purple_join_conference_cb(PurpleConnection *gc,
 	}
 }
 
+#ifdef HAVE_VV
+static void sipe_purple_test_call(PurplePluginAction *action)
+{
+	PurpleConnection *gc = (PurpleConnection *) action->context;
+	sipe_core_media_test_call(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+}
+#endif
+
 static void sipe_purple_show_join_conference(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
@@ -770,7 +813,9 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 		_("Enter meeting location string you received in the invitation.\n"
 		  "\n"
 		  "Valid location will be something like\n"
-		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234"),
+		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+		  "or\n"
+		  "https://meet.company.com/someone/abcdef1234"),
 		fields,
 		_("_Join"), G_CALLBACK(sipe_purple_join_conference_cb),
 		_("_Cancel"), NULL,
@@ -800,6 +845,11 @@ static GList *sipe_purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 
 	act = purple_plugin_action_new(_("Contact search..."), sipe_purple_show_find_contact);
 	menu = g_list_prepend(menu, act);
+
+#ifdef HAVE_VV
+	act = purple_plugin_action_new(_("Test call"), sipe_purple_test_call);
+	menu = g_list_prepend(menu, act);
+#endif
 
 	act = purple_plugin_action_new(_("Join scheduled conference..."), sipe_purple_show_join_conference);
 	menu = g_list_prepend(menu, act);
@@ -919,7 +969,12 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
-	purple_account_option_set_masked(option, TRUE);
+#if PURPLE_VERSION_CHECK(3,0,0)
+	purple_account_option_string_set_masked(
+#else
+	purple_account_option_set_masked(
+#endif
+					 option, TRUE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/** Example (federated domain): company.com      (i.e. ocschat@company.com)

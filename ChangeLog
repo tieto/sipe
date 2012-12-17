@@ -1,3 +1,16 @@
+version 1.14.0 "Buddy photo & ADFS support, Web Ticket Optimizations" (2012-XX-XX)
+	- Feature #3585364: Add support for Web Ticket authentication using ADFS (Stefan Becker)
+	  * special thanks to user bhakta79 for the hard work taking logs
+	- Feature #3578132: Kerberos configuration should be passwordless (Stefan Becker)
+	- Fixed #3580212: Connection drops after a few hours (Stefan Becker)
+        - add support for buddy photos (Jakub Adam)
+	- add support for call to Audio Test Service (Jakub Adam)
+	- initial implementation for telepathy backend (Stefan Becker)
+	  * nothing much to see for end users yet...
+	- reduce Web Ticket traffic by queueing requests & caching tickets (Stefan Becker)
+	- update OBS packaging information for Debian (Stefan Becker)
+        - various minor bug & build fixes
+
 version 1.13.3 "Bug Fixes III" (2012-08-19)
 	- Fixed #3537084: OpenBSD build issue (Stefan Becker)
 	- Fixed #3543294: Support Lync 2010 meet URLs (Jakub Adam)

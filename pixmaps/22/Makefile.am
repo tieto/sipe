@@ -1,10 +1,4 @@
-
-EXTRA_DIST = sipe.png
-
-MAINTAINERCLEANFILES = \
-	Makefile.in
-
-pidginprotocolpixdir = $(datadir)/pixmaps/pidgin/protocols/22
-
-pidginprotocolpix_DATA = $(EXTRA_DIST)
-
+pixmapsize = 22
+pixmapinst = 22x22
+pixmapext  = png
+include $(srcdir)/../Makefile.common.am

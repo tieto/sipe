@@ -147,7 +147,7 @@ get_epid(struct sipe_core_private *sipe_private)
 		gchar *self_sip_uri = sip_uri_self(sipe_private);
 		sipe_private->epid = sipe_get_epid(self_sip_uri,
 						   g_get_host_name(),
-						   sipe_backend_network_ip_address());
+						   sipe_backend_network_ip_address(SIPE_CORE_PUBLIC));
 		g_free(self_sip_uri);
 	}
 	return g_strdup(sipe_private->epid);
@@ -191,6 +191,8 @@ sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		sscanf(mail_hash, "%08x", &calendar_id);
 		g_free(mail_hash);
 		res = (calendar_id >> 4) | 0x40000000;
+	} else if (publication_key == SIPE_PUB_STATE_PHONE_VOIP) {	/* First hexadecimal digit is 0x8 */
+		res = (res >> 4) | 0x80000000;
 	}
 
 	return res;
@@ -570,12 +572,6 @@ sipe_utils_uri_unescape(const gchar *string)
 		*tmp = '\0';
 
 	return unescaped;
-}
-
-gboolean
-sipe_utils_is_avconf_uri(const gchar *uri)
-{
-	return g_strstr_len(uri, -1, "app:conf:audio-video:") != NULL;
 }
 
 /**

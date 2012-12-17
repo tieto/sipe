@@ -379,7 +379,7 @@ sipe_core_conf_create(struct sipe_core_public *sipe_public,
 		session = sipe_conf_create(SIPE_CORE_PRIVATE, NULL, focus_uri);
 		g_free(focus_uri);
 	} else {
-		gchar *error = g_strdup_printf(_("\"%s\" is not a valid focus URI"),
+		gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
 					       uri ? uri : "");
 		sipe_backend_notify_error(sipe_public,
 					  _("Failed to join the conference"),

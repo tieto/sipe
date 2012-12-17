@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -98,8 +98,21 @@ sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 			ctx->server_key = g_memdup(state->server_key,
 						   state->key_length);
 
-			SIPE_DEBUG_INFO("sip_sec_init_sec_context__tls_dsk: handshake completed, algorithm %d, key length %" G_GSIZE_FORMAT,
-					ctx->algorithm, ctx->key_length);
+			/* [MS-SIPAE] Section 3.2.2 Timers
+			 *
+			 * ... For an SA established using the TLS-DSK
+			 * authentication protocol, the client MUST
+			 * retrieve the expiration time of its certificate.
+			 * The expiration timer value is the lesser of the
+			 * interval to the certificate expiration and eight
+			 * hours, ...
+			 */
+			ctx->common.expires = sipe_tls_expires(state);
+			if (ctx->common.expires > (8 * 60 * 60))
+				ctx->common.expires = 8 * 60 * 60;
+
+			SIPE_DEBUG_INFO("sip_sec_init_sec_context__tls_dsk: handshake completed, algorithm %d, key length %" G_GSIZE_FORMAT ", expires %d",
+					ctx->algorithm, ctx->key_length, ctx->common.expires);
 
 			sipe_tls_free(state);
 			ctx->state = NULL;
@@ -216,6 +229,11 @@ sip_sec_create_context__tls_dsk(SIPE_UNUSED_PARAMETER guint type)
 	context->common.verify_signature_func = sip_sec_verify_signature__tls_dsk;
 
 	return((SipSecContext) context);
+}
+
+gboolean sip_sec_password__tls_dsk(void)
+{
+	return(TRUE);
 }
 
 /*

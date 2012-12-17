@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,7 @@ struct sipe_certificate;
 struct sipe_media_call_private;
 struct sipe_groupchat;
 struct sipe_svc;
+struct sipe_webticket;
 
 /**
  * Private part of the Sipe data structure
@@ -46,6 +47,7 @@ struct sipe_core_private {
 	struct sip_transport *transport;
 	const struct sip_service_data *service_data;
 	guint transport_type;
+	guint authentication_type;
 
 	/* Account information */
 	gchar *username;
@@ -111,6 +113,7 @@ struct sipe_core_private {
 
 	/* Voice call */
 	struct sipe_media_call_private *media_call;
+	gchar *test_call_bot_uri;
 	/**
 	 *  Provides the necessary information on where we can obtain
 	 *  credentials for the A/V Edge server service.
@@ -133,10 +136,17 @@ struct sipe_core_private {
 
 	/* TLS-DSK: Certificates & Web services */
 	struct sipe_certificate *certificate;
+	struct sipe_webticket *webticket;
 	struct sipe_svc *svc;
 
 	/* [MS-DLX] server URI */
 	gchar *dlx_uri;
+
+	/* Addressbook server URI */
+	gchar *addressbook_uri;
+
+	/* Pending photo download HTTP requests */
+	GSList *pending_photo_requests;
 };
 
 /**

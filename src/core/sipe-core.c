@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,6 +94,7 @@
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
 #include "sipe-utils.h"
+#include "sipe-webticket.h"
 
 /* locale_dir is unused if ENABLE_NLS is not defined */
 void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
@@ -389,8 +390,9 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 		sip_csta_close(sipe_private);
 	}
 
-	sipe_certificate_free(sipe_private);
+	/* pending service requests must be cancelled first */
 	sipe_svc_free(sipe_private);
+	sipe_webticket_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
 		sipe_subscriptions_unsubscribe(sipe_private);
@@ -398,6 +400,8 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 
 	sipe_core_connection_cleanup(sipe_private);
+	sipe_certificate_free(sipe_private);
+
 	g_free(sipe_private->public.sip_name);
 	g_free(sipe_private->public.sip_domain);
 	g_free(sipe_private->username);
@@ -416,15 +420,10 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_subscriptions_destroy(sipe_private);
 
 	if (sipe_private->groups) {
-		GSList *entry = sipe_private->groups;
-		while (entry) {
-			struct sipe_group *group = entry->data;
-			g_free(group->name);
-			g_free(group);
-			entry = entry->next;
-		}
+		GSList *entry;
+		while ((entry = sipe_private->groups) != NULL)
+			sipe_group_free(sipe_private, entry->data);
 	}
-	g_slist_free(sipe_private->groups);
 
 	if (sipe_private->our_publication_keys) {
 		GSList *entry = sipe_private->our_publication_keys;
@@ -436,12 +435,14 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_slist_free(sipe_private->our_publication_keys);
 
 #ifdef HAVE_VV
+	g_free(sipe_private->test_call_bot_uri);
 	g_free(sipe_private->mras_uri);
 	g_free(sipe_private->media_relay_username);
 	g_free(sipe_private->media_relay_password);
 	sipe_media_relay_list_free(sipe_private->media_relays);
 #endif
 
+	g_free(sipe_private->addressbook_uri);
 	g_free(sipe_private->dlx_uri);
 	g_free(sipe_private);
 }

@@ -29,6 +29,7 @@
  */
 
 #include <string.h>
+#include <time.h>
 
 #include <glib.h>
 
@@ -43,6 +44,11 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
+struct webticket_queued_data {
+	sipe_webticket_callback *callback;
+	gpointer callback_data;
+};
+
 struct webticket_callback_data {
 	gchar *service_uri;
 	const gchar *service_port;
@@ -52,8 +58,13 @@ struct webticket_callback_data {
 	gchar *webticket_fedbearer_uri;
 
 	gboolean tried_fedbearer;
-	gboolean webticket_for_service;
 	gboolean requires_signing;
+	enum {
+		TOKEN_STATE_NONE       = 0,
+		TOKEN_STATE_SERVICE,
+		TOKEN_STATE_FEDERATION,
+		TOKEN_STATE_FED_BEARER,
+	} token_state;
 
 	struct sipe_tls_random entropy;
 
@@ -61,8 +72,104 @@ struct webticket_callback_data {
 	gpointer callback_data;
 
 	struct sipe_svc_session *session;
+
+	GSList *queued;
 };
 
+struct webticket_token {
+	gchar *auth_uri;
+	gchar *token;
+	time_t expires;
+};
+
+struct sipe_webticket {
+	GHashTable *cache;
+	GHashTable *pending;
+
+	gchar *webticket_adfs_uri;
+	gchar *adfs_token;
+	time_t adfs_token_expires;
+
+	gboolean retrieved_realminfo;
+};
+
+void sipe_webticket_free(struct sipe_core_private *sipe_private)
+{
+	struct sipe_webticket *webticket = sipe_private->webticket;
+	if (!webticket)
+		return;
+
+	g_free(webticket->webticket_adfs_uri);
+	g_free(webticket->adfs_token);
+	if (webticket->pending)
+		g_hash_table_destroy(webticket->pending);
+	if (webticket->cache)
+		g_hash_table_destroy(webticket->cache);
+	g_free(webticket);
+	sipe_private->webticket = NULL;
+}
+
+static void free_token(gpointer data)
+{
+	struct webticket_token *wt = data;
+	g_free(wt->auth_uri);
+	g_free(wt->token);
+	g_free(wt);
+}
+
+static void sipe_webticket_init(struct sipe_core_private *sipe_private)
+{
+	struct sipe_webticket *webticket;
+
+	if (sipe_private->webticket)
+		return;
+
+	sipe_private->webticket = webticket = g_new0(struct sipe_webticket, 1);
+
+	webticket->cache   = g_hash_table_new_full(g_str_hash,
+						   g_str_equal,
+						   g_free,
+						   free_token);
+	webticket->pending = g_hash_table_new(g_str_hash,
+					      g_str_equal);
+}
+
+/* takes ownership of "token" */
+static void cache_token(struct sipe_core_private *sipe_private,
+			const gchar *service_uri,
+			const gchar *auth_uri,
+			gchar *token,
+			time_t expires)
+{
+	struct webticket_token *wt = g_new0(struct webticket_token, 1);
+	wt->auth_uri = g_strdup(auth_uri);
+	wt->token    = token;
+	wt->expires  = expires;
+	g_hash_table_insert(sipe_private->webticket->cache,
+			    g_strdup(service_uri),
+			    wt);
+}
+
+static const struct webticket_token *cache_hit(struct sipe_core_private *sipe_private,
+					       const gchar *service_uri)
+{
+	const struct webticket_token *wt;
+
+	sipe_webticket_init(sipe_private);
+
+	/* make sure a cached Web Ticket is still valid for 60 seconds */
+	wt = g_hash_table_lookup(sipe_private->webticket->cache,
+				 service_uri);
+	if (wt && (wt->expires < time(NULL) + 60)) {
+		SIPE_DEBUG_INFO("cache_hit: cached token for URI %s has expired",
+				service_uri);
+		wt = NULL;
+	}
+
+	return(wt);
+}
+
+/* frees just the main request data, when this is called "queued" is cleared */
 static void callback_data_free(struct webticket_callback_data *wcd)
 {
 	if (wcd) {
@@ -73,6 +180,57 @@ static void callback_data_free(struct webticket_callback_data *wcd)
 		g_free(wcd->service_uri);
 		g_free(wcd);
 	}
+}
+
+static void queue_request(struct webticket_callback_data *wcd,
+			  sipe_webticket_callback *callback,
+			  gpointer callback_data)
+{
+	struct webticket_queued_data *wqd = g_new0(struct webticket_queued_data, 1);
+
+	wqd->callback      = callback;
+	wqd->callback_data = callback_data;
+
+	wcd->queued = g_slist_prepend(wcd->queued, wqd);
+}
+
+static void callback_execute(struct sipe_core_private *sipe_private,
+			     struct webticket_callback_data *wcd,
+			     const gchar *auth_uri,
+			     const gchar *wsse_security,
+			     const gchar *failure_msg)
+{
+	GSList *entry = wcd->queued;
+
+	/* complete main request */
+	wcd->callback(sipe_private,
+		      wcd->service_uri,
+		      auth_uri,
+		      wsse_security,
+		      failure_msg,
+		      wcd->callback_data);
+
+	/* complete queued requests */
+	while (entry) {
+		struct webticket_queued_data *wqd = entry->data;
+
+		SIPE_DEBUG_INFO("callback_execute: completing queue request URI %s (Auth URI %s)",
+				wcd->service_uri, auth_uri);
+		wqd->callback(sipe_private,
+			      wcd->service_uri,
+			      auth_uri,
+			      wsse_security,
+			      failure_msg,
+			      wqd->callback_data);
+
+		g_free(wqd);
+		entry = entry->next;
+	}
+	g_slist_free(wcd->queued);
+
+	/* drop request from pending hash */
+	g_hash_table_remove(sipe_private->webticket->pending,
+			    wcd->service_uri);
 }
 
 static gchar *extract_raw_xml_attribute(const gchar *xml,
@@ -94,36 +252,10 @@ static gchar *extract_raw_xml_attribute(const gchar *xml,
 	return(data);
 }
 
-static gchar *extract_raw_xml(const gchar *xml,
-			      const gchar *tag,
-			      gboolean include_tag)
-{
-	gchar *tag_start = g_strdup_printf("<%s", tag);
-	gchar *tag_end   = g_strdup_printf("</%s>", tag);
-	gchar *data      = NULL;
-	const gchar *start = strstr(xml, tag_start);
-
-	if (start) {
-		const gchar *end = strstr(start + strlen(tag_start), tag_end);
-		if (end) {
-			if (include_tag) {
-				data = g_strndup(start, end + strlen(tag_end) - start);
-			} else {
-				const gchar *tmp = strchr(start + strlen(tag_start), '>') + 1;
-				data = g_strndup(tmp, end - tmp);
-			}
-		}
-	}
-
-	g_free(tag_end);
-	g_free(tag_start);
-	return(data);
-}
-
 static gchar *generate_timestamp(const gchar *raw,
 				 const gchar *lifetime_tag)
 {
-	gchar *lifetime = extract_raw_xml(raw, lifetime_tag, FALSE);
+	gchar *lifetime = sipe_xml_extract_raw(raw, lifetime_tag, FALSE);
 	gchar *timestamp = NULL;
 	if (lifetime)
 		timestamp = g_strdup_printf("<wsu:Timestamp xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"timestamp\">%s</wsu:Timestamp>",
@@ -135,7 +267,7 @@ static gchar *generate_timestamp(const gchar *raw,
 static gchar *generate_fedbearer_wsse(const gchar *raw)
 {
 	gchar *timestamp = generate_timestamp(raw, "wst:Lifetime");
-	gchar *keydata   = extract_raw_xml(raw, "EncryptedData", TRUE);
+	gchar *keydata   = sipe_xml_extract_raw(raw, "EncryptedData", TRUE);
 	gchar *wsse_security = NULL;
 
 	if (timestamp && keydata) {
@@ -148,14 +280,53 @@ static gchar *generate_fedbearer_wsse(const gchar *raw)
 	return(wsse_security);
 }
 
+static void generate_federation_wsse(struct sipe_webticket *webticket,
+				     const gchar *raw)
+{
+	gchar *timestamp = generate_timestamp(raw, "t:Lifetime");
+	gchar *keydata   = sipe_xml_extract_raw(raw, "saml:Assertion", TRUE);
+
+
+	/* clear old ADFS token */
+	g_free(webticket->adfs_token);
+	webticket->adfs_token = NULL;
+
+	if (timestamp && keydata) {
+		gchar *expires_string = sipe_xml_extract_raw(timestamp,
+							     "wsu:Expires",
+							     FALSE);
+
+		if (expires_string) {
+
+			SIPE_DEBUG_INFO("generate_federation_wsse: found timestamp & keydata, expires %s",
+					expires_string);
+
+			/* cache ADFS token */
+			webticket->adfs_token         = g_strconcat(timestamp,
+								    keydata,
+								    NULL);
+			webticket->adfs_token_expires = sipe_utils_str_to_time(expires_string);
+			g_free(expires_string);
+		}
+	}
+
+	g_free(keydata);
+	g_free(timestamp);
+}
+
 static gchar *generate_sha1_proof_wsse(const gchar *raw,
-				       struct sipe_tls_random *entropy)
+				       struct sipe_tls_random *entropy,
+				       time_t *expires)
 {
 	gchar *timestamp = generate_timestamp(raw, "Lifetime");
-	gchar *keydata   = extract_raw_xml(raw, "saml:Assertion", TRUE);
+	gchar *keydata   = sipe_xml_extract_raw(raw, "saml:Assertion", TRUE);
 	gchar *wsse_security = NULL;
 
 	if (timestamp && keydata) {
+		gchar *expires_string = sipe_xml_extract_raw(timestamp,
+							     "Expires",
+							     FALSE);
+
 		if (entropy) {
 			gchar *assertionID = extract_raw_xml_attribute(keydata,
 								       "AssertionID");
@@ -170,7 +341,7 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 			 *
 			 *       key = P_SHA1(Entropy_REQ, Entropy_RES)"
 			 */
-			gchar *entropy_res_base64 = extract_raw_xml(raw, "BinarySecret", FALSE);
+			gchar *entropy_res_base64 = sipe_xml_extract_raw(raw, "BinarySecret", FALSE);
 			gsize entropy_res_length;
 			guchar *entropy_response = g_base64_decode(entropy_res_base64,
 								   &entropy_res_length);
@@ -264,6 +435,12 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 						    keydata,
 						    NULL);
 		}
+
+		*expires = 0;
+		if (expires_string) {
+			*expires = sipe_utils_str_to_time(expires_string);
+			g_free(expires_string);
+		}
 	}
 
 	g_free(keydata);
@@ -271,6 +448,10 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 	return(wsse_security);
 }
 
+static gboolean federated_authentication(struct sipe_core_private *sipe_private,
+					 struct webticket_callback_data *wcd);
+static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
+				   struct webticket_callback_data *wcd);
 static void webticket_token(struct sipe_core_private *sipe_private,
 			    const gchar *uri,
 			    const gchar *raw,
@@ -281,24 +462,55 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 	gboolean failed = TRUE;
 
 	if (soap_body) {
-		/* WebTicket for Web Service */
-		if (wcd->webticket_for_service) {
+		switch (wcd->token_state) {
+		case TOKEN_STATE_NONE:
+			SIPE_DEBUG_INFO_NOFORMAT("webticket_token: ILLEGAL STATE - should not happen...");
+			break;
+
+		case TOKEN_STATE_SERVICE: {
+			/* WebTicket for Web Service */
+			time_t expires;
 			gchar *wsse_security = generate_sha1_proof_wsse(raw,
-									wcd->requires_signing ? &wcd->entropy : NULL);
+									wcd->requires_signing ? &wcd->entropy : NULL,
+									&expires);
 
 			if (wsse_security) {
-				/* callback takes ownership of wsse_security */
-				wcd->callback(sipe_private,
-					      wcd->service_uri,
-					      wcd->service_auth_uri,
-					      wsse_security,
-					      wcd->callback_data);
+				/* cache takes ownership of wsse_security */
+				cache_token(sipe_private,
+					    wcd->service_uri,
+					    wcd->service_auth_uri,
+					    wsse_security,
+					    expires);
+				callback_execute(sipe_private,
+						 wcd,
+						 wcd->service_auth_uri,
+						 wsse_security,
+						 NULL);
 				failed = FALSE;
-				g_free(wsse_security);
 			}
+			break;
+		}
 
-		/* WebTicket for federated authentication */
-		} else {
+		case TOKEN_STATE_FEDERATION:
+			/* WebTicket from ADFS for federated authentication */
+			generate_federation_wsse(sipe_private->webticket,
+						 raw);
+
+			if (sipe_private->webticket->adfs_token) {
+
+				SIPE_DEBUG_INFO("webticket_token: received valid SOAP message from ADFS %s",
+						uri);
+
+				if (federated_authentication(sipe_private,
+							     wcd)) {
+					/* callback data passed down the line */
+					wcd = NULL;
+				}
+			}
+			break;
+
+		case TOKEN_STATE_FED_BEARER: {
+			/* WebTicket for federated authentication */
 			gchar *wsse_security = generate_fedbearer_wsse(raw);
 
 			if (wsse_security) {
@@ -314,13 +526,17 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 						       &wcd->entropy,
 						       webticket_token,
 						       wcd)) {
-					wcd->webticket_for_service = TRUE;
+					wcd->token_state = TOKEN_STATE_SERVICE;
 
 					/* callback data passed down the line */
 					wcd = NULL;
 				}
 				g_free(wsse_security);
 			}
+			break;
+		}
+
+		/* end of: switch (wcd->token_state) { */
 		}
 
 	} else if (uri) {
@@ -329,14 +545,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO("webticket_token: anonymous authentication to service %s failed, retrying with federated authentication",
 					uri);
 
-			wcd->tried_fedbearer = TRUE;
-			if (sipe_svc_webticket_lmc(sipe_private,
-						   wcd->session,
-						   wcd->webticket_fedbearer_uri,
-						   webticket_token,
-						   wcd)) {
-				wcd->webticket_for_service = FALSE;
-
+			if (initiate_fedbearer(sipe_private, wcd)) {
 				/* callback data passed down the line */
 				wcd = NULL;
 			}
@@ -345,14 +554,137 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 
 	if (wcd) {
 		if (failed) {
-			wcd->callback(sipe_private,
-				      wcd->service_uri,
-				      uri ? uri : NULL,
-				      NULL,
-				      wcd->callback_data);
+			gchar *failure_msg = NULL;
+
+			if (soap_body) {
+				failure_msg = sipe_xml_data(sipe_xml_child(soap_body,
+									   "Body/Fault/Detail/error/internalerror/text"));
+				/* XML data can end in &#x000D;&#x000A; */
+				g_strstrip(failure_msg);
+			}
+
+			callback_execute(sipe_private,
+					 wcd,
+					 uri,
+					 NULL,
+					 failure_msg);
+			g_free(failure_msg);
 		}
 		callback_data_free(wcd);
 	}
+}
+
+static gboolean federated_authentication(struct sipe_core_private *sipe_private,
+					 struct webticket_callback_data *wcd)
+{
+	gboolean success;
+
+	if ((success = sipe_svc_webticket_lmc_federated(sipe_private,
+							wcd->session,
+							sipe_private->webticket->adfs_token,
+							wcd->webticket_fedbearer_uri,
+							webticket_token,
+							wcd)))
+		wcd->token_state = TOKEN_STATE_FED_BEARER;
+
+	/* If TRUE then callback data has been passed down the line */
+	return(success);
+}
+
+static gboolean fedbearer_authentication(struct sipe_core_private *sipe_private,
+					 struct webticket_callback_data *wcd)
+{
+	struct sipe_webticket *webticket = sipe_private->webticket;
+	gboolean success;
+
+	/* make sure a cached ADFS token is still valid for 60 seconds */
+	if (webticket->adfs_token &&
+	    (webticket->adfs_token_expires >= time(NULL) + 60)) {
+
+		SIPE_DEBUG_INFO_NOFORMAT("fedbearer_authentication: reusing cached ADFS token");
+		success = federated_authentication(sipe_private, wcd);
+
+	} else if (webticket->webticket_adfs_uri) {
+		if ((success = sipe_svc_webticket_adfs(sipe_private,
+						       wcd->session,
+						       webticket->webticket_adfs_uri,
+						       webticket_token,
+						       wcd)))
+			wcd->token_state = TOKEN_STATE_FEDERATION;
+	} else {
+		if ((success = sipe_svc_webticket_lmc(sipe_private,
+						      wcd->session,
+						      wcd->webticket_fedbearer_uri,
+						      webticket_token,
+						      wcd)))
+			wcd->token_state = TOKEN_STATE_FED_BEARER;
+	}
+
+	/* If TRUE then callback data has been passed down the line */
+	return(success);
+}
+
+static void realminfo(struct sipe_core_private *sipe_private,
+		      const gchar *uri,
+		      SIPE_UNUSED_PARAMETER const gchar *raw,
+		      sipe_xml *realminfo,
+		      gpointer callback_data)
+{
+	struct sipe_webticket *webticket = sipe_private->webticket;
+	struct webticket_callback_data *wcd = callback_data;
+
+	/* Only try retrieving of RealmInfo once */
+	webticket->retrieved_realminfo = TRUE;
+
+	if (realminfo) {
+		/* detect ADFS setup. See also:
+		 *
+		 *   http://en.wikipedia.org/wiki/Active_Directory_Federation_Services
+		 *
+		 * NOTE: this is based on observed behaviour.
+		 *       It is unkown if this is documented somewhere...
+		 */
+		SIPE_DEBUG_INFO("realminfo: data for user %s retrieved successfully",
+				sipe_private->username);
+
+		webticket->webticket_adfs_uri = sipe_xml_data(sipe_xml_child(realminfo,
+									     "STSAuthURL"));
+	}
+
+	if (webticket->webticket_adfs_uri)
+		SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
+				webticket->webticket_adfs_uri);
+	else
+		SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
+
+	if (!fedbearer_authentication(sipe_private, wcd)) {
+		callback_execute(sipe_private,
+				 wcd,
+				 uri,
+				 NULL,
+				 NULL);
+		callback_data_free(wcd);
+	}
+}
+
+static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
+				   struct webticket_callback_data *wcd)
+{
+	gboolean success;
+
+	if (sipe_private->webticket->retrieved_realminfo) {
+		/* skip retrieval and go to authentication */
+		success = fedbearer_authentication(sipe_private, wcd);
+	} else {
+		success = sipe_svc_realminfo(sipe_private,
+					     wcd->session,
+					     realminfo,
+					     wcd);
+	}
+
+	wcd->tried_fedbearer = TRUE;
+
+	return(success);
 }
 
 static void webticket_metadata(struct sipe_core_private *sipe_private,
@@ -410,15 +742,10 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 							     &wcd->entropy,
 							     webticket_token,
 							     wcd);
-				wcd->webticket_for_service = TRUE;
+				wcd->token_state = TOKEN_STATE_SERVICE;
 			} else {
-				wcd->tried_fedbearer = TRUE;
-				success = sipe_svc_webticket_lmc(sipe_private,
-								 wcd->session,
-								 wcd->webticket_fedbearer_uri,
-								 webticket_token,
-								 wcd);
-				wcd->webticket_for_service = FALSE;
+				success = initiate_fedbearer(sipe_private,
+							     wcd);
 			}
 
 			if (success) {
@@ -429,11 +756,11 @@ static void webticket_metadata(struct sipe_core_private *sipe_private,
 	}
 
 	if (wcd) {
-		wcd->callback(sipe_private,
-			      wcd->service_uri,
-			      uri ? uri : NULL,
-			      NULL,
-			      wcd->callback_data);
+		callback_execute(sipe_private,
+				 wcd,
+				 uri,
+				 NULL,
+				 NULL);
 		callback_data_free(wcd);
 	}
 }
@@ -519,11 +846,11 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 	}
 
 	if (wcd) {
-		wcd->callback(sipe_private,
-			      wcd->service_uri,
-			      uri ? uri : NULL,
-			      NULL,
-			      wcd->callback_data);
+		callback_execute(sipe_private,
+				 wcd,
+				 uri,
+				 NULL,
+				 NULL);
 		callback_data_free(wcd);
 	}
 }
@@ -535,21 +862,54 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 				sipe_webticket_callback *callback,
 				gpointer callback_data)
 {
-	struct webticket_callback_data *wcd = g_new0(struct webticket_callback_data, 1);
-	gboolean ret = sipe_svc_metadata(sipe_private,
-					 session,
-					 base_uri,
-					 service_metadata,
-					 wcd);
+	const struct webticket_token *wt = cache_hit(sipe_private, base_uri);
+	gboolean ret;
 
-	if (ret) {
-		wcd->service_uri   = g_strdup(base_uri);
-		wcd->service_port  = port_name;
-		wcd->callback      = callback;
-		wcd->callback_data = callback_data;
-		wcd->session       = session;
+	/* cache hit for this URI? */
+	if (wt) {
+		SIPE_DEBUG_INFO("sipe_webticket_request: using cached token for URI %s (Auth URI %s)",
+				base_uri, wt->auth_uri);
+		callback(sipe_private,
+			 base_uri,
+			 wt->auth_uri,
+			 wt->token,
+			 NULL,
+			 callback_data);
+		ret = TRUE;
 	} else {
-		g_free(wcd);
+		GHashTable *pending = sipe_private->webticket->pending;
+		struct webticket_callback_data *wcd = g_hash_table_lookup(pending,
+									  base_uri);
+
+		/* is there already a pending request for this URI? */
+		if (wcd) {
+			SIPE_DEBUG_INFO("sipe_webticket_request: pending request found for URI %s - queueing",
+					base_uri);
+			queue_request(wcd, callback, callback_data);
+			ret = TRUE;
+		} else {
+			wcd = g_new0(struct webticket_callback_data, 1);
+
+			ret = sipe_svc_metadata(sipe_private,
+						session,
+						base_uri,
+						service_metadata,
+						wcd);
+
+			if (ret) {
+				wcd->service_uri   = g_strdup(base_uri);
+				wcd->service_port  = port_name;
+				wcd->callback      = callback;
+				wcd->callback_data = callback_data;
+				wcd->session       = session;
+				wcd->token_state   = TOKEN_STATE_NONE;
+				g_hash_table_insert(pending,
+						    wcd->service_uri, /* borrowed */
+						    wcd);             /* borrowed */
+			} else {
+				g_free(wcd);
+			}
+		}
 	}
 
 	return(ret);

@@ -317,17 +317,20 @@ void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	const gchar *setting = sipe_backend_setting(SIPE_CORE_PUBLIC,
 						    SIPE_SETTING_GROUPCHAT_USER);
+	gboolean retry = FALSE;
 
 	if (groupchat->session) {
 		/* response to group chat server invite */
 		SIPE_DEBUG_ERROR_NOFORMAT("can't connect to group chat server!");
+
+		/* group chat server exists, but communication failed */
+		retry = TRUE;
 	} else {
 		/* response to initial invite */
 		SIPE_DEBUG_INFO_NOFORMAT("no group chat server found.");
 	}
 
 	sipe_session_close(sipe_private, session);
-	groupchat_init_retry(sipe_private);
 
 	if (!is_empty(setting)) {
 		gchar *msg = g_strdup_printf(_("Group Chat Proxy setting is incorrect:\n\n\t%s\n\nPlease update your Account."),
@@ -336,6 +339,15 @@ void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 					  _("Couldn't find Group Chat server!"),
 					  msg);
 		g_free(msg);
+
+		/* user specified group chat settings: we should retry */
+		retry = TRUE;
+	}
+
+	if (retry) {
+		groupchat_init_retry(sipe_private);
+	} else {
+		SIPE_DEBUG_INFO_NOFORMAT("disabling group chat feature.");
 	}
 }
 

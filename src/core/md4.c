@@ -40,7 +40,9 @@
  *
  * Changes are flagged with __SIPE__REMOVE_NSS_DEPENDENCIES__
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Added Coverity warning suppression
+ *
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  */
 
 /*
@@ -173,6 +175,8 @@ void md4sum(const Uint8 *input, Uint32 inputLen, Uint8 *result)
   memset(final + n + 1, 0, 120 - (n + 1));
 
   inputLen = inputLen << 3;
+  /* This code is correct: w2b() only accesses 4 bytes starting from &inputLen */
+  /* coverity[array_vs_singleton : FALSE] */
   w2b(final + (n >= 56 ? 120 : 56), &inputLen, 4);
 
   md4step(state, final);

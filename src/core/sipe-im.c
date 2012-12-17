@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -409,8 +409,8 @@ sipe_im_invite(struct sipe_core_private *sipe_private,
 		"t=0 0\r\n"
 		"m=%s %d sip null\r\n"
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
-		sipe_backend_network_ip_address(),
-		sipe_backend_network_ip_address(),
+		sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
+		sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
 		SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) ? "message" : "x-ms-message",
 		sip_transport_port(sipe_private));
 

@@ -37,10 +37,11 @@ struct sipe_core_private;
  */
 guint sipe_ocs2007_availability_from_status(const gchar *sipe_status_id,
 					    const gchar **activity_token);
-const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability);
+const gchar *sipe_ocs2007_status_from_legacy_availability(guint availability,
+							  const gchar *activity);
 const gchar *sipe_ocs2007_legacy_activity_description(guint availability);
 gboolean sipe_ocs2007_status_is_busy(const gchar *status_id);
-gboolean sipe_ocs2007_availability_is_away2(guint availability);
+gboolean sipe_ocs2007_availability_is_away(guint availability);
 
 /**
  * Publish status (OCS2007+)
@@ -49,6 +50,7 @@ void sipe_ocs2007_presence_publish(struct sipe_core_private *sipe_private,
 				   gpointer unused);
 void sipe_ocs2007_free(struct sipe_core_private *sipe_private);
 void sipe_ocs2007_category_publish(struct sipe_core_private *sipe_private);
+void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private);
 void sipe_ocs2007_reset_status(struct sipe_core_private *sipe_private);
 void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 				       struct sipmsg *msg);

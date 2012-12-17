@@ -126,7 +126,7 @@ void sipe_svc_session_close(struct sipe_svc_session *session)
 
 static void sipe_svc_https_response(int return_code,
 				    const gchar *body,
-				    SIPE_UNUSED_PARAMETER const gchar *content_type,
+				    SIPE_UNUSED_PARAMETER GSList *headers,
 				    HttpConn *conn,
 				    void *callback_data)
 {
@@ -217,6 +217,7 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 				      const gchar *soap_action,
 				      const gchar *wsse_security,
 				      const gchar *soap_body,
+				      const gchar *content_type,
 				      svc_callback *internal_callback,
 				      sipe_svc_callback *callback,
 				      gpointer callback_data)
@@ -254,7 +255,7 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 					      HTTP_CONN_POST,
 					      session,
 					      uri,
-					      "text/xml",
+					      content_type ? content_type : "text/xml",
 					      soap_action,
 					      body,
 					      internal_callback,
@@ -285,6 +286,7 @@ static gboolean new_soap_req(struct sipe_core_private *sipe_private,
 				     soap_action,
 				     wsse_security,
 				     soap_body,
+				     NULL,
 				     internal_callback,
 				     callback,
 				     callback_data));
@@ -386,7 +388,7 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 					   "  <Metadata>"
 					   "   <FromDialPad>false</FromDialPad>"
 					   "   <MaxResultNum>%d</MaxResultNum>"
-					   "   <ReturnList>displayName,msRTCSIP-PrimaryUserAddress,title,telephoneNumber,homePhone,mobile,otherTelephone,mail,company,country</ReturnList>"
+					   "   <ReturnList>displayName,msRTCSIP-PrimaryUserAddress,title,telephoneNumber,homePhone,mobile,otherTelephone,mail,company,country,photoRelPath,photoSize,photoHash</ReturnList>"
 					   "  </Metadata>"
 					   " </AbEntryRequest>"
 					   "</SearchAbEntry>",
@@ -408,56 +410,128 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 	return(ret);
 }
 
-/*
- * This functions encodes what the Microsoft Lync client does for
- * Office365 accounts. It will most definitely fail for internal Lync
- * installation that use TLS-DSK instead of NTLM.
- *
- * But for those anonymous authentication should already have succeeded.
- * I guess we'll have to see what happens in real life...
- */
+/* Requests to login.microsoftonline.com & ADFS */
+static gboolean request_passport(struct sipe_core_private *sipe_private,
+				 struct sipe_svc_session *session,
+				 const gchar *service_uri,
+				 const gchar *auth_uri,
+				 const gchar *wsse_security,
+				 const gchar *content_type,
+				 const gchar *request_extension,
+				 sipe_svc_callback *callback,
+				 gpointer callback_data)
+{
+	gchar *soap_body = g_strdup_printf("<wst:RequestSecurityToken>"
+					   " <wst:RequestType>http://schemas.xmlsoap.org/ws/2005/02/trust/Issue</wst:RequestType>"
+					   " <wsp:AppliesTo>"
+					   "  <wsa:EndpointReference>"
+					   "   <wsa:Address>%s</wsa:Address>"
+					   "  </wsa:EndpointReference>"
+					   " </wsp:AppliesTo>"
+					   " %s"
+					   "</wst:RequestSecurityToken>",
+					   service_uri,
+					   request_extension ? request_extension : "");
+
+	gboolean ret = sipe_svc_wsdl_request(sipe_private,
+					     session,
+					     auth_uri,
+					     "xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\" "
+					     "xmlns:wst=\"http://schemas.xmlsoap.org/ws/2005/02/trust\"",
+					     "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue",
+					     wsse_security,
+					     soap_body,
+					     content_type,
+					     sipe_svc_wsdl_response,
+					     callback,
+					     callback_data);
+	g_free(soap_body);
+
+	return(ret);
+}
+
+static gboolean request_user_password(struct sipe_core_private *sipe_private,
+				      struct sipe_svc_session *session,
+				      const gchar *service_uri,
+				      const gchar *auth_uri,
+				      const gchar *content_type,
+				      const gchar *request_extension,
+				      sipe_svc_callback *callback,
+				      gpointer callback_data)
+{
+	/* Only cleartext passwords seem to be accepted... */
+	gchar *wsse_security = g_strdup_printf("<wsse:UsernameToken>"
+					       " <wsse:Username>%s</wsse:Username>"
+					       " <wsse:Password>%s</wsse:Password>"
+					       "</wsse:UsernameToken>",
+					       sipe_private->username,
+					       sipe_private->password);
+
+	gboolean ret = request_passport(sipe_private,
+					session,
+					service_uri,
+					auth_uri,
+					wsse_security,
+					content_type,
+					request_extension,
+					callback,
+					callback_data);
+	g_free(wsse_security);
+
+	return(ret);
+}
+
+gboolean sipe_svc_webticket_adfs(struct sipe_core_private *sipe_private,
+				 struct sipe_svc_session *session,
+				 const gchar *adfs_uri,
+				 sipe_svc_callback *callback,
+				 gpointer callback_data)
+{
+	return(request_user_password(sipe_private,
+				     session,
+				     "urn:federation:MicrosoftOnline",
+				     adfs_uri,
+				     /* ADFS is special, *sigh* */
+				     "application/soap+xml; charset=utf-8",
+				     "<wst:KeyType>http://schemas.xmlsoap.org/ws/2005/05/identity/NoProofKey</wst:KeyType>",
+				     callback,
+				     callback_data));
+}
+
+#define LMC_URI "https://login.microsoftonline.com:443/RST2.srf"
+
 gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 				struct sipe_svc_session *session,
 				const gchar *service_uri,
 				sipe_svc_callback *callback,
 				gpointer callback_data)
 {
-	/* login.microsoftonline.com seems only to accept cleartext passwords :/ */
-	gchar *security = g_strdup_printf("<wsse:UsernameToken>"
-					  " <wsse:Username>%s</wsse:Username>"
-					  " <wsse:Password>%s</wsse:Password>"
-					  "</wsse:UsernameToken>",
-					  sipe_private->username,
-					  sipe_private->password);
+	return(request_user_password(sipe_private,
+				     session,
+				     service_uri,
+				     LMC_URI,
+				     NULL,
+				     NULL,
+				     callback,
+				     callback_data));
+}
 
-	gchar *soap_body = g_strdup_printf("<ps:RequestMultipleSecurityTokens>"
-					   " <wst:RequestSecurityToken>"
-					   "  <wst:RequestType>http://schemas.xmlsoap.org/ws/2005/02/trust/Issue</wst:RequestType>"
-					   "  <wsp:AppliesTo>"
-					   "   <wsa:EndpointReference>"
-					   "    <wsa:Address>%s</wsa:Address>"
-					   "   </wsa:EndpointReference>"
-					   "  </wsp:AppliesTo>"
-					   " </wst:RequestSecurityToken>"
-					   "</ps:RequestMultipleSecurityTokens>",
-					   service_uri);
-
-	gboolean ret = sipe_svc_wsdl_request(sipe_private,
-					     session,
-					     "https://login.microsoftonline.com:443/RST2.srf",
-					     "xmlns:ps=\"http://schemas.microsoft.com/Passport/SoapServices/PPCRL\" "
-					     "xmlns:soap=\"http://www.w3.org/2003/05/soap-envelope\" "
-					     "xmlns:wst=\"http://schemas.xmlsoap.org/ws/2005/02/trust\"",
-					     "http://schemas.xmlsoap.org/ws/2005/02/trust/RST/Issue",
-					     security,
-					     soap_body,
-					     sipe_svc_wsdl_response,
-					     callback,
-					     callback_data);
-	g_free(soap_body);
-	g_free(security);
-
-	return(ret);
+gboolean sipe_svc_webticket_lmc_federated(struct sipe_core_private *sipe_private,
+					  struct sipe_svc_session *session,
+					  const gchar *wsse_security,
+					  const gchar *service_uri,
+					  sipe_svc_callback *callback,
+					  gpointer callback_data)
+{
+	return(request_passport(sipe_private,
+				session,
+				service_uri,
+				LMC_URI,
+				wsse_security,
+				NULL,
+				NULL,
+				callback,
+				callback_data));
 }
 
 gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
@@ -470,7 +544,6 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 			    gpointer callback_data)
 {
 	gchar *uuid = get_uuid(sipe_private);
-	gchar *security = NULL;
 	gchar *secret = g_base64_encode(entropy->buffer, entropy->length);
 	gchar *soap_body = g_strdup_printf("<wst:RequestSecurityToken Context=\"%s\">"
 					   " <wst:TokenType>http://docs.oasis-open.org/wss/oasis-wss-saml-token-profile-1.1#SAMLV1.1</wst:TokenType>"
@@ -506,7 +579,6 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 				    callback_data);
 	g_free(soap_body);
 	g_free(secret);
-	g_free(security);
 	g_free(uuid);
 
 	return(ret);
@@ -523,6 +595,27 @@ static void sipe_svc_metadata_response(struct svc_request *data,
 		/* Callback: failed */
 		(*data->cb)(data->sipe_private, data->uri, NULL, NULL, data->cb_data);
 	}
+}
+
+gboolean sipe_svc_realminfo(struct sipe_core_private *sipe_private,
+			    struct sipe_svc_session *session,
+			    sipe_svc_callback *callback,
+			    gpointer callback_data)
+{
+	gchar *realminfo_uri = g_strdup_printf("https://login.microsoftonline.com/getuserrealm.srf?login=%s&xml=1",
+					       sipe_private->username);
+	gboolean ret = sipe_svc_https_request(sipe_private,
+					      HTTP_CONN_GET,
+					      session,
+					      realminfo_uri,
+					      "text",
+					      NULL,
+					      NULL,
+					      sipe_svc_metadata_response,
+					      callback,
+					      callback_data);
+	g_free(realminfo_uri);
+	return(ret);
 }
 
 gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,

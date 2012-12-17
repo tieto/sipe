@@ -82,7 +82,15 @@ struct sipe_transport_connection;
  * Availability and activity for RCC call connect/disconnect or participant count changes from 0 to 2, 2 to N, N to 2, 2 to 0.
  * First hexadecimal digit is 0x7; remaining seven hexadecimal digits are unique per device.
  */
-#define SIPE_PUB_STATE_PHONE	7
+#define SIPE_PUB_STATE_PHONE_RCC	7
+/**
+ * state
+ * VOIP Phone State
+ *
+ * Availability and activity for VOIP call connect/disconnect or participant count changes from 0 to 2, 2 to N, N to 2, 2 to 0.
+ * First hexadecimal digit is 0x8; remaining seven hexadecimal digits uniquely define the SIP URI and device.
+ */
+#define SIPE_PUB_STATE_PHONE_VOIP	8
 /**
  * calendarData
  * Free/busy data
@@ -471,15 +479,6 @@ gchar *sipe_utils_subscription_key(const gchar *event,
  * @return the resulting string. Must be g_free()'d after use.
  */
 gchar *sipe_utils_uri_unescape(const gchar *string);
-
-/**
- * Tests whether given string is a Uniform Resource Identifier of audio/video
- * conference
- *
- * @param uri a string
- * @return @c TRUE if the string represents AV conference URI
- */
-gboolean sipe_utils_is_avconf_uri(const gchar *uri);
 
 /**
  * Inserts in item in the list only if the value isn't already in that list

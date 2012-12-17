@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -66,6 +66,9 @@ typedef sip_uint32
 (*sip_sec_verify_signature_func)(SipSecContext context,
 				 const char *message,
 				 SipSecBuffer signature);
+
+typedef gboolean (*sip_sec_password_func)(void);
+
 
 struct sip_sec_context {
 	sip_sec_acquire_cred_func     acquire_cred_func;

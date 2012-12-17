@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -109,6 +109,15 @@ struct sipe_tls_state *sipe_tls_start(gpointer certificate);
  * @return TLS state structure
  */
 gboolean sipe_tls_next(struct sipe_tls_state *state);
+
+/**
+ * Extract expiration time from TLS certificate
+ *
+ * @param state     pointer to TLS state structure
+ *
+ * @return expiration time in seconds
+ */
+guint sipe_tls_expires(struct sipe_tls_state *state);
 
 /**
  * Free TLS state

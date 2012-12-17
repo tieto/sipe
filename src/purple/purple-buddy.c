@@ -186,6 +186,20 @@ void sipe_backend_buddy_set_string(SIPE_UNUSED_PARAMETER struct sipe_core_public
 	purple_blist_node_set_string(&b->node, buddy_info_property(key), val);
 }
 
+void sipe_backend_buddy_refresh_properties(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					   SIPE_UNUSED_PARAMETER const gchar *uri)
+{
+	/* nothing to do here: already taken care of by libpurple */
+}
+
+void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
+void sipe_backend_buddy_list_processing_finish(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
 sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 					  const gchar *name,
 					  const gchar *alias,
@@ -285,6 +299,38 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				    NULL);
 }
 
+gboolean sipe_backend_uses_photo(void)
+{
+	return TRUE;
+}
+
+void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
+				  const gchar *who,
+				  gpointer photo_data,
+				  gsize data_len,
+				  const gchar *photo_hash)
+{
+	PurpleAccount *account = sipe_public->backend_private->account;
+
+	purple_buddy_icons_set_for_user(account, who, photo_data,
+					data_len, photo_hash);
+}
+
+const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_public,
+					       const gchar *who)
+{
+	PurpleAccount *account = sipe_public->backend_private->account;
+	const gchar *result = NULL;
+
+	PurpleBuddyIcon *icon = purple_buddy_icons_find(account, who);
+	if (icon) {
+		result = purple_buddy_icon_get_checksum(icon);
+		purple_buddy_icon_unref(icon);
+	}
+
+	return result;
+}
+
 gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				      const gchar *group_name)
 {
@@ -295,6 +341,24 @@ gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_pub
 	}
 
 	return (purple_group != NULL);
+}
+
+gboolean sipe_backend_buddy_group_rename(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					 const gchar *old_name,
+					 const gchar *new_name)
+{
+	PurpleGroup *purple_group = purple_find_group(old_name);
+	if (purple_group)
+		purple_blist_rename_group(purple_group, new_name);
+	return(purple_group != NULL);
+}
+
+void sipe_backend_buddy_group_remove(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				     const gchar *group_name)
+{
+	PurpleGroup *purple_group = purple_find_group(group_name);
+	if (purple_group)
+		purple_blist_remove_group(purple_group);
 }
 
 struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)

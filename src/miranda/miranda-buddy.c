@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -311,7 +311,12 @@ gchar* sipe_backend_buddy_get_group_name(struct sipe_core_public *sipe_public,
 guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
 					   const gchar *uri)
 {
-	_NIF();
+	SIPPROTO *pr = sipe_public->backend_private;
+	sipe_backend_buddy buddy = sipe_backend_buddy_find(sipe_public, uri, NULL);
+	WORD rv = SIPE_ACTIVITY_UNSET;
+
+	sipe_miranda_getWord(pr, buddy, "Status", &rv);
+	return MirandaStatusToSipe(rv);
 }
 
 void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
@@ -370,6 +375,20 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 		return;
 
 	sipe_miranda_setContactString(pr, buddy, prop_name, val);
+}
+
+void sipe_backend_buddy_refresh_properties(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					   SIPE_UNUSED_PARAMETER const gchar *uri)
+{
+	/* nothing to do here: already taken care of by Miranda */
+}
+
+void sipe_backend_buddy_list_processing_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+}
+
+void sipe_backend_buddy_list_processing_finish(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
 }
 
 sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
@@ -485,7 +504,6 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   guint activity)
 {
 	SIPPROTO *pr = sipe_public->backend_private;
-	const gchar *module = pr->proto.m_szModuleName;
 	GSList *contacts = sipe_backend_buddy_find_all(sipe_public, who, NULL);
 
 	CONTACTS_FOREACH(contacts)
@@ -501,6 +519,20 @@ gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 	HANDLE hGroup = (HANDLE)CallService(MS_CLIST_GROUPCREATE, 0, (LPARAM)mir_group_name);
 	mir_free(mir_group_name);
 	return (hGroup?TRUE:FALSE);
+}
+
+gboolean sipe_backend_buddy_group_rename(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+					 SIPE_UNUSED_PARAMETER const gchar *old_name,
+					 SIPE_UNUSED_PARAMETER const gchar *new_name)
+{
+	/* @TODO */
+	return(FALSE);
+}
+
+void sipe_backend_buddy_group_remove(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				     SIPE_UNUSED_PARAMETER const gchar *group_name)
+{
+	/* @TODO */
 }
 
 struct sipe_backend_buddy_info *sipe_backend_buddy_info_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
@@ -711,6 +743,27 @@ sipe_miranda_GetInfo( SIPPROTO *pr, HANDLE hContact, int infoType )
 	}
 
 	return 0;
+}
+
+gboolean sipe_backend_uses_photo(void)
+{
+	return FALSE;
+}
+
+void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
+				  const gchar *who,
+				  gpointer photo_data,
+				  gsize data_len,
+				  const gchar *photo_hash)
+{
+	g_free(photo_data);
+}
+
+const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_public,
+					       const gchar *who)
+{
+	const gchar *result = NULL;
+	return result;
 }
 
 /*

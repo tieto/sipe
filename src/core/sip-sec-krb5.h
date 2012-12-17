@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010,2012 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -24,3 +24,5 @@
 
 SipSecContext
 sip_sec_create_context__krb5(guint type);
+
+gboolean sip_sec_password__krb5(void);
