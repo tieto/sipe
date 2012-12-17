@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1742,6 +1742,17 @@ gboolean sipe_tls_next(struct sipe_tls_state *state)
 	}
 
 	return(success);
+}
+
+guint sipe_tls_expires(struct sipe_tls_state *state)
+{
+	/* Avoid "cast increases required alignment" errors */
+	struct tls_internal_state *internal = (void *) state;
+
+	if (!state)
+		return(0);
+
+	return(sipe_cert_crypto_expires(internal->certificate));
 }
 
 void sipe_tls_free(struct sipe_tls_state *state)

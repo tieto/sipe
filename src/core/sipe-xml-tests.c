@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -63,7 +63,7 @@ gboolean sipe_backend_debug_enabled(void)
 void sipe_digest_sha1(SIPE_UNUSED_PARAMETER const guchar *data,
 		      SIPE_UNUSED_PARAMETER gsize length,
 		      SIPE_UNUSED_PARAMETER guchar *digest) {}
-const gchar *sipe_backend_network_ip_address(void) { return(NULL); }
+const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(NULL); }
 
 /* test helpers */
 static guint succeeded = 0;

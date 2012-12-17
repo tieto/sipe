@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -622,6 +622,7 @@ void sipe_miranda_login(SIPPROTO *pr) {
 	gchar *tmp = (char*)mir_calloc(1024);
 	int tmpstatus;
 	int ttype;
+	guint authentication_type;
 	struct sipe_core_public *sipe_public;
 
 //	CloseHandle((HANDLE) mir_forkthreadex(show_vlc, NULL, 65536, NULL));
@@ -658,10 +659,14 @@ void sipe_miranda_login(SIPPROTO *pr) {
 
 	//sipe_miranda_chat_setup_rejoin(pr);
 
+	/* default is NTLM */
+	authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
 #ifdef HAVE_LIBKRB5
 	if (sipe_miranda_getBool(pr, "krb5", FALSE))
-		SIPE_CORE_FLAG_SET(KRB5);
+		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
 #endif
+	/* TODO: configuration option for TLS-DSK? */
+
 //	/* @TODO: is this correct?
 //	   "sso" is only available when Kerberos support is compiled in */
 	if (sipe_miranda_getBool(pr, "sso", FALSE))
@@ -688,6 +693,7 @@ void sipe_miranda_login(SIPPROTO *pr) {
 	LOCK;
 	sipe_core_transport_sip_connect(pr->sip,
 					ttype,
+					authentication_type,
 					NULL,
 					NULL);
 	UNLOCK;

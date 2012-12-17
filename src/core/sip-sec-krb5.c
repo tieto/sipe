@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010,2012 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -275,6 +275,11 @@ sip_sec_create_context__krb5(SIPE_UNUSED_PARAMETER guint type)
 	return((SipSecContext) context);
 }
 
+gboolean sip_sec_password__krb5(void)
+{
+	/* Kerberos supports Single-Sign On */
+	return(FALSE);
+}
 
 static void
 sip_sec_krb5_print_gss_error0(char *func,

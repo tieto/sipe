@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include "config.h"
+#include "config.h" /* coverity[hfa: FALSE] */
 #endif
 
 #include <string.h>
@@ -47,7 +47,9 @@
 #endif
 #endif
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
@@ -139,7 +141,7 @@ static const gchar *get_suitable_local_ip(void)
 	return "0.0.0.0";
 }
 
-const gchar *sipe_backend_network_ip_address(void)
+const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
 	const gchar *ip = purple_network_get_my_ip(-1);
 	if (g_str_has_prefix(ip, "169.254."))
@@ -191,7 +193,8 @@ backend_listen_cb(int listenfd, struct sipe_backend_listendata *ldata)
 	ldata->listener = NULL;
 	ldata->listenfd = listenfd;
 
-	getsockname(listenfd, (struct sockaddr*)&addr, &socklen);
+	/* ignore error code */
+	(void) getsockname(listenfd, (struct sockaddr*)&addr, &socklen);
 	if (ldata->listen_cb)
 		ldata->listen_cb(ntohs(addr.sin_port), ldata->data);
 

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,7 +47,15 @@ struct sipe_backend_search_results {
 	int dummy;
 };
 
-struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+void sipe_backend_search_failed(struct sipe_core_public *sipe_public,
+				SIPE_UNUSED_PARAMETER struct sipe_backend_search_token *token,
+				const gchar *msg)
+{
+	sipe_backend_notify_error(sipe_public, msg, NULL);
+}
+
+struct sipe_backend_search_results *sipe_backend_search_results_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+								      SIPE_UNUSED_PARAMETER struct sipe_backend_search_token *token)
 {
 	return g_new0(struct sipe_backend_search_results, 1);
 }
@@ -100,7 +108,7 @@ HANDLE sipe_miranda_SearchByEmail( SIPPROTO *pr, const PROTOCHAR* email )
 	mail = mir_t2a(email);
 
 	LOCK;
-	sipe_core_buddy_search(pr->sip, NULL, NULL, NULL, NULL, mail);
+	sipe_core_buddy_search(pr->sip, NULL, NULL, NULL, NULL, NULL, mail);
 	UNLOCK;
 
 	mir_free(mail);
@@ -119,7 +127,7 @@ HANDLE sipe_miranda_SearchByName( SIPPROTO *pr, const PROTOCHAR* nick, const PRO
 	surname = mir_t2a(lastName);
 
 	LOCK;
-	sipe_core_buddy_search(pr->sip, given_name, surname, NULL, NULL, NULL);
+	sipe_core_buddy_search(pr->sip, NULL, given_name, surname, NULL, NULL, NULL);
 	UNLOCK;
 
 	mir_free(given_name);
@@ -169,7 +177,7 @@ HWND sipe_miranda_SearchAdvanced( SIPPROTO *pr, HWND owner )
 	g_string_free(msg, TRUE);
 
 	LOCK;
-/*	ret = (HANDLE)sipe_core_buddy_search( pr->sip, query, sipsimple_search_contact_cb, pr); */
+/*	ret = (HANDLE)sipe_core_buddy_search( pr->sip, NULL, query, sipsimple_search_contact_cb, pr); */
 	UNLOCK;
 
 	return (HANDLE)1;

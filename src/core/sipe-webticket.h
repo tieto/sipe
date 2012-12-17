@@ -36,18 +36,23 @@ struct sipe_svc_session;
  *
  * @param sipe_private  SIPE core private data
  * @param base_uri      Web Service base URI
- * @param auth_uri      Web Service auth. URI   (NULL when request aborted)
- * @param wsse_security Web Ticket XML fragment (NULL when request failed)
+ * @param auth_uri      Web Service auth. URI    (@c NULL when request aborted)
+ * @param wsse_security Web Ticket XML fragment  (@c NULL when request failed)
+ * @param failure_msg   Web Ticket error message (may be @c NULL)
  * @param callback_data callback data
  */
 typedef void (sipe_webticket_callback)(struct sipe_core_private *sipe_private,
 				       const gchar *base_uri,
 				       const gchar *auth_uri,
 				       const gchar *wsse_security,
+				       const gchar *failure_msg,
 				       gpointer callback_data);
 
 /**
  * Request a Web Ticket for Web Service URI
+ *
+ * NOTE: the callback can be called immediately if the Web Ticket is cached.
+ *       The callback data must therefore be properly initialized already.
  *
  * @param sipe_private  SIPE core private data
  * @param base_uri      Web Service base URI
@@ -62,3 +67,10 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 				const gchar *port_name,
 				sipe_webticket_callback *callback,
 				gpointer callback_data);
+
+/**
+ * Free webticket data
+ *
+ * @param sipe_private SIPE core private data
+ */
+void sipe_webticket_free(struct sipe_core_private *sipe_private);

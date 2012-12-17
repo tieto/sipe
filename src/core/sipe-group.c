@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -93,9 +93,8 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 			buddy = g_hash_table_lookup(sipe_private->buddies, ctx->user_name);
 			if (buddy) {
 				buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
+				sipe_group_update_buddy(sipe_private, buddy);
 			}
-
-			sipe_core_group_set_user(SIPE_CORE_PUBLIC, ctx->user_name);
 		}
 
 		sipe_xml_free(xml);
@@ -177,6 +176,20 @@ sipe_group_create(struct sipe_core_private *sipe_private,
 	g_free(request);
 }
 
+gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
+			   struct sipe_group *group,
+			   const gchar *name)
+{
+	gboolean renamed = sipe_backend_buddy_group_rename(SIPE_CORE_PUBLIC,
+							   group->name,
+							   name);
+	if (renamed) {
+		g_free(group->name);
+		group->name = g_strdup(name);
+	}
+	return(renamed);
+}
+
 void
 sipe_group_add(struct sipe_core_private *sipe_private,
 	       struct sipe_group * group)
@@ -190,6 +203,25 @@ sipe_group_add(struct sipe_core_private *sipe_private,
 	else
 	{
 		SIPE_DEBUG_INFO("did not add group %s", group->name ? group->name : "");
+	}
+}
+
+void sipe_group_free(struct sipe_core_private *sipe_private,
+		     struct sipe_group *group)
+{
+	sipe_private->groups = g_slist_remove(sipe_private->groups,
+					      group);
+	g_free(group->name);
+	g_free(group);
+}
+
+void sipe_group_remove(struct sipe_core_private *sipe_private,
+		       struct sipe_group *group)
+{
+	if (group) {
+		SIPE_DEBUG_INFO("removing group %s (id %d)", group->name, group->id);
+		sipe_backend_buddy_group_remove(SIPE_CORE_PUBLIC, group->name);
+		sipe_group_free(sipe_private, group);
 	}
 }
 
@@ -238,10 +270,7 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 				 request);
 		g_free(request);
 
-		sipe_private->groups = g_slist_remove(sipe_private->groups,
-						      s_group);
-		g_free(s_group->name);
-		g_free(s_group);
+		sipe_group_free(sipe_private, s_group);
 	} else {
 		SIPE_DEBUG_INFO("Cannot find group %s to delete", name);
 	}
@@ -275,37 +304,60 @@ static gchar *sipe_get_buddy_groups_string(struct sipe_buddy *buddy)
 /**
  * Sends buddy update to server
  */
-void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
-			      const gchar *who)
+static void send_buddy_update(struct sipe_core_private *sipe_private,
+			      struct sipe_buddy *buddy,
+			      const gchar *alias)
 {
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, who);
-	sipe_backend_buddy backend_buddy = sipe_backend_buddy_find(sipe_public, who, NULL);
+	gchar *groups = sipe_get_buddy_groups_string(buddy);
 
-	if (buddy && backend_buddy) {
-		gchar *groups = sipe_get_buddy_groups_string(buddy);
+	if (groups) {
+		gchar *request;
+		SIPE_DEBUG_INFO("Saving buddy %s with alias '%s' and groups '%s'",
+				buddy->name, alias, groups);
 
-		if (groups) {
-			gchar *alias = sipe_backend_buddy_get_alias(sipe_public, backend_buddy);
-			gchar *request;
-			SIPE_DEBUG_INFO("Saving buddy %s with alias %s and groups %s", who, alias, groups);
+		/* alias can contain restricted characters */
+		request = g_markup_printf_escaped("<m:displayName>%s</m:displayName>"
+						  "<m:groups>%s</m:groups>"
+						  "<m:subscribed>true</m:subscribed>"
+						  "<m:URI>%s</m:URI>"
+						  "<m:externalURI />",
+						  alias, groups, buddy->name);
+		g_free(groups);
 
-			/* alias can contain restricted characters */
-			request = g_markup_printf_escaped("<m:displayName>%s</m:displayName>"
-							  "<m:groups>%s</m:groups>"
-							  "<m:subscribed>true</m:subscribed>"
-							  "<m:URI>%s</m:URI>"
-							  "<m:externalURI />",
-							  alias, groups, buddy->name);
+		sip_soap_request(sipe_private,
+				 "setContact",
+				 request);
+		g_free(request);
+	}
+}
+
+/* indicates that buddy information on the server needs updating */
+void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
+			     struct sipe_buddy *buddy)
+{
+	if (buddy) {
+		sipe_backend_buddy backend_buddy = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+									   buddy->name,
+									   NULL);
+		if (backend_buddy) {
+			gchar *alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,
+								    backend_buddy);
+			send_buddy_update(sipe_private, buddy, alias);
 			g_free(alias);
-			g_free(groups);
-
-			sip_soap_request(sipe_private,
-					 "setContact",
-					 request);
-			g_free(request);
 		}
 	}
+}
+
+void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
+			       const gchar *who,
+			       const gchar *alias)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
+						       who);
+
+	if (buddy)
+		send_buddy_update(sipe_private, buddy, alias);
 }
 
 /*

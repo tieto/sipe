@@ -460,7 +460,7 @@ void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_INFO("sipe_apply_calendar_status: activity_since  : %s", asctime(localtime(&sbuddy->activity_since)));
 		if (cal_avail_since > sbuddy->activity_since) {
 			if ((cal_status == SIPE_CAL_OOF) &&
-			    sipe_ocs2007_availability_is_away2(avail)) {
+			    sipe_ocs2007_availability_is_away(avail)) {
 				g_free(sbuddy->activity);
 				sbuddy->activity = g_strdup(sipe_core_activity_description(SIPE_ACTIVITY_OOF));
 			}

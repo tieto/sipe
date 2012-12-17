@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -175,12 +175,14 @@ send_ft_accept(struct sipe_file_transfer_private *ft_private,
 	}
 
 	if (send_connect_data) {
+		struct sipe_core_private *sipe_private = ft_private->sipe_private;
+
 		g_string_append_printf(body,
 				       "IP-Address: %s\r\n"
 				       "Port: %d\r\n"
 				       "PortX: 11178\r\n"
 				       "AuthCookie: %u\r\n",
-				       sipe_backend_network_ip_address(),
+				       sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
 				       ft_private->port,
 				       ft_private->auth_cookie);
 	}
@@ -250,7 +252,7 @@ void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
 	struct sipe_core_private *sipe_private = ft_private->sipe_private;
 	struct sip_dialog *dialog;
 
-	const gchar *ip = sipe_backend_network_ip_address();
+	const gchar *ip = sipe_backend_network_ip_address(SIPE_CORE_PUBLIC);
 	gchar *body = g_strdup_printf("Application-Name: File Transfer\r\n"
 				      "Application-GUID: {5D3E02AB-6190-11d3-BBBB-00C04F795683}\r\n"
 				      "Invitation-Command: INVITE\r\n"

@@ -50,7 +50,7 @@ typedef struct http_conn_struct HttpConn;
 typedef struct http_session_struct HttpSession;
 
 /** callback */
-typedef void (*HttpConnCallback) (int return_code, const char *body, const char *content_type,
+typedef void (*HttpConnCallback) (int return_code, const char *body, GSList* headers,
 				  HttpConn *conn, void *data);
 
 /**

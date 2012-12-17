@@ -189,7 +189,7 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_
 
 struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_public,
 						const gchar *hostname,
-						int port,
+						guint port,
 						sipe_dns_resolved_cb callback,
 						gpointer data);
 
@@ -407,7 +407,7 @@ GList *sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media
 						       struct sipe_backend_stream *stream);
 
 /* Stream handling */
-gchar *sipe_backend_stream_get_id(struct sipe_backend_stream *stream);
+const gchar *sipe_backend_stream_get_id(struct sipe_backend_stream *stream);
 SipeMediaType sipe_backend_stream_get_type(struct sipe_backend_stream *stream);
 void sipe_backend_stream_hold(struct sipe_backend_media *media,
 			      struct sipe_backend_stream *stream,
@@ -482,7 +482,7 @@ void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local)
 
 /** NETWORK ******************************************************************/
 
-const gchar *sipe_backend_network_ip_address(void);
+const gchar *sipe_backend_network_ip_address(struct sipe_core_public *sipe_public);
 
 struct sipe_backend_listendata;
 
@@ -532,8 +532,13 @@ void sipe_backend_schedule_cancel(struct sipe_core_public *sipe_public,
 /** SEARCH *******************************************************************/
 
 struct sipe_backend_search_results;
+struct sipe_backend_search_token;
 
-struct sipe_backend_search_results *sipe_backend_search_results_start(struct sipe_core_public *sipe_public);
+void sipe_backend_search_failed(struct sipe_core_public *sipe_public,
+				struct sipe_backend_search_token *token,
+				const gchar *msg);
+struct sipe_backend_search_results *sipe_backend_search_results_start(struct sipe_core_public *sipe_public,
+								      struct sipe_backend_search_token *token);
 void sipe_backend_search_results_add(struct sipe_core_public *sipe_public,
 				     struct sipe_backend_search_results *results,
 				     const gchar *uri,
@@ -763,6 +768,17 @@ void sipe_backend_buddy_set_string(struct sipe_core_public *sipe_public,
 				   const gchar *val);
 
 /**
+ * Called after one ore more buddy-specific settings have been updated.
+ *
+ * Can be used by the backend to trigger an UI update event
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param uri         SIP URI of the contact
+ */
+void sipe_backend_buddy_refresh_properties(struct sipe_core_public *sipe_public,
+					   const gchar *uri);
+
+/**
  * Get the status token for a contact
  *
  * @param sipe_public The handle representing the protocol instance making the call
@@ -795,6 +811,24 @@ void sipe_backend_buddy_set_alias(struct sipe_core_public *sipe_public,
 void sipe_backend_buddy_set_server_alias(struct sipe_core_public *sipe_public,
 					 const sipe_backend_buddy who,
 					 const gchar *alias);
+
+/**
+ * Start processing buddy list
+ *
+ * Will be called every time we receive a buddy list in roaming contacts
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ */
+void sipe_backend_buddy_list_processing_start(struct sipe_core_public *sipe_public);
+
+/**
+ * Finished processing buddy list
+ *
+ * Will be called every time we receive a buddy list in roaming contacts
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ */
+void sipe_backend_buddy_list_processing_finish(struct sipe_core_public *sipe_public);
 
 /**
  * Add a contact to the buddy list
@@ -857,15 +891,75 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   guint activity);
 
 /**
+ * Checks whether backend has a capability to use buddy photos. If this function
+ * returns @c FALSE, SIPE core will not attempt to download the photos from
+ * server to save bandwidth.
+ *
+ * @return @c TRUE if backend is photo capable, otherwise @FALSE
+ */
+gboolean sipe_backend_uses_photo(void);
+
+/**
+ * Gives backend a photo image associated with a SIP URI. Backend has ownership
+ * of the data and must free it when not needed.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The name of the user whose photo is being set
+ * @param image_data The photo image data, must be g_free()'d by backend
+ * @param image_len Size of the image in Bytes
+ * @param photo_hash A data checksum provided by the server
+ */
+void sipe_backend_buddy_set_photo(struct sipe_core_public *sipe_public,
+				  const gchar *who,
+				  gpointer image_data,
+				  gsize image_len,
+				  const gchar *photo_hash);
+
+/**
+ * Retrieves a photo hash stored together with image data by
+ * @c sipe_backend_buddy_set_photo. Value is used by the core to detect photo
+ * file changes on server.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The name of the user whose photo hash to retrieve
+ * @return a photo hash (may be NULL)
+ */
+const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_public,
+					       const gchar *who);
+
+/**
  * Called when a new internal group is about to be added. If this returns FALSE,
  * the group will not be added.
  *
  * @param sipe_public The handle representing the protocol instance making the call
- * @param group The group being added
+ * @param group_name  The group being added
  * @return TRUE if everything is ok, FALSE if the group should not be added
  */
 gboolean sipe_backend_buddy_group_add(struct sipe_core_public *sipe_public,
 				      const gchar *group_name);
+
+/**
+ * Called when a new internal group has been renamed
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param old_name old name of the group
+ * @param new_name new name of the group
+ * @return TRUE if the group was found and renamed
+ */
+gboolean sipe_backend_buddy_group_rename(struct sipe_core_public *sipe_public,
+					 const gchar *old_name,
+					 const gchar *new_name);
+
+/**
+ * Called when a new internal group should be deleted
+ *
+ * NOTE: this will only be called on empty groups.
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param group_name  The group that should be removed
+ */
+void sipe_backend_buddy_group_remove(struct sipe_core_public *sipe_public,
+				     const gchar *group_name);
 
 /**
  * Present requested buddy information to the user

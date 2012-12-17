@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,3 +23,5 @@
 
 SipSecContext
 sip_sec_create_context__tls_dsk(guint type);
+
+gboolean sip_sec_password__tls_dsk(void);

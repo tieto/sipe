@@ -174,9 +174,15 @@ gpointer sipe_certificate_tls_dsk_find(struct sipe_core_private *sipe_private,
 
 static void certificate_failure(struct sipe_core_private *sipe_private,
 				const gchar *format,
-				const gchar *parameter)
+				const gchar *parameter,
+				const gchar *failure_info)
 {
 	gchar *tmp = g_strdup_printf(format, parameter);
+	if (failure_info) {
+		gchar *tmp2 = g_strdup_printf("%s\n(%s)", tmp, failure_info);
+		g_free(tmp);
+		tmp = tmp2;
+	}
 	sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 				      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 				      tmp);
@@ -225,7 +231,8 @@ static void get_and_publish_cert(struct sipe_core_private *sipe_private,
 	if (!success) {
 		certificate_failure(sipe_private,
 				    _("Certificate request to %s failed"),
-				    uri);
+				    uri,
+				    NULL);
 	}
 
 	callback_data_free(ccd);
@@ -235,6 +242,7 @@ static void certprov_webticket(struct sipe_core_private *sipe_private,
 			       const gchar *base_uri,
 			       const gchar *auth_uri,
 			       const gchar *wsse_security,
+			       const gchar *failure_msg,
 			       gpointer callback_data)
 {
 	struct certificate_callback_data *ccd = callback_data;
@@ -267,13 +275,15 @@ static void certprov_webticket(struct sipe_core_private *sipe_private,
 	        if (ccd) {
 			certificate_failure(sipe_private,
 					    _("Certificate request to %s failed"),
-					    base_uri);
+					    base_uri,
+					    NULL);
 		}
 
 	} else if (auth_uri) {
 		certificate_failure(sipe_private,
 				    _("Web ticket request to %s failed"),
-				    base_uri);
+				    base_uri,
+				    failure_msg);
 	}
 
 	if (ccd)

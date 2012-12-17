@@ -41,6 +41,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-media.h"
+#include "sipe-ocs2007.h"
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-nls.h"
@@ -287,7 +288,9 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 
 	session = sipe_session_find_call(sipe_private, call_private->with);
 	dialog = session->dialogs->data;
-	add_2007_fallback = dialog->cseq == 0 && call_private->ice_version == SIPE_ICE_RFC_5245;
+	add_2007_fallback = dialog->cseq == 0 &&
+		call_private->ice_version == SIPE_ICE_RFC_5245 &&
+		!sipe_strequal(call_private->with, sipe_private->test_call_bot_uri);
 
 	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
@@ -562,12 +565,22 @@ candidates_prepared_cb(struct sipe_media_call *call,
 	}
 }
 
+static void phone_state_publish(struct sipe_core_private *sipe_private)
+{
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+		sipe_ocs2007_phone_state_publish(sipe_private);
+	} else {
+		// TODO: OCS 2005 support. Is anyone still using it at all?
+	}
+}
+
 static void
 media_end_cb(struct sipe_media_call *call)
 {
 	g_return_if_fail(call);
 
 	SIPE_MEDIA_CALL_PRIVATE->sipe_private->media_call = NULL;
+	phone_state_publish(SIPE_MEDIA_CALL_PRIVATE->sipe_private);
 	sipe_media_call_free(SIPE_MEDIA_CALL_PRIVATE);
 }
 
@@ -577,6 +590,7 @@ call_accept_cb(struct sipe_media_call *call, gboolean local)
 	if (local) {
 		send_invite_response_if_ready(SIPE_MEDIA_CALL_PRIVATE);
 	}
+	phone_state_publish(SIPE_MEDIA_CALL_PRIVATE->sipe_private);
 }
 
 static void
@@ -785,7 +799,6 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	g_free(av_uri);
 
 	sipe_private->media_call->with = g_strdup(session->with);
-	sipe_private->media_call->ice_version = SIPE_ICE_DRAFT_6;
 
 	backend_media_relays =
 		sipe_backend_media_relays_convert(sipe_private->media_relays,
@@ -795,8 +808,8 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	if (!sipe_backend_media_add_stream(sipe_private->media_call->public.backend_private,
 					   "audio", dialog->with,
 					   SIPE_MEDIA_AUDIO,
-					   SIPE_ICE_DRAFT_6, TRUE,
-					   backend_media_relays)) {
+					   sipe_private->media_call->ice_version,
+					   TRUE, backend_media_relays)) {
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
@@ -815,6 +828,20 @@ gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public)
 		return SIPE_CORE_PRIVATE->media_call != NULL;
 	}
 	return FALSE;
+}
+
+void sipe_core_media_test_call(struct sipe_core_public *sipe_public)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	if (!sipe_private->test_call_bot_uri) {
+		sipe_backend_notify_error(sipe_public,
+					  _("Unable to establish a call"),
+					  _("Audio Test Service is not available."));
+		return;
+	}
+
+	sipe_core_media_initiate_call(sipe_public,
+				      sipe_private->test_call_bot_uri, FALSE);
 }
 
 void
@@ -1160,6 +1187,11 @@ void sipe_media_handle_going_offline(struct sipe_media_call_private *call_privat
 	}
 
 	sipe_media_hangup(call_private);
+}
+
+gboolean sipe_media_is_conference_call(struct sipe_media_call_private *call_private)
+{
+	return g_strstr_len(call_private->with, -1, "app:conf:audio-video:") != NULL;
 }
 
 static void

@@ -86,11 +86,18 @@ struct sipe_file_transfer {
 struct sipe_backend_private;
 
 /**
+ * SIP transport authentication scheme
+ */
+#define SIPE_AUTHENTICATION_TYPE_UNSET     0
+#define SIPE_AUTHENTICATION_TYPE_NTLM      1
+#define SIPE_AUTHENTICATION_TYPE_KERBEROS  2
+#define SIPE_AUTHENTICATION_TYPE_NEGOTIATE 3 /* internal use only */
+#define SIPE_AUTHENTICATION_TYPE_TLS_DSK   4
+
+/**
  * Flags
  */
-#define SIPE_CORE_FLAG_KRB5    0x00000001 /* user enabled Kerberos 5     */
-#define SIPE_CORE_FLAG_SSO     0x00000002 /* user enabled Single-Sign On */
-#define SIPE_CORE_FLAG_TLS_DSK 0x00000004 /* user enabled TLS-DSK        */
+#define SIPE_CORE_FLAG_SSO     0x00000001 /* user enabled Single-Sign On */
 
 #define SIPE_CORE_FLAG_IS(flag)    \
 	((sipe_public->flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
@@ -143,8 +150,6 @@ sipe_utils_nameval_find_instance(const GSList *list, const gchar *name, int whic
 
 void
 sipe_utils_nameval_free(GSList *list);
-
-gboolean sipe_utils_is_avconf_uri(const gchar *uri);
 
 gchar *sip_uri_from_name(const gchar *name);
 gchar *sip_uri_if_valid(const gchar *string);
@@ -265,8 +270,9 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 void sipe_core_contact_allow_deny(struct sipe_core_public *sipe_public,
 				  const gchar *who,
 				  gboolean allow);
-void sipe_core_group_set_user(struct sipe_core_public *sipe_public,
-			      const gchar * who);
+void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
+			       const gchar *who,
+			       const gchar *alias);
 
 /**
  * Setup core data
@@ -281,10 +287,24 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 void sipe_core_deallocate(struct sipe_core_public *sipe_public);
 
 /**
+ * Check if SIP authentication scheme requires a password
+ *
+ * NOTE: this can be called *BEFORE* @c sipe_core_allocate()!
+ *
+ * @param authentication SIP transport authentication type
+ * @param sso            TRUE if user selected Single-Sign On
+ *
+ * @return TRUE if password is required
+ */
+gboolean sipe_core_transport_sip_requires_password(guint authentication,
+						   gboolean sso);
+
+/**
  * Connect to SIP server
  */
 void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     guint transport,
+				     guint authentication,
 				     const gchar *server,
 				     const gchar *port);
 void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public);
@@ -379,6 +399,13 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
  */
 gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public);
 
+/**
+ * Checks voice quality by making a call to the test service
+ *
+ * @param sipe_public (in) SIPE core data.
+ */
+void sipe_core_media_test_call(struct sipe_core_public *sipe_public);
+
 /* file transfer */
 struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);
 void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
@@ -430,7 +457,9 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			   const gchar *old_group_name,
 			   const gchar *new_group_name);
 
+struct sipe_backend_search_token;
 void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
+			    struct sipe_backend_search_token *token,
 			    const gchar *given_name,
 			    const gchar *surname,
 			    const gchar *email,

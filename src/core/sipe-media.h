@@ -60,6 +60,13 @@ void sipe_media_hangup(struct sipe_media_call_private *call_private);
 void sipe_media_handle_going_offline(struct sipe_media_call_private *call_private);
 
 /**
+ * Checks whether the given media is a conference call.
+ *
+ * @return @c TRUE if call is a conference, @c FALSE when it is a PC2PC call.
+ */
+gboolean sipe_media_is_conference_call(struct sipe_media_call_private *call_private);
+
+/**
  * Checks whether SIP message belongs to the session of the given media call.
  *
  * Test is done on the basis of the Call-ID of the message.

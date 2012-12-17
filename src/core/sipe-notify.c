@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -92,6 +92,8 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 		if (sipe_strequal("ServerConfiguration", sipe_xml_attribute(node, "name"))) {
 			const gchar *dlx_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
 					"dlxExternalUrl" : "dlxInternalUrl";
+			const gchar *addressbook_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
+					"absExternalServerUrl" : "absInternalServerUrl";
 
 			g_free(sipe_private->focus_factory_uri);
 			sipe_private->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
@@ -103,7 +105,17 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->dlx_uri=%s",
 					sipe_private->dlx_uri ? sipe_private->dlx_uri : "");
 
+			g_free(sipe_private->addressbook_uri);
+			sipe_private->addressbook_uri = sipe_xml_data(sipe_xml_child(node, addressbook_uri_str));
+			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->addressbook_uri=%s",
+					sipe_private->addressbook_uri ? sipe_private->addressbook_uri : "");
+
 #ifdef HAVE_VV
+			g_free(sipe_private->test_call_bot_uri);
+			sipe_private->test_call_bot_uri = sipe_xml_data(sipe_xml_child(node, "botSipUriForTestCall"));
+			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->test_call_bot_uri=%s",
+					sipe_private->test_call_bot_uri ? sipe_private->test_call_bot_uri : "");
+
 			g_free(sipe_private->mras_uri);
 			sipe_private->mras_uri = g_strstrip(sipe_xml_data(sipe_xml_child(node, "mrasUri")));
 			SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->mras_uri=%s",
@@ -116,6 +128,13 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 		}
 	}
 	sipe_xml_free(xn_provision_group_list);
+
+	if (sipe_private->dlx_uri && sipe_private->addressbook_uri) {
+		/* Some buddies might have been added before we received this
+		 * provisioning notify with DLX and addressbook URIs. Now we can
+		 * trigger an update of their photos. */
+		sipe_buddy_refresh_photos(sipe_private);
+	}
 }
 
 static void process_incoming_notify_rlmi_resub(struct sipe_core_private *sipe_private,
@@ -285,7 +304,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	res_avail = sipe_ocs2007_availability_from_status(status_id, NULL);
 	if (user_avail > res_avail) {
 		res_avail = user_avail;
-		status_id = sipe_ocs2007_status_from_legacy_availability(user_avail);
+		status_id = sipe_ocs2007_status_from_legacy_availability(user_avail, NULL);
 	}
 
 	if (xn_display_name) {
@@ -320,6 +339,9 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 			g_free(phone);
 		}
 	}
+
+	if (xn_display_name || xn_contact)
+		sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC, uri);
 
 	/* devicePresence */
 	for (node = sipe_xml_child(xn_presentity, "devices/devicePresence"); node; node = sipe_xml_twin(node)) {
@@ -386,7 +408,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 					}
 					activity_since = dev_avail_since;
 				}
-				status_id = sipe_ocs2007_status_from_legacy_availability(res_avail);
+				status_id = sipe_ocs2007_status_from_legacy_availability(res_avail, NULL);
 				new_desc  = sipe_ocs2007_legacy_activity_description(res_avail);
 				if (new_desc) {
 					g_free(activity);
@@ -484,6 +506,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 					 unsigned len)
 {
 	const char *uri;
+	struct sipe_buddy *sbuddy = NULL;
 	sipe_xml *xn_categories;
 	const sipe_xml *xn_category;
 	const char *status = NULL;
@@ -493,6 +516,15 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 
 	xn_categories = sipe_xml_parse(data, len);
 	uri = sipe_xml_attribute(xn_categories, "uri"); /* with 'sip:' prefix */
+	if (uri) {
+		sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	}
+
+	if (!sbuddy) {
+		/* Got presence of a buddy not in our contact list, ignore. */
+		sipe_xml_free(xn_categories);
+		return;
+	}
 
 	for (xn_category = sipe_xml_child(xn_categories, "category");
 		 xn_category ;
@@ -606,42 +638,38 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 		/* note */
 		else if (sipe_strequal(attrVar, "note"))
 		{
-			if (uri) {
-				struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+			if (!has_note_cleaned) {
+				has_note_cleaned = TRUE;
 
-				if (!has_note_cleaned) {
-					has_note_cleaned = TRUE;
+				g_free(sbuddy->note);
+				sbuddy->note = NULL;
+				sbuddy->is_oof_note = FALSE;
+				sbuddy->note_since = publish_time;
 
-					g_free(sbuddy->note);
-					sbuddy->note = NULL;
-					sbuddy->is_oof_note = FALSE;
+				do_update_status = TRUE;
+			}
+			if (publish_time >= sbuddy->note_since) {
+				/* clean up in case no 'note' element is supplied
+				 * which indicate note removal in client
+				 */
+				g_free(sbuddy->note);
+				sbuddy->note = NULL;
+				sbuddy->is_oof_note = FALSE;
+				sbuddy->note_since = publish_time;
+
+				xn_node = sipe_xml_child(xn_category, "note/body");
+				if (xn_node) {
+					char *tmp;
+					sbuddy->note = g_markup_escape_text((tmp = sipe_xml_data(xn_node)), -1);
+					g_free(tmp);
+					sbuddy->is_oof_note = sipe_strequal(sipe_xml_attribute(xn_node, "type"), "OOF");
 					sbuddy->note_since = publish_time;
 
-					do_update_status = TRUE;
+					SIPE_DEBUG_INFO("process_incoming_notify_rlmi: uri(%s), note(%s)",
+							uri, sbuddy->note ? sbuddy->note : "");
 				}
-				if (sbuddy && (publish_time >= sbuddy->note_since)) {
-					/* clean up in case no 'note' element is supplied
-					 * which indicate note removal in client
-					 */
-					g_free(sbuddy->note);
-					sbuddy->note = NULL;
-					sbuddy->is_oof_note = FALSE;
-					sbuddy->note_since = publish_time;
-
-					xn_node = sipe_xml_child(xn_category, "note/body");
-					if (xn_node) {
-						char *tmp;
-						sbuddy->note = g_markup_escape_text((tmp = sipe_xml_data(xn_node)), -1);
-						g_free(tmp);
-						sbuddy->is_oof_note = sipe_strequal(sipe_xml_attribute(xn_node, "type"), "OOF");
-						sbuddy->note_since = publish_time;
-
-						SIPE_DEBUG_INFO("process_incoming_notify_rlmi: uri(%s), note(%s)",
-								uri, sbuddy->note ? sbuddy->note : "");
-					}
-					/* to trigger UI refresh in case no status info is supplied in this update */
-					do_update_status = TRUE;
-				}
+				/* to trigger UI refresh in case no status info is supplied in this update */
+				do_update_status = TRUE;
 			}
 		}
 		/* state */
@@ -653,7 +681,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 			const sipe_xml *xn_activity;
 			const sipe_xml *xn_meeting_subject;
 			const sipe_xml *xn_meeting_location;
-			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sipe_private->buddies, uri) : NULL;
+			const gchar *legacy_activity;
 
 			xn_node = sipe_xml_child(xn_category, "state");
 			if (!xn_node) continue;
@@ -667,68 +695,63 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 			availability = atoi(tmp);
 			g_free(tmp);
 
-			/* activity, meeting_subject, meeting_location */
-			if (sbuddy) {
-				const gchar *tmp;
+			/* activity */
+			g_free(sbuddy->activity);
+			sbuddy->activity = NULL;
+			if (xn_activity) {
+				const char *token = sipe_xml_attribute(xn_activity, "token");
+				const sipe_xml *xn_custom = sipe_xml_child(xn_activity, "custom");
 
-				/* activity */
-				g_free(sbuddy->activity);
-				sbuddy->activity = NULL;
-				if (xn_activity) {
-					const char *token = sipe_xml_attribute(xn_activity, "token");
-					const sipe_xml *xn_custom = sipe_xml_child(xn_activity, "custom");
-
-					/* from token */
-					if (!is_empty(token)) {
-						sbuddy->activity = g_strdup(sipe_core_activity_description(sipe_status_token_to_activity(token)));
-					}
-					/* from custom element */
-					if (xn_custom) {
-						char *custom = sipe_xml_data(xn_custom);
-
-						if (!is_empty(custom)) {
-							g_free(sbuddy->activity);
-							sbuddy->activity = custom;
-							custom = NULL;
-						}
-						g_free(custom);
-					}
+				/* from token */
+				if (!is_empty(token)) {
+					sbuddy->activity = g_strdup(sipe_core_activity_description(sipe_status_token_to_activity(token)));
 				}
-				/* meeting_subject */
-				g_free(sbuddy->meeting_subject);
-				sbuddy->meeting_subject = NULL;
-				if (xn_meeting_subject) {
-					char *meeting_subject = sipe_xml_data(xn_meeting_subject);
+				/* from custom element */
+				if (xn_custom) {
+					char *custom = sipe_xml_data(xn_custom);
 
-					if (!is_empty(meeting_subject)) {
-						sbuddy->meeting_subject = meeting_subject;
-						meeting_subject = NULL;
+					if (!is_empty(custom)) {
+						g_free(sbuddy->activity);
+						sbuddy->activity = custom;
+						custom = NULL;
 					}
-					g_free(meeting_subject);
+					g_free(custom);
 				}
-				/* meeting_location */
-				g_free(sbuddy->meeting_location);
-				sbuddy->meeting_location = NULL;
-				if (xn_meeting_location) {
-					char *meeting_location = sipe_xml_data(xn_meeting_location);
+			}
+			/* meeting_subject */
+			g_free(sbuddy->meeting_subject);
+			sbuddy->meeting_subject = NULL;
+			if (xn_meeting_subject) {
+				char *meeting_subject = sipe_xml_data(xn_meeting_subject);
 
-					if (!is_empty(meeting_location)) {
-						sbuddy->meeting_location = meeting_location;
-						meeting_location = NULL;
-					}
-					g_free(meeting_location);
+				if (!is_empty(meeting_subject)) {
+					sbuddy->meeting_subject = meeting_subject;
+					meeting_subject = NULL;
 				}
+				g_free(meeting_subject);
+			}
+			/* meeting_location */
+			g_free(sbuddy->meeting_location);
+			sbuddy->meeting_location = NULL;
+			if (xn_meeting_location) {
+				char *meeting_location = sipe_xml_data(xn_meeting_location);
 
-				status = sipe_ocs2007_status_from_legacy_availability(availability);
-				tmp    = sipe_ocs2007_legacy_activity_description(availability);
-				if (sbuddy->activity && tmp) {
-					gchar *tmp2 = sbuddy->activity;
-
-					sbuddy->activity = g_strdup_printf("%s, %s", sbuddy->activity, tmp);
-					g_free(tmp2);
-				} else if (tmp) {
-					sbuddy->activity = g_strdup(tmp);
+				if (!is_empty(meeting_location)) {
+					sbuddy->meeting_location = meeting_location;
+					meeting_location = NULL;
 				}
+				g_free(meeting_location);
+			}
+
+			status = sipe_ocs2007_status_from_legacy_availability(availability, NULL);
+			legacy_activity = sipe_ocs2007_legacy_activity_description(availability);
+			if (sbuddy->activity && legacy_activity) {
+				gchar *tmp2 = sbuddy->activity;
+
+				sbuddy->activity = g_strdup_printf("%s, %s", sbuddy->activity, legacy_activity);
+				g_free(tmp2);
+			} else if (legacy_activity) {
+				sbuddy->activity = g_strdup(legacy_activity);
 			}
 
 			do_update_status = TRUE;
@@ -736,11 +759,10 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 		/* calendarData */
 		else if(sipe_strequal(attrVar, "calendarData"))
 		{
-			struct sipe_buddy *sbuddy = uri ? g_hash_table_lookup(sipe_private->buddies, uri) : NULL;
 			const sipe_xml *xn_free_busy = sipe_xml_child(xn_category, "calendarData/freeBusy");
 			const sipe_xml *xn_working_hours = sipe_xml_child(xn_category, "calendarData/WorkingHours");
 
-			if (sbuddy && xn_free_busy) {
+			if (xn_free_busy) {
 				if (!has_free_busy_cleaned) {
 					has_free_busy_cleaned = TRUE;
 
@@ -775,7 +797,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 				}
 			}
 
-			if (sbuddy && xn_working_hours) {
+			if (xn_working_hours) {
 				sipe_cal_parse_working_hours(xn_working_hours, sbuddy);
 			}
 		}
@@ -796,6 +818,8 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 
 		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, activity);
 	}
+
+	sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC, uri);
 
 	sipe_xml_free(xn_categories);
 }
@@ -882,6 +906,8 @@ static void process_incoming_notify_pidf(struct sipe_core_private *sipe_private,
 
 		sipe_buddy_update_property(sipe_private, uri, SIPE_BUDDY_INFO_DISPLAY_NAME, display_name);
 		g_free(display_name);
+
+		sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC, uri);
 	}
 
 	if ((tuple = sipe_xml_child(pidf, "tuple"))) {
@@ -1063,18 +1089,125 @@ static void sipe_buddy_subscribe_cb(char *buddy_name,
 				    SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
 				    struct sipe_core_private *sipe_private)
 {
-	gchar *action_name = sipe_utils_presence_key(buddy_name);
-	/* g_hash_table_size() can never return 0, otherwise this function wouldn't be called :-) */
 	guint time_range = (g_hash_table_size(sipe_private->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
-	guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
 
-	sipe_schedule_mseconds(sipe_private,
-			       action_name,
-			       g_strdup(buddy_name),
-			       timeout,
-			       sipe_subscribe_presence_single,
-			       g_free);
-	g_free(action_name);
+	/*
+	 * g_hash_table_size() can never return 0, otherwise this function
+	 * wouldn't be called :-) But to keep Coverity happy...
+	 */
+	if (time_range) {
+		gchar *action_name = sipe_utils_presence_key(buddy_name);
+		guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
+
+		sipe_schedule_mseconds(sipe_private,
+				       action_name,
+				       g_strdup(buddy_name),
+				       timeout,
+				       sipe_subscribe_presence_single,
+				       g_free);
+		g_free(action_name);
+	}
+}
+
+/* Replace "~" with localized version of "Other Contacts" */
+static const gchar *get_group_name(const sipe_xml *node)
+{
+	const gchar *name = sipe_xml_attribute(node, "name");
+	return(g_str_has_prefix(name, "~") ? _("Other Contacts") : name);
+}
+
+static void add_new_group(struct sipe_core_private *sipe_private,
+			  const sipe_xml *node)
+{
+	struct sipe_group *group = g_new0(struct sipe_group, 1);
+
+	group->name = g_strdup(get_group_name(node));
+	group->id = (int)g_ascii_strtod(sipe_xml_attribute(node, "id"), NULL);
+
+	sipe_group_add(sipe_private, group);
+}
+
+static void add_new_buddy(struct sipe_core_private *sipe_private,
+			  const sipe_xml *node,
+			  const gchar *uri,
+			  const gchar *alias)
+{
+	const gchar *name = sipe_xml_attribute(node, "name");
+	/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
+	gchar *normalized_uri = g_ascii_strdown(uri, -1);
+	struct sipe_buddy *buddy = NULL;
+	gchar *tmp;
+	gchar **item_groups;
+	int i = 0;
+
+	/* assign to group Other Contacts if nothing else received */
+	tmp = g_strdup(sipe_xml_attribute(node, "groups"));
+	if (is_empty(tmp)) {
+		struct sipe_group *group = sipe_group_find_by_name(sipe_private,
+								   _("Other Contacts"));
+		g_free(tmp);
+		tmp = group ? g_strdup_printf("%d", group->id) : g_strdup("1");
+	}
+	item_groups = g_strsplit(tmp, " ", 0);
+	g_free(tmp);
+
+	while (item_groups[i]) {
+		struct sipe_group *group = sipe_group_find_by_id(sipe_private,
+								 g_ascii_strtod(item_groups[i],
+										NULL));
+
+		/* If couldn't find the right group for this contact, */
+		/* then just put it in the first group we have	      */
+		if ((group == NULL) &&
+		    (g_slist_length(sipe_private->groups) > 0))
+			group = sipe_private->groups->data;
+
+		if (group) {
+			sipe_backend_buddy b = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+								       normalized_uri,
+								       group->name);
+			gchar *b_alias;
+
+			if (!b) {
+				b = sipe_backend_buddy_add(SIPE_CORE_PUBLIC,
+							   normalized_uri,
+							   alias,
+							   group->name);
+				SIPE_DEBUG_INFO("Created new buddy %s with alias %s",
+						normalized_uri, alias);
+			}
+
+			b_alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, b);
+			if (sipe_strcase_equal(alias, b_alias) &&
+			    !is_empty(name)) {
+				sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC,
+							     b,
+							     name);
+				SIPE_DEBUG_INFO("Replaced for buddy %s in group '%s' old alias '%s' with '%s'",
+						normalized_uri, group->name, b_alias, name);
+			}
+			g_free(b_alias);
+
+			if (!buddy)
+				buddy = sipe_buddy_add(sipe_private,
+						       normalized_uri);
+
+			buddy->groups = slist_insert_unique_sorted(buddy->groups,
+								   group,
+								   (GCompareFunc)sipe_group_compare);
+
+			SIPE_DEBUG_INFO("Added buddy %s to group %s",
+					buddy->name, group->name);
+		} else {
+			SIPE_DEBUG_INFO("No group found for contact %s!  Unable to add to buddy list",
+					name);
+		}
+
+		i++;
+	}
+
+	g_strfreev(item_groups);
+	g_free(normalized_uri);
 }
 
 static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_private,
@@ -1087,6 +1220,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	sipe_xml *isc;
 	guint delta;
 	const sipe_xml *group_node;
+
 	if (!g_str_has_prefix(tmp, "vnd-microsoft-roaming-contacts")) {
 		return FALSE;
 	}
@@ -1103,100 +1237,28 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		sipe_private->deltanum_contacts = delta;
 	}
 
+	/* Process whole buddy list (only sent once?) */
 	if (sipe_strequal(sipe_xml_name(isc), "contactList")) {
 
+		/* Start processing contact list */
+		sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
+
 		/* Parse groups */
-		for (group_node = sipe_xml_child(isc, "group"); group_node; group_node = sipe_xml_twin(group_node)) {
-			struct sipe_group * group = g_new0(struct sipe_group, 1);
-			const char *name = sipe_xml_attribute(group_node, "name");
+		for (group_node = sipe_xml_child(isc, "group"); group_node; group_node = sipe_xml_twin(group_node))
+			add_new_group(sipe_private, group_node);
 
-			if (g_str_has_prefix(name, "~")) {
-				name = _("Other Contacts");
-			}
-			group->name = g_strdup(name);
-			group->id = (int)g_ascii_strtod(sipe_xml_attribute(group_node, "id"), NULL);
-
-			sipe_group_add(sipe_private, group);
-		}
-
-		// Make sure we have at least one group
+		/* Make sure we have at least one group */
 		if (g_slist_length(sipe_private->groups) == 0) {
 			sipe_group_create(sipe_private, _("Other Contacts"), NULL);
 		}
 
 		/* Parse contacts */
 		for (item = sipe_xml_child(isc, "contact"); item; item = sipe_xml_twin(item)) {
-			const gchar *uri = sipe_xml_attribute(item, "uri");
-			const gchar *name = sipe_xml_attribute(item, "name");
-			gchar *buddy_name;
-			struct sipe_buddy *buddy = NULL;
-			gchar *tmp;
-			gchar **item_groups;
-			int i = 0;
-
-			/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
-			tmp = sip_uri_from_name(uri);
-			buddy_name = g_ascii_strdown(tmp, -1);
-			g_free(tmp);
-
-			/* assign to group Other Contacts if nothing else received */
-			tmp = g_strdup(sipe_xml_attribute(item, "groups"));
-			if(is_empty(tmp)) {
-				struct sipe_group *group = sipe_group_find_by_name(sipe_private, _("Other Contacts"));
-				g_free(tmp);
-				tmp = group ? g_strdup_printf("%d", group->id) : g_strdup("1");
-			}
-			item_groups = g_strsplit(tmp, " ", 0);
-			g_free(tmp);
-
-			while (item_groups[i]) {
-				struct sipe_group *group = sipe_group_find_by_id(sipe_private, g_ascii_strtod(item_groups[i], NULL));
-
-				// If couldn't find the right group for this contact, just put them in the first group we have
-				if (group == NULL && g_slist_length(sipe_private->groups) > 0) {
-					group = sipe_private->groups->data;
-				}
-
-				if (group != NULL) {
-					gchar *b_alias;
-					sipe_backend_buddy b = sipe_backend_buddy_find(SIPE_CORE_PUBLIC, buddy_name, group->name);
-					if (!b){
-						b = sipe_backend_buddy_add(SIPE_CORE_PUBLIC, buddy_name, uri, group->name);
-						SIPE_DEBUG_INFO("Created new buddy %s with alias %s", buddy_name, uri);
-					}
-
-					b_alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, b);
-					if (sipe_strcase_equal(uri, b_alias)) {
-						if (name != NULL && strlen(name) != 0) {
-							sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC, b, name);
-
-							SIPE_DEBUG_INFO("Replaced buddy %s alias with %s", buddy_name, name);
-						}
-					}
-					g_free(b_alias);
-
-					if (!buddy) {
-						buddy = g_new0(struct sipe_buddy, 1);
-						buddy->name = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC, b);
-						g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
-
-						SIPE_DEBUG_INFO("Added SIPE buddy %s", buddy->name);
-					}
-
-					buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
-
-					SIPE_DEBUG_INFO("Added buddy %s to group %s", buddy->name, group->name);
-				} else {
-					SIPE_DEBUG_INFO("No group found for contact %s!  Unable to add to buddy list",
-							name);
-				}
-
-				i++;
-			} // while, contact groups
-			g_strfreev(item_groups);
-			g_free(buddy_name);
-
-		} // for, contacts
+			const gchar *name = sipe_xml_attribute(item, "uri");
+			gchar *uri        = sip_uri_from_name(name);
+			add_new_buddy(sipe_private, item, uri, name);
+			g_free(uri);
+		}
 
 		sipe_cleanup_local_blist(sipe_private);
 
@@ -1204,15 +1266,184 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		/* This will resemble subscription to roaming_self in 2007 systems */
 		if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 			gchar *self_uri = sip_uri_self(sipe_private);
-			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, self_uri);
-
-			if (!buddy) {
-				buddy = g_new0(struct sipe_buddy, 1);
-				buddy->name = g_strdup(self_uri);
-				g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
-			}
+			sipe_buddy_add(sipe_private, self_uri);
 			g_free(self_uri);
 		}
+
+		/* Finished processing contact list */
+		sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
+
+	/* Process buddy list updates */
+	} else if (sipe_strequal(sipe_xml_name(isc), "contactDelta")) {
+
+		/* Process new groups */
+		for (group_node = sipe_xml_child(isc, "addedGroup"); group_node; group_node = sipe_xml_twin(group_node))
+			add_new_group(sipe_private, group_node);
+
+		/* Process modified groups */
+		for (group_node = sipe_xml_child(isc, "modifiedGroup"); group_node; group_node = sipe_xml_twin(group_node)) {
+			struct sipe_group *group = sipe_group_find_by_id(sipe_private,
+									 (int)g_ascii_strtod(sipe_xml_attribute(group_node, "id"),
+											     NULL));
+			if (group) {
+				const gchar *name = get_group_name(group_node);
+
+				if (!(is_empty(name) ||
+				      sipe_strequal(group->name, name)) &&
+				    sipe_group_rename(sipe_private,
+						      group,
+						      name))
+					SIPE_DEBUG_INFO("Replaced group %d name with %s", group->id, name);
+			}
+		}
+
+		/* Process new buddies */
+		for (item = sipe_xml_child(isc, "addedContact"); item; item = sipe_xml_twin(item)) {
+			const gchar *uri  = sipe_xml_attribute(item, "uri");
+			const gchar *name = sipe_get_no_sip_uri(uri);
+			add_new_buddy(sipe_private, item, uri, name);
+		}
+
+		/* Process modified buddies */
+		for (item = sipe_xml_child(isc, "modifiedContact"); item; item = sipe_xml_twin(item)) {
+			const gchar *uri = sipe_xml_attribute(item, "uri");
+			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
+								       uri);
+
+			if (buddy) {
+				gchar **item_groups = g_strsplit(sipe_xml_attribute(item,
+										    "groups"),
+								 " ", 0);
+
+				/* this should be defined. Otherwise we would get "deletedContact" */
+				if (item_groups) {
+					const gchar *name = sipe_xml_attribute(item, "name");
+					gboolean empty_name = is_empty(name);
+					GSList *found = NULL;
+					GSList *entry;
+					int i = 0;
+
+					while (item_groups[i]) {
+						struct sipe_group *group = sipe_group_find_by_id(sipe_private,
+												 g_ascii_strtod(item_groups[i],
+														NULL));
+						/* ignore unkown groups */
+						if (group) {
+							sipe_backend_buddy b = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+												       uri,
+												       group->name);
+
+							/* add group to found list */
+							found = g_slist_prepend(found, group);
+
+							if (b) {
+								/* new alias? */
+								gchar *b_alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,
+													      b);
+
+								if (!(empty_name ||
+								      sipe_strequal(b_alias, name))) {
+									sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC,
+												     b,
+												     name);
+									SIPE_DEBUG_INFO("Replaced for buddy %s in group '%s' old alias '%s' with '%s'",
+											uri, group->name, b_alias, name);
+								}
+								g_free(b_alias);
+
+							} else {
+								const gchar *alias = empty_name ? uri : name;
+								/* buddy was not in this group */
+								sipe_backend_buddy_add(SIPE_CORE_PUBLIC,
+										       uri,
+										       alias,
+										       group->name);
+								buddy->groups = slist_insert_unique_sorted(buddy->groups,
+													   group,
+													   (GCompareFunc) sipe_group_compare);
+								SIPE_DEBUG_INFO("Added buddy %s (alias '%s' to group '%s'",
+										uri, alias, group->name);
+							}
+						}
+
+						/* next group */
+						i++;
+					}
+					g_strfreev(item_groups);
+
+ 					/* removed from groups? */
+					entry = buddy->groups;
+					while (entry) {
+						GSList *remove_link = entry;
+						struct sipe_group *group = remove_link->data;
+
+						/* next buddy group */
+						entry = entry->next;
+
+						/* old group NOT found in new list? */
+						if (g_slist_find(found, group) == NULL) {
+							sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+													  uri,
+													  group->name);
+							SIPE_DEBUG_INFO("Removing buddy %s from group '%s'",
+									uri, group->name);
+							/* this should never be NULL */
+							if (oldb)
+								sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+											  oldb);
+							buddy->groups = g_slist_remove_link(buddy->groups,
+											    remove_link);
+						}
+					}
+					g_slist_free(found);
+				}
+			}
+		}
+
+		/* Process deleted buddies */
+		for (item = sipe_xml_child(isc, "deletedContact"); item; item = sipe_xml_twin(item)) {
+			const gchar *uri = sipe_xml_attribute(item, "uri");
+			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
+								       uri);
+
+			if (buddy) {
+				GSList *entry = buddy->groups;
+
+				SIPE_DEBUG_INFO("Removing buddy %s", uri);
+				while (entry) {
+					struct sipe_group *group = entry->data;
+					sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+											  uri,
+											  group->name);
+					/* this should never be NULL */
+					if (oldb)
+						sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+									  oldb);
+
+					/* next buddy group */
+					entry = entry->next;
+				}
+				sipe_buddy_remove(sipe_private, buddy);
+			}
+		}
+
+		/* Process deleted groups
+		 *
+		 * NOTE: all buddies will already have been removed from the
+		 *       group prior to this. The log shows that OCS actually
+		 *       sends two separate updates when you delete a group:
+		 *
+		 *         - first one with "modifiedContact" removing buddies
+		 *           from the group, leaving it empty, and
+		 *
+		 *         - then one with "deletedGroup" removing the group
+		 */
+		for (group_node = sipe_xml_child(isc, "deletedGroup"); group_node; group_node = sipe_xml_twin(group_node))
+			sipe_group_remove(sipe_private,
+					  sipe_group_find_by_id(sipe_private,
+								(int)g_ascii_strtod(sipe_xml_attribute(group_node, "id"),
+										    NULL)));
+
 	}
 	sipe_xml_free(isc);
 

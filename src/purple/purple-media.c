@@ -28,7 +28,9 @@
 #include "glib/gstdio.h"
 #include <fcntl.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 #include "sipe-common.h"
 
@@ -46,16 +48,11 @@
 #include "purple-private.h"
 
 /*
- * GValueArray has been marked deprecated in glib 2.32 but it is still used by
- * libpurple and libfarsight APIs. Therefore we need to disable the deprecated
- * warning so that the code still compiles for platforms that enable it.
- *
  * GStreamer interfaces fail to compile on ARM architecture with -Wcast-align
  *
  * Diagnostic #pragma was added in GCC 4.2.0
  */
 #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2)
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__)
 #pragma GCC diagnostic ignored "-Wcast-align"
 #endif
@@ -438,6 +435,11 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
 		//sessionid = "sipe-voice-rawudp";
+
+		/* To avoid Coverity FORWARD_NULL warning. params_cnt is
+		 * still 0 so this is a no-op. libpurple API documentation
+		 * doesn't specify if params can be NULL or not. */
+		params = g_new0(GParameter, 1);
 	}
 
 	ensure_codecs_conf();
@@ -455,7 +457,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			++media->unconfirmed_streams;
 	}
 
-	if (params && media_relays)
+	if ((params_cnt > 2) && media_relays)
 		g_value_unset(&params[3].value);
 
 	g_free(params);
@@ -564,7 +566,7 @@ sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media
 							 stream->participant);
 }
 
-gchar *
+const gchar *
 sipe_backend_stream_get_id(struct sipe_backend_stream *stream)
 {
 	return stream->sessionid;

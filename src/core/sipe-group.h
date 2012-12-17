@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,6 +36,21 @@ void sipe_group_create(struct sipe_core_private *sipe_private,
 		       const gchar *name,
 		       const gchar * who);
 
+gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
+			   struct sipe_group *group,
+			   const gchar *name);
+
 void sipe_group_add(struct sipe_core_private *sipe_private,
 		    struct sipe_group * group);
 
+/* remove group from core and free the data structure */
+void sipe_group_free(struct sipe_core_private *sipe_private,
+		     struct sipe_group *group);
+
+/* remove group from core & backend */
+void sipe_group_remove(struct sipe_core_private *sipe_private,
+		       struct sipe_group *group);
+
+/* update alias/group list for a buddy on the server */
+void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
+			     struct sipe_buddy *buddy);

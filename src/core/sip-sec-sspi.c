@@ -36,6 +36,7 @@
 #include "sip-sec-mech.h"
 #include "sip-sec-sspi.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
 
 /* Mechanism names */
 #define SSPI_MECH_NTLM      "NTLM"
@@ -331,11 +332,17 @@ sip_sec_create_context__sspi(guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->mech = (type == AUTH_TYPE_NTLM) ? SSPI_MECH_NTLM :
-			((type == AUTH_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS :
-			 ((type == AUTH_TYPE_NEGOTIATE) ? SSPI_MECH_NEGOTIATE : SSPI_MECH_TLS_DSK));
+	context->mech = (type == SIPE_AUTHENTICATION_TYPE_NTLM) ? SSPI_MECH_NTLM :
+			((type == SIPE_AUTHENTICATION_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS :
+			 ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ? SSPI_MECH_NEGOTIATE : SSPI_MECH_TLS_DSK));
 
 	return((SipSecContext) context);
+}
+
+gboolean sip_sec_password__sspi(void)
+{
+	/* SSPI supports Single-Sign On */
+	return(FALSE);
 }
 
 /* Utility Functions */
