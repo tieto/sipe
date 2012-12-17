@@ -1,3 +1,19 @@
+pidgin-sipe (1.14.0-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+        - Feature #3585364: Add support for Web Ticket authentication
+          using ADFS
+        - Feature #3578132: Kerberos configuration should be
+          passwordless
+        - Fixed #3580212: Connection drops after a few hours
+        - add support for buddy photos
+        - add support for call to Audio Test Service
+        - reduce Web Ticket traffic by queueing requests & caching
+          tickets
+        - various minor bug & build fixes
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 17 Dec 2012 19:44:18 +0100
+
 pidgin-sipe (1.13.3-1) unstable; urgency=low
 
   * New upstream release.
