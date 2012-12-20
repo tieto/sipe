@@ -1,4 +1,4 @@
-pidgin-sipe (1.14.0-1) UNRELEASED; urgency=low
+pidgin-sipe (1.14.0-1) experimental; urgency=low
 
   * New upstream release.
         - Feature #3585364: Add support for Web Ticket authentication
