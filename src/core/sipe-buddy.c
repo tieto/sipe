@@ -1264,6 +1264,11 @@ static void process_buddy_photo_response(int return_code, const char *body,
 
 	sipe_private->pending_photo_requests =
 		g_slist_remove(sipe_private->pending_photo_requests, rdata);
+
+	/* Mark connection for close and let it be freed at http_conn_input(). */
+	http_conn_set_close(rdata->conn);
+	rdata->conn = NULL;
+
 	photo_response_data_free(rdata);
 }
 
