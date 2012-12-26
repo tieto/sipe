@@ -384,9 +384,11 @@ void sipe_core_buddy_tooltip_info(struct sipe_core_public *sipe_public,
 		SIPE_ADD_BUDDY_INFO(_("Meeting about"), meeting_subject);
 	}
 	if (note) {
+		gchar *note_italics = g_strdup_printf("<i>%s</i>", note);
 		SIPE_DEBUG_INFO("sipe_tooltip_text: %s note: '%s'", uri, note);
 		SIPE_ADD_BUDDY_INFO_NOESCAPE(is_oof_note ? _("Out of office note") : _("Note"),
-					     g_strdup_printf("<i>%s</i>", note));
+					     note_italics);
+		g_free(note_italics);
 	}
 	if (access_text) {
 		SIPE_ADD_BUDDY_INFO(_("Access level"), access_text);
