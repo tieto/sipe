@@ -28,3 +28,20 @@ Description: Pidgin plugin for MS Office Communicator and MS Lync
  .
  With this plugin you should be able to replace your Microsoft Office
  Communicator client with Pidgin.
+
+Package: pidgin-sipe-dbg
+Section: debug
+Priority: extra
+Architecture: any
+Depends: pidgin-sipe (= ${binary:Version}), ${misc:Depends}
+Description: Pidgin plugin for MS Office Communicator and MS Lync (debug symbols)
+ A third-party plugin for the Pidgin multi-protocol instant messenger.
+ It implements the extended version of SIP/SIMPLE used by various products:
+ .
+     * Microsoft Lync Server 2010
+     * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
+     * Microsoft Live Communications Server (LCS 2003/2005)
+     * Reuters Messaging
+ .
+ This package contains debug symbols for pidgin-sipe that can help in
+ tracing execution of the plugin and searching for bugs.
