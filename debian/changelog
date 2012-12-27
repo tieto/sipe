@@ -1,3 +1,12 @@
+pidgin-sipe (1.14.1-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+        - Feature #3578132: Kerberos configuration should be passwordless
+          * purple: non Single Sign-on users are asked for the password again
+        - bug & memory leak fixes in sipe-buddy.c
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 27 Dec 2012 18:24:40 +0100
+
 pidgin-sipe (1.14.0-1) experimental; urgency=low
 
   * New upstream release.
