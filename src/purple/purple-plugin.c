@@ -247,31 +247,16 @@ static GList *sipe_purple_blist_node_menu(PurpleBlistNode *node)
 	}
 }
 
-static void sipe_purple_login(PurpleAccount *account)
+static guint get_authentication_type(PurpleAccount *account)
 {
-	PurpleConnection *gc   = purple_account_get_connection(account);
-	const gchar *username  = purple_account_get_username(account);
-	const gchar *password  = purple_connection_get_password(gc);
-	const gchar *email     = purple_account_get_string(account, "email", NULL);
-	const gchar *email_url = purple_account_get_string(account, "email_url", NULL);
-	const gchar *transport = purple_account_get_string(account, "transport", "auto");
-	const gchar *auth      = purple_account_get_string(account, "authentication", "ntlm");
-	struct sipe_core_public *sipe_public;
-	gchar **username_split;
-	gchar *login_domain = NULL;
-	gchar *login_account = NULL;
-	const gchar *errmsg;
-	guint transport_type;
-	guint authentication_type;
-	struct sipe_backend_private *purple_private;
-	gboolean sso = TRUE;
+	const gchar *auth = purple_account_get_string(account, "authentication", "ntlm");
 
 	/* map option list to type - default is NTLM */
-	authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+	guint authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 	if (sipe_strequal(auth, "krb5")) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
-	} else
+	}
 #endif
 #ifndef HAVE_SSPI
 	/*
@@ -283,24 +268,31 @@ static void sipe_purple_login(PurpleAccount *account)
 	}
 #endif
 
+	return(authentication_type);
+}
+
+static gboolean get_sso_flag(PurpleAccount *account)
+{
 	/* @TODO: is this correct?
 	   "sso" is only available when Kerberos/SSPI support is compiled in */
-	sso = purple_account_get_bool(account, "sso", TRUE);
+	return(purple_account_get_bool(account, "sso", TRUE));
+}
 
-	/* Password required? */
-	if (sipe_core_transport_sip_requires_password(authentication_type,
-						      sso) &&
-	    (!password || !strlen(password))) {
-#if PURPLE_VERSION_CHECK(3,0,0)
-		purple_connection_error(
-#else
-		purple_connection_error_reason(
-#endif
-					       gc,
-					       PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-					       _("Password required"));
-		return;
-	}
+static void connect_to_core(PurpleConnection *gc,
+			    PurpleAccount *account,
+			    const gchar *password)
+{
+	const gchar *username  = purple_account_get_username(account);
+	const gchar *email     = purple_account_get_string(account, "email", NULL);
+	const gchar *email_url = purple_account_get_string(account, "email_url", NULL);
+	const gchar *transport = purple_account_get_string(account, "transport", "auto");
+	struct sipe_core_public *sipe_public;
+	gchar **username_split;
+	gchar *login_domain = NULL;
+	gchar *login_account = NULL;
+	const gchar *errmsg;
+	guint transport_type;
+	struct sipe_backend_private *purple_private;
 
 	/* username format: <username>,[<optional login>] */
 	SIPE_DEBUG_INFO("sipe_purple_login: username '%s'", username);
@@ -350,7 +342,7 @@ static void sipe_purple_login(PurpleAccount *account)
 	sipe_purple_chat_setup_rejoin(purple_private);
 
 	SIPE_CORE_FLAG_UNSET(SSO);
-	if (sso)
+	if (get_sso_flag(account))
 		SIPE_CORE_FLAG_SET(SSO);
 
 	gc->proto_data = sipe_public;
@@ -370,10 +362,71 @@ static void sipe_purple_login(PurpleAccount *account)
 	}
 	sipe_core_transport_sip_connect(sipe_public,
 					transport_type,
-					authentication_type,
+					get_authentication_type(account),
 					username_split[0],
 					username_split[0] ? username_split[1] : NULL);
 	g_strfreev(username_split);
+}
+
+static void password_required_cb(PurpleConnection *gc,
+				 SIPE_UNUSED_PARAMETER PurpleRequestFields *fields)
+{
+        if (!PURPLE_CONNECTION_IS_VALID(gc))
+                return;
+
+#if PURPLE_VERSION_CHECK(3,0,0)
+	purple_connection_error(
+#else
+	purple_connection_error_reason(
+#endif
+				gc,
+				PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+				_("Password required"));
+}
+
+static void password_ok_cb(PurpleConnection *gc,
+			   PurpleRequestFields *fields)
+{
+	const gchar *password;
+
+        if (!PURPLE_CONNECTION_IS_VALID(gc))
+                return;
+
+	password = purple_request_fields_get_string(fields, "password");
+
+	if (password && strlen(password)) {
+		PurpleAccount *account = purple_connection_get_account(gc);
+
+		if (purple_request_fields_get_bool(fields, "remember"))
+			purple_account_set_remember_password(account, TRUE);
+		purple_account_set_password(account, password);
+
+		/* Now we have a password and we can connect */
+		connect_to_core(gc, account, password);
+
+	} else
+		/* reject an empty password */
+		password_required_cb(gc, fields);
+}
+
+static void sipe_purple_login(PurpleAccount *account)
+{
+	PurpleConnection *gc = purple_account_get_connection(account);
+	const gchar *password = purple_connection_get_password(gc);
+
+	/* Password required? */
+	if (sipe_core_transport_sip_requires_password(get_authentication_type(account),
+						      get_sso_flag(account)) &&
+	    (!password || !strlen(password)))
+		/* No password set - request one from user */
+		purple_account_request_password(account,
+						G_CALLBACK(password_ok_cb),
+						G_CALLBACK(password_required_cb),
+						gc);
+	else
+		/* No password required or saved password - connect now */
+		connect_to_core(gc, account, password);
+
 }
 
 static void sipe_purple_close(PurpleConnection *gc)

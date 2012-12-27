@@ -1,7 +1,23 @@
 -------------------------------------------------------------------
-Sun Dec 16 14:28:00 UTC 2012 - chemobejk@gmail.com
+Wed Dec 26 14:23:00 UTC 2012 - chemobejk@gmail.com
 
-- Update to version 1.14.0
+- Update to version 1.14.1
+
+-------------------------------------------------------------------
+Mon Dec 17 10:46:21 UTC 2012 - dimstar@opensuse.org
+
+- Update to version 1.14.0:
+  + Add support for Web Ticket authentication using ADFS
+    (sf#3585364).
+  + Kerberos configuration should be passwordless (sf#3578132).
+  + Connection drops after a few hours (sf#3580212)
+  + Add support for buddy photos.
+  + Add support for call to Audio Test Service.
+  + Initial implementation for telepathy backend.
+  + Reduce Web Ticket traffic by queueing requests & caching
+    tickets.
+  + Update OBS packaging information for Debian.
+  + Various minor bug & build fixes.
 
 -------------------------------------------------------------------
 Sun Sep 16 19:06:03 UTC 2012 - zaitor@opensuse.org

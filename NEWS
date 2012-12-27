@@ -1,12 +1,4 @@
-version 1.14.0 "Buddy photo & ADFS support, Web Ticket Optimizations" (2012-12-16)
-	- Feature #3585364: Add support for Web Ticket authentication using ADFS (Stefan Becker)
-	  * special thanks to user bhakta79 for the hard work taking logs
+version 1.14.1 "Bug Fixes I" (2012-12-26)
 	- Feature #3578132: Kerberos configuration should be passwordless (Stefan Becker)
-	- Fixed #3580212: Connection drops after a few hours (Stefan Becker)
-        - add support for buddy photos (Jakub Adam)
-	- add support for call to Audio Test Service (Jakub Adam)
-	- initial implementation for telepathy backend (Stefan Becker)
-	  * nothing much to see for end users yet...
-	- reduce Web Ticket traffic by queueing requests & caching tickets (Stefan Becker)
-	- update OBS packaging information for Debian (Stefan Becker)
-        - various minor bug & build fixes
+	  * purple: non Single Sign-on users are asked for the password again
+	- bug & memory leak fixes in sipe-buddy.c (Jakub Adam)
