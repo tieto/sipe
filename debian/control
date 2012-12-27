@@ -17,10 +17,11 @@ Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: gstreamer0.10-ffmpeg, gstreamer0.10-x
-Description: Pidgin protocol plugin to connect to MS Office Communicator
+Description: Pidgin plugin for MS Office Communicator and MS Lync
  A third-party plugin for the Pidgin multi-protocol instant messenger.
  It implements the extended version of SIP/SIMPLE used by various products:
  .
+     * Microsoft Lync Server 2010
      * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
      * Microsoft Live Communications Server (LCS 2003/2005)
      * Reuters Messaging
