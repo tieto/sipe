@@ -1,4 +1,4 @@
-pidgin-sipe (1.14.1-1) UNRELEASED; urgency=low
+pidgin-sipe (1.14.1-1) experimental; urgency=low
 
   * New upstream release.
         - Feature #3578132: Kerberos configuration should be passwordless
@@ -7,7 +7,7 @@ pidgin-sipe (1.14.1-1) UNRELEASED; urgency=low
   * Update synopsis and extended description to mention also MS Lync.
   * Create package with debug symbols.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 27 Dec 2012 18:24:40 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 30 Dec 2012 17:37:21 +0100
 
 pidgin-sipe (1.14.0-1) experimental; urgency=low
 
