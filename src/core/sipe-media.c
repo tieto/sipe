@@ -511,6 +511,22 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 	call_private->encryption_compatible = encryption_levels_compatible(msg);
 }
 
+static gboolean
+call_initialized(struct sipe_media_call *call)
+{
+	GSList *streams =
+		sipe_backend_media_get_streams(call->backend_private);
+
+	for (; streams; streams = streams->next) {
+		if (!sipe_backend_stream_initialized(call->backend_private,
+						     streams->data)) {
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 // Sends an invite response when the call is accepted and local candidates were
 // prepared, otherwise does nothing. If error response is sent, call_private is
 // disposed before function returns. Returns true when response was sent.
@@ -522,7 +538,7 @@ send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 	backend_media = call_private->public.backend_private;
 
 	if (!sipe_backend_media_accepted(backend_media) ||
-	    !sipe_backend_candidates_prepared(backend_media))
+	    !call_initialized(&call_private->public))
 		return FALSE;
 
 	if (!call_private->encryption_compatible) {
@@ -546,22 +562,24 @@ send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 }
 
 static void
-candidates_prepared_cb(struct sipe_media_call *call,
-		       struct sipe_backend_stream *stream)
+stream_initialized_cb(struct sipe_media_call *call,
+		      struct sipe_backend_stream *stream)
 {
-	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
-	struct sipe_backend_media *backend_private = call->backend_private;
+	if (call_initialized(call)) {
+		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+		struct sipe_backend_media *backend_private = call->backend_private;
 
-	if (sipe_backend_media_is_initiator(backend_private, stream)) {
-		sipe_invite_call(call_private->sipe_private,
-				 process_invite_call_response);
-	} else {
-		struct sdpmsg *smsg = call_private->smsg;
-		call_private->smsg = NULL;
+		if (sipe_backend_media_is_initiator(backend_private, stream)) {
+			sipe_invite_call(call_private->sipe_private,
+					 process_invite_call_response);
+		} else if (call_private->smsg) {
+			struct sdpmsg *smsg = call_private->smsg;
+			call_private->smsg = NULL;
 
-		apply_remote_message(call_private, smsg);
-		send_invite_response_if_ready(call_private);
-		sdpmsg_free(smsg);
+			apply_remote_message(call_private, smsg);
+			send_invite_response_if_ready(call_private);
+			sdpmsg_free(smsg);
+		}
 	}
 }
 
@@ -673,7 +691,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private,
 	call_private->ice_version = ice_version;
 	call_private->encryption_compatible = TRUE;
 
-	call_private->public.candidates_prepared_cb = candidates_prepared_cb;
+	call_private->public.stream_initialized_cb  = stream_initialized_cb;
 	call_private->public.media_end_cb           = media_end_cb;
 	call_private->public.call_accept_cb         = call_accept_cb;
 	call_private->public.call_reject_cb         = call_reject_cb;

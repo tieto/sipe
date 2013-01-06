@@ -350,8 +350,8 @@ struct sipe_backend_media_relays;
 struct sipe_media_call {
 	struct sipe_backend_media *backend_private;
 
-	void (*candidates_prepared_cb)(struct sipe_media_call *,
-				       struct sipe_backend_stream *);
+	void (*stream_initialized_cb)(struct sipe_media_call *,
+				      struct sipe_backend_stream *);
 	void (*media_end_cb)(struct sipe_media_call *);
 	void (*call_accept_cb)(struct sipe_media_call *, gboolean local);
 	void (*call_reject_cb)(struct sipe_media_call *, gboolean local);
@@ -400,7 +400,8 @@ void sipe_backend_media_add_remote_candidates(struct sipe_backend_media *media,
 gboolean sipe_backend_media_is_initiator(struct sipe_backend_media *media,
 					 struct sipe_backend_stream *stream);
 gboolean sipe_backend_media_accepted(struct sipe_backend_media *media);
-gboolean sipe_backend_candidates_prepared(struct sipe_backend_media *media);
+gboolean sipe_backend_stream_initialized(struct sipe_backend_media *media,
+					 struct sipe_backend_stream *stream);
 GList *sipe_backend_media_get_active_local_candidates(struct sipe_backend_media *media,
 						      struct sipe_backend_stream *stream);
 GList *sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media,

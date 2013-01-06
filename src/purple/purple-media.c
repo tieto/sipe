@@ -94,18 +94,33 @@ static PurpleMediaNetworkProtocol sipe_network_protocol_to_purple(SipeNetworkPro
 static SipeNetworkProtocol purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto);
 
 static void
+maybe_signal_stream_initialized(struct sipe_media_call *call, gchar *sessionid)
+{
+	if (call->stream_initialized_cb) {
+		struct sipe_backend_stream *stream;
+		stream = sipe_backend_media_get_stream_by_id(call->backend_private, sessionid);
+
+		if (sipe_backend_stream_initialized(call->backend_private, stream)) {
+			call->stream_initialized_cb(call, stream);
+		}
+	}
+}
+
+static void
 on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			  gchar *sessionid,
 			  SIPE_UNUSED_PARAMETER gchar *participant,
 			  struct sipe_media_call *call)
 {
-	struct sipe_backend_stream *stream;
-	stream = sipe_backend_media_get_stream_by_id(call->backend_private, sessionid);
+	maybe_signal_stream_initialized(call, sessionid);
+}
 
-	if (call->candidates_prepared_cb &&
-	    sipe_backend_candidates_prepared(call->backend_private)) {
-		call->candidates_prepared_cb(call, stream);
-	}
+static void
+on_codecs_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
+		    gchar *sessionid,
+		    struct sipe_media_call *call)
+{
+	maybe_signal_stream_initialized(call, sessionid);
 }
 
 static void
@@ -228,6 +243,8 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 
 	g_signal_connect(G_OBJECT(media->m), "candidates-prepared",
 			 G_CALLBACK(on_candidates_prepared_cb), call);
+	g_signal_connect(G_OBJECT(media->m), "codecs-changed",
+			 G_CALLBACK(on_codecs_changed_cb), call);
 	g_signal_connect(G_OBJECT(media->m), "stream-info",
 			 G_CALLBACK(on_stream_info_cb), call);
 	g_signal_connect(G_OBJECT(media->m), "error",
@@ -533,9 +550,23 @@ gboolean sipe_backend_media_accepted(struct sipe_backend_media *media)
 }
 
 gboolean
-sipe_backend_candidates_prepared(struct sipe_backend_media *media)
+sipe_backend_stream_initialized(struct sipe_backend_media *media,
+				struct sipe_backend_stream *stream)
 {
-	return purple_media_candidates_prepared(media->m, NULL, NULL);
+	g_return_val_if_fail(media, FALSE);
+	g_return_val_if_fail(stream, FALSE);
+
+	if (purple_media_candidates_prepared(media->m,
+					     stream->sessionid,
+					     stream->participant)) {
+		GList *codecs;
+		codecs = purple_media_get_codecs(media->m, stream->sessionid);
+		if (codecs) {
+			purple_media_codec_list_free(codecs);
+			return TRUE;
+		}
+	}
+	return FALSE;
 }
 
 GList *
