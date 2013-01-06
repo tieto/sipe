@@ -72,7 +72,6 @@ struct sipe_backend_media {
 struct sipe_backend_stream {
 	gchar *sessionid;
 	gchar *participant;
-	gboolean candidates_prepared;
 	gboolean local_on_hold;
 	gboolean remote_on_hold;
 	gboolean accepted;
@@ -102,8 +101,6 @@ on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 {
 	struct sipe_backend_stream *stream;
 	stream = sipe_backend_media_get_stream_by_id(call->backend_private, sessionid);
-
-	stream->candidates_prepared = TRUE;
 
 	if (call->candidates_prepared_cb &&
 	    sipe_backend_candidates_prepared(call->backend_private)) {
@@ -450,7 +447,6 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		stream = g_new0(struct sipe_backend_stream, 1);
 		stream->sessionid = g_strdup(id);
 		stream->participant = g_strdup(participant);
-		stream->candidates_prepared = FALSE;
 
 		media->streams = g_slist_append(media->streams, stream);
 		if (!initiator)
@@ -539,13 +535,7 @@ gboolean sipe_backend_media_accepted(struct sipe_backend_media *media)
 gboolean
 sipe_backend_candidates_prepared(struct sipe_backend_media *media)
 {
-	GSList *streams = media->streams;
-	for (; streams; streams = streams->next) {
-		struct sipe_backend_stream *s = streams->data;
-		if (!s->candidates_prepared)
-			return FALSE;
-	}
-	return TRUE;
+	return purple_media_candidates_prepared(media->m, NULL, NULL);
 }
 
 GList *
