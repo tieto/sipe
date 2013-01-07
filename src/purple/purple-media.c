@@ -75,6 +75,7 @@ struct sipe_backend_stream {
 	gboolean local_on_hold;
 	gboolean remote_on_hold;
 	gboolean accepted;
+	gboolean initialized_cb_was_fired;
 };
 
 static void
@@ -100,8 +101,10 @@ maybe_signal_stream_initialized(struct sipe_media_call *call, gchar *sessionid)
 		struct sipe_backend_stream *stream;
 		stream = sipe_backend_media_get_stream_by_id(call->backend_private, sessionid);
 
-		if (sipe_backend_stream_initialized(call->backend_private, stream)) {
+		if (sipe_backend_stream_initialized(call->backend_private, stream) &&
+		    !stream->initialized_cb_was_fired) {
 			call->stream_initialized_cb(call, stream);
+			stream->initialized_cb_was_fired = TRUE;
 		}
 	}
 }
@@ -464,6 +467,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 		stream = g_new0(struct sipe_backend_stream, 1);
 		stream->sessionid = g_strdup(id);
 		stream->participant = g_strdup(participant);
+		stream->initialized_cb_was_fired = FALSE;
 
 		media->streams = g_slist_append(media->streams, stream);
 		if (!initiator)
