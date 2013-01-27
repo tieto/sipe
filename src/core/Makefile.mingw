@@ -1,6 +1,6 @@
 ################################### tell Emacs this is a -*- makefile-gmake -*-
 #
-# Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2011-13 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #
@@ -85,6 +85,9 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipe-ft-tftp.c \
 			sipe-group.c \
 			sipe-groupchat.c \
+			sipe-http.c \
+			sipe-http-request.c \
+			sipe-http-transport.c \
 			sipe-im.c \
 			sipe-incoming.c \
 			sipe-notify.c \

@@ -49,6 +49,12 @@ libsipe_core_la_SOURCES = \
 	sipe-group.c \
 	sipe-groupchat.h \
 	sipe-groupchat.c \
+	sipe-http.h \
+	sipe-http.c \
+	sipe-http-request.h \
+	sipe-http-request.c \
+	sipe-http-transport.h \
+	sipe-http-transport.c \
 	sipe-im.h \
 	sipe-im.c \
 	sipe-incoming.h \

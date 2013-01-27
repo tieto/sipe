@@ -23,6 +23,9 @@
 		1C705DD512C1ED410004E43B /* libpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DD412C1ED410004E43B /* libpurple.framework */; };
 		1C705DEA12C1ED810004E43B /* libintl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DE912C1ED810004E43B /* libintl.framework */; };
 		1C705DFB12C1EDCA0004E43B /* AIUtilities.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DFA12C1EDCA0004E43B /* AIUtilities.framework */; };
+		1C822BED12F8E87500CC4AE7 /* sipe-http.c in Sources */ = {isa = PBXBuildFile; fileRef = 1C822BEB12F8E87500CC4AE7 /* sipe-http.c */; };
+		1C822BED12F8E87500CC4AE8 /* sipe-http-request.c in Sources */ = {isa = PBXBuildFile; fileRef = 1C822BEB12F8E87500CC4AE8 /* sipe-http-request.c */; };
+		1C822BED12F8E87500CC4AE9 /* sipe-http-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 1C822BEB12F8E87500CC4AE9 /* sipe-http-transport.c */; };
 		1C822BED12F8E87500CC4AEA /* sipe-im.c in Sources */ = {isa = PBXBuildFile; fileRef = 1C822BEB12F8E87500CC4AEA /* sipe-im.c */; };
 		1CD71E3413C5380B0079DE64 /* sipe-ft-tftp.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CD71E3313C5380B0079DE64 /* sipe-ft-tftp.c */; };
 		1CD71E3B13C538340079DE64 /* sipe-group.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CD71E3A13C538340079DE64 /* sipe-group.c */; };
@@ -147,6 +150,9 @@
 		1C705DD412C1ED410004E43B /* libpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libpurple.framework; path = /Users/mduggan/Library/Frameworks/libpurple.framework; sourceTree = "<absolute>"; };
 		1C705DE912C1ED810004E43B /* libintl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libintl.framework; path = /Users/mduggan/Library/Frameworks/libintl.framework; sourceTree = "<absolute>"; };
 		1C705DFA12C1EDCA0004E43B /* AIUtilities.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AIUtilities.framework; path = /Users/mduggan/Library/Frameworks/AIUtilities.framework; sourceTree = "<absolute>"; };
+		1C822BEB12F8E87500CC4AE7 /* sipe-http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http.c"; sourceTree = "<group>"; };
+		1C822BEB12F8E87500CC4AE8 /* sipe-http-request.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http-request.c"; sourceTree = "<group>"; };
+		1C822BEB12F8E87500CC4AE9 /* sipe-http-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http-transport.c"; sourceTree = "<group>"; };
 		1C822BEB12F8E87500CC4AEA /* sipe-im.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-im.c"; sourceTree = "<group>"; };
 		1CD71E3313C5380B0079DE64 /* sipe-ft-tftp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ft-tftp.c"; sourceTree = "<group>"; };
 		1CD71E3A13C538340079DE64 /* sipe-group.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-group.c"; sourceTree = "<group>"; };
@@ -417,6 +423,9 @@
 				1CE49FB314A17CF000663393 /* sipe-ocs2005.c */,
 				1CD71E3A13C538340079DE64 /* sipe-group.c */,
 				1CD71E3313C5380B0079DE64 /* sipe-ft-tftp.c */,
+				1C822BEB12F8E87500CC4AE7 /* sipe-http.c */,
+				1C822BEB12F8E87500CC4AE8 /* sipe-http-request.c */,
+				1C822BEB12F8E87500CC4AE9 /* sipe-http-transport.c */,
 				1C822BEB12F8E87500CC4AEA /* sipe-im.c */,
 				1CF2610812C2E1AA0045B6CC /* sdpmsg.c */,
 				1CF2610C12C2E1AA0045B6CC /* sipe-groupchat.c */,
@@ -611,6 +620,9 @@
 				1CF2611912C2E1AA0045B6CC /* sipe-incoming.c in Sources */,
 				1CF2611C12C2E1AA0045B6CC /* sipe-subscriptions.c in Sources */,
 				1CF2611D12C2E1AA0045B6CC /* sipe-user.c in Sources */,
+				1C822BED12F8E87500CC4AE7 /* sipe-http.c in Sources */,
+				1C822BED12F8E87500CC4AE8 /* sipe-http-request.c in Sources */,
+				1C822BED12F8E87500CC4AE9 /* sipe-http-transport.c in Sources */,
 				1C822BED12F8E87500CC4AEA /* sipe-im.c in Sources */,
 				1CD71E3413C5380B0079DE64 /* sipe-ft-tftp.c in Sources */,
 				1CD71E3B13C538340079DE64 /* sipe-group.c in Sources */,

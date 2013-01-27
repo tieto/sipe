@@ -164,6 +164,9 @@
     <ClCompile Include="src\core\sipe-ft.c" />
     <ClCompile Include="src\core\sipe-group.c" />
     <ClCompile Include="src\core\sipe-groupchat.c" />
+    <ClCompile Include="src\core\sipe-http.c" />
+    <ClCompile Include="src\core\sipe-http-request.c" />
+    <ClCompile Include="src\core\sipe-http-transport.c" />
     <ClCompile Include="src\core\sipe-im.c" />
     <ClCompile Include="src\core\sipe-incoming.c" />
     <ClCompile Include="src\core\sipe-media.c" />
@@ -236,6 +239,9 @@
     <ClInclude Include="src\core\sipe-ft.h" />
     <ClInclude Include="src\core\sipe-group.h" />
     <ClInclude Include="src\core\sipe-groupchat.h" />
+    <ClInclude Include="src\core\sipe-http.h" />
+    <ClInclude Include="src\core\sipe-http-request.h" />
+    <ClInclude Include="src\core\sipe-http-transport.h" />
     <ClInclude Include="src\core\sipe-im.h" />
     <ClInclude Include="src\core\sipe-incoming.h" />
     <ClInclude Include="src\core\sipe-media.h" />
