@@ -30,6 +30,33 @@
 #define _SIPE_HTTP_PRIVATE_IF_TRANSPORT
 #include "sipe-http-transport.h"
 
+struct sipe_http_connection {
+	struct sipe_http_connection_public public;
+	/* TBD */
+};
+
+struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_private *sipe_private,
+							     const gchar *host,
+							     guint32 port)
+{
+	struct sipe_http_connection *conn = g_new0(struct sipe_http_connection, 1);
+
+	conn->public.sipe_private = sipe_private;
+	conn->public.host         = g_strdup(host);
+	conn->public.port         = port;
+
+	return((struct sipe_http_connection_public *) conn);
+}
+
+
+void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
+{
+	struct sipe_http_connection *conn = (struct sipe_http_connection *) conn_public;
+
+	g_free(conn->public.host);
+	g_free(conn);
+}
+
 /*
   Local Variables:
   mode: c

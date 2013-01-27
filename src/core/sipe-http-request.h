@@ -34,3 +34,31 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct sipe_http_connection_private;
+
+struct sipe_http_connection_public {
+	struct sipe_core_private *sipe_private;
+	struct sipe_http_connection_private *conn_private;
+
+	gchar *host;
+        guint32 port;
+};
+
+/**
+ * Create new HTTP connection data
+ *
+ * @param sipe_private SIPE core private data
+ * @param host         name of the host to connect to
+ * @param port         port number to connect to
+ *
+ * @return HTTP connection public data
+ */
+struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_private *sipe_private,
+							     const gchar *host,
+							     guint32 port);
+/**
+ * HTTP connection shutdown
+ *
+ * @param conn_public HTTP connection public data
+ */
+void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public);

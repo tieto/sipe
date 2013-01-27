@@ -34,3 +34,18 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+
+/**
+ * Initiate HTTP connection
+ *
+ * If a connection to this host/port already exists it will be reused.
+ *
+ * @param sipe_private SIPE core private data
+ * @param host         name of the host to connect to
+ * @param port         port number to connect to
+ *
+ * @return HTTP connection public data
+ */
+struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_private *sipe_private,
+							    const gchar *host,
+							    guint32 port);
