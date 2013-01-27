@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-13 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,6 +84,7 @@
 #include "sipe-crypt.h"
 #include "sipe-group.h"
 #include "sipe-groupchat.h"
+#include "sipe-http.h"
 #include "sipe-media.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
@@ -391,6 +392,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 
 	/* pending service requests must be cancelled first */
+	sipe_http_free(sipe_private);
 	sipe_svc_free(sipe_private);
 	sipe_webticket_free(sipe_private);
 

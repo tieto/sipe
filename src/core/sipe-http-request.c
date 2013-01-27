@@ -29,3 +29,12 @@
 #include "sipe-http-request.h"
 #define _SIPE_HTTP_PRIVATE_IF_TRANSPORT
 #include "sipe-http-transport.h"
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/

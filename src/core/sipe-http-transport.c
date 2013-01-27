@@ -23,9 +23,35 @@
 
 #include <glib.h>
 
+#include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-http.h"
 
 #define _SIPE_HTTP_PRIVATE_IF_REQUEST
 #include "sipe-http-request.h"
 #define _SIPE_HTTP_PRIVATE_IF_TRANSPORT
 #include "sipe-http-transport.h"
+
+struct sipe_http {
+	GHashTable *connections;
+};
+
+void sipe_http_free(struct sipe_core_private *sipe_private)
+{
+	struct sipe_http *http = sipe_private->http;
+	if (!http)
+		return;
+
+	g_hash_table_destroy(http->connections);
+	g_free(http);
+	sipe_private->http = NULL;
+}
+
+/*
+  Local Variables:
+  mode: c
+  c-file-style: "bsd"
+  indent-tabs-mode: t
+  tab-width: 8
+  End:
+*/

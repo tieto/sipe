@@ -31,3 +31,10 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+
+/**
+ * Free HTTP data
+ *
+ * @param sipe_private SIPE core private data
+ */
+void sipe_http_free(struct sipe_core_private *sipe_private);
