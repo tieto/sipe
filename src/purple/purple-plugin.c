@@ -867,6 +867,7 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 		  "\n"
 		  "Valid location will be something like\n"
 		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+		  "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 		  "or\n"
 		  "https://meet.company.com/someone/abcdef1234"),
 		fields,
