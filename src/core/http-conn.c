@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010,2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-13 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -458,13 +458,25 @@ http_conn_process_input_message(HttpConn *http_conn,
 			return;
 		}
 
-#ifdef HAVE_SSPI
-		if (http_conn->auth && http_conn->auth->use_negotiate)
-			auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#define AUTHSTRING "NTLM and Negotiate authentications are"
+		{
+			struct sipe_core_public *sipe_public = http_conn->sipe_public;
+
+			/* "Negotiate" is only supported for Kerberos */
+			if (SIPE_CORE_PRIVATE->authentication_type == SIPE_AUTHENTICATION_TYPE_KERBEROS)
+				auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
+		}
 		if (auth_hdr) {
+#if defined(HAVE_SSPI)
 			auth_type = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
+#else
+			auth_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
+#endif
 			auth_name = "Negotiate";
 		} else
+#else
+#define AUTHSTRING "NTLM authentication is"
 #endif
 		{
 			auth_hdr = sipmsg_find_auth_header(msg, "NTLM");
@@ -476,14 +488,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
-#ifdef HAVE_SSPI
-#define AUTHSTRING				"NTLM and Negotiate authentications are"
-#else /* !HAVE_SSPI */
-#define AUTHSTRING				"NTLM authentication is"
-#endif /* HAVE_SSPI */
-			SIPE_DEBUG_INFO("http_conn_process_input_message: Only %s supported in the moment, exiting",
-					AUTHSTRING
-			);
+			SIPE_DEBUG_INFO_NOFORMAT("http_conn_process_input_message: Only " AUTHSTRING " supported at the moment, exiting");
 			http_conn_set_close(http_conn);
 			return;
 		}
