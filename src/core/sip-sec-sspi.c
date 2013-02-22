@@ -22,7 +22,6 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
 #include <windows.h>
 #include <rpc.h>
 #ifndef SECURITY_WIN32
@@ -60,7 +59,7 @@ typedef struct _context_sspi {
 static int
 sip_sec_get_interval_from_now_sec(TimeStamp timestamp);
 
-void
+static void
 sip_sec_sspi_print_error(const char *func,
 			 SECURITY_STATUS ret);
 
@@ -402,7 +401,7 @@ sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
 	return (int)((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
 }
 
-void
+static void
 sip_sec_sspi_print_error(const char *func,
 			 SECURITY_STATUS ret)
 {
@@ -422,7 +421,7 @@ sip_sec_sspi_print_error(const char *func,
 	error_message = g_strndup(buff, buff_length);
 	LocalFree(buff);
 
-	printf("SSPI ERROR [%d] in %s: %s", (int)ret, func, error_message);
+	SIPE_DEBUG_ERROR("SSPI ERROR [%d] in %s: %s", (int)ret, func, error_message);
 	g_free(error_message);
 }
 
