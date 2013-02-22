@@ -1694,12 +1694,12 @@ typedef struct _context_ntlm {
 	char* domain;
 	char *username;
 	char *password;
-	int step;
 	guchar *client_sign_key;
 	guchar *server_sign_key;
 	guchar *client_seal_key;
 	guchar *server_seal_key;
 	guint32 flags;
+	gboolean initial;
 } *context_ntlm;
 
 
@@ -1718,6 +1718,7 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 	ctx->domain   = g_strdup(domain);
 	ctx->username = g_strdup(username);
 	ctx->password = g_strdup(password);
+	ctx->initial  = TRUE;
 
 	return SIP_SEC_E_OK;
 }
@@ -1732,17 +1733,18 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__ntlm: in use");
 
-	ctx->step++;
-	if (ctx->step == 1) {
-		if (!context->is_connection_based) {
-			out_buff->length = 0;
-			out_buff->value = NULL;
-		} else {
+	if (ctx->initial) {
+		ctx->initial = FALSE;
+
+		/* HTTP */
+		if (context->is_connection_based) {
 			sip_sec_ntlm_gen_negotiate(out_buff);
 			sip_sec_ntlm_message_describe(out_buff, "Negotiate");
+		/* SIP */
+		} else {
+			out_buff->length = 0;
+			out_buff->value = NULL;
 		}
-		return SIP_SEC_I_CONTINUE_NEEDED;
-
 	} else 	{
 		sip_uint32 res;
 		guchar *client_sign_key = NULL;
@@ -1815,9 +1817,9 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 
 		/* Authentication is completed */
 		ctx->common.is_ready = TRUE;
-
-		return SIP_SEC_E_OK;
 	}
+
+	return SIP_SEC_E_OK;
 }
 
 /**

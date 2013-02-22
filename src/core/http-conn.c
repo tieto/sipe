@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-13 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -497,7 +497,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			http_conn->sec_ctx =
 				sip_sec_create_context(auth_type,
 						       use_sso,
-						       1,
+						       TRUE, /* connection-based for HTTP */
 						       http_conn->auth && http_conn->auth->domain ? http_conn->auth->domain : "",
 						       http_conn->auth ? http_conn->auth->user : NULL,
 						       http_conn->auth ? http_conn->auth->password : NULL);

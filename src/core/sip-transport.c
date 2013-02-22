@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -173,13 +173,6 @@ static void sipe_make_signature(struct sipe_core_private *sipe_private,
 	}
 }
 
-static gchar *auth_header_version(struct sip_auth *auth)
-{
-	return(auth->version > 2 ?
-	       g_strdup_printf(", version=%d", auth->version) :
-	       g_strdup(""));
-}
-
 static const gchar *const auth_type_to_protocol[] = {
 	NULL,       /* SIPE_AUTHENTICATION_TYPE_UNSET     */
 	"NTLM",     /* SIPE_AUTHENTICATION_TYPE_NTLM      */
@@ -318,7 +311,13 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 	}
 
 	opaque_str = auth->opaque ? g_strdup_printf(", opaque=\"%s\"", auth->opaque) : g_strdup("");
-	version_str = auth_header_version(auth);
+
+	if (auth->version > 2) {
+		version_str = g_strdup_printf(", version=%d", auth->version);
+	} else {
+		version_str = g_strdup("");
+	}
+
 	ret = g_strdup_printf("%s qop=\"auth\"%s, realm=\"%s\", targetname=\"%s\"%s%s%s",
 			      auth->protocol, opaque_str,
 			      auth->realm, auth->target,
@@ -328,17 +327,6 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 	g_free(gssapi_str);
 	g_free(sign_str);
 
-	return(ret);
-}
-
-static gchar *start_auth_handshake(struct sip_auth *auth)
-{
-	gchar *version_str = auth_header_version(auth);
-	gchar *ret = g_strdup_printf("%s qop=\"auth\", realm=\"%s\", targetname=\"%s\", gssapi-data=\"\"%s",
-				     auth->protocol,
-				     auth->realm, auth->target,
-				     version_str);
-	g_free(version_str);
 	return(ret);
 }
 
@@ -355,16 +343,6 @@ static gchar *auth_header(struct sipe_core_private *sipe_private,
 	 */
 	if (msg->signature) {
 		ret = msg_signature_to_auth(auth, msg);
-
-	/*
-	 * If the message isn't signed then we don't have a initialized
-         * authentication context yet.
-	 *
-	 * Start the authentication handshake if NTLM is selected.
-	 */
-	} else if ((auth->type == SIPE_AUTHENTICATION_TYPE_NTLM) &&
-		   !auth->gssapi_data) {
-		ret = start_auth_handshake(auth);
 
 	/*
 	 * We should reach this point only when the authentication context

@@ -54,6 +54,7 @@ typedef struct _context_sspi {
 	CtxtHandle* ctx_sspi;
 	/** Kerberos or NTLM */
 	const char *mech;
+	gboolean initial;
 } *context_sspi;
 
 static int
@@ -144,9 +145,41 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	ULONG req_flags;
 	ULONG ret_flags;
 	context_sspi ctx = (context_sspi)context;
-	CtxtHandle* out_context = g_malloc0(sizeof(CtxtHandle));
+	gboolean connection_less_ntlm = !context->is_connection_based &&
+		ctx->mech && (strcmp(ctx->mech, SSPI_MECH_NTLM) == 0);
+	CtxtHandle* out_context;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
+
+	if (connection_less_ntlm && ctx->initial) {
+
+		/* empty initial message for connection-less NTLM */
+		if (in_buff.value == NULL) {
+			SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: initial message for connection-less NTLM");
+			out_buff->length = 0;
+			out_buff->value = NULL;
+			return SIP_SEC_E_OK;
+
+		/* call again to create context for connection-less NTLM */
+		} else {
+			SipSecBuffer empty = { 0, NULL };
+
+			ctx->initial = FALSE;
+			ret = sip_sec_init_sec_context__sspi(context,
+							     empty,
+							     out_buff,
+							     service_name);
+			if (ret == SEC_E_OK) {
+				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: connection-less NTLM second round");
+				g_free(out_buff->value);
+			} else {
+				sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: unexpected NTLM state", ret);
+				return SIP_SEC_E_INTERNAL_ERROR;
+			}
+		}
+	}
+
+	out_context = g_malloc0(sizeof(CtxtHandle));
 
 	input_desc.cBuffers = 1;
 	input_desc.pBuffers = &in_token;
@@ -170,9 +203,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		     ISC_REQ_INTEGRITY |
 		     ISC_REQ_IDENTIFY);
 
-	if (ctx->mech && !strcmp(ctx->mech, SSPI_MECH_NTLM) &&
-	    !context->is_connection_based)
-	{
+	if (connection_less_ntlm) {
 		req_flags |= (ISC_REQ_DATAGRAM);
 	}
 
@@ -338,6 +369,7 @@ sip_sec_create_context__sspi(guint type)
 	context->mech = (type == SIPE_AUTHENTICATION_TYPE_NTLM) ? SSPI_MECH_NTLM :
 			((type == SIPE_AUTHENTICATION_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS :
 			 ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ? SSPI_MECH_NEGOTIATE : SSPI_MECH_TLS_DSK));
+	context->initial = TRUE;
 
 	return((SipSecContext) context);
 }

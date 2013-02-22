@@ -162,7 +162,7 @@ sip_sec_init_context_step(SipSecContext context,
 			if (out_buff.length > 0 && out_buff.value) {
 				*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
 			} else {
-				*output_toked_base64 = NULL;
+				*output_toked_base64 = g_strdup("");
 			}
 
 			g_free(out_buff.value);
@@ -193,7 +193,7 @@ sip_sec_init_context(SipSecContext *context,
 
 	*context = sip_sec_create_context(type,
 					  sso,
-					  0, /* Connectionless for SIP */
+					  FALSE, /* connection-less for SIP */
 					  domain,
 					  username,
 					  password);
