@@ -126,7 +126,7 @@ sip_sec_create_context(guint type,
 
 		ret = (*context->acquire_cred_func)(context, domain, username, password);
 		if (ret != SIP_SEC_E_OK) {
-			SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_init_context failed to acquire credentials.");
+			SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_create_context: failed to acquire credentials.");
 			(*context->destroy_context_func)(context);
 			context = NULL;
 		}
@@ -174,43 +174,6 @@ sip_sec_init_context_step(SipSecContext context,
 	}
 
 	return ret;
-}
-
-char *
-sip_sec_init_context(SipSecContext *context,
-		     int *expires,
-		     guint type,
-		     const int  sso,
-		     const char *domain,
-		     const char *username,
-		     const char *password,
-		     const char *target)
-{
-	char *output_toked_base64 = NULL;
-	int exp;
-
-	*context = sip_sec_create_context(type,
-					  sso,
-					  FALSE, /* connection-less for SIP */
-					  domain,
-					  username,
-					  password);
-	if (!*context) {
-		SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_init_context: failed sip_sec_create_context()");
-		return NULL;
-	}
-
-	sip_sec_init_context_step(*context,
-				  target,
-				  NULL,
-				  &output_toked_base64,
-				  &exp);
-
-	if (expires) {
-		*expires = exp;
-	}
-
-	return output_toked_base64;
 }
 
 gboolean sip_sec_context_is_ready(SipSecContext context)

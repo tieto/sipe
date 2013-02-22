@@ -69,32 +69,6 @@ sip_sec_init_context_step(SipSecContext context,
 			  int *expires);
 
 /**
- * A convenience method for sipe. Combines execution on sip_sec_create_context()
- * and sip_sec_init_context_step(). Suitable for connectionless NTLM (as in SIP).
- * Unsuitable for connection-based (TCP, TLS) Web authentication.
- *
- * Initializes security context.
- * Obtains cashed initial credentials (TGT for Kerberos) or requests new ones if required. In former case domain/username/password information is unnecessary.
- * Then obtains Service ticket (for Kerberos) , base64 encodes it and provide as output.
- *
- * @param context (in,out) security context to store and pass between security method invocations
- * @param mech (in) security mechanism - NTLM or Kerberos
- * @param domain (in) NTLM Domain/Kerberos Realm.
- * @param target (in) security target. Service principal name on case of Kerberos.
- * @param expires (out) security context expiration time in seconds.
- *
- * @return base64 encoded output token to send to server.
- */
-char *sip_sec_init_context(SipSecContext *context,
-			   int *expires,
-			   guint type,
-			   const int  sso,
-			   const char *domain,
-			   const char *username,
-			   const char *password,
-			   const char *target);
-
-/**
  * Check if the authentication of a security context is completed and it is
  * ready to be used for message signing and signature verification
  *

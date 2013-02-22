@@ -275,14 +275,21 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 			}
 		}
 
-		gssapi_data = sip_sec_init_context(&(auth->gssapi_context),
-						   &(auth->expires),
-						   auth->type,
-						   SIPE_CORE_PUBLIC_FLAG_IS(SSO),
-						   sipe_private->authdomain ? sipe_private->authdomain : "",
-						   authuser,
-						   password,
-						   auth->target);
+		auth->gssapi_context = sip_sec_create_context(auth->type,
+							      SIPE_CORE_PUBLIC_FLAG_IS(SSO),
+							      FALSE, /* connection-less for SIP */
+							      sipe_private->authdomain ? sipe_private->authdomain : "",
+							      authuser,
+							      password);
+
+		if (auth->gssapi_context) {
+			sip_sec_init_context_step(auth->gssapi_context,
+						  auth->target,
+						  NULL,
+						  &gssapi_data,
+						  &(auth->expires));
+		}
+
 		if (!gssapi_data || !auth->gssapi_context) {
 			g_free(gssapi_data);
 			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
