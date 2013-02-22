@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009, 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
@@ -1812,6 +1812,10 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		ctx->server_seal_key = server_seal_key;
 
 		ctx->flags = flags;
+
+		/* Authentication is completed */
+		ctx->common.is_ready = TRUE;
+
 		return SIP_SEC_E_OK;
 	}
 }

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -211,6 +211,9 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	if (ret == SEC_I_CONTINUE_NEEDED) {
 		return SIP_SEC_I_CONTINUE_NEEDED;
 	} else	{
+		/* Authentication is completed */
+		ctx->common.is_ready = TRUE;
+
 		return SIP_SEC_E_OK;
 	}
 }

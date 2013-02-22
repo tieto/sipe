@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -122,7 +122,7 @@ sip_sec_create_context(guint type,
 
 		context->sso = sso;
 		context->is_connection_based = is_connection_based;
-		context->is_ready = TRUE;
+		context->is_ready = FALSE;
 
 		ret = (*context->acquire_cred_func)(context, domain, username, password);
 		if (ret != SIP_SEC_E_OK) {

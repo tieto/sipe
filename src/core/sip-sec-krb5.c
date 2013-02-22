@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010,2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -161,6 +161,10 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 		out_buff->value = output_token.value;
 
 		context->expires = (int)expiry;
+
+		/* Authentication is completed */
+		ctx->common.is_ready = TRUE;
+
 		return SIP_SEC_E_OK;
 	}
 }

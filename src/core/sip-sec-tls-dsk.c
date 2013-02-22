@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -62,14 +62,7 @@ sip_sec_acquire_cred__tls_dsk(SipSecContext context,
 	context_tls_dsk ctx = (context_tls_dsk)context;
 
 	ctx->state = sipe_tls_start((gpointer) password);
-	if (ctx->state) {
-		/* Authentication not yet completed */
-		ctx->common.is_ready = FALSE;
-
-		return SIP_SEC_E_OK;
-	} else {
-		return SIP_SEC_E_INTERNAL_ERROR;
-	}
+	return(ctx->state ? SIP_SEC_E_OK : SIP_SEC_E_INTERNAL_ERROR);
 }
 
 static sip_uint32
