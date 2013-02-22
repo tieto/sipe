@@ -239,14 +239,12 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		context->expires = sip_sec_get_interval_from_now_sec(expiry);
 	}
 
-	if (ret == SEC_I_CONTINUE_NEEDED) {
-		return SIP_SEC_I_CONTINUE_NEEDED;
-	} else	{
+	if (ret != SEC_I_CONTINUE_NEEDED) {
 		/* Authentication is completed */
 		ctx->common.is_ready = TRUE;
-
-		return SIP_SEC_E_OK;
 	}
+
+	return SIP_SEC_E_OK;
 }
 
 static void

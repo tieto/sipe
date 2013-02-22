@@ -157,7 +157,7 @@ sip_sec_init_context_step(SipSecContext context,
 		if (input_toked_base64)
 			g_free(in_buff.value);
 
-		if (ret == SIP_SEC_E_OK || ret == SIP_SEC_I_CONTINUE_NEEDED) {
+		if (ret == SIP_SEC_E_OK) {
 
 			if (out_buff.length > 0 && out_buff.value) {
 				*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
@@ -184,10 +184,8 @@ sip_sec_init_context(SipSecContext *context,
 		     const char *domain,
 		     const char *username,
 		     const char *password,
-		     const char *target,
-		     const char *input_toked_base64)
+		     const char *target)
 {
-	sip_uint32 ret;
 	char *output_toked_base64 = NULL;
 	int exp;
 
@@ -202,21 +200,11 @@ sip_sec_init_context(SipSecContext *context,
 		return NULL;
 	}
 
-	ret = sip_sec_init_context_step(*context,
-					target,
-					NULL,
-					&output_toked_base64,
-					&exp);
-
-	/* for NTLM type 3 */
-	if (ret == SIP_SEC_I_CONTINUE_NEEDED) {
-		g_free(output_toked_base64);
-		ret = sip_sec_init_context_step(*context,
-						target,
-						input_toked_base64,
-						&output_toked_base64,
-						&exp);
-	}
+	sip_sec_init_context_step(*context,
+				  target,
+				  NULL,
+				  &output_toked_base64,
+				  &exp);
 
 	if (expires) {
 		*expires = exp;

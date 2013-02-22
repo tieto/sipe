@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -81,7 +81,6 @@ sip_sec_init_context_step(SipSecContext context,
  * @param mech (in) security mechanism - NTLM or Kerberos
  * @param domain (in) NTLM Domain/Kerberos Realm.
  * @param target (in) security target. Service principal name on case of Kerberos.
- * @param input_toked_base64 (in) base64 encoded input security token. This is Type2 NTLM message or NULL for Kerberos.
  * @param expires (out) security context expiration time in seconds.
  *
  * @return base64 encoded output token to send to server.
@@ -93,8 +92,7 @@ char *sip_sec_init_context(SipSecContext *context,
 			   const char *domain,
 			   const char *username,
 			   const char *password,
-			   const char *target,
-			   const char *input_toked_base64);
+			   const char *target);
 
 /**
  * Check if the authentication of a security context is completed and it is

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -29,8 +29,7 @@
  */
 
 #define SIP_SEC_E_OK 0
-#define SIP_SEC_E_INTERNAL_ERROR (-2146893052)
-#define SIP_SEC_I_CONTINUE_NEEDED 590610
+#define SIP_SEC_E_INTERNAL_ERROR -1
 
 typedef unsigned long sip_uint32;
 

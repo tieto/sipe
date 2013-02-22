@@ -282,8 +282,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 						   sipe_private->authdomain ? sipe_private->authdomain : "",
 						   authuser,
 						   password,
-						   auth->target,
-						   auth->gssapi_data);
+						   auth->target);
 		if (!gssapi_data || !auth->gssapi_context) {
 			g_free(gssapi_data);
 			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
