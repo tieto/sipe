@@ -100,8 +100,6 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	OM_uint32 ret;
 	OM_uint32 minor;
 	OM_uint32 expiry;
-	OM_uint32 request_flags;
-	OM_uint32 response_flags;
 	gss_buffer_desc input_token;
 	gss_buffer_desc output_token;
 	gss_buffer_desc input_name_buffer;
@@ -109,6 +107,18 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	context_krb5 ctx = (context_krb5) context;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__krb5: started");
+
+	/* Delete old context first */
+	if (ctx->ctx_krb5 != GSS_C_NO_CONTEXT) {
+		ret = gss_delete_sec_context(&minor,
+					     &(ctx->ctx_krb5),
+					     GSS_C_NO_BUFFER);
+		if (GSS_ERROR(ret)) {
+			sip_sec_krb5_print_gss_error("gss_delete_sec_context", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to delete security context (ret=%d)", (int)ret);
+		}
+		ctx->ctx_krb5 = GSS_C_NO_CONTEXT;
+	}
 
 	input_name_buffer.value = (void *)service_name;
 	input_name_buffer.length = strlen(input_name_buffer.value) + 1;
@@ -123,8 +133,6 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 
-	request_flags = GSS_C_INTEG_FLAG;
-
 	input_token.length = in_buff.length;
 	input_token.value = in_buff.value;
 
@@ -136,39 +144,30 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 				   &(ctx->ctx_krb5),
 				   target_name,
 				   GSS_C_NO_OID,
-				   request_flags,
+				   GSS_C_INTEG_FLAG,
 				   GSS_C_INDEFINITE,
 				   GSS_C_NO_CHANNEL_BINDINGS,
 				   &input_token,
 				   NULL,
 				   &output_token,
-				   &response_flags,
+				   NULL,
 				   &expiry);
 
 	if (GSS_ERROR(ret)) {
 		sip_sec_krb5_print_gss_error("gss_init_sec_context", ret, minor);
 		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to initialize context (ret=%d)", (int)ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
-	} else {
-		ret = gss_release_cred(&minor, &(ctx->cred_krb5));
-		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_release_cred", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to release credentials (ret=%d)", (int)ret);
-		}
-
-		input_token.value = NULL;
-		input_token.length = 0;
-
-		out_buff->length = output_token.length;
-		out_buff->value = output_token.value;
-
-		context->expires = (int)expiry;
-
-		/* Authentication is completed */
-		ctx->common.is_ready = TRUE;
-
-		return SIP_SEC_E_OK;
 	}
+
+	out_buff->length = output_token.length;
+	out_buff->value = output_token.value;
+
+	context->expires = (int)expiry;
+
+	/* Authentication is completed */
+	context->is_ready = TRUE;
+
+	return SIP_SEC_E_OK;
 }
 
 /**
@@ -255,7 +254,7 @@ sip_sec_destroy_sec_context__krb5(SipSecContext context)
 		}
 	}
 
-	if (ctx->ctx_krb5) {
+	if (ctx->ctx_krb5 != GSS_C_NO_CONTEXT) {
 		ret = gss_delete_sec_context(&minor, &(ctx->ctx_krb5), GSS_C_NO_BUFFER);
 		if (GSS_ERROR(ret)) {
 			sip_sec_krb5_print_gss_error("gss_delete_sec_context", ret, minor);
@@ -277,6 +276,8 @@ sip_sec_create_context__krb5(SIPE_UNUSED_PARAMETER guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__krb5;
 	context->common.make_signature_func   = sip_sec_make_signature__krb5;
 	context->common.verify_signature_func = sip_sec_verify_signature__krb5;
+
+	context->ctx_krb5 = GSS_C_NO_CONTEXT;
 
 	return((SipSecContext) context);
 }
