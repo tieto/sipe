@@ -1742,8 +1742,9 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			sip_sec_ntlm_message_describe(out_buff, "Negotiate");
 		/* SIP */
 		} else {
+			/* empty initial message for connection-less NTLM */
 			out_buff->length = 0;
-			out_buff->value = NULL;
+			out_buff->value = (guint8 *) g_strdup("");
 		}
 	} else 	{
 		sip_uint32 res;

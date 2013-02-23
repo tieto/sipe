@@ -156,7 +156,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		if (in_buff.value == NULL) {
 			SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: initial message for connection-less NTLM");
 			out_buff->length = 0;
-			out_buff->value = NULL;
+			out_buff->value = (guint8 *) g_strdup("");
 			return SIP_SEC_E_OK;
 
 		/* call again to create context for connection-less NTLM */

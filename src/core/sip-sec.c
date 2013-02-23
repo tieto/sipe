@@ -159,10 +159,14 @@ sip_sec_init_context_step(SipSecContext context,
 
 		if (ret == SIP_SEC_E_OK) {
 
-			if (out_buff.length > 0 && out_buff.value) {
-				*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
-			} else {
-				*output_toked_base64 = g_strdup("");
+			if (out_buff.value) {
+				if (out_buff.length > 0) {
+					*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
+				} else {
+					/* special string: caller takes ownership */
+					*output_toked_base64 = (gchar *) out_buff.value;
+					out_buff.value = NULL;
+				}
 			}
 
 			g_free(out_buff.value);
