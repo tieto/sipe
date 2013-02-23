@@ -62,7 +62,6 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 {
 	OM_uint32 ret;
 	OM_uint32 minor;
-	OM_uint32 expiry;
 	gss_cred_id_t credentials;
 
 	if (!context->sso) {
@@ -78,7 +77,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 			       GSS_C_INITIATE,
 			       &credentials,
 			       NULL,
-			       &expiry);
+			       NULL);
 
 	if (GSS_ERROR(ret)) {
 		sip_sec_krb5_print_gss_error("gss_acquire_cred", ret, minor);
@@ -424,7 +423,6 @@ sip_sec_krb5_obtain_tgt(const char *username_in,
 		krb5_free_context(context);
 }
 
-#if defined(HAVE_KRB5_GET_ERROR_MESSAGE)
 static void
 sip_sec_krb5_print_error(const char *func,
 			 krb5_context context,
@@ -434,15 +432,6 @@ sip_sec_krb5_print_error(const char *func,
 	SIPE_DEBUG_ERROR("Kerberos 5 ERROR in %s: %s", func, error_message);
 	krb5_free_error_message(context, error_message);
 }
-#else
-static void
-sip_sec_krb5_print_error(const char *func,
-			 SIPE_UNUSED_PARAMETER krb5_context context,
-			 SIPE_UNUSED_PARAMETER krb5_error_code ret)
-{
-	SIPE_DEBUG_ERROR("Kerberos 5 ERROR in %s: %s", func, "unknown error");
-}
-#endif
 
 /*
   Local Variables:
