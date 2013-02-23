@@ -44,8 +44,7 @@ typedef struct _context_krb5 {
 static void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 minor);
 
 static void
-sip_sec_krb5_obtain_tgt(const char *realm,
-		        const char *username,
+sip_sec_krb5_obtain_tgt(const char *username,
 			const char *password);
 
 /* sip-sec-mech.h API implementation for Kerberos/GSS-API */
@@ -57,7 +56,7 @@ sip_sec_krb5_obtain_tgt(const char *realm,
  */
 static sip_uint32
 sip_sec_acquire_cred__krb5(SipSecContext context,
-			    const char *domain,
+			    SIPE_UNUSED_PARAMETER const char *domain,
 			    const char *username,
 			    const char *password)
 {
@@ -68,7 +67,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 
 	if (!context->sso) {
 		/* Do not use default credentials, obtain a new one and store it in cache */
-		sip_sec_krb5_obtain_tgt(g_ascii_strup(domain, -1), username, password);
+		sip_sec_krb5_obtain_tgt(username, password);
 	}
 
 	/* Acquire default user credentials */
@@ -98,7 +97,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 			       const char *service_name)
 {
 	OM_uint32 ret;
-	OM_uint32 minor;
+	OM_uint32 minor, minor_ignore;
 	OM_uint32 expiry;
 	gss_buffer_desc input_token;
 	gss_buffer_desc output_token;
@@ -139,6 +138,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	output_token.length = 0;
 	output_token.value = NULL;
 
+	/* context takes ownership of input_name_buffer? */
 	ret = gss_init_sec_context(&minor,
 				   ctx->cred_krb5,
 				   &(ctx->ctx_krb5),
@@ -154,13 +154,15 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 				   &expiry);
 
 	if (GSS_ERROR(ret)) {
+		gss_release_buffer(&minor_ignore, &output_token);
 		sip_sec_krb5_print_gss_error("gss_init_sec_context", ret, minor);
 		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to initialize context (ret=%d)", (int)ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	}
 
 	out_buff->length = output_token.length;
-	out_buff->value = output_token.value;
+	out_buff->value  = g_memdup(output_token.value, output_token.length);
+	gss_release_buffer(&minor_ignore, &output_token);
 
 	context->expires = (int)expiry;
 
@@ -197,9 +199,10 @@ sip_sec_make_signature__krb5(SipSecContext context,
 		SIPE_DEBUG_ERROR("sip_sec_make_signature__krb5: failed to make signature (ret=%d)", (int)ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
 	} else {
-		signature->value = output_token.value;
 		signature->length = output_token.length;
-
+		signature->value  = g_memdup(output_token.value,
+					     output_token.length);
+		gss_release_buffer(&minor, &output_token);
 		return SIP_SEC_E_OK;
 	}
 }
@@ -214,7 +217,6 @@ sip_sec_verify_signature__krb5(SipSecContext context,
 {
 	OM_uint32 ret;
 	OM_uint32 minor;
-	gss_qop_t qop_state;
 	gss_buffer_desc input_message;
 	gss_buffer_desc input_token;
 
@@ -228,7 +230,7 @@ sip_sec_verify_signature__krb5(SipSecContext context,
 			     ((context_krb5)context)->ctx_krb5,
 			     &input_message,
 			     &input_token,
-			     &qop_state);
+			     NULL);
 
 	if (GSS_ERROR(ret)) {
 		sip_sec_krb5_print_gss_error("gss_verify_mic", ret, minor);
@@ -338,8 +340,7 @@ sip_sec_krb5_print_error(const char *func,
  * 'ATLANTA.LOCAL' is a realm (domain) .
  */
 static void
-sip_sec_krb5_obtain_tgt(SIPE_UNUSED_PARAMETER const char *realm_in,
-		        const char *username_in,
+sip_sec_krb5_obtain_tgt(const char *username_in,
 			const char *password)
 {
 	krb5_context	context;
