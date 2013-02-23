@@ -445,7 +445,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		const char *auth_name;
 		char *authorization;
 		char *output_toked_base64;
-		int use_sso = !http_conn->auth || (http_conn->auth && !http_conn->auth->user);
+		int use_sso = !http_conn->auth || !http_conn->auth->user;
 		long ret = -1;
 
 		http_conn->retries++;

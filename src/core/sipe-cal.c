@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-13 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -183,8 +183,8 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 		g_free(cal->auth->domain);
 		g_free(cal->auth->user);
 		g_free(cal->auth->password);
+		g_free(cal->auth);
 	}
-	g_free(cal->auth);
 	g_free(cal->as_url);
 	g_free(cal->oof_url);
 	g_free(cal->oab_url);
@@ -229,14 +229,14 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 			cal->domino_url  = g_strdup(value);
 		}
 
-		cal->auth = g_new0(HttpConnAuth, 1);
-
 		/* user specified email login? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
 		if (!is_empty(value)) {
+			const char *tmp = strstr(value, "\\");
+
+			cal->auth = g_new0(HttpConnAuth, 1);
 
 			/* user specified email login domain? */
-			const char *tmp = strstr(value, "\\");
 			if (tmp) {
 				cal->auth->domain = g_strndup(value, tmp - value);
 				cal->auth->user   = g_strdup(tmp + 1);
@@ -246,10 +246,11 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 			cal->auth->password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
 										 SIPE_SETTING_EMAIL_PASSWORD));
 
-		} else {
-			/* re-use SIPE credentials */
+		} else if (!SIPE_CORE_PUBLIC_FLAG_IS(SSO)) {
+			/* re-use SIP credentials when SSO is not selected */
+			cal->auth = g_new0(HttpConnAuth, 1);
 			cal->auth->domain   = g_strdup(sipe_private->authdomain);
-			cal->auth->user     = g_strdup(sipe_private->authuser);
+			cal->auth->user     = sipe_private->authuser ? g_strdup(sipe_private->authuser) : g_strdup(sipe_private->username);
 			cal->auth->password = g_strdup(sipe_private->password);
 		}
 		return TRUE;

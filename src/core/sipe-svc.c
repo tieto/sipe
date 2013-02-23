@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -190,7 +190,8 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				      body,
 				      content_type,
 				      data->soap_action,
-				      &data->auth,
+				      /* use credentials only when SSO is not selected */
+				      SIPE_CORE_PUBLIC_FLAG_IS(SSO) ? NULL : &data->auth,
 				      sipe_svc_https_response,
 				      data);
 
