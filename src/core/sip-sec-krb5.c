@@ -44,7 +44,8 @@ typedef struct _context_krb5 {
 static void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 minor);
 
 static void
-sip_sec_krb5_obtain_tgt(const char *username,
+sip_sec_krb5_obtain_tgt(const char *domain,
+			const char *username,
 			const char *password);
 
 /* sip-sec-mech.h API implementation for Kerberos/GSS-API */
@@ -56,9 +57,9 @@ sip_sec_krb5_obtain_tgt(const char *username,
  */
 static sip_uint32
 sip_sec_acquire_cred__krb5(SipSecContext context,
-			    SIPE_UNUSED_PARAMETER const char *domain,
-			    const char *username,
-			    const char *password)
+			   const char *domain,
+			   const char *username,
+			   const char *password)
 {
 	OM_uint32 ret;
 	OM_uint32 minor;
@@ -66,7 +67,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 
 	if (!context->sso) {
 		/* Do not use default credentials, obtain a new one and store it in cache */
-		sip_sec_krb5_obtain_tgt(username, password);
+		sip_sec_krb5_obtain_tgt(domain, username, password);
 	}
 
 	/* Acquire default user credentials */
@@ -339,7 +340,8 @@ sip_sec_krb5_print_error(const char *func,
  * 'ATLANTA.LOCAL' is a realm (domain) .
  */
 static void
-sip_sec_krb5_obtain_tgt(const char *username_in,
+sip_sec_krb5_obtain_tgt(const char *domain_in,
+			const char *username_in,
 			const char *password)
 {
 	krb5_context	context;
@@ -349,32 +351,21 @@ sip_sec_krb5_obtain_tgt(const char *username_in,
 	krb5_error_code	ret;
 	char *realm;
 	char *username;
-	gchar **domain_user;
 	gchar **user_realm;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_krb5_obtain_tgt: started");
 
 	memset(&credentials, 0, sizeof(krb5_creds));
 
-	/* extracts realm as domain part of username
-	 * either before '/' & '\' or after '@'
-	 */
-	domain_user = g_strsplit_set(username_in, "/\\", 2);
-	if (domain_user[1]) {
-		realm = g_ascii_strup(domain_user[0], -1);
-		username = g_strdup(domain_user[1]);
-	} else {
-		realm = g_strdup("");
-		username = g_strdup(username_in);
-	}
-	g_strfreev(domain_user);
-
-	user_realm = g_strsplit(username, "@", 2);
+	user_realm = g_strsplit(username_in, "@", 2);
 	if (user_realm && user_realm[1]) {
-		g_free(username);
-		g_free(realm);
+		/* "user@domain" -> use domain as realm */
+		realm    = g_ascii_strup(user_realm[1], -1);
 		username = g_strdup(user_realm[0]);
-		realm = g_ascii_strup(user_realm[1], -1);
+	} else {
+		/* use provided domain as realm */
+		realm    = g_ascii_strup(domain_in ? domain_in : "", -1);
+		username = g_strdup(username_in);
 	}
 	g_strfreev(user_realm);
 
