@@ -119,8 +119,8 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 		ctx->ctx_krb5 = GSS_C_NO_CONTEXT;
 	}
 
-	input_name_buffer.value = (void *)service_name;
-	input_name_buffer.length = strlen(input_name_buffer.value) + 1;
+	input_name_buffer.value  = (void *) service_name;
+	input_name_buffer.length = strlen(service_name) + 1;
 
 	ret = gss_import_name(&minor,
 			      &input_name_buffer,
@@ -138,7 +138,6 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	output_token.length = 0;
 	output_token.value = NULL;
 
-	/* context takes ownership of input_name_buffer? */
 	ret = gss_init_sec_context(&minor,
 				   ctx->cred_krb5,
 				   &(ctx->ctx_krb5),
@@ -152,6 +151,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 				   &output_token,
 				   NULL,
 				   &expiry);
+	gss_release_name(&minor_ignore, &target_name);
 
 	if (GSS_ERROR(ret)) {
 		gss_release_buffer(&minor_ignore, &output_token);
@@ -248,19 +248,19 @@ sip_sec_destroy_sec_context__krb5(SipSecContext context)
 	OM_uint32 minor;
 	context_krb5 ctx = (context_krb5) context;
 
-	if (ctx->cred_krb5) {
-		ret = gss_release_cred(&minor, &(ctx->cred_krb5));
-		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_release_cred", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__krb5: failed to release credentials (ret=%d)", (int)ret);
-		}
-	}
-
 	if (ctx->ctx_krb5 != GSS_C_NO_CONTEXT) {
 		ret = gss_delete_sec_context(&minor, &(ctx->ctx_krb5), GSS_C_NO_BUFFER);
 		if (GSS_ERROR(ret)) {
 			sip_sec_krb5_print_gss_error("gss_delete_sec_context", ret, minor);
 			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__krb5: failed to delete security context (ret=%d)", (int)ret);
+		}
+	}
+
+	if (ctx->cred_krb5) {
+		ret = gss_release_cred(&minor, &(ctx->cred_krb5));
+		if (GSS_ERROR(ret)) {
+			sip_sec_krb5_print_gss_error("gss_release_cred", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__krb5: failed to release credentials (ret=%d)", (int)ret);
 		}
 	}
 
