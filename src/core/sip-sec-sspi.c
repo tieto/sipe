@@ -93,8 +93,8 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	ctx->connection_less_ntlm = !context->is_connection_based &&
 		(ctx->type == SIPE_AUTHENTICATION_TYPE_NTLM);
 
-	if (username) {
-		if (!password) {
+	if (!context->sso) {
+		if (!username || !password) {
 			return SIP_SEC_E_INTERNAL_ERROR;
 		}
 
@@ -122,7 +122,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 					(SEC_CHAR *)mech_names[ctx->type],
 					SECPKG_CRED_OUTBOUND,
 					NULL,
-					(context->sso || !username) ? NULL : &auth_identity,
+					context->sso ? NULL : &auth_identity,
 					NULL,
 					NULL,
 					ctx->cred_sspi,
