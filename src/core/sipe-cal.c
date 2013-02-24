@@ -232,19 +232,16 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 		/* user specified email login? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
 		if (!is_empty(value)) {
-			const char *tmp = strstr(value, "\\");
+			/* Allowed domain-account separators are / or \ */
+			gchar **domain_user = g_strsplit_set(value, "/\\", 2);
+			gboolean has_domain = domain_user[1] != NULL;
 
 			cal->auth = g_new0(HttpConnAuth, 1);
-
-			/* user specified email login domain? */
-			if (tmp) {
-				cal->auth->domain = g_strndup(value, tmp - value);
-				cal->auth->user   = g_strdup(tmp + 1);
-			} else {
-				cal->auth->user   = g_strdup(value);
-			}
+			cal->auth->domain   = has_domain ? g_strdup(domain_user[0]) : NULL;
+			cal->auth->user     = g_strdup(domain_user[has_domain ? 1 : 0]);
 			cal->auth->password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
-										 SIPE_SETTING_EMAIL_PASSWORD));
+									    SIPE_SETTING_EMAIL_PASSWORD));
+			g_strfreev(domain_user);
 
 		} else if (!SIPE_CORE_PUBLIC_FLAG_IS(SSO)) {
 			/* re-use SIP credentials when SSO is not selected */
