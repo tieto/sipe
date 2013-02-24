@@ -506,6 +506,8 @@ http_conn_process_input_message(HttpConn *http_conn,
 		if (http_conn->sec_ctx) {
 			char **parts = g_strsplit(auth_hdr, " ", 0);
 			char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
+			SIPE_DEBUG_INFO("http_conn_process_input_message: init context target '%s' token '%s'",
+					spn, parts[1] ? parts[1] : "<NULL>");
 			ret = sip_sec_init_context_step(http_conn->sec_ctx,
 							spn,
 							parts[1],
