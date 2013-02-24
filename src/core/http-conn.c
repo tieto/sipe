@@ -445,7 +445,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		const char *auth_name;
 		char *authorization;
 		char *output_toked_base64;
-		int use_sso = !http_conn->auth || !http_conn->auth->user;
+		HttpConnAuth *auth = http_conn->auth;
 		long ret = -1;
 
 		http_conn->retries++;
@@ -496,11 +496,11 @@ http_conn_process_input_message(HttpConn *http_conn,
 		if (!http_conn->sec_ctx) {
 			http_conn->sec_ctx =
 				sip_sec_create_context(auth_type,
-						       use_sso,
+						       auth == NULL, /* Single Sign-On flag */
 						       TRUE, /* connection-based for HTTP */
-						       http_conn->auth && http_conn->auth->domain ? http_conn->auth->domain : "",
-						       http_conn->auth ? http_conn->auth->user : NULL,
-						       http_conn->auth ? http_conn->auth->password : NULL);
+						       auth ? auth->domain   : NULL,
+						       auth ? auth->user     : NULL,
+						       auth ? auth->password : NULL);
 		}
 
 		if (http_conn->sec_ctx) {
