@@ -38,10 +38,14 @@
 #include "sipe-core.h"
 
 /* Mechanism names */
-#define SSPI_MECH_NTLM      "NTLM"
-#define SSPI_MECH_KERBEROS  "Kerberos"
-#define SSPI_MECH_NEGOTIATE "Negotiate"
-#define SSPI_MECH_TLS_DSK   "Schannel" /* SSL/TLS provider, is this correct? */
+static const gchar * const mech_names[] = {
+	"",          /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+	"NTLM",      /* SIPE_AUTHENTICATION_TYPE_NTLM      */
+	"Kerberos",  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
+	"Negotiate", /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
+	/* SSL/TLS provider, is this correct? */
+	"Schannel",  /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+};
 
 #ifndef ISC_REQ_IDENTIFY
 #define ISC_REQ_IDENTIFY               0x00002000
@@ -51,9 +55,9 @@ typedef struct _context_sspi {
 	struct sip_sec_context common;
 	CredHandle* cred_sspi;
 	CtxtHandle* ctx_sspi;
-	/** Kerberos or NTLM */
-	const char *mech;
+	guint type;
 	gboolean initial;
+	gboolean connection_less_ntlm;
 } *context_sspi;
 
 static int
@@ -86,6 +90,9 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	SEC_WINNT_AUTH_IDENTITY auth_identity;
 	context_sspi ctx = (context_sspi)context;
 
+	ctx->connection_less_ntlm = !context->is_connection_based &&
+		(ctx->type == SIPE_AUTHENTICATION_TYPE_NTLM);
+
 	if (username) {
 		if (!password) {
 			return SIP_SEC_E_INTERNAL_ERROR;
@@ -112,7 +119,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	          a SCHANNEL_CRED datastructure, pointing to the private key
 		  and the client certificate */
 	ret = AcquireCredentialsHandleA(NULL,
-					(SEC_CHAR *)ctx->mech,
+					(SEC_CHAR *)mech_names[ctx->type],
 					SECPKG_CRED_OUTBOUND,
 					NULL,
 					(context->sso || !username) ? NULL : &auth_identity,
@@ -144,13 +151,11 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	ULONG req_flags;
 	ULONG ret_flags;
 	context_sspi ctx = (context_sspi)context;
-	gboolean connection_less_ntlm = !context->is_connection_based &&
-		ctx->mech && (strcmp(ctx->mech, SSPI_MECH_NTLM) == 0);
 	CtxtHandle* out_context;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
 
-	if (connection_less_ntlm && ctx->initial) {
+	if (ctx->connection_less_ntlm && ctx->initial) {
 
 		/* empty initial message for connection-less NTLM */
 		if (in_buff.value == NULL) {
@@ -202,7 +207,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		     ISC_REQ_INTEGRITY |
 		     ISC_REQ_IDENTIFY);
 
-	if (connection_less_ntlm) {
+	if (ctx->connection_less_ntlm) {
 		req_flags |= (ISC_REQ_DATAGRAM);
 	}
 
@@ -234,7 +239,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	}
 
 	ctx->ctx_sspi = out_context;
-	if (ctx->mech && !strcmp(ctx->mech, SSPI_MECH_KERBEROS)) {
+	if (ctx->type == SIPE_AUTHENTICATION_TYPE_KERBEROS) {
 		context->expires = sip_sec_get_interval_from_now_sec(expiry);
 	}
 
@@ -363,9 +368,7 @@ sip_sec_create_context__sspi(guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->mech = (type == SIPE_AUTHENTICATION_TYPE_NTLM) ? SSPI_MECH_NTLM :
-			((type == SIPE_AUTHENTICATION_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS :
-			 ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ? SSPI_MECH_NEGOTIATE : SSPI_MECH_TLS_DSK));
+	context->type    = type;
 	context->initial = TRUE;
 
 	return((SipSecContext) context);
