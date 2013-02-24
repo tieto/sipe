@@ -357,10 +357,10 @@ sip_sec_krb5_obtain_tgt(const char *username_in,
 	memset(&credentials, 0, sizeof(krb5_creds));
 
 	/* extracts realm as domain part of username
-	 * either before '\' or after '@'
+	 * either before '/' & '\' or after '@'
 	 */
-	domain_user = g_strsplit(username_in, "\\", 2);
-	if (domain_user && domain_user[1]) {
+	domain_user = g_strsplit_set(username_in, "/\\", 2);
+	if (domain_user[1]) {
 		realm = g_ascii_strup(domain_user[0], -1);
 		username = g_strdup(domain_user[1]);
 	} else {
