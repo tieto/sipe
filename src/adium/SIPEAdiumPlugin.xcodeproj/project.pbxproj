@@ -3,17 +3,13 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 45;
+	objectVersion = 46;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		1C1DC3C714A7FFED001F6A0F /* libnspr4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */; };
-		1C1DC3C814A7FFED001F6A0F /* libnss3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C1DC3C614A7FFED001F6A0F /* libnss3.dylib */; };
 		1C1DC3CC14A80038001F6A0F /* libsmime3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */; };
 		1C1DC3D014A8005A001F6A0F /* md4.c in Sources */ = {isa = PBXBuildFile; fileRef = 1C1DC3CF14A8005A001F6A0F /* md4.c */; };
-		1C1DC3D714A80285001F6A0F /* libsmime3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */; };
-		1C1DC3D814A80285001F6A0F /* libnspr4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */; };
-		1C1DC3D914A80285001F6A0F /* libnss3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3C614A7FFED001F6A0F /* libnss3.dylib */; };
 		1C3F91AC12C1F531000AA829 /* libpidgin-sipe.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C7056D312C1E5820004E43B /* libpidgin-sipe.a */; };
 		1C3F91BE12C1F602000AA829 /* libpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DD412C1ED410004E43B /* libpurple.framework */; };
 		1C3F91C312C1F60D000AA829 /* libglib.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DD212C1ED410004E43B /* libglib.framework */; };
@@ -62,9 +58,23 @@
 		1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = C9488445109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.m */; };
 		1CF2619D12C2E9AC0045B6CC /* Adium.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DCE12C1ED410004E43B /* Adium.framework */; };
 		1CF2619E12C2E9AD0045B6CC /* AdiumLibpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DD012C1ED410004E43B /* AdiumLibpurple.framework */; };
+		7B2AB067166607900020766F /* libintl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DE912C1ED810004E43B /* libintl.framework */; };
+		7B2AB0941666A17D0020766F /* libnssutil3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B2AB0931666A17D0020766F /* libnssutil3.dylib */; };
+		7B5DD2EB16DB1E0A00B3D188 /* libnss3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B57773F166EC5FB000DBCD5 /* libnss3.dylib */; };
+		7B5DD2EC16DB1E0A00B3D188 /* libsoftokn3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */; };
+		7B5DD2ED16DB1E0A00B3D188 /* libfreebl3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */; };
+		7B5DD2EE16DB1E0A00B3D188 /* libplds4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B5777121668103B000DBCD5 /* libplds4.dylib */; };
+		7B5DD2EF16DB1E0A00B3D188 /* libplc4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B5777101668102A000DBCD5 /* libplc4.dylib */; };
+		7B5DD2F016DB1E0A00B3D188 /* libnssutil3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B2AB0931666A17D0020766F /* libnssutil3.dylib */; };
+		7B5DD2F116DB1E0A00B3D188 /* libsmime3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */; };
+		7B5DD2F216DB1E0A00B3D188 /* libnspr4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */; };
+		7B85598F166F1875005868B4 /* libnss3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B57773F166EC5FB000DBCD5 /* libnss3.dylib */; };
+		7B855990166F1878005868B4 /* libsoftokn3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */; };
+		7B855991166F187B005868B4 /* libfreebl3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */; };
+		7B855992166F187F005868B4 /* libplds4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5777121668103B000DBCD5 /* libplds4.dylib */; };
+		7B855993166F1882005868B4 /* libplc4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5777101668102A000DBCD5 /* libplc4.dylib */; };
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
-		B13FAAE4119D3D2E001CE037 /* libintl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAAE3119D3D2E001CE037 /* libintl.framework */; };
 		B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB4F119D5155001CE037 /* purple-connection.c */; };
 		B13FAB61119D5155001CE037 /* purple-debug.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB51119D5155001CE037 /* purple-debug.c */; };
 		B13FAB63119D5155001CE037 /* purple-dnsquery.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB53119D5155001CE037 /* purple-dnsquery.c */; };
@@ -107,6 +117,76 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		7B2AB02B1665EECF0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 34BD9DA9053146CC000AB133;
+			remoteInfo = Adium;
+		};
+		7B2AB02D1665EECF0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 34BD9DE105314751000AB133;
+			remoteInfo = Adium.Framework;
+		};
+		7B2AB02F1665EECF0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 3485D68009EB416300232CC4;
+			remoteInfo = AdiumLibpurple;
+		};
+		7B2AB0311665EECF0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 6334FBFC0F9C11DC003C77A9;
+			remoteInfo = AIUtilities.framework;
+		};
+		7B2AB0331665EECF0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 349C2EFA0867AC97000BF883;
+			remoteInfo = AdiumApplescriptRunner;
+		};
+		7B2AB0351665EECF0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 312ED3CA0C7E875B00A6BDA9;
+			remoteInfo = "Unit tests";
+		};
+		7B2AB0371665EECF0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 2;
+			remoteGlobalIDString = 633D4FA40F9D3073004F491E;
+			remoteInfo = "Spotlight Importer";
+		};
+		7B2AB03A1665EEFA0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 34BD9DAF05314751000AB133;
+			remoteInfo = Adium.Framework;
+		};
+		7B2AB03C1665EEFA0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 3485D67F09EB416300232CC4;
+			remoteInfo = AdiumLibpurple;
+		};
+		7B2AB03E1665EEFA0020766F /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			proxyType = 1;
+			remoteGlobalIDString = 6334FBFB0F9C11DC003C77A9;
+			remoteInfo = AIUtilities.framework;
+		};
 		C92A79F110B25023009B64B9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 089C1669FE841209C02AAC07 /* Project object */;
@@ -117,15 +197,20 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
-		1C1DC3DE14A80293001F6A0F /* CopyFiles */ = {
+		7B5DD2EA16DB1DFD00B3D188 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 10;
+			dstSubfolderSpec = 7;
 			files = (
-				1C1DC3D714A80285001F6A0F /* libsmime3.dylib in CopyFiles */,
-				1C1DC3D814A80285001F6A0F /* libnspr4.dylib in CopyFiles */,
-				1C1DC3D914A80285001F6A0F /* libnss3.dylib in CopyFiles */,
+				7B5DD2EB16DB1E0A00B3D188 /* libnss3.dylib in CopyFiles */,
+				7B5DD2EC16DB1E0A00B3D188 /* libsoftokn3.dylib in CopyFiles */,
+				7B5DD2ED16DB1E0A00B3D188 /* libfreebl3.dylib in CopyFiles */,
+				7B5DD2EE16DB1E0A00B3D188 /* libplds4.dylib in CopyFiles */,
+				7B5DD2EF16DB1E0A00B3D188 /* libplc4.dylib in CopyFiles */,
+				7B5DD2F016DB1E0A00B3D188 /* libnssutil3.dylib in CopyFiles */,
+				7B5DD2F116DB1E0A00B3D188 /* libsmime3.dylib in CopyFiles */,
+				7B5DD2F216DB1E0A00B3D188 /* libnspr4.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -136,17 +221,16 @@
 		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		089C167FFE841241C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
-		1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnspr4.dylib; path = ../../../../lib/libnspr4.dylib; sourceTree = SOURCE_ROOT; };
-		1C1DC3C614A7FFED001F6A0F /* libnss3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnss3.dylib; path = ../../../../lib/libnss3.dylib; sourceTree = SOURCE_ROOT; };
-		1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsmime3.dylib; path = ../../../../lib/libsmime3.dylib; sourceTree = SOURCE_ROOT; };
+		1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnspr4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/pr/src/libnspr4.dylib; sourceTree = NSS_SRCPATH; };
+		1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsmime3.dylib; path = mozilla/security/nss/lib/smime/Darwin11.4.2_64_OPT.OBJ/libsmime3.dylib; sourceTree = NSS_SRCPATH; };
 		1C1DC3CF14A8005A001F6A0F /* md4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = md4.c; sourceTree = "<group>"; };
 		1C7056D312C1E5820004E43B /* libpidgin-sipe.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libpidgin-sipe.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		1C705DCE12C1ED410004E43B /* Adium.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Adium.framework; path = /Users/mduggan/Library/Frameworks/Adium.framework; sourceTree = "<absolute>"; };
-		1C705DD012C1ED410004E43B /* AdiumLibpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdiumLibpurple.framework; path = /Users/mduggan/Library/Frameworks/AdiumLibpurple.framework; sourceTree = "<absolute>"; };
-		1C705DD212C1ED410004E43B /* libglib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libglib.framework; path = /Users/mduggan/Library/Frameworks/libglib.framework; sourceTree = "<absolute>"; };
-		1C705DD412C1ED410004E43B /* libpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libpurple.framework; path = /Users/mduggan/Library/Frameworks/libpurple.framework; sourceTree = "<absolute>"; };
-		1C705DE912C1ED810004E43B /* libintl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libintl.framework; path = /Users/mduggan/Library/Frameworks/libintl.framework; sourceTree = "<absolute>"; };
-		1C705DFA12C1EDCA0004E43B /* AIUtilities.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AIUtilities.framework; path = /Users/mduggan/Library/Frameworks/AIUtilities.framework; sourceTree = "<absolute>"; };
+		1C705DCE12C1ED410004E43B /* Adium.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Adium.framework; path = "../../../Library/Developer/Xcode/DerivedData/SIPEAdiumPlugin-bnkwemywwozrvxceuphmxxyferqx/Build/Products/Debug/Adium.framework"; sourceTree = ADIUM_SRCPATH; };
+		1C705DD012C1ED410004E43B /* AdiumLibpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdiumLibpurple.framework; path = "../../../Library/Developer/Xcode/DerivedData/SIPEAdiumPlugin-bnkwemywwozrvxceuphmxxyferqx/Build/Products/Debug/AdiumLibpurple.framework"; sourceTree = ADIUM_SRCPATH; };
+		1C705DD212C1ED410004E43B /* libglib.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libglib.framework; path = Frameworks/libglib.framework; sourceTree = ADIUM_SRCPATH; };
+		1C705DD412C1ED410004E43B /* libpurple.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libpurple.framework; path = Frameworks/libpurple.framework; sourceTree = ADIUM_SRCPATH; };
+		1C705DE912C1ED810004E43B /* libintl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libintl.framework; path = Frameworks/libintl.framework; sourceTree = ADIUM_SRCPATH; };
+		1C705DFA12C1EDCA0004E43B /* AIUtilities.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AIUtilities.framework; path = "../../../Library/Developer/Xcode/DerivedData/SIPEAdiumPlugin-bnkwemywwozrvxceuphmxxyferqx/Build/Products/Debug/AIUtilities.framework"; sourceTree = ADIUM_SRCPATH; };
 		1C822BEB12F8E87500CC4AEA /* sipe-im.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-im.c"; sourceTree = "<group>"; };
 		1CD71E3313C5380B0079DE64 /* sipe-ft-tftp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ft-tftp.c"; sourceTree = "<group>"; };
 		1CD71E3A13C538340079DE64 /* sipe-group.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-group.c"; sourceTree = "<group>"; };
@@ -183,9 +267,15 @@
 		1CF2611012C2E1AA0045B6CC /* sipe-subscriptions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-subscriptions.c"; sourceTree = "<group>"; };
 		1CF2611112C2E1AA0045B6CC /* sipe-user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-user.c"; sourceTree = "<group>"; };
 		32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIPEAdiumPlugin_Prefix.pch; sourceTree = "<group>"; };
+		7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Adium.xcodeproj; sourceTree = ADIUM_SRCPATH; };
+		7B2AB0931666A17D0020766F /* libnssutil3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnssutil3.dylib; path = mozilla/security/nss/lib/util/Darwin11.4.2_64_OPT.OBJ/libnssutil3.dylib; sourceTree = NSS_SRCPATH; };
+		7B5777101668102A000DBCD5 /* libplc4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplc4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/libc/src/libplc4.dylib; sourceTree = NSS_SRCPATH; };
+		7B5777121668103B000DBCD5 /* libplds4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplds4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/ds/libplds4.dylib; sourceTree = NSS_SRCPATH; };
+		7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreebl3.dylib; path = mozilla/security/nss/lib/freebl/Darwin11.4.2_64_OPT.OBJ/Darwin_SINGLE_SHLIB/libfreebl3.dylib; sourceTree = NSS_SRCPATH; };
+		7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsoftokn3.dylib; path = "../nss-3.14/mozilla/security/nss/lib/softoken/Darwin11.4.2_64_OPT.OBJ/libsoftokn3.dylib"; sourceTree = ADIUM_SRCPATH; };
+		7B57773F166EC5FB000DBCD5 /* libnss3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnss3.dylib; path = mozilla/security/nss/lib/nss/Darwin11.4.2_64_OPT.OBJ/libnss3.dylib; sourceTree = NSS_SRCPATH; };
 		8D5B49B6048680CD000E48DA /* SIPEAdiumPlugin.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SIPEAdiumPlugin.AdiumLibpurplePlugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
-		B13FAAE3119D3D2E001CE037 /* libintl.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = libintl.framework; path = /Users/mduggan/src/adium/Frameworks/libintl.framework; sourceTree = "<absolute>"; };
 		B13FAB4F119D5155001CE037 /* purple-connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-connection.c"; sourceTree = "<group>"; };
 		B13FAB51119D5155001CE037 /* purple-debug.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-debug.c"; sourceTree = "<group>"; };
 		B13FAB53119D5155001CE037 /* purple-dnsquery.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-dnsquery.c"; sourceTree = "<group>"; };
@@ -239,19 +329,24 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7B855993166F1882005868B4 /* libplc4.dylib in Frameworks */,
 				8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */,
 				C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */,
-				B13FAAE4119D3D2E001CE037 /* libintl.framework in Frameworks */,
 				B13FAC66119D7280001CE037 /* libxml2.dylib in Frameworks */,
 				1C705DFB12C1EDCA0004E43B /* AIUtilities.framework in Frameworks */,
 				1C3F91AC12C1F531000AA829 /* libpidgin-sipe.a in Frameworks */,
 				1C3F91BE12C1F602000AA829 /* libpurple.framework in Frameworks */,
 				1C3F91C312C1F60D000AA829 /* libglib.framework in Frameworks */,
+				7B2AB067166607900020766F /* libintl.framework in Frameworks */,
 				1CF2619D12C2E9AC0045B6CC /* Adium.framework in Frameworks */,
 				1CF2619E12C2E9AD0045B6CC /* AdiumLibpurple.framework in Frameworks */,
+				7B85598F166F1875005868B4 /* libnss3.dylib in Frameworks */,
+				7B855990166F1878005868B4 /* libsoftokn3.dylib in Frameworks */,
+				7B855992166F187F005868B4 /* libplds4.dylib in Frameworks */,
+				7B855991166F187B005868B4 /* libfreebl3.dylib in Frameworks */,
 				1C1DC3C714A7FFED001F6A0F /* libnspr4.dylib in Frameworks */,
-				1C1DC3C814A7FFED001F6A0F /* libnss3.dylib in Frameworks */,
 				1C1DC3CC14A80038001F6A0F /* libsmime3.dylib in Frameworks */,
+				7B2AB0941666A17D0020766F /* libnssutil3.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -274,6 +369,7 @@
 		089C166AFE841209C02AAC07 /* SIPEAdiumPlugin */ = {
 			isa = PBXGroup;
 			children = (
+				7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */,
 				08FB77AFFE84173DC02AAC07 /* Classes */,
 				C92A79B110B24C50009B64B9 /* pidgin-sipe */,
 				32C88E010371C26100C91783 /* Other Sources */,
@@ -287,19 +383,11 @@
 		089C1671FE841209C02AAC07 /* Frameworks and Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */,
-				1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */,
-				1C1DC3C614A7FFED001F6A0F /* libnss3.dylib */,
-				B13FAC60119D721E001CE037 /* libxml2.dylib */,
-				B13FAAE3119D3D2E001CE037 /* libintl.framework */,
+				7BC54799169BB9C0003DF552 /* NSS Libraries */,
+				7B1E80001665C79300E0C654 /* Other Libraries */,
+				7B1E7FFF1665C77400E0C654 /* Adium Frameworks */,
 				1058C7ACFEA557BF11CA2CBB /* Linked Frameworks */,
 				1058C7AEFEA557BF11CA2CBB /* Other Frameworks */,
-				1C705DCE12C1ED410004E43B /* Adium.framework */,
-				1C705DD012C1ED410004E43B /* AdiumLibpurple.framework */,
-				1C705DD212C1ED410004E43B /* libglib.framework */,
-				1C705DD412C1ED410004E43B /* libpurple.framework */,
-				1C705DE912C1ED810004E43B /* libintl.framework */,
-				1C705DFA12C1EDCA0004E43B /* AIUtilities.framework */,
 			);
 			name = "Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -365,6 +453,56 @@
 				32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */,
 			);
 			name = "Other Sources";
+			sourceTree = "<group>";
+		};
+		7B1E7FFF1665C77400E0C654 /* Adium Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1C705DD212C1ED410004E43B /* libglib.framework */,
+				1C705DD412C1ED410004E43B /* libpurple.framework */,
+				1C705DE912C1ED810004E43B /* libintl.framework */,
+				1C705DCE12C1ED410004E43B /* Adium.framework */,
+				1C705DD012C1ED410004E43B /* AdiumLibpurple.framework */,
+				1C705DFA12C1EDCA0004E43B /* AIUtilities.framework */,
+			);
+			name = "Adium Frameworks";
+			sourceTree = "<group>";
+		};
+		7B1E80001665C79300E0C654 /* Other Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				B13FAC60119D721E001CE037 /* libxml2.dylib */,
+			);
+			name = "Other Libraries";
+			sourceTree = "<group>";
+		};
+		7B2AB01F1665EECF0020766F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7B2AB02C1665EECF0020766F /* Adium.app */,
+				7B2AB02E1665EECF0020766F /* Adium.framework */,
+				7B2AB0301665EECF0020766F /* AdiumLibpurple.framework */,
+				7B2AB0321665EECF0020766F /* AIUtilities.framework */,
+				7B2AB0341665EECF0020766F /* AdiumApplescriptRunner */,
+				7B2AB0361665EECF0020766F /* Unit tests.octest */,
+				7B2AB0381665EECF0020766F /* AdiumSpotlightImporter.mdimporter */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		7BC54799169BB9C0003DF552 /* NSS Libraries */ = {
+			isa = PBXGroup;
+			children = (
+				7B57773F166EC5FB000DBCD5 /* libnss3.dylib */,
+				7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */,
+				7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */,
+				7B5777121668103B000DBCD5 /* libplds4.dylib */,
+				7B5777101668102A000DBCD5 /* libplc4.dylib */,
+				7B2AB0931666A17D0020766F /* libnssutil3.dylib */,
+				1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */,
+				1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */,
+			);
+			name = "NSS Libraries";
 			sourceTree = "<group>";
 		};
 		B13FAB4D119D5155001CE037 /* purple */ = {
@@ -463,6 +601,13 @@
 /* End PBXGroup section */
 
 /* Begin PBXHeadersBuildPhase section */
+		7B1E80021665E5DA00E0C654 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		C92A796510B24BAD009B64B9 /* Headers */ = {
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
@@ -477,14 +622,18 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1DEB913A08733D840010E9CD /* Build configuration list for PBXNativeTarget "SIPEAdiumPlugin" */;
 			buildPhases = (
+				7B1E80021665E5DA00E0C654 /* Headers */,
 				8D5B49AF048680CD000E48DA /* Resources */,
 				8D5B49B1048680CD000E48DA /* Sources */,
 				8D5B49B3048680CD000E48DA /* Frameworks */,
-				1C1DC3DE14A80293001F6A0F /* CopyFiles */,
+				7B5DD2EA16DB1DFD00B3D188 /* CopyFiles */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				7B2AB03B1665EEFA0020766F /* PBXTargetDependency */,
+				7B2AB03D1665EEFA0020766F /* PBXTargetDependency */,
+				7B2AB03F1665EEFA0020766F /* PBXTargetDependency */,
 				C92A79F210B25023009B64B9 /* PBXTargetDependency */,
 			);
 			name = SIPEAdiumPlugin;
@@ -515,8 +664,11 @@
 /* Begin PBXProject section */
 		089C1669FE841209C02AAC07 /* Project object */ = {
 			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0450;
+			};
 			buildConfigurationList = 1DEB913E08733D840010E9CD /* Build configuration list for PBXProject "SIPEAdiumPlugin" */;
-			compatibilityVersion = "Xcode 3.1";
+			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = English;
 			hasScannedForEncodings = 1;
 			knownRegions = (
@@ -527,6 +679,12 @@
 			);
 			mainGroup = 089C166AFE841209C02AAC07 /* SIPEAdiumPlugin */;
 			projectDirPath = "";
+			projectReferences = (
+				{
+					ProductGroup = 7B2AB01F1665EECF0020766F /* Products */;
+					ProjectRef = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+				},
+			);
 			projectRoot = "";
 			targets = (
 				8D5B49AC048680CD000E48DA /* SIPEAdiumPlugin */,
@@ -534,6 +692,58 @@
 			);
 		};
 /* End PBXProject section */
+
+/* Begin PBXReferenceProxy section */
+		7B2AB02C1665EECF0020766F /* Adium.app */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.application;
+			path = Adium.app;
+			remoteRef = 7B2AB02B1665EECF0020766F /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		7B2AB02E1665EECF0020766F /* Adium.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = Adium.framework;
+			remoteRef = 7B2AB02D1665EECF0020766F /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		7B2AB0301665EECF0020766F /* AdiumLibpurple.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = AdiumLibpurple.framework;
+			remoteRef = 7B2AB02F1665EECF0020766F /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		7B2AB0321665EECF0020766F /* AIUtilities.framework */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.framework;
+			path = AIUtilities.framework;
+			remoteRef = 7B2AB0311665EECF0020766F /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		7B2AB0341665EECF0020766F /* AdiumApplescriptRunner */ = {
+			isa = PBXReferenceProxy;
+			fileType = "compiled.mach-o.executable";
+			path = AdiumApplescriptRunner;
+			remoteRef = 7B2AB0331665EECF0020766F /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		7B2AB0361665EECF0020766F /* Unit tests.octest */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = "Unit tests.octest";
+			remoteRef = 7B2AB0351665EECF0020766F /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		7B2AB0381665EECF0020766F /* AdiumSpotlightImporter.mdimporter */ = {
+			isa = PBXReferenceProxy;
+			fileType = wrapper.cfbundle;
+			path = AdiumSpotlightImporter.mdimporter;
+			remoteRef = 7B2AB0371665EECF0020766F /* PBXContainerItemProxy */;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		8D5B49AF048680CD000E48DA /* Resources */ = {
@@ -638,6 +848,21 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		7B2AB03B1665EEFA0020766F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Adium.Framework;
+			targetProxy = 7B2AB03A1665EEFA0020766F /* PBXContainerItemProxy */;
+		};
+		7B2AB03D1665EEFA0020766F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = AdiumLibpurple;
+			targetProxy = 7B2AB03C1665EEFA0020766F /* PBXContainerItemProxy */;
+		};
+		7B2AB03F1665EEFA0020766F /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = AIUtilities.framework;
+			targetProxy = 7B2AB03E1665EEFA0020766F /* PBXContainerItemProxy */;
+		};
 		C92A79F210B25023009B64B9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = C92A796810B24BAD009B64B9 /* pidgin-sipe */;
@@ -668,32 +893,34 @@
 		1DEB913B08733D840010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(HOME)/Library/Frameworks\"",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(ADIUM_SRCPATH)/**";
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_MODEL_TUNING = G5;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
 				GCC_PREPROCESSOR_DEFINITIONS = "PURPLE_STATIC_PRPL=1";
 				HEADER_SEARCH_PATHS = (
-					"$(HOME)/Library/Frameworks/AIUtilities.framework/Headers",
-					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
-					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
-					"$(HOME)/Library/Frameworks/Adium.framework/Headers",
-					"$(HOME)/Library/Frameworks/AdiumLibpurple.framework/Headers",
-					../api,
+					"$(ADIUM_SRCPATH)/**",
+					"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers",
+					"$(NSS_SRCPATH)/**",
 				);
 				INFOPLIST_FILE = Info.plist;
 				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
-				LIBRARY_SEARCH_PATHS = "$(HOME)/lib";
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(ADIUM_SRCPATH)/**",
+					"$(NSS_SRCPATH)/**",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/util/Darwin11.4.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/nss/Darwin11.4.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/lib\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/softoken/Darwin11.4.0_64_OPT.OBJ\"",
+				);
+				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = SIPEAdiumPlugin;
+				USER_HEADER_SEARCH_PATHS = "../purple ../api $(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers";
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Debug;
@@ -701,28 +928,30 @@
 		1DEB913C08733D840010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				COMBINE_HIDPI_IMAGES = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(HOME)/Library/Frameworks\"",
-				);
+				FRAMEWORK_SEARCH_PATHS = "$(ADIUM_SRCPATH)/**";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
 				HEADER_SEARCH_PATHS = (
-					"$(HOME)/Library/Frameworks/AIUtilities.framework/Headers",
-					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
-					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
-					"$(HOME)/Library/Frameworks/Adium.framework/Headers",
-					"$(HOME)/Library/Frameworks/AdiumLibpurple.framework/Headers",
-					../api,
+					"$(ADIUM_SRCPATH)/**",
+					"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers",
+					"$(NSS_SRCPATH)/**",
 				);
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Library/Bundles";
-				LIBRARY_SEARCH_PATHS = "$(HOME)/lib";
+				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(ADIUM_SRCPATH)/**",
+					"$(NSS_SRCPATH)/**",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/util/Darwin11.4.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/nss/Darwin11.4.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/lib\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/softoken/Darwin11.4.0_64_OPT.OBJ\"",
+				);
 				PRODUCT_NAME = SIPEAdiumPlugin;
+				USER_HEADER_SEARCH_PATHS = "../purple ../api $(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers";
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Release;
@@ -730,14 +959,12 @@
 		1DEB913F08733D840010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "";
-				ONLY_ACTIVE_ARCH = YES;
-				PREBINDING = NO;
+				NSPR_SRCPATH = "$(NSS_SRCPATH)/mozilla/nsprpub";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-16";
 			};
 			name = Debug;
@@ -745,14 +972,11 @@
 		1DEB914008733D840010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = "$(ARCHS_STANDARD_32_BIT)";
+				ARCHS = "$(ARCHS_STANDARD_32_64_BIT)";
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				HEADER_SEARCH_PATHS = "";
-				ONLY_ACTIVE_ARCH = NO;
-				PREBINDING = NO;
-				SDKROOT = "";
+				NSPR_SRCPATH = "$(NSS_SRCPATH)/mozilla/nsprpub";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-16";
 			};
 			name = Release;
@@ -761,17 +985,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../../../Library/Frameworks\"",
-					"\"$(SRCROOT)/../../../adium/Frameworks\"",
-					"\"$(SRCROOT)/../../../adium/build/Debug\"",
-					"\"$(SRCROOT)/../../../../Frameworks\"",
-				);
 				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.net/projects/p/pidgin-sipe/r/mob/\\\"",
@@ -809,21 +1025,23 @@
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				HEADER_SEARCH_PATHS = (
-					"$(HOME)/Library/Frameworks/libintl.framework/Headers",
-					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
-					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
+					"$(ADIUM_SRCPATH)/Frameworks/libintl.framework/Headers",
+					"$(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers",
+					"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers",
 					../purple,
 					../api,
 					/usr/include/libxml2,
-					"$(HOME)/include/**",
+					"$(NSS_SRCPATH)/mozilla/dist/public/nss",
+					"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/include/",
+					"$(NSPR_SRCPATH)/**",
+					"$(NSS_SRCPATH)/**",
 				);
 				INSTALL_PATH = /usr/local/lib;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../../../../Library/Libraries\"",
-					"\"$(SRCROOT)/../../../../lib\"",
+					"\"$(SRCROOT)/../../../../../../Documents/Projects/nss/nss-3.14/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/lib\"",
 				);
-				PREBINDING = NO;
+				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "pidgin-sipe";
 			};
 			name = Debug;
@@ -832,17 +1050,9 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				FRAMEWORK_SEARCH_PATHS = (
-					"$(inherited)",
-					"\"$(SRCROOT)/../../../../Library/Frameworks\"",
-					"\"$(SRCROOT)/../../../adium/Frameworks\"",
-					"\"$(SRCROOT)/../../../adium/build/Debug\"",
-					"\"$(SRCROOT)/../../../../Frameworks\"",
-				);
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_MODEL_TUNING = G5;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.net/projects/p/pidgin-sipe/r/mob/\\\"",
@@ -880,21 +1090,22 @@
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				HEADER_SEARCH_PATHS = (
-					"$(HOME)/Library/Frameworks/libintl.framework/Headers",
-					"$(HOME)/Library/Frameworks/libpurple.framework/Headers",
-					"$(HOME)/Library/Frameworks/libglib.framework/Headers",
+					"$(ADIUM_SRCPATH)/Frameworks/libintl.framework/Headers",
+					"$(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers",
+					"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers",
 					../purple,
 					../api,
 					/usr/include/libxml2,
-					"$(HOME)/include/**",
+					"$(NSS_SRCPATH)/mozilla/dist/public/nss",
+					"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/include/",
+					"$(NSPR_SRCPATH)/**",
+					"$(NSS_SRCPATH)/**",
 				);
 				INSTALL_PATH = /usr/local/lib;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../../../../Library/Libraries\"",
-					"\"$(SRCROOT)/../../../../lib\"",
+					"\"$(SRCROOT)/../../../../../../Documents/Projects/nss/nss-3.14/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/lib\"",
 				);
-				PREBINDING = NO;
 				PRODUCT_NAME = "pidgin-sipe";
 				ZERO_LINK = NO;
 			};

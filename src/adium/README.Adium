@@ -1,56 +1,39 @@
 Compiling SIPE plugin for Adium
 ===============================
+To compile the Adium plugin you will need XCode, then to get the following dependencies:
 
-To compile the Adium plugin you will need XCode, then to get and compile:
+* Adium 1.5+ code:          	http://trac.adium.im/wiki/GettingNewestAdiumSource
+* libnss 3.14+libnspr 4.9.2:	https://developer.mozilla.org/en-US/docs/NSS/NSS_3.14_release_notes
 
-* Adium 1.5+ code:        http://trac.adium.im/wiki/GettingNewestAdiumSource
-* libnss 3.12.6+libnspr:  https://developer.mozilla.org/NSS_3.12.6_release_notes
-
-1. Build Adium
+1. Get Adium
 --------------
+Follow the instructions at their URL above.
 
-Adium 1.5 should compile out-of-the-box.  Build the Release build, then link
-the required frameworks into your home directory.  The frameworks you need are:
- * glib, gobject, intl, purple (pre-packaged in Adium source)
- * AIUtilities, Adium, AdiumLibpurple (build with Adium)
-
-(These steps assume you put source in ~/src/, so change that appropriately)
-
-$ cd ~/Library/Frameworks 
-$ for x in glib gobject intl purple; do ln -s ~/src/adium/Frameworks/lib$x.framework lib$x.framework; done
-$ for x in AIUtilities Adium AdiumLibpurple; do ln -s ~/src/adium/build/Release/$x.framework $x.framework; done
-
-2. Build libnss and libnspr
----------------------------
-
-$ cd nss-3.12.6/mozilla/security/nss
-$ USE_64=1 make nss_build_all install
-$ mkdir ~/lib ~/include
-$ cp -LR ../../dist/Darwin*/lib/* ~/lib
-$ cp -LR ../../dist/Darwin*/include/* ../../dist/public/* ~/include
-
-(There may be an easier way to do this, if so please update the instructions)
-
-3. Build SIPEAdiumPlugin.xcodeproj and test it
+2. Setup Adium Source Tree variable in XCode 
 ----------------------------------------------
+Point a source tree variable ($ADIUM_SRCPATH) to the directory you put Adium in.
+i.e If Adium is located in /tmp/Adium,  $ADIUM_SRCPATH should be set to /tmp/Adium
 
+3. Get and build libnss and libnspr
+-------------------------------------
+$ curl -O https://ftp.mozilla.org/pub/mozilla.org/security/nss/releases/NSS_3_14_RTM/src/nss-3.14-with-nspr-4.9.2.tar.gz
+$ tar -xvzf nss-3.14-with-nspr-4.9.2.tar.gz
+$ cd nss-3.14
+$ grep -lR '@executable_path' * | xargs sed -i '.orig' -e 's/@executable_path/@rpath/g' 
+$ make nss_build_all install -C mozilla/security/nss BUILD_OPT=1 NSS_ENABLE_ECC=1 NS_USE_GCC=1 NO_MDUPDATE=1 NSS_USE_SYSTEM_SQLITE=1 NSPR_INCLUDE_DIR=mozilla/nsprpub/dist/include/nspr NSPR_LIB_DIR=mozilla/nsprpub/dist USE_64=1
+
+TODO: Import NSS/NSPR as an external build system target in XCode project, and pull RELEASE_OBJDIR_NAME from the autoconf.mk file to dynamically find the build products.
+
+4. Setup NSS Source Tree variable in XCode 
+--------------------------------------------
+Point a source tree variable ($NSS_SRCPATH) to the directory you put Adium in
+i.e if NSS is located in /tmp/nss-3.14 ,  $NSS_SRCPATH should be /tmp/nss-3.14
+
+5. Build SIPEAdiumPlugin.xcodeproj and test it
+------------------------------------------------
 Load the project in XCode hit build!
 
-Test by linking the framework into the Adium plugins directory:
-
-$ cd "~/Library/Application Support/Adium 2.0/PlugIns/"
-$ ln -s ~/src/siplcs/src/adium/build/Release/SIPEAdiumPlugin.AdiumLibpurplePlugin SIPEAdiumPlugin.AdiumLibpurplePlugin
 
 Now fire up Adium and add an Office Communicator account type.
 
-
-Other Notes
-===========
-
-Older versions of SIPE (1.12.x) worked with Adium 1.4.x, but as of SIPE 1.13.0,
-libnss is no longer optional.  The 32-bit version of libnss is difficult to
-build on MacOS, so Adium 1.5 (which compiles as x86_64) is required.  If you
-can build the 32-bit version of libnss and libnspr build, the plugin API is
-still compatible with Adium 1.4.  To make a 1.4-compatible version, change the
-Architecture back to 32-Bit under Targets -> pidgin-sipe -> Get Info -> Build.
 
