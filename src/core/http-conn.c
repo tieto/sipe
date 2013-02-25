@@ -715,8 +715,10 @@ static void http_conn_input(struct sipe_transport_connection *conn)
 
 	if (http_conn->closed) {
 		http_conn_close(http_conn->do_close, "Server closed connection");
+		http_conn->do_close = NULL;
 	} else if (http_conn->do_close) {
 		http_conn_close(http_conn->do_close, "User initiated");
+		http_conn->do_close = NULL;
 	}
 }
 
