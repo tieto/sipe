@@ -60,6 +60,7 @@
 		1CF2619E12C2E9AD0045B6CC /* AdiumLibpurple.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DD012C1ED410004E43B /* AdiumLibpurple.framework */; };
 		7B2AB067166607900020766F /* libintl.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C705DE912C1ED810004E43B /* libintl.framework */; };
 		7B2AB0941666A17D0020766F /* libnssutil3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B2AB0931666A17D0020766F /* libnssutil3.dylib */; };
+		7B50EFAB16DB326100F897D1 /* PurpleDefaultsSIPE.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */; };
 		7B5DD2EB16DB1E0A00B3D188 /* libnss3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B57773F166EC5FB000DBCD5 /* libnss3.dylib */; };
 		7B5DD2EC16DB1E0A00B3D188 /* libsoftokn3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */; };
 		7B5DD2ED16DB1E0A00B3D188 /* libfreebl3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */; };
@@ -269,6 +270,7 @@
 		32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIPEAdiumPlugin_Prefix.pch; sourceTree = "<group>"; };
 		7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Adium.xcodeproj; sourceTree = ADIUM_SRCPATH; };
 		7B2AB0931666A17D0020766F /* libnssutil3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnssutil3.dylib; path = mozilla/security/nss/lib/util/Darwin11.4.2_64_OPT.OBJ/libnssutil3.dylib; sourceTree = NSS_SRCPATH; };
+		7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PurpleDefaultsSIPE.plist; sourceTree = "<group>"; };
 		7B5777101668102A000DBCD5 /* libplc4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplc4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/libc/src/libplc4.dylib; sourceTree = NSS_SRCPATH; };
 		7B5777121668103B000DBCD5 /* libplds4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplds4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/ds/libplds4.dylib; sourceTree = NSS_SRCPATH; };
 		7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreebl3.dylib; path = mozilla/security/nss/lib/freebl/Darwin11.4.2_64_OPT.OBJ/Darwin_SINGLE_SHLIB/libfreebl3.dylib; sourceTree = NSS_SRCPATH; };
@@ -395,6 +397,7 @@
 		089C167CFE841241C02AAC07 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */,
 				1CDEE46512C35FCA00790CAF /* ESSIPEAccountView.nib */,
 				C9FDAEF3109ADF97004EEEAF /* sipe-small.png */,
 				C9FDAEF4109ADF97004EEEAF /* sipe.png */,
@@ -754,6 +757,7 @@
 				C9FDAEF6109ADF97004EEEAF /* sipe.png in Resources */,
 				C9D5F10810B264C4008F82FF /* sipe-small.png in Resources */,
 				1CDEE46712C35FCA00790CAF /* ESSIPEAccountView.nib in Resources */,
+				7B50EFAB16DB326100F897D1 /* PurpleDefaultsSIPE.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1039,7 +1043,7 @@
 				INSTALL_PATH = /usr/local/lib;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../../../../../Documents/Projects/nss/nss-3.14/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/lib\"",
+					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/lib\"",
 				);
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "pidgin-sipe";
@@ -1104,7 +1108,7 @@
 				INSTALL_PATH = /usr/local/lib;
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"\"$(SRCROOT)/../../../../../../Documents/Projects/nss/nss-3.14/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/lib\"",
+					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.0_64_OPT.OBJ/lib\"",
 				);
 				PRODUCT_NAME = "pidgin-sipe";
 				ZERO_LINK = NO;
