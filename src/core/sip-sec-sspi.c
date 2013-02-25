@@ -155,32 +155,44 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
 
-	if (ctx->connection_less_ntlm && ctx->initial) {
+	if (ctx->connection_less_ntlm) {
+		if (ctx->initial) {
+			/* empty initial message for connection-less NTLM */
+			if (in_buff.value == NULL) {
+				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: initial message for connection-less NTLM");
+				out_buff->length = 0;
+				out_buff->value = (guint8 *) g_strdup("");
+				return SIP_SEC_E_OK;
 
-		/* empty initial message for connection-less NTLM */
-		if (in_buff.value == NULL) {
-			SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: initial message for connection-less NTLM");
-			out_buff->length = 0;
-			out_buff->value = (guint8 *) g_strdup("");
-			return SIP_SEC_E_OK;
-
-		/* call again to create context for connection-less NTLM */
-		} else {
-			SipSecBuffer empty = { 0, NULL };
-
-			ctx->initial = FALSE;
-			ret = sip_sec_init_sec_context__sspi(context,
-							     empty,
-							     out_buff,
-							     service_name);
-			if (ret == SEC_E_OK) {
-				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: connection-less NTLM second round");
-				g_free(out_buff->value);
+				/* call again to create context for connection-less NTLM */
 			} else {
-				sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: unexpected NTLM state", ret);
-				return SIP_SEC_E_INTERNAL_ERROR;
+				SipSecBuffer empty = { 0, NULL };
+
+				ctx->initial = FALSE;
+				ret = sip_sec_init_sec_context__sspi(context,
+								     empty,
+								     out_buff,
+								     service_name);
+				if (ret == SEC_E_OK) {
+					SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: connection-less NTLM second round");
+					g_free(out_buff->value);
+				} else {
+					sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: unexpected NTLM state", ret);
+					return SIP_SEC_E_INTERNAL_ERROR;
+				}
 			}
 		}
+	} else if (context->is_connection_based &&
+		   ctx->ctx_sspi &&
+		   (in_buff.value == NULL)) {
+		/*
+		 * We already have an initialized connection-based context
+		 * and we're asked to initialize it with a NULL token. This
+		 * will fail with "invalid token". Drop old context instead.
+		 */
+		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: dropping old context");
+		DeleteSecurityContext(ctx->ctx_sspi);
+		ctx->ctx_sspi = NULL;
 	}
 
 	out_context = g_malloc0(sizeof(CtxtHandle));
