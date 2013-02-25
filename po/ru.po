@@ -13,7 +13,7 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2012-12-06 11:45+0000\n"
+"PO-Revision-Date: 2013-02-25 17:14+0000\n"
 "Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -22,53 +22,53 @@ msgstr ""
 "Language: ru\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: ../src/core/sip-transport.c:237 ../src/core/sip-transport.c:298
+#: ../src/core/sip-transport.c:230 ../src/core/sip-transport.c:297
 msgid "Failed to authenticate to server"
 msgstr "Не удалось проверить подлинность сервера"
 
-#: ../src/core/sip-transport.c:262
+#: ../src/core/sip-transport.c:255
 #, c-format
 msgid "Can't request certificate from %s"
 msgstr "Невозможно запросить сертификат от %s"
 
-#: ../src/core/sip-transport.c:272
+#: ../src/core/sip-transport.c:265
 msgid "No URI for certificate provisioning service provided"
 msgstr "Нет URI для сертификата"
 
-#: ../src/core/sip-transport.c:1222
+#: ../src/core/sip-transport.c:1206
 msgid "Authentication failed"
 msgstr "Ошибка аутентификации"
 
-#: ../src/core/sip-transport.c:1230
+#: ../src/core/sip-transport.c:1214
 msgid "Incompatible authentication scheme chosen"
 msgstr "Выбрана несовместимая схема проверки подлинности пользователя"
 
-#: ../src/core/sip-transport.c:1247 ../src/core/sipe-notify.c:1028
+#: ../src/core/sip-transport.c:1231 ../src/core/sipe-notify.c:1028
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Вы были отклонены сервером: %s"
 
-#: ../src/core/sip-transport.c:1248 ../src/core/sip-transport.c:1264
-#: ../src/core/sip-transport.c:1288 ../src/core/sip-transport.c:1312
+#: ../src/core/sip-transport.c:1232 ../src/core/sip-transport.c:1248
+#: ../src/core/sip-transport.c:1272 ../src/core/sip-transport.c:1296
 #: ../src/core/sipe-conf.c:266 ../src/core/sipe-notify.c:1028
 msgid "no reason given"
 msgstr "причина не указана"
 
-#: ../src/core/sip-transport.c:1263
+#: ../src/core/sip-transport.c:1247
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Не найден: %s. Пожалуйста, обратитесь к администратору"
 
-#: ../src/core/sip-transport.c:1265
+#: ../src/core/sip-transport.c:1249
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP-адрес либо не включен для URI назначения либо не существует"
 
-#: ../src/core/sip-transport.c:1288 ../src/core/sip-transport.c:1312
+#: ../src/core/sip-transport.c:1272 ../src/core/sip-transport.c:1296
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Сервис недоступен: %s"
 
-#: ../src/core/sip-transport.c:1654
+#: ../src/core/sip-transport.c:1638
 msgid "Invalid message signature received"
 msgstr "Получена недопустимая подпись сообщения"
 
@@ -88,20 +88,20 @@ msgstr "Место собрания"
 msgid "Meeting about"
 msgstr "Тема собрания"
 
-#: ../src/core/sipe-buddy.c:388
+#: ../src/core/sipe-buddy.c:389
 msgid "Out of office note"
 msgstr "Сообщение \"Нет на работе\""
 
-#: ../src/core/sipe-buddy.c:388
+#: ../src/core/sipe-buddy.c:389
 msgid "Note"
 msgstr "Личное сообщение"
 
-#: ../src/core/sipe-buddy.c:392 ../src/core/sipe-buddy.c:1644
+#: ../src/core/sipe-buddy.c:394 ../src/core/sipe-buddy.c:1651
 #: ../src/purple/purple-buddy.c:583
 msgid "Access level"
 msgstr "Уровень доступа"
 
-#: ../src/core/sipe-buddy.c:581
+#: ../src/core/sipe-buddy.c:583
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
@@ -109,120 +109,120 @@ msgstr[0] "Найден %d один контакт %s :"
 msgstr[1] "Найдено несколько %d контактов %s :"
 msgstr[2] "Найдены %d другие контакты %s :"
 
-#: ../src/core/sipe-buddy.c:583
+#: ../src/core/sipe-buddy.c:585
 msgid " (more matched your query)"
 msgstr " (большее соответствие вашему запросу)"
 
-#: ../src/core/sipe-buddy.c:614 ../src/core/sipe-buddy.c:751
+#: ../src/core/sipe-buddy.c:616 ../src/core/sipe-buddy.c:753
 msgid "No contacts found"
 msgstr "Контакты не найдены"
 
-#: ../src/core/sipe-buddy.c:626 ../src/core/sipe-buddy.c:764
+#: ../src/core/sipe-buddy.c:628 ../src/core/sipe-buddy.c:766
 msgid "Unable to display the search results"
 msgstr "Не удается отобразить результаты поиска"
 
-#: ../src/core/sipe-buddy.c:729 ../src/core/sipe-buddy.c:741
+#: ../src/core/sipe-buddy.c:731 ../src/core/sipe-buddy.c:743
 msgid "Contact search failed"
 msgstr "Поиск контактов неудачен"
 
-#: ../src/core/sipe-buddy.c:863
+#: ../src/core/sipe-buddy.c:865
 msgid "Invalid contact search query"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1536
+#: ../src/core/sipe-buddy.c:1543
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Сделать ведущим '%s'"
 
-#: ../src/core/sipe-buddy.c:1549
+#: ../src/core/sipe-buddy.c:1556
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Удалить из '%s'"
 
-#: ../src/core/sipe-buddy.c:1563
+#: ../src/core/sipe-buddy.c:1570
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Пригласить в '%s'"
 
-#: ../src/core/sipe-buddy.c:1579
+#: ../src/core/sipe-buddy.c:1586
 msgid "New chat"
 msgstr "Новый чат"
 
-#: ../src/core/sipe-buddy.c:1592
+#: ../src/core/sipe-buddy.c:1599
 msgid "Work"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1599
+#: ../src/core/sipe-buddy.c:1606
 msgid "Mobile"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1607
+#: ../src/core/sipe-buddy.c:1614
 msgid "Home"
 msgstr "Домашняя страница"
 
-#: ../src/core/sipe-buddy.c:1615
+#: ../src/core/sipe-buddy.c:1622
 msgid "Other"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1623
+#: ../src/core/sipe-buddy.c:1630
 msgid "Custom1"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1633
+#: ../src/core/sipe-buddy.c:1640
 msgid "Send email..."
 msgstr "Отправить сообщение электронной почты..."
 
-#: ../src/core/sipe-cal.c:949
+#: ../src/core/sipe-cal.c:945
 msgid "Free"
 msgstr "Свободен"
 
-#: ../src/core/sipe-cal.c:950
+#: ../src/core/sipe-cal.c:946
 msgid "Tentative"
 msgstr "Под вопросом"
 
 #. SIPE_ACTIVITY_BUSY
-#: ../src/core/sipe-cal.c:951 ../src/core/sipe-status.c:61
+#: ../src/core/sipe-cal.c:947 ../src/core/sipe-status.c:61
 msgid "Busy"
 msgstr "Занят"
 
 #. SIPE_ACTIVITY_OOF
-#: ../src/core/sipe-cal.c:952 ../src/core/sipe-status.c:72
+#: ../src/core/sipe-cal.c:948 ../src/core/sipe-status.c:72
 msgid "Out of office"
 msgstr "Нет на месте"
 
-#: ../src/core/sipe-cal.c:953
+#: ../src/core/sipe-cal.c:949
 msgid "No data"
 msgstr "Нет данных"
 
-#: ../src/core/sipe-cal.c:1061 ../src/core/sipe-cal.c:1088
+#: ../src/core/sipe-cal.c:1057 ../src/core/sipe-cal.c:1084
 #, c-format
 msgid "Currently %s"
 msgstr "в настоящий момент %s"
 
-#: ../src/core/sipe-cal.c:1067
+#: ../src/core/sipe-cal.c:1063
 msgid "Outside of working hours for next 8 hours"
 msgstr "Нерабочее время в течение следующих 8 часов"
 
-#: ../src/core/sipe-cal.c:1069
+#: ../src/core/sipe-cal.c:1065
 #, c-format
 msgid "%s for next 8 hours"
 msgstr "%s в течение следующих 8 часов"
 
-#: ../src/core/sipe-cal.c:1078
+#: ../src/core/sipe-cal.c:1074
 msgid "Not working"
 msgstr "не работаю"
 
-#: ../src/core/sipe-cal.c:1082
+#: ../src/core/sipe-cal.c:1078
 #, c-format
 msgid "%s until %.2d:%.2d"
 msgstr "%s до %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1090
+#: ../src/core/sipe-cal.c:1086
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
 msgstr "%s. Нерабочее время в %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1095
+#: ../src/core/sipe-cal.c:1091
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
 msgstr "%s. %s в %.2d:%.2d"
@@ -450,7 +450,7 @@ msgstr "Недостаточно памяти"
 msgid "Other Contacts"
 msgstr "Другие контакты"
 
-#: ../src/core/sipe-groupchat.c:333
+#: ../src/core/sipe-groupchat.c:336
 #, c-format
 msgid ""
 "Group Chat Proxy setting is incorrect:\n"
@@ -460,20 +460,20 @@ msgid ""
 "Please update your Account."
 msgstr "Настройки прокси для групппового чата не верны:\n\n»%s\n\nПожалуйста измените настройки аккаунта."
 
-#: ../src/core/sipe-groupchat.c:336
+#: ../src/core/sipe-groupchat.c:339
 msgid "Couldn't find Group Chat server!"
 msgstr "Сервер группового чата не найден!"
 
-#: ../src/core/sipe-groupchat.c:434
+#: ../src/core/sipe-groupchat.c:446
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
 msgstr "Сообщение не было доставлено в чат канал '%s'"
 
-#: ../src/core/sipe-groupchat.c:510
+#: ../src/core/sipe-groupchat.c:522
 msgid "Error retrieving room list"
 msgstr "Не удалось "
 
-#: ../src/core/sipe-groupchat.c:614
+#: ../src/core/sipe-groupchat.c:626
 msgid "Error joining chat room"
 msgstr "Ошибка подключения к чату"
 
@@ -488,51 +488,51 @@ msgstr "Не удалось пригласить %s"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "Поступило сообщение неподдерживаемого типа от %s"
 
-#: ../src/core/sipe-media.c:539 ../src/core/sipe-media.c:838
-#: ../src/core/sipe-media.c:1094 ../src/core/sipe-media.c:1116
+#: ../src/core/sipe-media.c:555 ../src/core/sipe-media.c:856
+#: ../src/core/sipe-media.c:1112 ../src/core/sipe-media.c:1134
 msgid "Unable to establish a call"
 msgstr "Не удалось сделать вызов"
 
-#: ../src/core/sipe-media.c:540 ../src/core/sipe-media.c:1095
+#: ../src/core/sipe-media.c:556 ../src/core/sipe-media.c:1113
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr "Настройки шифрования собеседника несовместимы с нашими."
 
-#: ../src/core/sipe-media.c:733 ../src/core/sipe-media.c:746
-#: ../src/core/sipe-media.c:814 ../src/core/sipe-media.c:1115
+#: ../src/core/sipe-media.c:751 ../src/core/sipe-media.c:764
+#: ../src/core/sipe-media.c:832 ../src/core/sipe-media.c:1133
 msgid "Error occured"
 msgstr "Произошла ошибка"
 
-#: ../src/core/sipe-media.c:734 ../src/core/sipe-media.c:815
+#: ../src/core/sipe-media.c:752 ../src/core/sipe-media.c:833
 msgid "Error creating audio stream"
 msgstr "Ошибка при создании аудио потокa"
 
-#: ../src/core/sipe-media.c:747
+#: ../src/core/sipe-media.c:765
 msgid "Error creating video stream"
 msgstr "Ошибка при создании видео потокa"
 
-#: ../src/core/sipe-media.c:839
+#: ../src/core/sipe-media.c:857
 msgid "Audio Test Service is not available."
 msgstr ""
 
-#: ../src/core/sipe-media.c:1067
+#: ../src/core/sipe-media.c:1085
 msgid "User unavailable"
 msgstr "Пользователь недоступен"
 
-#: ../src/core/sipe-media.c:1070
+#: ../src/core/sipe-media.c:1088
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr "%s не хочет, чтобы его беспокоили"
 
-#: ../src/core/sipe-media.c:1072
+#: ../src/core/sipe-media.c:1090
 #, c-format
 msgid "User %s is not available"
 msgstr "Пользователь %s недоступен"
 
-#: ../src/core/sipe-media.c:1077
+#: ../src/core/sipe-media.c:1095
 msgid "Call rejected"
 msgstr "Вызов отклонен"
 
-#: ../src/core/sipe-media.c:1078
+#: ../src/core/sipe-media.c:1096
 #, c-format
 msgid "User %s rejected call"
 msgstr "Пользователь %s отклонил вызов"
@@ -566,7 +566,7 @@ msgstr "Группа"
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
 #: ../src/core/sipe-ocs2007.c:472 ../src/purple/purple-buddy.c:55
-#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:756
+#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:809
 #: ../src/purple/purple-search.c:58
 msgid "Company"
 msgstr "Компания"
@@ -730,7 +730,7 @@ msgstr "Офис"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
-#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:758
+#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:811
 #: ../src/purple/purple-search.c:61
 msgid "Country"
 msgstr "Страна"
@@ -846,99 +846,100 @@ msgstr "Тема обсуждения: %s"
 msgid "Message"
 msgstr "Сообщение"
 
-#: ../src/purple/purple-plugin.c:301
-msgid "Password required"
-msgstr ""
-
-#: ../src/purple/purple-plugin.c:360
+#: ../src/purple/purple-plugin.c:352
 msgid "Connecting"
 msgstr "Установка соединения"
 
-#: ../src/purple/purple-plugin.c:482
+#: ../src/purple/purple-plugin.c:384
+msgid "Password required"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:535
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: ../src/purple/purple-plugin.c:750
+#: ../src/purple/purple-plugin.c:803
 msgid "First name"
 msgstr "Имя"
 
-#: ../src/purple/purple-plugin.c:752
+#: ../src/purple/purple-plugin.c:805
 msgid "Last name"
 msgstr "Фамилия"
 
-#: ../src/purple/purple-plugin.c:754 ../src/purple/purple-search.c:64
+#: ../src/purple/purple-plugin.c:807 ../src/purple/purple-search.c:64
 msgid "Email"
 msgstr "Email"
 
-#: ../src/purple/purple-plugin.c:762
+#: ../src/purple/purple-plugin.c:815
 msgid "Search"
 msgstr "Искать"
 
-#: ../src/purple/purple-plugin.c:763
+#: ../src/purple/purple-plugin.c:816
 msgid "Search for a contact"
 msgstr "Поиск контактов"
 
-#: ../src/purple/purple-plugin.c:764
+#: ../src/purple/purple-plugin.c:817
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "Введите информацию о человеке, которого вы хотите найти. Пустые поля будут игнорироваться."
 
-#: ../src/purple/purple-plugin.c:766
+#: ../src/purple/purple-plugin.c:819
 msgid "_Search"
 msgstr "_Искать"
 
-#: ../src/purple/purple-plugin.c:767 ../src/purple/purple-plugin.c:821
+#: ../src/purple/purple-plugin.c:820 ../src/purple/purple-plugin.c:875
 msgid "_Cancel"
 msgstr "О_тменить"
 
-#: ../src/purple/purple-plugin.c:807
+#: ../src/purple/purple-plugin.c:860
 msgid "Meeting location"
 msgstr "Место совещания"
 
-#: ../src/purple/purple-plugin.c:811
+#: ../src/purple/purple-plugin.c:864
 msgid "Join conference"
 msgstr "Присоединиться к конференции"
 
-#: ../src/purple/purple-plugin.c:812
+#: ../src/purple/purple-plugin.c:865
 msgid "Join scheduled conference"
 msgstr "Присоедениться к запланированной конференции"
 
-#: ../src/purple/purple-plugin.c:813
+#: ../src/purple/purple-plugin.c:866
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
 "Valid location will be something like\n"
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+"conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:820
+#: ../src/purple/purple-plugin.c:874
 msgid "_Join"
 msgstr "_Регистрация"
 
-#: ../src/purple/purple-plugin.c:843
+#: ../src/purple/purple-plugin.c:897
 msgid "About SIPE plugin..."
 msgstr "О плагине SIPE..."
 
-#: ../src/purple/purple-plugin.c:846
+#: ../src/purple/purple-plugin.c:900
 msgid "Contact search..."
 msgstr "Поиск контактов..."
 
-#: ../src/purple/purple-plugin.c:850
+#: ../src/purple/purple-plugin.c:904
 msgid "Test call"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:854
+#: ../src/purple/purple-plugin.c:908
 msgid "Join scheduled conference..."
 msgstr "Регистрация на запланированной конференции ..."
 
-#: ../src/purple/purple-plugin.c:857
+#: ../src/purple/purple-plugin.c:911
 msgid "Republish Calendar"
 msgstr "Опубликовать календарь"
 
-#: ../src/purple/purple-plugin.c:860
+#: ../src/purple/purple-plugin.c:914
 msgid "Reset status"
 msgstr "Сбросить состояние"
 
@@ -949,32 +950,32 @@ msgstr "Сбросить состояние"
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #. 
-#: ../src/purple/purple-plugin.c:917
+#: ../src/purple/purple-plugin.c:971
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr "Логин\n   user  или  DOMAIN\\user  или\n   user@company.com"
 
-#: ../src/purple/purple-plugin.c:921
+#: ../src/purple/purple-plugin.c:975
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr "Сервер[:Порт]\n(оставьте пустым для авто-обнаружения)"
 
-#: ../src/purple/purple-plugin.c:924
+#: ../src/purple/purple-plugin.c:978
 msgid "Connection type"
 msgstr "Тип подключения"
 
-#: ../src/purple/purple-plugin.c:925
+#: ../src/purple/purple-plugin.c:979
 msgid "Auto"
 msgstr "Автоматически"
 
-#: ../src/purple/purple-plugin.c:926
+#: ../src/purple/purple-plugin.c:980
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:927
+#: ../src/purple/purple-plugin.c:981
 msgid "TCP"
 msgstr "TCP"
 
@@ -982,24 +983,24 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:933
+#: ../src/purple/purple-plugin.c:987
 msgid "User Agent"
 msgstr "Агент пользователя"
 
-#: ../src/purple/purple-plugin.c:936
+#: ../src/purple/purple-plugin.c:990
 msgid "Authentication scheme"
 msgstr "Схема проверки подлинности "
 
-#: ../src/purple/purple-plugin.c:937
+#: ../src/purple/purple-plugin.c:991
 msgid "NTLM"
 msgstr "NTLM"
 
-#: ../src/purple/purple-plugin.c:939
+#: ../src/purple/purple-plugin.c:993
 msgid "Kerberos"
 msgstr "Kerberos"
 
 #. see above
-#: ../src/purple/purple-plugin.c:943
+#: ../src/purple/purple-plugin.c:997
 msgid "TLS-DSK"
 msgstr "TLS-DSK"
 
@@ -1007,20 +1008,20 @@ msgstr "TLS-DSK"
 #. * No login/password is taken into account if this option present,
 #. * instead used default credentials stored in OS.
 #. 
-#: ../src/purple/purple-plugin.c:952
+#: ../src/purple/purple-plugin.c:1006
 msgid "Use Single Sign-On"
 msgstr "Использовать Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #. 
-#: ../src/purple/purple-plugin.c:959
+#: ../src/purple/purple-plugin.c:1013
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr "URL службы электронной почты\n(оставьте пустым для авто-обнаружения)"
 
-#: ../src/purple/purple-plugin.c:962
+#: ../src/purple/purple-plugin.c:1016
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1029,13 +1030,13 @@ msgstr "Адрес электронной почты\n(если отличен �
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #. 
-#: ../src/purple/purple-plugin.c:968
+#: ../src/purple/purple-plugin.c:1022
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr "Логин электронной почты\n(если отличен от Логина)"
 
-#: ../src/purple/purple-plugin.c:971
+#: ../src/purple/purple-plugin.c:1025
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1044,7 +1045,7 @@ msgstr "Пароль электронной почты\n(если отличен
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
 #. 
-#: ../src/purple/purple-plugin.c:978
+#: ../src/purple/purple-plugin.c:1037
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
