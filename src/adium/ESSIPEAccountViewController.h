@@ -15,6 +15,8 @@
     IBOutlet NSMenu *menu_connectionType;
     
     IBOutlet NSTextField *textField_windowsLogin;
+    
+    IBOutlet NSTextField *textField_userAgent;
 }
 
 

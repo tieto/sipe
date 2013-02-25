@@ -33,6 +33,9 @@
 
 	int ctype = [[account preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS] intValue];
 	[popUp_conntype selectItemWithTag:ctype];
+    
+    NSString *userAgent = [account preferenceForKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
+	[textField_userAgent setStringValue:(userAgent ? userAgent : @"")];
 
 	//NSString *email = [account preferenceForKey:KEY_SIPE_EMAIL group:GROUP_ACCOUNT_STATUS];
 	//[textField_email setStringValue:(email ? email : @"")];
@@ -45,9 +48,11 @@
 {
 	[super saveConfiguration];
 
-	//Resource
 	[account setPreference:[textField_windowsLogin stringValue]
 					forKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
+    
+    [account setPreference:[textField_userAgent stringValue]
+					forKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
     
     int ctype = [[popUp_conntype selectedItem] tag];
 	[account setPreference:[NSNumber numberWithInt:ctype]
