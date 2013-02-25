@@ -71,10 +71,16 @@ sip_sec_sspi_print_error(const char *func,
 static void
 sip_sec_destroy_sspi_context(context_sspi context)
 {
-	if (context->ctx_sspi)
+	if (context->ctx_sspi) {
 		DeleteSecurityContext(context->ctx_sspi);
-	if (context->cred_sspi)
+		g_free(context->ctx_sspi);
+		context->ctx_sspi = NULL;
+	}
+	if (context->cred_sspi) {
 		FreeCredentialsHandle(context->cred_sspi);
+		g_free(context->cred_sspi);
+		context->cred_sspi = NULL;
+	}
 }
 
 /* sip-sec-mech.h API implementation for SSPI - Kerberos and NTLM */
@@ -192,10 +198,12 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		 */
 		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: dropping old context");
 		DeleteSecurityContext(ctx->ctx_sspi);
+		g_free(ctx->ctx_sspi);
 		ctx->ctx_sspi = NULL;
 	}
 
-	out_context = g_malloc0(sizeof(CtxtHandle));
+	/* reuse existing context on following calls */
+	out_context = ctx->ctx_sspi ? ctx->ctx_sspi : g_malloc0(sizeof(CtxtHandle));
 
 	input_desc.cBuffers = 1;
 	input_desc.pBuffers = &in_token;
@@ -237,6 +245,8 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 					 &expiry);
 
 	if (ret != SEC_E_OK && ret != SEC_I_CONTINUE_NEEDED) {
+		if (!ctx->ctx_sspi)
+			g_free(out_context);
 		sip_sec_destroy_sspi_context(ctx);
 		sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: InitializeSecurityContextA", ret);
 		return SIP_SEC_E_INTERNAL_ERROR;
@@ -245,12 +255,13 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	out_buff->length = out_token.cbBuffer;
 	out_buff->value = NULL;
 	if (out_token.cbBuffer) {
-		out_buff->value = g_malloc0(out_token.cbBuffer);
-		memmove(out_buff->value, out_token.pvBuffer, out_token.cbBuffer);
+		out_buff->value = g_malloc(out_token.cbBuffer);
+		memcpy(out_buff->value, out_token.pvBuffer, out_token.cbBuffer);
 		FreeContextBuffer(out_token.pvBuffer);
 	}
 
 	ctx->ctx_sspi = out_context;
+
 	if (ctx->type == SIPE_AUTHENTICATION_TYPE_KERBEROS) {
 		context->expires = sip_sec_get_interval_from_now_sec(expiry);
 	}
@@ -288,8 +299,8 @@ sip_sec_make_signature__sspi(SipSecContext context,
 	context_sspi ctx = (context_sspi) context;
 
 	ret = QueryContextAttributes(ctx->ctx_sspi,
-					SECPKG_ATTR_SIZES,
-					&context_sizes);
+				     SECPKG_ATTR_SIZES,
+				     &context_sizes);
 
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_make_signature__sspi: QueryContextAttributes", ret);
@@ -297,7 +308,7 @@ sip_sec_make_signature__sspi(SipSecContext context,
 	}
 
 	signature_buff_length = context_sizes.cbMaxSignature;
-	signature_buff = g_malloc0(signature_buff_length);
+	signature_buff = g_malloc(signature_buff_length);
 
 	buffs_desc.cBuffers = 2;
 	buffs_desc.pBuffers = buffs;
