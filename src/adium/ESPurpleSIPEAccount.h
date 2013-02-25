@@ -10,6 +10,7 @@
 #import <AdiumLibpurple/CBPurpleAccount.h>
 
 #define KEY_SIPE_WINDOWS_LOGIN          @"SIPE:Windows Login"
+#define KEY_SIPE_PASSWORD               @"SIPE:Password"
 #define KEY_SIPE_CONNECTION_TYPE        @"SIPE:Connection Type"
 #define KEY_SIPE_EMAIL                  @"SIPE:Email"
 #define KEY_SIPE_EMAIL_URL              @"SIPE:Email URL"

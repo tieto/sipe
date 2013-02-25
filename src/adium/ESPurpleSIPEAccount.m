@@ -7,62 +7,39 @@
 //
 
 #import <Adium/AIStatus.h>
+#import <Adium/AIStatusControllerProtocol.h>
 #import <Adium/AIHTMLDecoder.h>
 
 #import "ESPurpleSIPEAccount.h"
 
 #include "sipe-core.h"
 
-// taken from sipe.c
-#define SIPE_STATUS_ID_UNKNOWN     purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET)     /* Unset (primitive) */
-#define SIPE_STATUS_ID_OFFLINE     purple_primitive_get_id_from_type(PURPLE_STATUS_OFFLINE)   /* Offline (primitive) */
-#define SIPE_STATUS_ID_AVAILABLE   purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) /* Online */
-/*      PURPLE_STATUS_UNAVAILABLE: */
-#define SIPE_STATUS_ID_BUSY        "busy"                                                     /* Busy */
-#define SIPE_STATUS_ID_BUSYIDLE    "busyidle"                                                 /* BusyIdle */
-#define SIPE_STATUS_ID_DND         "do-not-disturb"                                           /* Do Not Disturb */
-#define SIPE_STATUS_ID_IN_MEETING  "in-a-meeting"                                             /* In a meeting */
-#define SIPE_STATUS_ID_IN_CONF     "in-a-conference"                                          /* In a conference */
-#define SIPE_STATUS_ID_ON_PHONE    "on-the-phone"                                             /* On the phone */
-#define SIPE_STATUS_ID_INVISIBLE   purple_primitive_get_id_from_type(PURPLE_STATUS_INVISIBLE) /* Appear Offline */
-/*      PURPLE_STATUS_AWAY: */
-#define SIPE_STATUS_ID_IDLE        "idle"                                                     /* Idle/Inactive */
-#define SIPE_STATUS_ID_BRB         "be-right-back"                                            /* Be Right Back */
-#define SIPE_STATUS_ID_AWAY        purple_primitive_get_id_from_type(PURPLE_STATUS_AWAY)      /* Away (primitive) */
-/** Reuters status (user settable) */
-#define SIPE_STATUS_ID_LUNCH       "out-to-lunch"                                             /* Out To Lunch */
-/* ???  PURPLE_STATUS_EXTENDED_AWAY */
-/* ???  PURPLE_STATUS_MOBILE */
-/* ???  PURPLE_STATUS_TUNE */
-
 
 @implementation ESPurpleSIPEAccount
+
 - (const char*)protocolPlugin
 {
 	return "prpl-sipe";
 }
 
-
 - (void)configurePurpleAccount
 {
 	NSLog(@"Configure account: %x\n", account);
 
-	[super configurePurpleAccount];	
-  
-	if (self.host && [self.host length]) {
-		if (self.port) {
-			// TODO: figure out a better size for this!
-			char tmp[512];
-			sprintf(tmp, "%s:%d", [self.host UTF8String], self.port);
-			purple_account_set_string(account, "server", tmp);
-		} else {
-			// super-class already set this
-		}
-	}
+	[super configurePurpleAccount];
 
+		// Get the preferences
+	int ctype = [[self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS] intValue];
 	NSString *email     = [self preferenceForKey:KEY_SIPE_EMAIL group:GROUP_ACCOUNT_STATUS];
 	NSString *emailURL  = [self preferenceForKey:KEY_SIPE_EMAIL_URL group:GROUP_ACCOUNT_STATUS];
 	NSString *emailPass = [self preferenceForKey:KEY_SIPE_EMAIL_PASSWORD group:GROUP_ACCOUNT_STATUS];
+	NSString *thePassword = [self preferenceForKey:KEY_SIPE_PASSWORD group:GROUP_ACCOUNT_STATUS];
+	NSString *chatProxy = [self preferenceForKey:KEY_SIPE_GROUP_CHAT_PROXY group:GROUP_ACCOUNT_STATUS];
+    NSString *userAgent = [self preferenceForKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
+	NSString *winLogin  = [self preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
+
+    
+		// Configure Email settings
     if (email && [email length])
         purple_account_set_string(account, "email", [email UTF8String]);
     if (emailURL && [emailURL length])
@@ -70,7 +47,13 @@
     if (emailPass && [emailPass length])
         purple_account_set_string(account, "email_password", [emailPass UTF8String]);
 
-	int ctype = [[self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS] intValue];
+		// Configure Password
+	if (thePassword && [thePassword length])
+	{
+		purple_account_set_password(account, [thePassword UTF8String]);
+	}
+
+		// Configure Connnection type
     const char *ctypes;
     switch (ctype) {
         default:
@@ -80,58 +63,27 @@
     }
     purple_account_set_string(account, "transport", ctypes);
 
-    NSString *chatProxy = [self preferenceForKey:KEY_SIPE_GROUP_CHAT_PROXY group:GROUP_ACCOUNT_STATUS];
-    NSString *userAgent = [self preferenceForKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
+
+		// Configure Proxy and UserAgent
     if (chatProxy && [chatProxy length])
         purple_account_set_string(account, "groupchat_user", [chatProxy UTF8String]);
     if (userAgent && [userAgent length])
         purple_account_set_string(account, "useragent", [userAgent UTF8String]);
 
-    
-    NSString *winLogin  = [self preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
-    
+
+		// Configure the AccountName
     NSString *completeUserName = [NSString stringWithUTF8String:[self purpleAccountName]];
-    
+
     if (winLogin && [winLogin length])
         completeUserName = [NSString stringWithFormat:@"%@,%@",completeUserName, winLogin];
-    
+
     purple_account_set_username(account, [completeUserName UTF8String]);
-    
+
 	const char *username  = purple_account_get_username(account);
-    
+
     NSLog(@"AccountName: %s\n", username ? username : "NULL");
-    
+
 }
-
-
-/*
-- (const char *)purpleStatusIDForStatus:(AIStatus *)statusState
-							  arguments:(NSMutableDictionary *)arguments
-{
-    const char    *statusID = NULL;
-
-    switch (statusState.statusType) {
-        case AIAvailableStatusType:
-            statusID = SIPE_STATUS_ID_AVAILABLE;
-            break;
-        case AIAwayStatusType:
-            statusID = SIPE_STATUS_ID_AWAY;
-            break;
-			
-        case AIInvisibleStatusType:
-            statusID = SIPE_STATUS_ID_INVISIBLE;
-            break;
-			
-        case AIOfflineStatusType:
-            statusID = SIPE_STATUS_ID_OFFLINE;
-            break;
-    }       
-	//If we didn't get a purple status type, request one from super
-	if (statusID == NULL) statusID = [super purpleStatusIDForStatus:statusState arguments:arguments];
-	
-    return statusID;
-}
-*/
 
 
 #pragma mark File transfer
@@ -162,7 +114,10 @@
 } 
 
 #pragma mark Status Messages
-/*
+/*!
+ * @brief Status name to use for a Purple buddy
+ */
+
 - (NSString *)statusNameForPurpleBuddy:(PurpleBuddy *)buddy
 {
     NSString        *statusName = nil;
@@ -172,20 +127,30 @@
     
     if (!purpleStatusID) return nil;
 	
-    if (!strcmp(purpleStatusID, jabber_buddy_state_get_status_id(JABBER_BUDDY_STATE_CHAT))) {
-        statusName = STATUS_NAME_FREE_FOR_CHAT;
+    if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_AVAILABLE))) {
+        statusName = STATUS_NAME_AVAILABLE;
 		
-    } else if (!strcmp(purpleStatusID, jabber_buddy_state_get_status_id(JABBER_BUDDY_STATE_XA))) {
-        statusName = STATUS_NAME_EXTENDED_AWAY;
+    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_AWAY))) {
+        statusName = STATUS_NAME_AWAY;
 		
-    } else if (!strcmp(purpleStatusID, jabber_buddy_state_get_status_id(JABBER_BUDDY_STATE_DND))) {
+    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_BRB))) {
+        statusName = STATUS_NAME_BRB;
+		
+    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_BUSY))) {
+        statusName = STATUS_NAME_BUSY;
+		
+    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_BUSYIDLE))) {
+        statusName = STATUS_NAME_BUSY;
+		
+    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_DND))) {
         statusName = STATUS_NAME_DND;
-		
-    }   
+		 
+    } // TODO: put in entries for all SIPE_ACTIVITY_xxxx values
     
     return statusName;
 }
-*/
+
+
 
 /*!
  * @brief Status message for a contact
@@ -199,6 +164,8 @@
 	NSString					*statusMessage = nil;
 	
 	// TODO: get sipe activity or annotation
+    
+    // probably need to call something like sipe_backend_buddy_get_status();
 	
 	// Get the plugin's status message for this buddy if they don't have a status message
 	if (!message && !sipemessage) {
@@ -222,6 +189,55 @@
 	}
 
 	return statusMessage ? [AIHTMLDecoder decodeHTML:statusMessage] : nil;
-	}
+}
+
+
+ - (const char *)purpleStatusIDForStatus:(AIStatus *)statusState
+ arguments:(NSMutableDictionary *)arguments
+ {
+     const char    *statusID = NULL;
+     NSString		*statusName = statusState.statusName;
+     NSString		*statusMessageString = [statusState statusMessageString];
+     
+     if (!statusMessageString) statusMessageString = @"";
+
+     switch (statusState.statusType) {
+         case AIAvailableStatusType:
+             statusID = sipe_core_activity_description(SIPE_ACTIVITY_AVAILABLE);
+             break;
+             
+         case AIAwayStatusType:
+             statusID = sipe_core_activity_description(SIPE_ACTIVITY_AWAY);
+             break;
+             
+             /* TODO:  separate away status into different parts
+              if (([statusName isEqualToString:STATUS_NAME_BRB]) ||
+                 ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BRB]] == NSOrderedSame))
+                 statusID = "brb";
+             else if (([statusName isEqualToString:STATUS_NAME_BUSY]) ||
+                      ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BUSY]] == NSOrderedSame))
+                 statusID = "busy";
+             else if (([statusName isEqualToString:STATUS_NAME_PHONE]) ||
+                      ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_PHONE]] == NSOrderedSame))
+                 statusID = "phone";
+             else if (([statusName isEqualToString:STATUS_NAME_LUNCH]) ||
+                      ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_LUNCH]] == NSOrderedSame))
+                 statusID = "lunch";  */
+         
+         case AIInvisibleStatusType:
+             statusID = sipe_core_activity_description(SIPE_ACTIVITY_INVISIBLE);
+             break;
+         
+         case AIOfflineStatusType:
+             statusID = sipe_core_activity_description(SIPE_ACTIVITY_OFFLINE);
+             break;
+     }
+         
+     //If we didn't get a purple status type, request one from super
+     if (statusID == NULL) statusID = [super purpleStatusIDForStatus:statusState arguments:arguments];
+     
+     return statusID;
+ }
+ 
 
 @end

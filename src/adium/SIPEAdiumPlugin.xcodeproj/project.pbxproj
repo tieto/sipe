@@ -202,7 +202,7 @@
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
 			dstPath = "";
-			dstSubfolderSpec = 7;
+			dstSubfolderSpec = 10;
 			files = (
 				7B5DD2EB16DB1E0A00B3D188 /* libnss3.dylib in CopyFiles */,
 				7B5DD2EC16DB1E0A00B3D188 /* libsoftokn3.dylib in CopyFiles */,
