@@ -45,6 +45,23 @@ typedef struct _context_negotiate {
 	SipSecContext ntlm;
 } *context_negotiate;
 
+static void sip_sec_negotiate_drop_krb5(context_negotiate context)
+{
+	if (context->krb5)
+		context->krb5->destroy_context_func(context->krb5);
+	context->krb5 = NULL;
+}
+
+static sip_uint32 sip_sec_negotiate_ntlm_fallback(context_negotiate context)
+{
+	sip_sec_negotiate_drop_krb5(context);
+
+	return(context->ntlm->acquire_cred_func(context->ntlm,
+						context->domain,
+						context->username,
+						context->password));
+}
+
 /* sip-sec-mech.h API implementation for Negotiate */
 
 static sip_uint32
@@ -54,12 +71,24 @@ sip_sec_acquire_cred__negotiate(SipSecContext context,
 				const char *password)
 {
 	context_negotiate ctx = (context_negotiate) context;
+	sip_uint32 ret;
 
 	ctx->domain   = domain;
 	ctx->username = username;
 	ctx->password = password;
 
-	return(SIP_SEC_E_INTERNAL_ERROR);
+	context = ctx->krb5;
+	ret = context->acquire_cred_func(context,
+					 domain,
+					 username,
+					 password);
+	if (ret != SIP_SEC_E_OK) {
+		/* Kerberos failed -> fall back to NTLM immediately */
+		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__negotiate: fallback to NTLM");
+		ret = sip_sec_negotiate_ntlm_fallback(ctx);
+	}
+
+	return(ret);
 }
 
 static sip_uint32
@@ -76,6 +105,7 @@ sip_sec_make_signature__negotiate(SIPE_UNUSED_PARAMETER SipSecContext context,
 				  SIPE_UNUSED_PARAMETER const char *message,
 				  SIPE_UNUSED_PARAMETER SipSecBuffer *signature)
 {
+	/* No implementation needed, as Negotiate is not used for SIP */
 	return(SIP_SEC_E_INTERNAL_ERROR);
 }
 
@@ -84,6 +114,7 @@ sip_sec_verify_signature__negotiate(SIPE_UNUSED_PARAMETER SipSecContext context,
 				    SIPE_UNUSED_PARAMETER const char *message,
 				    SIPE_UNUSED_PARAMETER SipSecBuffer signature)
 {
+	/* No implementation needed, as Negotiate is not used for SIP */
 	return(SIP_SEC_E_INTERNAL_ERROR);
 }
 
@@ -94,8 +125,7 @@ sip_sec_destroy_sec_context__negotiate(SipSecContext context)
 
 	if (ctx->ntlm)
 		ctx->ntlm->destroy_context_func(ctx->ntlm);
-	if (ctx->krb5)
-		ctx->krb5->destroy_context_func(ctx->krb5);
+	sip_sec_negotiate_drop_krb5(ctx);
 	g_free(ctx);
 }
 
