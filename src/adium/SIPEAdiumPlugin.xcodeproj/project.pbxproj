@@ -91,6 +91,7 @@
 		B13FABDB119D585A001CE037 /* http-conn.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB9D119D585A001CE037 /* http-conn.c */; };
 		B13FABDF119D585A001CE037 /* sip-csta.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA3119D585A001CE037 /* sip-csta.c */; };
 		B13FABE1119D585A001CE037 /* sip-sec-krb5.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA5119D585A001CE037 /* sip-sec-krb5.c */; };
+		B13FABE4119D585A001CE037 /* sip-sec-negotiate.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA8119D585A001CE037 /* sip-sec-negotiate.c */; };
 		B13FABE5119D585A001CE037 /* sip-sec-ntlm.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */; };
 		B13FABE9119D585A001CE037 /* sip-sec.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABAD119D585A001CE037 /* sip-sec.c */; };
 		B13FABEB119D585A001CE037 /* sip-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABAF119D585A001CE037 /* sip-transport.c */; };
@@ -293,6 +294,7 @@
 		B13FAB9D119D585A001CE037 /* http-conn.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "http-conn.c"; sourceTree = "<group>"; };
 		B13FABA3119D585A001CE037 /* sip-csta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-csta.c"; sourceTree = "<group>"; };
 		B13FABA5119D585A001CE037 /* sip-sec-krb5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-krb5.c"; sourceTree = "<group>"; };
+		B13FABA8119D585A001CE037 /* sip-sec-negotiate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-negotiate.c"; sourceTree = "<group>"; };
 		B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-ntlm.c"; sourceTree = "<group>"; };
 		B13FABAD119D585A001CE037 /* sip-sec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec.c"; sourceTree = "<group>"; };
 		B13FABAF119D585A001CE037 /* sip-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-transport.c"; sourceTree = "<group>"; };
@@ -567,6 +569,7 @@
 				B13FAB9D119D585A001CE037 /* http-conn.c */,
 				B13FABA3119D585A001CE037 /* sip-csta.c */,
 				B13FABA5119D585A001CE037 /* sip-sec-krb5.c */,
+				B13FABA8119D585A001CE037 /* sip-sec-negotiate.c */,
 				B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */,
 				B13FABAD119D585A001CE037 /* sip-sec.c */,
 				B13FABAF119D585A001CE037 /* sip-transport.c */,
@@ -794,6 +797,7 @@
 				B13FABDB119D585A001CE037 /* http-conn.c in Sources */,
 				B13FABDF119D585A001CE037 /* sip-csta.c in Sources */,
 				B13FABE1119D585A001CE037 /* sip-sec-krb5.c in Sources */,
+				B13FABE4119D585A001CE037 /* sip-sec-negotiate.c in Sources */,
 				B13FABE5119D585A001CE037 /* sip-sec-ntlm.c in Sources */,
 				B13FABE9119D585A001CE037 /* sip-sec.c in Sources */,
 				B13FABEB119D585A001CE037 /* sip-transport.c in Sources */,

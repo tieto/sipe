@@ -142,6 +142,7 @@
     <ClCompile Include="src\core\sdpmsg.c" />
     <ClCompile Include="src\core\sip-csta.c" />
     <ClCompile Include="src\core\sip-sec-krb5.c" />
+    <ClCompile Include="src\core\sip-sec-negotiate.c" />
     <ClCompile Include="src\core\sip-sec-ntlm.c" />
     <ClCompile Include="src\core\sip-sec-sspi.c" />
     <ClCompile Include="src\core\sip-sec-tls-dsk.c" />
@@ -215,6 +216,7 @@
     <ClInclude Include="src\core\sip-csta.h" />
     <ClInclude Include="src\core\sip-sec-krb5.h" />
     <ClInclude Include="src\core\sip-sec-mech.h" />
+    <ClInclude Include="src\core\sip-sec-negotiate.h" />
     <ClInclude Include="src\core\sip-sec-ntlm.h" />
     <ClInclude Include="src\core\sip-sec-sspi.h" />
     <ClInclude Include="src\core\sip-sec-tls-dsk.h" />

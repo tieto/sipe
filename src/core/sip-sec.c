@@ -44,18 +44,21 @@
 #include "sip-sec-tls-dsk.h"
 #define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
 #define sip_sec_password__NTLM			sip_sec_password__ntlm
-#define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
-/* #define sip_sec_password__Negotiate: see below */
 #define sip_sec_create_context__TLS_DSK		sip_sec_create_context__tls_dsk
 #define sip_sec_password__TLS_DSK		sip_sec_password__tls_dsk
 
 #ifdef HAVE_LIBKRB5
 #include "sip-sec-krb5.h"
+#include "sip-sec-negotiate.h"
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__krb5
 #define sip_sec_password__Kerberos		sip_sec_password__krb5
+#define sip_sec_create_context__Negotiate	sip_sec_create_context__negotiate
+/* #define sip_sec_password__Negotiate: see below */
 #else
 #define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
 #define sip_sec_password__Kerberos		sip_sec_password__NONE
+#define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
+/* #define sip_sec_password__Negotiate: see below */
 #endif
 
 #else /* _WIN32 */
