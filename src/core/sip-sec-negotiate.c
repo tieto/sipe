@@ -43,6 +43,7 @@ typedef struct _context_negotiate {
 	const gchar *password;
 	SipSecContext krb5;
 	SipSecContext ntlm;
+	gboolean disable_fallback;
 } *context_negotiate;
 
 static void sip_sec_negotiate_drop_krb5(context_negotiate context)
@@ -52,9 +53,30 @@ static void sip_sec_negotiate_drop_krb5(context_negotiate context)
 	context->krb5 = NULL;
 }
 
+static void sip_sec_negotiate_copy_flags(context_negotiate ctx,
+					 SipSecContext context)
+{
+	context->sso                 = ctx->common.sso;
+	context->is_connection_based = ctx->common.is_connection_based;
+}
+
+static void sip_sec_negotiate_copy_settings(context_negotiate ctx,
+					    SipSecContext context)
+{
+	ctx->common.is_ready = context->is_ready;
+	ctx->common.expires  = context->expires;
+}
+
+
 static sip_uint32 sip_sec_negotiate_ntlm_fallback(context_negotiate context)
 {
+	if (context->disable_fallback) {
+		SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_negotiate_ntlm_fallback: forbidden");
+		return(SIP_SEC_E_INTERNAL_ERROR);
+	}
+
 	sip_sec_negotiate_drop_krb5(context);
+	sip_sec_negotiate_copy_flags(context, context->ntlm);
 
 	return(context->ntlm->acquire_cred_func(context->ntlm,
 						context->domain,
@@ -73,11 +95,14 @@ sip_sec_acquire_cred__negotiate(SipSecContext context,
 	context_negotiate ctx = (context_negotiate) context;
 	sip_uint32 ret;
 
+	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__negotiate: entering");
+
 	ctx->domain   = domain;
 	ctx->username = username;
 	ctx->password = password;
 
 	context = ctx->krb5;
+	sip_sec_negotiate_copy_flags(ctx, context);
 	ret = context->acquire_cred_func(context,
 					 domain,
 					 username,
@@ -92,12 +117,55 @@ sip_sec_acquire_cred__negotiate(SipSecContext context,
 }
 
 static sip_uint32
-sip_sec_init_sec_context__negotiate(SIPE_UNUSED_PARAMETER SipSecContext context,
-				    SIPE_UNUSED_PARAMETER SipSecBuffer in_buff,
-				    SIPE_UNUSED_PARAMETER SipSecBuffer *out_buff,
-				    SIPE_UNUSED_PARAMETER const char *service_name)
+sip_sec_init_sec_context__negotiate(SipSecContext context,
+				    SipSecBuffer in_buff,
+				    SipSecBuffer *out_buff,
+				    const char *service_name)
 {
-	return(SIP_SEC_E_INTERNAL_ERROR);
+	context_negotiate ctx = (context_negotiate) context;
+	sip_uint32 ret;
+
+	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__negotiate: entering");
+
+	/* Kerberos available? */
+	context = ctx->krb5;
+	if (context) {
+		ret = context->init_context_func(context,
+						 in_buff,
+						 out_buff,
+						 service_name);
+
+		if (ret != SIP_SEC_E_OK) {
+			/* Kerberos failed -> fall back to NTLM */
+			SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__negotiate: fallback to NTLM");
+			ret = sip_sec_negotiate_ntlm_fallback(ctx);
+
+			if (ret == SIP_SEC_E_OK) {
+				context = ctx->ntlm;
+				ret = context->init_context_func(context,
+								 in_buff,
+								 out_buff,
+								 service_name);
+			}
+		} else {
+			/* Kerberos succeeded -> disable fallback to NTLM */
+			ctx->disable_fallback = TRUE;
+		}
+
+	/* No Kerberos available -> use NTLM */
+	} else {
+		context = ctx->ntlm;
+		ret = context->init_context_func(context,
+						 in_buff,
+						 out_buff,
+						 service_name);
+	}
+
+	/* context points to the last used child context */
+	if (ret == SIP_SEC_E_OK)
+		sip_sec_negotiate_copy_settings(ctx, context);
+
+	return(ret);
 }
 
 static sip_uint32
@@ -147,8 +215,9 @@ sip_sec_create_context__negotiate(guint type)
 				context->common.destroy_context_func  = sip_sec_destroy_sec_context__negotiate;
 				context->common.make_signature_func   = sip_sec_make_signature__negotiate;
 				context->common.verify_signature_func = sip_sec_verify_signature__negotiate;
-				context->krb5 = krb5;
-				context->ntlm = ntlm;
+				context->krb5             = krb5;
+				context->ntlm             = ntlm;
+				context->disable_fallback = FALSE;
 			} else {
 				ntlm->destroy_context_func(ntlm);
 			}

@@ -9,6 +9,15 @@ version 1.15.0 "HTTP with Kerberos authentication" (2013-XX-XX)
 	- Fixed #3603228: Crash on 1.14.1 when connecting to server (Stefan Becker)
 	- Fixed #3604671: sip uri with apostrophe is not valid (Stefan Becker)
 	- fixed HTTP redirect crash (Stefan Becker)
+	- added implementation for HTTP "WWW-Authenticate: Negotiate" scheme (Stefan Becker)
+	  * effective for all platforms that support --with-krb5
+	  * it will try Kerberos first, then fall back to NTLM
+	  * valid Kerberos Single Sign-On setup will be detected automatically
+	  * setup for a mixed Kerberos/NTLM HTTP environment:
+	    - login name:     DOMAIN\account
+	    - password:       domain password
+	    - authentication: Kerberos
+	    - Single Sign-On: OFF(!)          (see above)
 	- Farstream 0.1.1 compatibility fix (Jakub Adam)
 	- support conf:sip: meeting URIs (Jakub Adam)
 	- updated Adium port (Michael Lamb)
