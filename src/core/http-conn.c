@@ -463,16 +463,12 @@ http_conn_process_input_message(HttpConn *http_conn,
 		{
 			struct sipe_core_public *sipe_public = http_conn->sipe_public;
 
-			/* "Negotiate" is only supported for Kerberos */
-			if (SIPE_CORE_PRIVATE->authentication_type == SIPE_AUTHENTICATION_TYPE_KERBEROS)
+			/* Use "Negotiate" unless the user requested "NTLM" */
+			if (SIPE_CORE_PRIVATE->authentication_type != SIPE_AUTHENTICATION_TYPE_NTLM)
 				auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
 		}
 		if (auth_hdr) {
-#if defined(HAVE_SSPI)
 			auth_type = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
-#else
-			auth_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
-#endif
 			auth_name = "Negotiate";
 		} else
 #else
