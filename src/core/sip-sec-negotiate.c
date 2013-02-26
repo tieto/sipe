@@ -41,6 +41,8 @@ typedef struct _context_negotiate {
 	const gchar *domain;
 	const gchar *username;
 	const gchar *password;
+	SipSecContext krb5;
+	SipSecContext ntlm;
 } *context_negotiate;
 
 /* sip-sec-mech.h API implementation for Negotiate */
@@ -90,20 +92,42 @@ sip_sec_destroy_sec_context__negotiate(SipSecContext context)
 {
 	context_negotiate ctx = (context_negotiate) context;
 
+	if (ctx->ntlm)
+		ctx->ntlm->destroy_context_func(ctx->ntlm);
+	if (ctx->krb5)
+		ctx->krb5->destroy_context_func(ctx->krb5);
 	g_free(ctx);
 }
 
 SipSecContext
-sip_sec_create_context__negotiate(SIPE_UNUSED_PARAMETER guint type)
+sip_sec_create_context__negotiate(guint type)
 {
-	context_negotiate context = g_malloc0(sizeof(struct _context_negotiate));
-	if (!context) return(NULL);
+	context_negotiate context = NULL;
+	SipSecContext krb5 = sip_sec_create_context__krb5(type);
 
-	context->common.acquire_cred_func     = sip_sec_acquire_cred__negotiate;
-	context->common.init_context_func     = sip_sec_init_sec_context__negotiate;
-	context->common.destroy_context_func  = sip_sec_destroy_sec_context__negotiate;
-	context->common.make_signature_func   = sip_sec_make_signature__negotiate;
-	context->common.verify_signature_func = sip_sec_verify_signature__negotiate;
+	if (krb5) {
+		SipSecContext ntlm = sip_sec_create_context__ntlm(type);
+
+		if (ntlm) {
+			context = g_malloc0(sizeof(struct _context_negotiate));
+
+			if (context) {
+				context->common.acquire_cred_func     = sip_sec_acquire_cred__negotiate;
+				context->common.init_context_func     = sip_sec_init_sec_context__negotiate;
+				context->common.destroy_context_func  = sip_sec_destroy_sec_context__negotiate;
+				context->common.make_signature_func   = sip_sec_make_signature__negotiate;
+				context->common.verify_signature_func = sip_sec_verify_signature__negotiate;
+				context->krb5 = krb5;
+				context->ntlm = ntlm;
+			} else {
+				ntlm->destroy_context_func(ntlm);
+			}
+		}
+
+		if (!context) {
+			krb5->destroy_context_func(krb5);
+		}
+	}
 
 	return((SipSecContext) context);
 }
