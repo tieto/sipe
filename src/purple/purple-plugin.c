@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,18 @@
 /* Backward compatibility when compiling against 2.4.x API */
 #if !PURPLE_VERSION_CHECK(2,5,0) && !PURPLE_VERSION_CHECK(3,0,0)
 #define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
+#endif
+
+/*
+ * NOTE: this flag means two things:
+ *
+ *  - is Single Sign-On supported, and
+ *  - is Kerberos supported
+ */
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#define PURPLE_SIPE_SSO_AND_KERBEROS 1
+#else
+#define PURPLE_SIPE_SSO_AND_KERBEROS 0
 #endif
 
 /* Sipe core activity <-> Purple status mapping */
@@ -253,7 +265,7 @@ static guint get_authentication_type(PurpleAccount *account)
 
 	/* map option list to type - default is NTLM */
 	guint authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if PURPLE_SIPE_SSO_AND_KERBEROS
 	if (sipe_strequal(auth, "krb5")) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
 	}
@@ -273,9 +285,15 @@ static guint get_authentication_type(PurpleAccount *account)
 
 static gboolean get_sso_flag(PurpleAccount *account)
 {
-	/* @TODO: is this correct?
-	   "sso" is only available when Kerberos/SSPI support is compiled in */
-	return(purple_account_get_bool(account, "sso", TRUE));
+#if PURPLE_SIPE_SSO_AND_KERBEROS
+	/*
+	 * NOTE: the default must be *OFF*, i.e. it is up to the user to tell
+	 *       SIPE that it is OK to use Single Sign-On or not.
+	 */
+	return(purple_account_get_bool(account, "sso", FALSE));
+#else
+	return(FALSE);
+#endif
 }
 
 static void connect_to_core(PurpleConnection *gc,
@@ -989,7 +1007,7 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 
 	option = purple_account_option_list_new(_("Authentication scheme"), "authentication", NULL);
 	purple_account_option_add_list_item(option, _("NTLM"), "ntlm");
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if PURPLE_SIPE_SSO_AND_KERBEROS
 	purple_account_option_add_list_item(option, _("Kerberos"), "krb5");
 #endif
 #ifndef HAVE_SSPI
@@ -998,12 +1016,22 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 #endif
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-	/* Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
-	 * No login/password is taken into account if this option present,
-	 * instead used default credentials stored in OS.
+#if PURPLE_SIPE_SSO_AND_KERBEROS
+	/*
+	 * When the user selects Single Sign-On then SIPE will ignore the
+	 * settings for "login name" and "password". Instead it will use the
+	 * default credentials provided by the OS.
+	 *
+	 * NOTE: the default must be *OFF*, i.e. it is up to the user to tell
+	 *       SIPE that it is OK to use Single Sign-On or not.
+	 *
+	 * Configurations that are known to support Single Sign-On:
+	 *
+	 *  - Windows, host joined to domain, SIPE with SSPI: NTLM
+	 *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
+	 *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 	 */
-	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", TRUE);
+	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", FALSE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 #endif
 
