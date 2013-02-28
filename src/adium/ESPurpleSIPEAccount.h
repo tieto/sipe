@@ -10,6 +10,7 @@
 #import <AdiumLibpurple/CBPurpleAccount.h>
 
 #define KEY_SIPE_WINDOWS_LOGIN          @"SIPE:Windows Login"
+#define KEY_SIPE_CONNECT_HOST           @"SIPE:Connect Host"
 #define KEY_SIPE_PASSWORD               @"SIPE:Password"  // TODO: Do we need to keep this key? PurpleAccount should store this for us
 #define KEY_SIPE_CONNECTION_TYPE        @"SIPE:Connection Type"
 #define KEY_SIPE_EMAIL                  @"SIPE:Email"

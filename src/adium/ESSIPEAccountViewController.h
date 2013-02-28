@@ -15,6 +15,8 @@
 
     IBOutlet    NSTextField     *textField_windowsLogin;
 
+    IBOutlet    NSTextField     *textField_server;
+    
     IBOutlet	NSTextField		*textField_userAgent;
 	IBOutlet	NSTextField		*textField_emailURL;
 	IBOutlet	NSTextField		*textField_email;

@@ -24,13 +24,17 @@
 	return "prpl-sipe";
 }
 
+ 
 - (NSString *)hostForPurple
 {
-    if([self preferenceForKey:KEY_CONNECT_HOST])
+    NSString *server = [self preferenceForKey:KEY_SIPE_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+    if (!server || [server length] == 0)
     {
-        return self.host;
+        // set the KEY_CONNECT_HOST to "autodetect" just to make sure we don't lose it from the defaults
+        [self setPreference:@"autodetect" forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+        return @"autodetect";
     } else {
-        return @"host_placeholder";
+        return server;
     }
 }
 
@@ -41,6 +45,32 @@
     
     // Account preferences
     NSLog(@"Configuring account: %s\n", self.purpleAccountName);
+    
+    // !!! ------  HACK/Kludge alert!  ------
+    /*
+     * Adium's CBPurpleAccount class's implementation of configurePurpleAccount (called above)
+     * has the following line:
+     *
+     *         if (hostName && [hostName length]) {
+     * 
+     * Which doesn't allow us to leave the KEY_CONNECT_HOST preference empty (Adium prompts for the user to fill it out)
+     * sipe-core is expecting the server account setting to be empty to engage the auto-detection piece.  The only way
+     * to fix this is to fake out Adium by storing the servername in a different key (KEY_SIPE_CONNECT_HOST) and setting a
+     * default KEY_CONNECT_HOST to something.  We then need to detect that we have an empty servername here, and 
+     * "overwrite" the default placeholder with an empty string.
+     */
+    
+    // if there is no host specified, we're looking to auto-detect
+    // TODO: change this to a checkbox, and enable/disable based on that.  Leaving a field blank is bad UI design.  
+    NSString *server = [self preferenceForKey:KEY_SIPE_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+    
+    // if the server is empty, clear it in purple account (because the defaults hack for the superclass set it to "autodetect").  Otherwise, use the one provided
+    if([server isEqualToString:@""])
+    {
+        purple_account_set_string(account,"server", "");
+    } else {
+        // NOP.  Superclass already set this via the [self hostForPurple] response.
+    }
 	
     NSString *winLogin  = [self preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
     NSString *completeUserName = [NSString stringWithUTF8String:[self purpleAccountName]];

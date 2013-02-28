@@ -69,6 +69,7 @@
 		7B5DD2F116DB1E0A00B3D188 /* libsmime3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */; };
 		7B5DD2F216DB1E0A00B3D188 /* libnspr4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */; };
 		7B78055816DEC73400B844A6 /* ESSIPEAccountView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */; };
+		7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */; };
 		7B85598F166F1875005868B4 /* libnss3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B57773F166EC5FB000DBCD5 /* libnss3.dylib */; };
 		7B855990166F1878005868B4 /* libsoftokn3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */; };
 		7B855991166F187B005868B4 /* libfreebl3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */; };
@@ -275,6 +276,7 @@
 		7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsoftokn3.dylib; path = "../nss-3.14/mozilla/security/nss/lib/softoken/Darwin11.4.2_64_OPT.OBJ/libsoftokn3.dylib"; sourceTree = ADIUM_SRCPATH; };
 		7B57773F166EC5FB000DBCD5 /* libnss3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnss3.dylib; path = mozilla/security/nss/lib/nss/Darwin11.4.2_64_OPT.OBJ/libnss3.dylib; sourceTree = NSS_SRCPATH; };
 		7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ESSIPEAccountView.xib; path = English.lproj/ESSIPEAccountView.xib; sourceTree = "<group>"; };
+		7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-negotiate.c"; sourceTree = "<group>"; };
 		8D5B49B6048680CD000E48DA /* SIPEAdiumPlugin.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SIPEAdiumPlugin.AdiumLibpurplePlugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		B13FAB4F119D5155001CE037 /* purple-connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-connection.c"; sourceTree = "<group>"; };
@@ -545,6 +547,7 @@
 				1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */,
 				B13FABA5119D585A001CE037 /* sip-sec-krb5.c */,
 				1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */,
+				7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */,
 				1CE4A00214A17FD100663393 /* sipe-certificate.c */,
 				1CE4A00414A17FD100663393 /* sipe-tls-tester.c */,
 				1CE4A00514A17FD100663393 /* sipe-tls.c */,
@@ -766,6 +769,7 @@
 				1CF2612D12C2E7420045B6CC /* ESSIPEService.m in Sources */,
 				1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */,
 				1CDEE46112C35DAD00790CAF /* ESSIPEAccountViewController.m in Sources */,
+				7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

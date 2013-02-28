@@ -26,6 +26,9 @@
 {
     [super configureForAccount:inAccount];
     
+    NSString *server = [account preferenceForKey:KEY_SIPE_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+    [textField_server setStringValue:(server ? server : @"")];
+    
     NSString *windowsLogin = [account preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
 	[textField_windowsLogin setStringValue:(windowsLogin ? windowsLogin : @"")];
     
@@ -72,6 +75,9 @@
     
     [account setPreference:[textField_windowsLogin stringValue]
 					forKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
+    
+    [account setPreference:[textField_server stringValue]
+                    forKey:KEY_SIPE_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
     
     // TODO: Figure out how to only save the password if the user has "Save password" checked
     [account setPreference:[textField_password stringValue]
