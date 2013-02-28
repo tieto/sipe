@@ -370,6 +370,14 @@ static void connect_to_core(PurpleConnection *gc,
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
 	username_split = g_strsplit(purple_account_get_string(account, "server", ""), ":", 2);
+
+        /* The adium client requires a server string be supplied. If the user entered adium.im assume 
+	  they really want autodiscovery */
+	if (username_split[0] && sipe_strequal(username_split[0], "adium.im")) {
+		g_strfreev(username_split);
+		username_split = g_strsplit("", ":", 2);
+	}
+
 	if (sipe_strequal(transport, "auto")) {
 		transport_type = (username_split[0] == NULL) ?
 			SIPE_TRANSPORT_AUTO : SIPE_TRANSPORT_TLS;
