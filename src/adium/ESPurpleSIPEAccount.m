@@ -3,17 +3,19 @@
 //  SIPEAdiumPlugin
 //
 //  Created by Matt Meissner on 10/30/09.
-//  Copyright 2009 Matt Meissner. All rights reserved.
+//  Modified by Michael Lamb on 2/27/13
+//  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
 //
 
+#import <AISharedAdium.h>
 #import <Adium/AIStatus.h>
 #import <Adium/AIStatusControllerProtocol.h>
-#import <Adium/AIHTMLDecoder.h>
 
 #import "ESPurpleSIPEAccount.h"
+#import "ESSIPEService.h"
 
 #include "sipe-core.h"
-
+#include "sipe-backend.h"
 
 @implementation ESPurpleSIPEAccount
 
@@ -22,67 +24,78 @@
 	return "prpl-sipe";
 }
 
+- (NSString *)hostForPurple
+{
+    if([self preferenceForKey:KEY_CONNECT_HOST])
+    {
+        return self.host;
+    } else {
+        return @"host_placeholder";
+    }
+}
+
+#pragma mark Account Configuration
 - (void)configurePurpleAccount
 {
-	NSLog(@"Configure account: %x\n", account);
-
 	[super configurePurpleAccount];
-
-		// Get the preferences
-	int ctype = [[self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS] intValue];
-	NSString *email     = [self preferenceForKey:KEY_SIPE_EMAIL group:GROUP_ACCOUNT_STATUS];
-	NSString *emailURL  = [self preferenceForKey:KEY_SIPE_EMAIL_URL group:GROUP_ACCOUNT_STATUS];
-	NSString *emailPass = [self preferenceForKey:KEY_SIPE_EMAIL_PASSWORD group:GROUP_ACCOUNT_STATUS];
-	NSString *thePassword = [self preferenceForKey:KEY_SIPE_PASSWORD group:GROUP_ACCOUNT_STATUS];
-	NSString *chatProxy = [self preferenceForKey:KEY_SIPE_GROUP_CHAT_PROXY group:GROUP_ACCOUNT_STATUS];
-    NSString *userAgent = [self preferenceForKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
-	NSString *winLogin  = [self preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
-
     
-		// Configure Email settings
-    if (email && [email length])
-        purple_account_set_string(account, "email", [email UTF8String]);
-    if (emailURL && [emailURL length])
-        purple_account_set_string(account, "email_url", [emailURL UTF8String]);
-    if (emailPass && [emailPass length])
-        purple_account_set_string(account, "email_password", [emailPass UTF8String]);
-
-		// Configure Password
-	if (thePassword && [thePassword length])
-	{
-		purple_account_set_password(account, [thePassword UTF8String]);
-	}
-
-		// Configure Connnection type
-    const char *ctypes;
-    switch (ctype) {
-        default:
-        case 0: ctypes = "auto"; break;
-        case 1: ctypes = "tcp";  break;
-        case 2: ctypes = "tls";  break;
-    }
-    purple_account_set_string(account, "transport", ctypes);
-
-
-		// Configure Proxy and UserAgent
-    if (chatProxy && [chatProxy length])
-        purple_account_set_string(account, "groupchat_user", [chatProxy UTF8String]);
-    if (userAgent && [userAgent length])
-        purple_account_set_string(account, "useragent", [userAgent UTF8String]);
-
-
-		// Configure the AccountName
+    // Account preferences
+    NSLog(@"Configuring account: %s\n", self.purpleAccountName);
+	
+    NSString *winLogin  = [self preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
     NSString *completeUserName = [NSString stringWithUTF8String:[self purpleAccountName]];
 
-    if (winLogin && [winLogin length])
+    if (winLogin && [winLogin length]) {
+        // Configure the complete username ("user@domain.com,DOMAIN\user")
         completeUserName = [NSString stringWithFormat:@"%@,%@",completeUserName, winLogin];
+        purple_account_set_username(account, [completeUserName UTF8String]);
+    } else {
+        purple_account_set_username(account, self.purpleAccountName);
+    }
+    
+    NSString *thePassword = [self preferenceForKey:KEY_SIPE_PASSWORD group:GROUP_ACCOUNT_STATUS];
+    if (thePassword && [thePassword length])
+        purple_account_set_password(account, [thePassword UTF8String]);
 
-    purple_account_set_username(account, [completeUserName UTF8String]);
+	BOOL sso = [[self preferenceForKey:KEY_SIPE_SINGLE_SIGN_ON group:GROUP_ACCOUNT_STATUS] boolValue];
+	purple_account_set_bool(account, "sso", sso);
+    
+    if (sso) {
+            // Adium doesn't honor our "optional" password on account creation and will prompt if the password field is left blank, so we must force it to think there is one, but only if there isn't already a password saved
+            if (!thePassword)
+                [self setPasswordTemporarily:@"placeholder"];
+    }
+    
+    // Connection preferences
+    NSString *connType = [self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS];
+    purple_account_set_string(account, "transport", [connType UTF8String]);
+    
+    NSString *authScheme = [self preferenceForKey:KEY_SIPE_AUTH_SCHEME group:GROUP_ACCOUNT_STATUS];
+    purple_account_set_string(account, "authentication", [authScheme UTF8String]);
+    
+	NSString *userAgent = [self preferenceForKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
+    purple_account_set_string(account, "useragent", (!userAgent.length) ?  [userAgent UTF8String] : "" );
+    
+    // Email preferences
+    NSString *emailURL = [self preferenceForKey:KEY_SIPE_EMAIL_URL group:GROUP_ACCOUNT_STATUS];
+    purple_account_set_string(account, "email_usr", (!emailURL.length) ?  [emailURL UTF8String] : "" );
 
-	const char *username  = purple_account_get_username(account);
+    // TODO: Use account name (user@domain) as default for this
+    NSString *email = [self preferenceForKey:KEY_SIPE_EMAIL group:GROUP_ACCOUNT_STATUS];
+    purple_account_set_string(account, "email", (!email.length) ?  [email UTF8String] : "" );
+    
+    // TODO: Use Windows Login (DOMAIN\user) as default for this
+    NSString *emailLogin = [self preferenceForKey:KEY_SIPE_EMAIL_LOGIN group:GROUP_ACCOUNT_STATUS];
+    purple_account_set_string(account, "email_login", (!emailLogin.length) ?  [emailLogin UTF8String] : "" );
 
-    NSLog(@"AccountName: %s\n", username ? username : "NULL");
-
+    // TODO: Use default password as default for this
+    NSString *emailPassword = [self preferenceForKey:KEY_SIPE_EMAIL_PASSWORD group:GROUP_ACCOUNT_STATUS];
+    purple_account_set_string(account, "email_password", (!emailPassword.length) ?  [emailPassword UTF8String] : "" );
+    
+    // Group chat preferences
+    NSString *groupchatUser = [self preferenceForKey:KEY_SIPE_GROUP_CHAT_PROXY group:GROUP_ACCOUNT_STATUS];
+    purple_account_set_string(account, "groupchat_user", (!groupchatUser.length) ? [groupchatUser UTF8String] : "" );
+    
 }
 
 
@@ -117,121 +130,144 @@
 /*!
  * @brief Status name to use for a Purple buddy
  */
-
 - (NSString *)statusNameForPurpleBuddy:(PurpleBuddy *)buddy
 {
-    NSString        *statusName = nil;
+    NSString *statusName = [super statusNameForPurpleBuddy:buddy];
     PurplePresence  *presence = purple_buddy_get_presence(buddy);
-    PurpleStatus        *status = purple_presence_get_active_status(presence);
+    PurpleStatus    *status = purple_presence_get_active_status(presence);
     const char      *purpleStatusID = purple_status_get_id(status);
     
     if (!purpleStatusID) return nil;
-	
-    if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_AVAILABLE))) {
-        statusName = STATUS_NAME_AVAILABLE;
-		
-    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_AWAY))) {
-        statusName = STATUS_NAME_AWAY;
-		
-    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_BRB))) {
-        statusName = STATUS_NAME_BRB;
-		
-    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_BUSY))) {
-        statusName = STATUS_NAME_BUSY;
-		
-    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_BUSYIDLE))) {
-        statusName = STATUS_NAME_BUSY;
-		
-    } else if (!strcmp(purpleStatusID, sipe_core_activity_description(SIPE_ACTIVITY_DND))) {
-        statusName = STATUS_NAME_DND;
-		 
-    } // TODO: put in entries for all SIPE_ACTIVITY_xxxx values
     
-    return statusName;
+    switch (sipe_status_token_to_activity(purpleStatusID))
+    {
+        case SIPE_ACTIVITY_AVAILABLE:
+        case SIPE_ACTIVITY_ONLINE:
+            statusName = STATUS_NAME_AVAILABLE;
+            break;
+        case SIPE_ACTIVITY_AWAY:
+        case SIPE_ACTIVITY_INACTIVE:
+            statusName = STATUS_NAME_AWAY;
+            break;
+        case SIPE_ACTIVITY_BRB:
+            statusName = STATUS_NAME_BRB;
+            break;
+        case SIPE_ACTIVITY_BUSY:
+        case SIPE_ACTIVITY_BUSYIDLE:
+            statusName = STATUS_NAME_BUSY;
+            break;
+        case SIPE_ACTIVITY_DND:
+            statusName = STATUS_NAME_DND;
+            break;
+        case SIPE_ACTIVITY_LUNCH:
+            statusName = STATUS_NAME_LUNCH;
+            break;
+        case SIPE_ACTIVITY_INVISIBLE:
+            statusName = STATUS_NAME_INVISIBLE;
+            break;
+        case SIPE_ACTIVITY_OFFLINE:
+            statusName = STATUS_NAME_OFFLINE;
+            break;
+        case SIPE_ACTIVITY_ON_PHONE:
+            statusName = STATUS_NAME_PHONE;
+            break;
+        case SIPE_ACTIVITY_IN_CONF:
+        case SIPE_ACTIVITY_IN_MEETING:
+            statusName = STATUS_NAME_NOT_AT_DESK;
+            break;
+        case SIPE_ACTIVITY_OOF:
+            statusName = STATUS_NAME_NOT_IN_OFFICE;
+            break;
+        case SIPE_ACTIVITY_URGENT_ONLY:
+            statusName = STATUS_NAME_AWAY_FRIENDS_ONLY;
+            break;
+        default:
+            statusName = STATUS_NAME_OFFLINE;
+    }
+   
+    return statusName; 
+    
 }
-
-
 
 /*!
- * @brief Status message for a contact
+ * @brief Maps purple status IDs to Adium statuses
  */
-- (NSAttributedString *)statusMessageForPurpleBuddy:(PurpleBuddy *)buddy
-{
-	PurplePresence				*presence = purple_buddy_get_presence(buddy);
-	PurpleStatus				*status = (presence ? purple_presence_get_active_status(presence) : NULL);
-	const char					*message = (status ? purple_status_get_attr_string(status, "message") : NULL);
-	char						*sipemessage = NULL;
-	NSString					*statusMessage = nil;
-	
-	// TODO: get sipe activity or annotation
-    
-    // probably need to call something like sipe_backend_buddy_get_status();
-	
-	// Get the plugin's status message for this buddy if they don't have a status message
-	if (!message && !sipemessage) {
-		PurplePluginProtocolInfo  *prpl_info = self.protocolInfo;
-		
-		if (prpl_info && prpl_info->status_text) {
-			char *status_text = (prpl_info->status_text)(buddy);
-			
-			// Don't display "Offline" as a status message.
-			if (status_text && strcmp(status_text, _("Offline")) != 0) {
-				statusMessage = [NSString stringWithUTF8String:status_text];				
-			}
-			
-			g_free(status_text);
-		}
-	} else if (sipemessage) {
-		statusMessage = [NSString stringWithUTF8String:sipemessage];
-		g_free(sipemessage);
-	} else {
-		statusMessage = [NSString stringWithUTF8String:message];
-	}
-
-	return statusMessage ? [AIHTMLDecoder decodeHTML:statusMessage] : nil;
-}
-
-
- - (const char *)purpleStatusIDForStatus:(AIStatus *)statusState
- arguments:(NSMutableDictionary *)arguments
+ - (const char *)purpleStatusIDForStatus:(AIStatus *)statusState arguments:(NSMutableDictionary *)arguments
  {
-     const char    *statusID = NULL;
+     const gchar    *statusID;
      NSString		*statusName = statusState.statusName;
      NSString		*statusMessageString = [statusState statusMessageString];
      
      if (!statusMessageString) statusMessageString = @"";
 
+     // TODO: figure out why sipe_status_activity_to_token calls return junk, instead of a gchar*
      switch (statusState.statusType) {
          case AIAvailableStatusType:
-             statusID = sipe_core_activity_description(SIPE_ACTIVITY_AVAILABLE);
+             statusID = sipe_activity_map[SIPE_ACTIVITY_AVAILABLE].status_id;
+             //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_AVAILABLE);
              break;
              
          case AIAwayStatusType:
-             statusID = sipe_core_activity_description(SIPE_ACTIVITY_AWAY);
-             break;
-             
-             /* TODO:  separate away status into different parts
-              if (([statusName isEqualToString:STATUS_NAME_BRB]) ||
-                 ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BRB]] == NSOrderedSame))
-                 statusID = "brb";
-             else if (([statusName isEqualToString:STATUS_NAME_BUSY]) ||
-                      ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BUSY]] == NSOrderedSame))
-                 statusID = "busy";
-             else if (([statusName isEqualToString:STATUS_NAME_PHONE]) ||
-                      ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_PHONE]] == NSOrderedSame))
-                 statusID = "phone";
-             else if (([statusName isEqualToString:STATUS_NAME_LUNCH]) ||
+             if (([statusName isEqualToString:STATUS_NAME_AWAY]) ||
+                 ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_AWAY]] == NSOrderedSame))
+             {
+                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_AWAY);
+                 statusID = sipe_activity_map[SIPE_ACTIVITY_AWAY].status_id;
+             } else if (([statusName isEqualToString:STATUS_NAME_BRB]) ||
+                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BRB]] == NSOrderedSame))
+             {
+                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_BRB);
+                 statusID = sipe_activity_map[SIPE_ACTIVITY_BRB].status_id;
+             } else if (([statusName isEqualToString:STATUS_NAME_BUSY]) ||
+                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BUSY]] == NSOrderedSame))
+             {
+                 // TODO: Figure out how to determine if they should be "busy" or "busyidle"
+                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_BUSY);
+                 statusID = sipe_activity_map[SIPE_ACTIVITY_BUSY].status_id;
+             } else if (([statusName isEqualToString:STATUS_NAME_DND]) ||
+                      ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_DND]] == NSOrderedSame))
+             {
+                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_DND);
+                 statusID = sipe_activity_map[SIPE_ACTIVITY_DND].status_id;
+             } else if (([statusName isEqualToString:STATUS_NAME_LUNCH]) ||
                       ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_LUNCH]] == NSOrderedSame))
-                 statusID = "lunch";  */
+             {
+                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_LUNCH);
+                 statusID = sipe_activity_map[SIPE_ACTIVITY_LUNCH].status_id;
+             } else if (([statusName isEqualToString:STATUS_NAME_PHONE]) ||
+                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_PHONE]] == NSOrderedSame))
+             {
+                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE);
+                 statusID = sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].status_id;
+             } else if (([statusName isEqualToString:STATUS_NAME_NOT_AT_DESK]) ||
+                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_NOT_AT_DESK]] == NSOrderedSame))
+             {
+                 // TODO: Figure out how to determine if they should be "In a meeting" or "In a conference"
+                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_IN_MEETING);
+                 statusID = sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].status_id;
+             } else if (([statusName isEqualToString:STATUS_NAME_NOT_IN_OFFICE]) ||
+                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_NOT_IN_OFFICE]] == NSOrderedSame))
+             {
+                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_OOF);
+                 statusID = sipe_activity_map[SIPE_ACTIVITY_OOF].status_id;
+             } else if (([statusName isEqualToString:STATUS_NAME_AWAY_FRIENDS_ONLY]) ||
+                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_AWAY_FRIENDS_ONLY]] == NSOrderedSame))
+             {
+                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_URGENT_ONLY);
+                 statusID = sipe_activity_map[SIPE_ACTIVITY_URGENT_ONLY].status_id;
+             }
          
          case AIInvisibleStatusType:
-             statusID = sipe_core_activity_description(SIPE_ACTIVITY_INVISIBLE);
+             //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_INVISIBLE);
+             statusID = sipe_activity_map[SIPE_ACTIVITY_INVISIBLE].status_id;
              break;
          
          case AIOfflineStatusType:
-             statusID = sipe_core_activity_description(SIPE_ACTIVITY_OFFLINE);
+             //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_OFFLINE);
+             statusID = sipe_activity_map[SIPE_ACTIVITY_OFFLINE].status_id;
              break;
      }
+     
          
      //If we didn't get a purple status type, request one from super
      if (statusID == NULL) statusID = [super purpleStatusIDForStatus:statusState arguments:arguments];

@@ -19,7 +19,7 @@
 	<key>CFBundleSignature</key>
 	<string>AdIM</string>
 	<key>AIMinimumAdiumVersionRequirement</key>
-	<string>1.4b12</string>
+	<string>1.5</string>
 	<key>CFBundleVersion</key>
 	<string></string>
 	<key>CFBundleShortVersionString</key>
