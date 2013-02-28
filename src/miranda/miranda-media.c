@@ -157,7 +157,7 @@ sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media
 	return NULL;
 }
 
-gchar *
+const gchar *
 sipe_backend_stream_get_id(struct sipe_backend_stream *stream)
 {
 	_NIF();

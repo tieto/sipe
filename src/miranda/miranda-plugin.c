@@ -84,6 +84,7 @@ static BOOL (WINAPI *pfnEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
 HINSTANCE hInst;
 PLUGINLINK* pluginLink;
 struct MM_INTERFACE mmi;
+int hLangpack;
 
 /*
  * Dialog boxes

@@ -149,6 +149,8 @@ connected_callback(HANDLE fd, void* data, const gchar *reason)
 	struct sipe_transport_miranda *transport = (struct sipe_transport_miranda*)data;
 	SIPPROTO *pr = transport->pr;
 
+	if (!pr) return;
+
 	LOCK;
 	if (!fd)
 	{
