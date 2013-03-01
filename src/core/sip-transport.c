@@ -84,10 +84,10 @@ struct sip_auth {
 	gchar *realm;
 	gchar *sts_uri;
 	gchar *target;
-	int version;
-	int retries;
-	int ntlm_num;
-	int expires;
+	guint version;
+	guint retries;
+	guint ntlm_num;
+	guint expires;
 };
 
 /* sip-transport.c private data */
@@ -214,15 +214,15 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 	/* Create security context or handshake continuation? */
 	if (auth->gssapi_context) {
 		/* Perform next step in authentication handshake */
-		int status = sip_sec_init_context_step(auth->gssapi_context,
-						       auth->target,
-						       auth->gssapi_data,
-						       &gssapi_data,
-						       &auth->expires);
+		gboolean status = sip_sec_init_context_step(auth->gssapi_context,
+							    auth->target,
+							    auth->gssapi_data,
+							    &gssapi_data,
+							    &auth->expires);
 
 		/* If authentication is completed gssapi_data can be NULL */
-		if ((status < 0) ||
-		    !(sip_sec_context_is_ready(auth->gssapi_context) || gssapi_data)) {
+		if (!(status &&
+		      (sip_sec_context_is_ready(auth->gssapi_context) || gssapi_data))) {
 			SIPE_DEBUG_ERROR_NOFORMAT("initialize_auth_context: security context continuation failed");
 			g_free(gssapi_data);
 			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
@@ -1628,7 +1628,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 			rspauth = sipmsg_find_part_of_header(sipmsg_find_header(msg, "Authentication-Info"), "rspauth=\"", "\"", NULL);
 
 			if (rspauth != NULL) {
-				if (!sip_sec_verify_signature(transport->registrar.gssapi_context, signature_input_str, rspauth)) {
+				if (sip_sec_verify_signature(transport->registrar.gssapi_context, signature_input_str, rspauth)) {
 					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: signature of incoming message validated");
 					process_input_message(sipe_private, msg);
 				} else {

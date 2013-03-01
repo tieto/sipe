@@ -32,22 +32,22 @@ typedef struct sip_sec_context *SipSecContext;
  * Obtains cashed initial credentials (TGT for Kerberos) or requests new ones if required.
  * In former case domain/username/password information is unnecessary.
  *
- * @param type (in) authentication type
- * @param sso (in) use Single Sign-On
- * @param is_connection_based (in) context is used for a connection
- * @param domain (in) NTLM Domain/Kerberos Realm.
- * @param username (in) user name (can be NULL)
- * @param password (in) password (can be NULL)
+ * @param type     (in) authentication type
+ * @param sso      (in) @c TRUE if Single Sign-On should be used
+ * @param http     (in) @c TRUE if HTTP, @c FALSE for SIP
+ * @param domain   (in) NTLM Domain/Kerberos Realm (ignored for SSO)
+ * @param username (in) user name (can be NULL)    (ignored for SSO)
+ * @param password (in) password (can be NULL)     (ignored for SSO)
  *
  * @return context security context to store and pass between security method invocations
  */
 SipSecContext
 sip_sec_create_context(guint type,
-		       const int  sso,
-		       int is_connection_based,
-		       const char *domain,
-		       const char *username,
-		       const char *password);
+		       gboolean sso,
+		       gboolean http,
+		       const gchar *domain,
+		       const gchar *username,
+		       const gchar *password);
 
 /**
  * Obtains Service ticket (for Kerberos), base64 encodes it and provide as output.
@@ -58,15 +58,15 @@ sip_sec_create_context(guint type,
  * @param output_toked_base64 (out) base64 encoded output token to send to server.
  * @param expires (out) security context expiration time in seconds.
  *
- * @return SIP_SEC_* value signifying success of the operation.
+ * @return @c TRUE if successful
  *
  */
-unsigned long
+gboolean
 sip_sec_init_context_step(SipSecContext context,
-			  const char *target,
-			  const char *input_toked_base64,
-			  char **output_toked_base64,
-			  int *expires);
+			  const gchar *target,
+			  const gchar *input_toked_base64,
+			  gchar **output_toked_base64,
+			  guint *expires);
 
 /**
  * Check if the authentication of a security context is completed and it is
@@ -74,7 +74,7 @@ sip_sec_init_context_step(SipSecContext context,
  *
  * @param context (in) security context. May be @c NULL.
  *
- * @return @TRUE if authentication is completed
+ * @return @c TRUE if authentication is completed
  */
 gboolean sip_sec_context_is_ready(SipSecContext context);
 
@@ -95,8 +95,8 @@ void sip_sec_destroy_context(SipSecContext context);
  *
  * @return signature for the message. Converted to Hex null terminated string;
  */
-char *sip_sec_make_signature(SipSecContext context,
-			     const char *message);
+gchar *sip_sec_make_signature(SipSecContext context,
+			      const gchar *message);
 
 /**
  * A convenience method for sipe.
@@ -108,9 +108,9 @@ char *sip_sec_make_signature(SipSecContext context,
  *
  * @return FALSE on error
  */
-int sip_sec_verify_signature(SipSecContext context,
-			     const char *message,
-			     const char *signature_hex);
+gboolean sip_sec_verify_signature(SipSecContext context,
+				  const gchar *message,
+				  const gchar *signature_hex);
 
 /**
  * Check if authentication scheme requires a password
@@ -118,7 +118,7 @@ int sip_sec_verify_signature(SipSecContext context,
  * @param type authentication type
  * @param sso  TRUE if user selected Single-Sign On
  *
- * @return TRUE if password is required
+ * @return @c TRUE if password is required
  */
 gboolean sip_sec_requires_password(guint authentication,
 				   gboolean sso);

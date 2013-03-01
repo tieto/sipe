@@ -53,23 +53,22 @@ typedef struct _context_tls_dsk {
 
 /* sip-sec-mech.h API implementation for TLS-DSK */
 
-static sip_uint32
+static gboolean
 sip_sec_acquire_cred__tls_dsk(SipSecContext context,
-			      SIPE_UNUSED_PARAMETER const char *domain,
-			      SIPE_UNUSED_PARAMETER const char *username,
-			      const char *password)
+			      SIPE_UNUSED_PARAMETER const gchar *domain,
+			      SIPE_UNUSED_PARAMETER const gchar *username,
+			      const gchar *password)
 {
-	context_tls_dsk ctx = (context_tls_dsk)context;
+	context_tls_dsk ctx = (context_tls_dsk) context;
 
-	ctx->state = sipe_tls_start((gpointer) password);
-	return(ctx->state ? SIP_SEC_E_OK : SIP_SEC_E_INTERNAL_ERROR);
+	return((ctx->state = sipe_tls_start((gpointer) password)) != NULL);
 }
 
-static sip_uint32
+static gboolean
 sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 				  SipSecBuffer in_buff,
 				  SipSecBuffer *out_buff,
-				  SIPE_UNUSED_PARAMETER const char *service_name)
+				  SIPE_UNUSED_PARAMETER const gchar *service_name)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
 	struct sipe_tls_state *state = ctx->state;
@@ -81,7 +80,7 @@ sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 		if ((state->algorithm != SIPE_TLS_DIGEST_ALGORITHM_NONE) &&
 		    state->client_key && state->server_key) {
 			/* Authentication is completed */
-			ctx->common.is_ready = TRUE;
+			context->flags |= SIP_SEC_FLAG_COMMON_READY;
 
 			/* copy key pair */
 			ctx->algorithm  = state->algorithm;
@@ -120,16 +119,17 @@ sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 		ctx->state = NULL;
 	}
 
-	return((ctx->common.is_ready || ctx->state) ? SIP_SEC_E_OK : SIP_SEC_E_INTERNAL_ERROR);
+	return(((context->flags & SIP_SEC_FLAG_COMMON_READY) ||
+		ctx->state));
 }
 
-static sip_uint32
+static gboolean
 sip_sec_make_signature__tls_dsk(SipSecContext context,
-				const char *message,
+				const gchar *message,
 				SipSecBuffer *signature)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
-	sip_uint32 result = SIP_SEC_E_INTERNAL_ERROR;
+	gboolean result = FALSE;
 
 	switch (ctx->algorithm) {
 	case SIPE_TLS_DIGEST_ALGORITHM_MD5:
@@ -138,7 +138,7 @@ sip_sec_make_signature__tls_dsk(SipSecContext context,
 		sipe_digest_hmac_md5(ctx->client_key, ctx->key_length,
 				     (guchar *) message, strlen(message),
 				     signature->value);
-		result = SIP_SEC_E_OK;
+		result = TRUE;
 		break;
 
 	case SIPE_TLS_DIGEST_ALGORITHM_SHA1:
@@ -147,7 +147,7 @@ sip_sec_make_signature__tls_dsk(SipSecContext context,
 		sipe_digest_hmac_sha1(ctx->client_key, ctx->key_length,
 				      (guchar *) message, strlen(message),
 				      signature->value);
-		result = SIP_SEC_E_OK;
+		result = TRUE;
 		break;
 
 	default:
@@ -158,14 +158,14 @@ sip_sec_make_signature__tls_dsk(SipSecContext context,
 	return(result);
 }
 
-static sip_uint32
+static gboolean
 sip_sec_verify_signature__tls_dsk(SipSecContext context,
-				  const char *message,
+				  const gchar *message,
 				  SipSecBuffer signature)
 {
 	context_tls_dsk ctx = (context_tls_dsk) context;
 	SipSecBuffer mac    = { 0, NULL };
-	sip_uint32 result   = SIP_SEC_E_INTERNAL_ERROR;
+	gboolean result     = FALSE;
 
 	switch (ctx->algorithm) {
 	case SIPE_TLS_DIGEST_ALGORITHM_MD5:
@@ -190,8 +190,7 @@ sip_sec_verify_signature__tls_dsk(SipSecContext context,
 	}
 
 	if (mac.value) {
-		result = memcmp(signature.value, mac.value, mac.length) ?
-			SIP_SEC_E_INTERNAL_ERROR : SIP_SEC_E_OK;
+		result = memcmp(signature.value, mac.value, mac.length) == 0;
 		g_free(mac.value);
 	}
 

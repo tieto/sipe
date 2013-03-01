@@ -42,8 +42,9 @@ typedef struct _context_krb5 {
 	const gchar *domain;
 	const gchar *username;
 	const gchar *password;
-	gboolean retry_auth;
 } *context_krb5;
+
+#define SIP_SEC_FLAG_KRB5_RETRY_AUTH 0x00010000
 
 static void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 minor);
 
@@ -102,7 +103,7 @@ static gboolean sip_sec_krb5_acquire_credentials(context_krb5 context)
 static gboolean sip_sec_krb5_initialize_context(context_krb5 context,
 						SipSecBuffer in_buff,
 						SipSecBuffer *out_buff,
-						const char *service_name)
+						const gchar *service_name)
 {
 	OM_uint32 ret;
 	OM_uint32 minor, minor_ignore;
@@ -160,20 +161,20 @@ static gboolean sip_sec_krb5_initialize_context(context_krb5 context,
 	context->common.expires = (int)expiry;
 
 	/* Authentication is completed */
-	context->common.is_ready = TRUE;
+	context->common.flags |= SIP_SEC_FLAG_COMMON_READY;
 
 	return(TRUE);
 }
 
 /* sip-sec-mech.h API implementation for Kerberos/GSS-API */
 
-static sip_uint32
+static gboolean
 sip_sec_acquire_cred__krb5(SipSecContext context,
-			   const char *domain,
-			   const char *username,
-			   const char *password)
+			   const gchar *domain,
+			   const gchar *username,
+			   const gchar *password)
 {
-	context_krb5 ctx = (context_krb5)context;
+	context_krb5 ctx = (context_krb5) context;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__krb5: started");
 
@@ -190,17 +191,17 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 	 * This will be FALSE for HTTP connections. If Kerberos authentication
 	 * succeeded for Kerberos, then there is no need to retry.
 	 */
-	ctx->retry_auth = !context->is_connection_based;
+	if ((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0)
+		context->flags |= SIP_SEC_FLAG_KRB5_RETRY_AUTH;
 
-	return(sip_sec_krb5_acquire_credentials(ctx) ?
-	       SIP_SEC_E_OK: SIP_SEC_E_INTERNAL_ERROR);
+	return(sip_sec_krb5_acquire_credentials(ctx));
 }
 
-static sip_uint32
+static gboolean
 sip_sec_init_sec_context__krb5(SipSecContext context,
 			       SipSecBuffer in_buff,
 			       SipSecBuffer *out_buff,
-			       const char *service_name)
+			       const gchar *service_name)
 {
 	OM_uint32 ret;
 	OM_uint32 minor;
@@ -231,7 +232,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	 * a TGT. This will will only succeed if we have been provided with
 	 * valid authentication information by the user.
 	 */
-	if (!result && ctx->retry_auth) {
+	if (!result && (context->flags & SIP_SEC_FLAG_KRB5_RETRY_AUTH)) {
 		sip_sec_krb5_destroy_context(ctx);
 		result = sip_sec_krb5_obtain_tgt(ctx)          &&
 			 sip_sec_krb5_acquire_credentials(ctx) &&
@@ -242,17 +243,17 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	}
 
 	/* Only retry once */
-	ctx->retry_auth = FALSE;
+	context->flags &= ~SIP_SEC_FLAG_KRB5_RETRY_AUTH;
 
-	return(result ? SIP_SEC_E_OK: SIP_SEC_E_INTERNAL_ERROR);
+	return(result);
 }
 
 /**
  * @param message a NULL terminated string to sign
  */
-static sip_uint32
+static gboolean
 sip_sec_make_signature__krb5(SipSecContext context,
-			     const char *message,
+			     const gchar *message,
 			     SipSecBuffer *signature)
 {
 	OM_uint32 ret;
@@ -272,22 +273,22 @@ sip_sec_make_signature__krb5(SipSecContext context,
 	if (GSS_ERROR(ret)) {
 		sip_sec_krb5_print_gss_error("gss_get_mic", ret, minor);
 		SIPE_DEBUG_ERROR("sip_sec_make_signature__krb5: failed to make signature (ret=%d)", (int)ret);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	} else {
 		signature->length = output_token.length;
 		signature->value  = g_memdup(output_token.value,
 					     output_token.length);
 		gss_release_buffer(&minor, &output_token);
-		return SIP_SEC_E_OK;
+		return TRUE;
 	}
 }
 
 /**
  * @param message a NULL terminated string to check signature of
  */
-static sip_uint32
+static gboolean
 sip_sec_verify_signature__krb5(SipSecContext context,
-			       const char *message,
+			       const gchar *message,
 			       SipSecBuffer signature)
 {
 	OM_uint32 ret;
@@ -310,9 +311,9 @@ sip_sec_verify_signature__krb5(SipSecContext context,
 	if (GSS_ERROR(ret)) {
 		sip_sec_krb5_print_gss_error("gss_verify_mic", ret, minor);
 		SIPE_DEBUG_ERROR("sip_sec_verify_signature__krb5: failed to make signature (ret=%d)", (int)ret);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	} else {
-		return SIP_SEC_E_OK;
+		return TRUE;
 	}
 }
 
@@ -381,7 +382,7 @@ static void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 mi
  * Prints out errors of Kerberos 5 function invocation
  */
 static void
-sip_sec_krb5_print_error(const char *func,
+sip_sec_krb5_print_error(const gchar *func,
 			 krb5_context context,
 			 krb5_error_code ret);
 
@@ -481,11 +482,11 @@ static gboolean sip_sec_krb5_obtain_tgt(context_krb5 ctx)
 }
 
 static void
-sip_sec_krb5_print_error(const char *func,
+sip_sec_krb5_print_error(const gchar *func,
 			 krb5_context context,
 			 krb5_error_code ret)
 {
-	const char *error_message = krb5_get_error_message(context, ret);
+	const gchar *error_message = krb5_get_error_message(context, ret);
 	SIPE_DEBUG_ERROR("Kerberos 5 ERROR in %s: %s", func, error_message);
 	krb5_free_error_message(context, error_message);
 }

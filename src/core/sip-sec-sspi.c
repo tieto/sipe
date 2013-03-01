@@ -56,15 +56,16 @@ typedef struct _context_sspi {
 	CredHandle* cred_sspi;
 	CtxtHandle* ctx_sspi;
 	guint type;
-	gboolean initial;
-	gboolean connection_less_ntlm;
 } *context_sspi;
+
+#define SIP_SEC_FLAG_SSPI_INITIAL  0x00010000
+#define SIP_SEC_FLAG_SSPI_SIP_NTLM 0x00020000
 
 static int
 sip_sec_get_interval_from_now_sec(TimeStamp timestamp);
 
 static void
-sip_sec_sspi_print_error(const char *func,
+sip_sec_sspi_print_error(const gchar *func,
 			 SECURITY_STATUS ret);
 
 /** internal method */
@@ -85,23 +86,24 @@ sip_sec_destroy_sspi_context(context_sspi context)
 
 /* sip-sec-mech.h API implementation for SSPI - Kerberos and NTLM */
 
-static sip_uint32
+static gboolean
 sip_sec_acquire_cred__sspi(SipSecContext context,
-			   const char *domain,
-			   const char *username,
-			   const char *password)
+			   const gchar *domain,
+			   const gchar *username,
+			   const gchar *password)
 {
 	SECURITY_STATUS ret;
 	TimeStamp expiry;
 	SEC_WINNT_AUTH_IDENTITY auth_identity;
 	context_sspi ctx = (context_sspi)context;
 
-	ctx->connection_less_ntlm = !context->is_connection_based &&
-		(ctx->type == SIPE_AUTHENTICATION_TYPE_NTLM);
+	if (((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
+	    (ctx->type == SIPE_AUTHENTICATION_TYPE_NTLM))
+		context->flags |= SIP_SEC_FLAG_SSPI_SIP_NTLM;
 
-	if (!context->sso) {
+	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
 		if (!username || !password) {
-			return SIP_SEC_E_INTERNAL_ERROR;
+			return FALSE;
 		}
 
 		memset(&auth_identity, 0, sizeof(auth_identity));
@@ -128,7 +130,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 					(SEC_CHAR *)mech_names[ctx->type],
 					SECPKG_CRED_OUTBOUND,
 					NULL,
-					context->sso ? NULL : &auth_identity,
+					(context->flags & SIP_SEC_FLAG_COMMON_SSO) ? NULL : &auth_identity,
 					NULL,
 					NULL,
 					ctx->cred_sspi,
@@ -138,17 +140,17 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		sip_sec_sspi_print_error("sip_sec_acquire_cred__sspi: AcquireCredentialsHandleA", ret);
 		g_free(ctx->cred_sspi);
 		ctx->cred_sspi = NULL;
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	} else {
-		return SIP_SEC_E_OK;
+		return TRUE;
 	}
 }
 
-static sip_uint32
+static gboolean
 sip_sec_init_sec_context__sspi(SipSecContext context,
 			       SipSecBuffer in_buff,
 			       SipSecBuffer *out_buff,
-			       const char *service_name)
+			       const gchar *service_name)
 {
 	TimeStamp expiry;
 	SecBufferDesc input_desc, output_desc;
@@ -161,34 +163,32 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
 
-	if (ctx->connection_less_ntlm) {
-		if (ctx->initial) {
+	if (context->flags & SIP_SEC_FLAG_SSPI_SIP_NTLM) {
+		if (context->flags & SIP_SEC_FLAG_SSPI_INITIAL) {
 			/* empty initial message for connection-less NTLM */
 			if (in_buff.value == NULL) {
 				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: initial message for connection-less NTLM");
 				out_buff->length = 0;
 				out_buff->value = (guint8 *) g_strdup("");
-				return SIP_SEC_E_OK;
+				return TRUE;
 
 				/* call again to create context for connection-less NTLM */
 			} else {
 				SipSecBuffer empty = { 0, NULL };
 
-				ctx->initial = FALSE;
-				ret = sip_sec_init_sec_context__sspi(context,
-								     empty,
-								     out_buff,
-								     service_name);
-				if (ret == SEC_E_OK) {
+				context->flags &= ~SIP_SEC_FLAG_SSPI_INITIAL;
+				if (sip_sec_init_sec_context__sspi(context,
+								   empty,
+								   out_buff,
+								   service_name)) {
 					SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: connection-less NTLM second round");
 					g_free(out_buff->value);
 				} else {
-					sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: unexpected NTLM state", ret);
-					return SIP_SEC_E_INTERNAL_ERROR;
+					return FALSE;
 				}
 			}
 		}
-	} else if (context->is_connection_based &&
+	} else if ((context->flags & SIP_SEC_FLAG_COMMON_HTTP) &&
 		   ctx->ctx_sspi &&
 		   (in_buff.value == NULL)) {
 		/*
@@ -227,7 +227,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		     ISC_REQ_INTEGRITY |
 		     ISC_REQ_IDENTIFY);
 
-	if (ctx->connection_less_ntlm) {
+	if (context->flags & SIP_SEC_FLAG_SSPI_SIP_NTLM) {
 		req_flags |= (ISC_REQ_DATAGRAM);
 	}
 
@@ -249,7 +249,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 			g_free(out_context);
 		sip_sec_destroy_sspi_context(ctx);
 		sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: InitializeSecurityContextA", ret);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	}
 
 	out_buff->length = out_token.cbBuffer;
@@ -268,10 +268,10 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 
 	if (ret != SEC_I_CONTINUE_NEEDED) {
 		/* Authentication is completed */
-		ctx->common.is_ready = TRUE;
+		context->flags |= SIP_SEC_FLAG_COMMON_READY;
 	}
 
-	return SIP_SEC_E_OK;
+	return TRUE;
 }
 
 static void
@@ -285,16 +285,16 @@ sip_sec_destroy_sec_context__sspi(SipSecContext context)
  * @param message a NULL terminated string to sign
  *
  */
-static sip_uint32
+static gboolean
 sip_sec_make_signature__sspi(SipSecContext context,
-			     const char *message,
+			     const gchar *message,
 			     SipSecBuffer *signature)
 {
 	SecBufferDesc buffs_desc;
 	SecBuffer buffs[2];
 	SECURITY_STATUS ret;
 	SecPkgContext_Sizes context_sizes;
-	unsigned char *signature_buff;
+	guchar *signature_buff;
 	size_t signature_buff_length;
 	context_sspi ctx = (context_sspi) context;
 
@@ -304,7 +304,7 @@ sip_sec_make_signature__sspi(SipSecContext context,
 
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_make_signature__sspi: QueryContextAttributes", ret);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	}
 
 	signature_buff_length = context_sizes.cbMaxSignature;
@@ -331,22 +331,22 @@ sip_sec_make_signature__sspi(SipSecContext context,
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_make_signature__sspi: MakeSignature", ret);
 		g_free(signature_buff);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	}
 
 	signature->value = signature_buff;
 	signature->length = buffs[1].cbBuffer;
 
-	return SIP_SEC_E_OK;
+	return TRUE;
 }
 
 /**
  * @param message a NULL terminated string to check signature of
- * @return SIP_SEC_E_OK on success
+ * @return TRUE on success
  */
-static sip_uint32
+static gboolean
 sip_sec_verify_signature__sspi(SipSecContext context,
-			       const char *message,
+			       const gchar *message,
 			       SipSecBuffer signature)
 {
 	SecBufferDesc buffs_desc;
@@ -374,10 +374,10 @@ sip_sec_verify_signature__sspi(SipSecContext context,
 
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_verify_signature__sspi: VerifySignature", ret);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	}
 
-	return SIP_SEC_E_OK;
+	return TRUE;
 }
 
 SipSecContext
@@ -391,8 +391,8 @@ sip_sec_create_context__sspi(guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->type    = type;
-	context->initial = TRUE;
+	context->common.flags |= SIP_SEC_FLAG_SSPI_INITIAL;
+	context->type          = type;
 
 	return((SipSecContext) context);
 }
@@ -428,12 +428,12 @@ sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
 }
 
 static void
-sip_sec_sspi_print_error(const char *func,
+sip_sec_sspi_print_error(const gchar *func,
 			 SECURITY_STATUS ret)
 {
-	char *error_message;
+	gchar *error_message;
 	static char *buff;
-	int buff_length;
+	guint buff_length;
 
 	buff_length = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
 				    FORMAT_MESSAGE_ALLOCATE_BUFFER |

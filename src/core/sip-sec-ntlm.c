@@ -995,7 +995,7 @@ sip_sec_ntlm_parse_challenge(SipSecBuffer in_buff,
  * @param server_seal_key (out) 	must be g_free()'d after use
  * @param flags (in, out)		negotiated flags
  */
-static sip_uint32
+static gboolean
 sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 			      guchar **server_sign_key,
 			      guchar **client_seal_key,
@@ -1008,11 +1008,11 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 			      const guint64 time_val,
 			      const guint8 *target_info,
 			      int target_info_len,
-			      gboolean is_connection_based,
+			      gboolean http,
 			      SipSecBuffer *out_buff,
 			      guint32 *flags)
 {
-	guint32 orig_flags = is_connection_based ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS_CONNLESS;
+	guint32 orig_flags = http ? NEGOTIATE_FLAGS_CONN : NEGOTIATE_FLAGS_CONNLESS;
 	guint32 neg_flags = (*flags & orig_flags) | NTLMSSP_REQUEST_TARGET;
 	int ntlmssp_nt_resp_len =
 #ifdef _SIPE_COMPILING_TESTS
@@ -1044,12 +1044,12 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 	guint64 time_vl = time_val ? time_val : TIME_T_TO_VAL(time(NULL));
 
 	if (!IS_FLAG(*flags, NEGOTIATE_FLAGS_COMMON_MIN) ||
-	    !(is_connection_based || IS_FLAG(*flags, NEGOTIATE_FLAGS_CONNLESS_EXTRA)) ||
+	    !(http || IS_FLAG(*flags, NEGOTIATE_FLAGS_CONNLESS_EXTRA)) ||
 	    !nt_challenge_response) /* Coverity thinks ntlmssp_nt_resp_len could be 0 */
 	{
 		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_ntlm_gen_authenticate: received incompatible NTLM NegotiateFlags, exiting.");
 		g_free(nt_challenge_response);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	}
 
 	if (IS_FLAG(neg_flags, NTLMSSP_NEGOTIATE_128)) {
@@ -1245,7 +1245,7 @@ sip_sec_ntlm_gen_authenticate(guchar **client_sign_key,
 
 	g_free(nt_challenge_response);
 
-	return SIP_SEC_E_OK;
+	return TRUE;
 }
 
 /**
@@ -1691,9 +1691,9 @@ sip_sec_ntlm_message_describe(SipSecBuffer *buff,
 /* Security context for NTLM */
 typedef struct _context_ntlm {
 	struct sip_sec_context common;
-	char* domain;
-	char *username;
-	char *password;
+	gchar *domain;
+	gchar *username;
+	gchar *password;
 	guchar *client_sign_key;
 	guchar *server_sign_key;
 	guchar *client_seal_key;
@@ -1703,31 +1703,31 @@ typedef struct _context_ntlm {
 } *context_ntlm;
 
 
-static sip_uint32
+static gboolean
 sip_sec_acquire_cred__ntlm(SipSecContext context,
-			   const char *domain,
-			   const char *username,
-			   const char *password)
+			   const gchar *domain,
+			   const gchar *username,
+			   const gchar *password)
 {
 	context_ntlm ctx = (context_ntlm)context;
 
 	/* NTLM requires a username & password. Domain may be empty */
 	if (!domain || is_empty(username) || is_empty(password))
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 
 	ctx->domain   = g_strdup(domain);
 	ctx->username = g_strdup(username);
 	ctx->password = g_strdup(password);
 	ctx->initial  = TRUE;
 
-	return SIP_SEC_E_OK;
+	return TRUE;
 }
 
-static sip_uint32
+static gboolean
 sip_sec_init_sec_context__ntlm(SipSecContext context,
 			       SipSecBuffer in_buff,
 			       SipSecBuffer *out_buff,
-			       SIPE_UNUSED_PARAMETER const char *service_name)
+			       SIPE_UNUSED_PARAMETER const gchar *service_name)
 {
 	context_ntlm ctx = (context_ntlm) context;
 
@@ -1737,7 +1737,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		ctx->initial = FALSE;
 
 		/* HTTP */
-		if (context->is_connection_based) {
+		if (context->flags & SIP_SEC_FLAG_COMMON_HTTP) {
 			sip_sec_ntlm_gen_negotiate(out_buff);
 			sip_sec_ntlm_message_describe(out_buff, "Negotiate");
 		/* SIP */
@@ -1747,7 +1747,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 			out_buff->value = (guint8 *) g_strdup("");
 		}
 	} else 	{
-		sip_uint32 res;
+		gboolean res;
 		guchar *client_sign_key = NULL;
 		guchar *server_sign_key = NULL;
 		guchar *client_seal_key = NULL;
@@ -1760,7 +1760,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		gchar *tmp;
 
 		if (!in_buff.value || !in_buff.length) {
-			return SIP_SEC_E_INTERNAL_ERROR;
+			return FALSE;
 		}
 
 		sip_sec_ntlm_message_describe(&in_buff, "Challenge");
@@ -1785,14 +1785,14 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 					      time_val,
 					      target_info,
 					      target_info_len,
-					      context->is_connection_based,
+					      context->flags & SIP_SEC_FLAG_COMMON_HTTP,
 					      out_buff,
 					      &flags);
 		g_free(server_challenge);
 		g_free(target_info);
 		g_free(tmp);
 
-		if (res != SIP_SEC_E_OK) {
+		if (!res) {
 			g_free(client_sign_key);
 			g_free(server_sign_key);
 			g_free(client_seal_key);
@@ -1817,19 +1817,19 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 		ctx->flags = flags;
 
 		/* Authentication is completed */
-		ctx->common.is_ready = TRUE;
+		context->flags |= SIP_SEC_FLAG_COMMON_READY;
 	}
 
-	return SIP_SEC_E_OK;
+	return TRUE;
 }
 
 /**
  * @param message a NULL terminated string to sign
  *
  */
-static sip_uint32
+static gboolean
 sip_sec_make_signature__ntlm(SipSecContext context,
-			     const char *message,
+			     const gchar *message,
 			     SipSecBuffer *signature)
 {
 	signature->length = 16;
@@ -1845,31 +1845,30 @@ sip_sec_make_signature__ntlm(SipSecContext context,
 					  * use (void *) to remove guint8 alignment
 					  */
 					 (void *)signature->value);
-	return SIP_SEC_E_OK;
+	return TRUE;
 }
 
 /**
  * @param message a NULL terminated string to check signature of
- * @return SIP_SEC_E_OK on success
+ * @return TRUE on success
  */
-static sip_uint32
+static gboolean
 sip_sec_verify_signature__ntlm(SipSecContext context,
-			       const char *message,
+			       const gchar *message,
 			       SipSecBuffer signature)
 {
+	context_ntlm ctx = (context_ntlm) context;
 	guint32 mac[4];
 	/* SipSecBuffer.value is g_malloc()'d: use (void *) to remove guint8 alignment */
 	guint32 random_pad = GUINT32_FROM_LE(((guint32 *)((void *)signature.value))[1]);
 
-	sip_sec_ntlm_sipe_signature_make(((context_ntlm) context)->flags,
-								 message,
-								 random_pad,
-								 ((context_ntlm) context)->server_sign_key,
-								 ((context_ntlm) context)->server_seal_key,
-								 mac);
-	return(memcmp(signature.value, mac, 16) ?
-	       SIP_SEC_E_INTERNAL_ERROR :
-	       SIP_SEC_E_OK);
+	sip_sec_ntlm_sipe_signature_make(ctx->flags,
+					 message,
+					 random_pad,
+					 ctx->server_sign_key,
+					 ctx->server_seal_key,
+					 mac);
+	return(memcmp(signature.value, mac, 16) == 0);
 }
 
 static void

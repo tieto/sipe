@@ -102,11 +102,11 @@ static gboolean sip_sec_password__NONE(void)
 /* sip_sec API methods */
 SipSecContext
 sip_sec_create_context(guint type,
-		       const int  sso,
-		       int is_connection_based,
-		       const char *domain,
-		       const char *username,
-		       const char *password)
+		       gboolean sso,
+		       gboolean http,
+		       const gchar *domain,
+		       const gchar *username,
+		       const gchar *password)
 {
 	SipSecContext context = NULL;
 
@@ -121,14 +121,14 @@ sip_sec_create_context(guint type,
 
 	context = (*(auth_to_hook[type]))(type);
 	if (context) {
-		sip_uint32 ret;
 
-		context->sso = sso;
-		context->is_connection_based = is_connection_based;
-		context->is_ready = FALSE;
+		context->flags = 0;
+		if (sso)
+			context->flags |= SIP_SEC_FLAG_COMMON_SSO;
+		if (http)
+			context->flags |= SIP_SEC_FLAG_COMMON_HTTP;
 
-		ret = (*context->acquire_cred_func)(context, domain, username, password);
-		if (ret != SIP_SEC_E_OK) {
+		if (!(*context->acquire_cred_func)(context, domain, username, password)) {
 			SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_create_context: failed to acquire credentials.");
 			(*context->destroy_context_func)(context);
 			context = NULL;
@@ -138,14 +138,14 @@ sip_sec_create_context(guint type,
 	return(context);
 }
 
-unsigned long
+gboolean
 sip_sec_init_context_step(SipSecContext context,
-			  const char *target,
-			  const char *input_toked_base64,
-			  char **output_toked_base64,
-			  int *expires)
+			  const gchar *target,
+			  const gchar *input_toked_base64,
+			  gchar **output_toked_base64,
+			  guint *expires)
 {
-	sip_uint32 ret = SIP_SEC_E_INTERNAL_ERROR;
+	gboolean ret = FALSE;
 
 	if (context) {
 		SipSecBuffer in_buff  = {0, NULL};
@@ -160,7 +160,7 @@ sip_sec_init_context_step(SipSecContext context,
 		if (input_toked_base64)
 			g_free(in_buff.value);
 
-		if (ret == SIP_SEC_E_OK) {
+		if (ret) {
 
 			if (out_buff.value) {
 				if (out_buff.length > 0) {
@@ -185,7 +185,7 @@ sip_sec_init_context_step(SipSecContext context,
 
 gboolean sip_sec_context_is_ready(SipSecContext context)
 {
-	return(context && (context->is_ready != 0));
+	return(context && (context->flags & SIP_SEC_FLAG_COMMON_READY));
 }
 
 void
@@ -194,12 +194,12 @@ sip_sec_destroy_context(SipSecContext context)
 	if (context) (*context->destroy_context_func)(context);
 }
 
-char * sip_sec_make_signature(SipSecContext context, const char *message)
+gchar *sip_sec_make_signature(SipSecContext context, const gchar *message)
 {
 	SipSecBuffer signature;
-	char *signature_hex;
+	gchar *signature_hex;
 
-	if(((*context->make_signature_func)(context, message, &signature)) != SIP_SEC_E_OK) {
+	if (!(*context->make_signature_func)(context, message, &signature)) {
 		SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_make_signature failed. Unable to sign message!");
 		return NULL;
 	}
@@ -208,15 +208,18 @@ char * sip_sec_make_signature(SipSecContext context, const char *message)
 	return signature_hex;
 }
 
-int sip_sec_verify_signature(SipSecContext context, const char *message, const char *signature_hex)
+gboolean sip_sec_verify_signature(SipSecContext context,
+				  const gchar *message,
+				  const gchar *signature_hex)
 {
 	SipSecBuffer signature;
-	sip_uint32 res;
+	gboolean res;
 
 	SIPE_DEBUG_INFO("sip_sec_verify_signature: message is:%s signature to verify is:%s",
 			message ? message : "", signature_hex ? signature_hex : "");
 
-	if (!message || !signature_hex) return SIP_SEC_E_INTERNAL_ERROR;
+	if (!message || !signature_hex)
+		return FALSE;
 
 	signature.length = hex_str_to_buff(signature_hex, &signature.value);
 	res = (*context->verify_signature_func)(context, message, signature);

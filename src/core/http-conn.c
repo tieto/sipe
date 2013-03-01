@@ -446,7 +446,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 		char *authorization;
 		char *output_toked_base64;
 		HttpConnAuth *auth = http_conn->auth;
-		long ret = -1;
+		gboolean ret = FALSE;
 
 		http_conn->retries++;
 		if (http_conn->retries > 2) {
@@ -513,7 +513,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			g_strfreev(parts);
 		}
 
-		if (ret < 0) {
+		if (!ret) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
