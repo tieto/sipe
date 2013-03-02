@@ -1671,6 +1671,8 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 
 static void resolve_next_service(struct sipe_core_private *sipe_private,
 				 const struct sip_service_data *start);
+static void resolve_next_address(struct sipe_core_private *sipe_private,
+				 gboolean initial);
 static void sip_transport_error(struct sipe_transport_connection *conn,
 				const gchar *msg)
 {
@@ -1679,6 +1681,9 @@ static void sip_transport_error(struct sipe_transport_connection *conn,
 	/* This failed attempt was based on a DNS SRV record */
 	if (sipe_private->service_data) {
 		resolve_next_service(sipe_private, NULL);
+	/* This failed attempt was based on a DNS A record */
+	} else if (sipe_private->address_data) {
+		resolve_next_address(sipe_private, FALSE);
 	} else {
 		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 					      SIPE_CONNECTION_ERROR_NETWORK,
@@ -1717,7 +1722,11 @@ struct sip_service_data {
 	guint type;
 };
 
-/* Service list for autodection */
+/*
+ * Autodiscover using DNS SRV records. See RFC2782/3263
+ *
+ * Service list for AUTO
+ */
 static const struct sip_service_data service_autodetect[] = {
 	{ "sipinternaltls", "tcp", SIPE_TRANSPORT_TLS }, /* for internal TLS connections */
 	{ "sipinternal",    "tcp", SIPE_TRANSPORT_TCP }, /* for internal TCP connections */
@@ -1746,21 +1755,52 @@ static const struct sip_service_data *services[] = {
 	service_tcp         /* SIPE_TRANSPORT_TCP  */
 };
 
+struct sip_address_data {
+	const char *prefix;
+	guint port;
+};
+
+/*
+ * Autodiscover using DNS A records. This is an extension addded
+ * by Microsoft. See http://support.microsoft.com/kb/2619522
+ */
+static const struct sip_address_data addresses[] = {
+	{ "sipinternal", 5061 },
+	{ "sipexternal",  443 },
+	{ "sip",         5061 },
+	{ "sip",          443 },
+	{ NULL,             0 }
+};
+
 static void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
 				   const gchar *hostname, guint port)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	gboolean service = sipe_private->service_data != NULL;
 
 	sipe_private->dns_query = NULL;
 
 	if (hostname) {
-		SIPE_DEBUG_INFO("sipe_core_dns_resolved - SRV hostname: %s port: %d",
-				hostname, port);
-		sipe_server_register(sipe_private,
-				     sipe_private->service_data->type,
+		guint type;
+
+		if (service) {
+			type = sipe_private->service_data->type;
+		} else {
+			port = sipe_private->address_data->port;
+			type = sipe_private->transport_type;
+			if (type == SIPE_TRANSPORT_AUTO)
+				type = SIPE_TRANSPORT_TLS;
+		}
+
+		SIPE_DEBUG_INFO("sipe_core_dns_resolved - %s hostname: %s port: %d",
+				service ? "SRV" : "A", hostname, port);
+		sipe_server_register(sipe_private, type,
 				     g_strdup(hostname), port);
 	} else {
-		resolve_next_service(SIPE_CORE_PRIVATE, NULL);
+		if (service)
+			resolve_next_service(SIPE_CORE_PRIVATE, NULL);
+		else
+			resolve_next_address(SIPE_CORE_PRIVATE, FALSE);
 	}
 }
 
@@ -1772,19 +1812,13 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 	} else {
 		sipe_private->service_data++;
 		if (sipe_private->service_data->protocol == NULL) {
-			guint type = sipe_private->transport_type;
 
 			/* We tried all services */
 			sipe_private->service_data = NULL;
 
-			/* Try connecting to the SIP hostname directly */
-			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; using SIP domain as fallback");
-			if (type == SIPE_TRANSPORT_AUTO)
-				type = SIPE_TRANSPORT_TLS;
-
-			sipe_server_register(sipe_private, type,
-					     g_strdup(sipe_private->public.sip_domain),
-					     0);
+			/* Try A records list next */
+			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; trying A records next");
+			resolve_next_address(sipe_private, TRUE);
 			return;
 		}
 	}
@@ -1797,6 +1831,46 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 					sipe_private->public.sip_domain,
 					(sipe_dns_resolved_cb) sipe_core_dns_resolved,
 					SIPE_CORE_PUBLIC);
+}
+
+static void resolve_next_address(struct sipe_core_private *sipe_private,
+				 gboolean initial)
+{
+	gchar *hostname;
+
+	if (initial) {
+		sipe_private->address_data = addresses;
+	} else {
+		sipe_private->address_data++;
+		if (sipe_private->address_data->prefix == NULL) {
+			guint type = sipe_private->transport_type;
+
+			/* We tried all addresss */
+			sipe_private->address_data = NULL;
+
+			/* Try connecting to the SIP hostname directly */
+			SIPE_DEBUG_INFO_NOFORMAT("no SRV or A records found; using SIP domain as fallback");
+			if (type == SIPE_TRANSPORT_AUTO)
+				type = SIPE_TRANSPORT_TLS;
+
+			sipe_server_register(sipe_private, type,
+					     g_strdup(sipe_private->public.sip_domain),
+					     0);
+			return;
+		}
+	}
+
+	/* Try to resolve next address */
+	hostname = g_strdup_printf("%s.%s",
+				   sipe_private->address_data->prefix,
+				   sipe_private->public.sip_domain);
+	sipe_private->dns_query = sipe_backend_dns_query_a(
+					SIPE_CORE_PUBLIC,
+					hostname,
+					sipe_private->address_data->port,
+					(sipe_dns_resolved_cb) sipe_core_dns_resolved,
+					SIPE_CORE_PUBLIC);
+	g_free(hostname);
 }
 
 /*

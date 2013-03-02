@@ -21,6 +21,7 @@
  */
 
 /* Forward declarations */
+struct sip_address_data;
 struct sip_csta;
 struct sip_service_data;
 struct sip_transport;
@@ -45,7 +46,8 @@ struct sipe_core_private {
 
 	/* sip-transport.c private data */
 	struct sip_transport *transport;
-	const struct sip_service_data *service_data;
+	const struct sip_service_data *service_data; /* autodiscovery SRV records */
+	const struct sip_address_data *address_data; /* autodiscovery A records */
 	guint transport_type;
 	guint authentication_type;
 
