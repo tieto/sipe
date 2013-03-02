@@ -466,7 +466,7 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 					       " <wsse:Password>%s</wsse:Password>"
 					       "</wsse:UsernameToken>",
 					       sipe_private->username,
-					       sipe_private->password);
+					       sipe_private->password ? sipe_private->password : "");
 
 	gboolean ret = request_passport(sipe_private,
 					session,

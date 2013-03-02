@@ -3,12 +3,15 @@ version 1.15.0 "HTTP with Kerberos authentication" (2013-XX-XX)
 	  * effective for all platforms that support --with-krb5
 	  * this triggered a series of cleanup & simplification changes and
 	    functionality & memory leak fixes in the sip-sec modules
-	  * NOTE: if you do *NOT* use Single Sign-On, then be sure to disable
-	          it in the "Advanced" tab of the account settings
 	  * special thanks to Jarek Polok for the logs and testing
 	- Fixed #3603228: Crash on 1.14.1 when connecting to server (Stefan Becker)
 	- Fixed #3604671: sip uri with apostrophe is not valid (Stefan Becker)
 	- fixed HTTP redirect crash (Stefan Becker)
+	- unified Single Sign-On handling in all places (Stefan Becker)
+	  * if SSO is enabled then "Login" & "Password" settings are ignored
+	  * SSO is now off by default for new accounts
+	  * NOTE: if you do *NOT* use SSO, then be sure to disable it in the
+	          "Advanced" tab of the account settings after updating!
 	- added implementation for HTTP "WWW-Authenticate: Negotiate" scheme (Stefan Becker)
 	  * effective for all platforms that support --with-krb5
 	  * it will try Kerberos first, then fall back to NTLM

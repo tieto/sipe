@@ -1711,7 +1711,10 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 {
 	context_ntlm ctx = (context_ntlm)context;
 
-	/* NTLM requires a username & password. Domain may be empty */
+	/*
+	 * Our NTLM implementation does not support Single Sign-On.
+	 * Thus username & password are required. Empty domain is OK.
+	 */
 	if (!domain || is_empty(username) || is_empty(password))
 		return FALSE;
 

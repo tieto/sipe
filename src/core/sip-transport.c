@@ -233,12 +233,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 
 	} else {
 		/* Create security context */
-		const gchar *authuser = sipe_private->authuser;
 		gpointer password = sipe_private->password;
-
-		if (is_empty(authuser)) {
-			authuser = sipe_private->username;
-		}
 
 		/* For TLS-DSK the "password" is a certificate */
 		if (auth->type == SIPE_AUTHENTICATION_TYPE_TLS_DSK) {
@@ -279,7 +274,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 							      SIPE_CORE_PUBLIC_FLAG_IS(SSO),
 							      FALSE, /* connection-less for SIP */
 							      sipe_private->authdomain ? sipe_private->authdomain : "",
-							      authuser,
+							      sipe_private->authuser   ? sipe_private->authuser   : sipe_private->username,
 							      password);
 
 		if (auth->gssapi_context) {
@@ -1820,6 +1815,19 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     const gchar *port)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	/*
+	 * This is the first time when we can check the SSO flag.
+	 * If it is set then we ignore all authentication settings.
+	 */
+	if (SIPE_CORE_PUBLIC_FLAG_IS(SSO)) {
+		g_free(sipe_private->authdomain);
+		g_free(sipe_private->authuser);
+		g_free(sipe_private->password);
+		sipe_private->authdomain = NULL;
+		sipe_private->authuser   = NULL;
+		sipe_private->password   = NULL;
+	}
 
 	sipe_private->authentication_type = authentication;
 
