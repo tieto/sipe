@@ -1,8 +1,7 @@
 Source: pidgin-sipe
 Section: misc
 Priority: optional
-Maintainer: Anibal Avelar <aavelar@cofradia.org>
-Uploaders: Jakub Adam <jakub.adam@ktknet.cz>
+Maintainer: Jakub Adam <jakub.adam@ktknet.cz>
 Homepage: http://sipe.sourceforge.net/
 Build-Depends: dpkg-dev (>= 1.16.1~), debhelper (>= 7), autotools-dev, pkg-config,
  libglib2.0-dev (>= 2.12.0), libxml2-dev, libpurple-dev (>= 2.4.0), libtool,
