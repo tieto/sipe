@@ -23,6 +23,7 @@ version 1.15.0 "Authentication & Autodiscovery Update" (2013-XX-XX)
 	    - authentication: Kerberos
 	    - Single Sign-On: OFF(!)          (see above)
 	- enabled TLS-DSK support in Windows SSPI version
+	- TLS-DSK: don't ask for password if SSPI or Kerberos are compiled in
 	- Farstream 0.1.1 compatibility fix (Jakub Adam)
 	- support conf:sip: meeting URIs (Jakub Adam)
 	- updated Adium port (Michael Lamb)
