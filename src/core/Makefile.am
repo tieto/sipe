@@ -19,6 +19,8 @@ libsipe_core_la_SOURCES = \
 	sip-sec.h \
 	sip-sec.c \
 	sip-sec-mech.h \
+	sip-sec-tls-dsk.h \
+	sip-sec-tls-dsk.c \
 	sip-soap.h \
 	sip-soap.c \
 	sip-transport.h \
@@ -96,9 +98,7 @@ libsipe_core_la_SOURCES += \
 	md4.h \
 	md4.c \
 	sip-sec-ntlm.h \
-	sip-sec-ntlm.c \
-	sip-sec-tls-dsk.h \
-	sip-sec-tls-dsk.c
+	sip-sec-ntlm.c
 
 noinst_LTLIBRARIES += \
 	libsipe_core_tests.la

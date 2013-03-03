@@ -84,14 +84,9 @@
 #define sip_sec_password__Negotiate        sip_sec_password__NONE
 
 /* SIPE_AUTHENTICATION_TYPE_TLS_DSK */
-#if SIP_SEC_WINDOWS_SSPI
-#define sip_sec_create_context__TLS_DSK    sip_sec_create_context__sspi
-#define sip_sec_password__TLS_DSK          sip_sec_password__sspi
-#else
 #include "sip-sec-tls-dsk.h"
 #define sip_sec_create_context__TLS_DSK    sip_sec_create_context__tls_dsk
 #define sip_sec_password__TLS_DSK          sip_sec_password__tls_dsk
-#endif
 
 /* Dummy initialization hook */
 static SipSecContext

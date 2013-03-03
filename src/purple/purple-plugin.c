@@ -270,15 +270,9 @@ static guint get_authentication_type(PurpleAccount *account)
 		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
 	}
 #endif
-#ifndef HAVE_SSPI
-	/*
-	 * @TODO: SSL handshake support isn't implemented in sip-sec-sspi.c.
-	 *        So ignore configuration setting for now.
-	 */
 	if (sipe_strequal(auth, "tls-dsk")) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
 	}
-#endif
 
 	return(authentication_type);
 }
@@ -1010,10 +1004,7 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 #if PURPLE_SIPE_SSO_AND_KERBEROS
 	purple_account_option_add_list_item(option, _("Kerberos"), "krb5");
 #endif
-#ifndef HAVE_SSPI
-	/* see above */
 	purple_account_option_add_list_item(option, _("TLS-DSK"), "tls-dsk");
-#endif
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 #if PURPLE_SIPE_SSO_AND_KERBEROS

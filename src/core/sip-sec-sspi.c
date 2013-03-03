@@ -43,8 +43,7 @@ static const gchar * const mech_names[] = {
 	"NTLM",      /* SIPE_AUTHENTICATION_TYPE_NTLM      */
 	"Kerberos",  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 	"Negotiate", /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
-	/* SSL/TLS provider, is this correct? */
-	"Schannel",  /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+	"",          /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
 };
 
 #ifndef ISC_REQ_IDENTIFY
@@ -123,9 +122,6 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 
 	ctx->cred_sspi = g_malloc0(sizeof(CredHandle));
 
-	/* @TODO: this does not work for "Schannel" (TLS-DSK) as it expects
-	          a SCHANNEL_CRED datastructure, pointing to the private key
-		  and the client certificate */
 	ret = AcquireCredentialsHandleA(NULL,
 					(SEC_CHAR *)mech_names[ctx->type],
 					SECPKG_CRED_OUTBOUND,
