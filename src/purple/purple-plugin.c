@@ -286,6 +286,7 @@ static gboolean get_sso_flag(PurpleAccount *account)
 	 */
 	return(purple_account_get_bool(account, "sso", FALSE));
 #else
+	(void) account; /* keep compiler happy */
 	return(FALSE);
 #endif
 }
