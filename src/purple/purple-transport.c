@@ -351,7 +351,13 @@ static void transport_canwrite_cb(gpointer data,
 				  SIPE_UNUSED_PARAMETER gint source,
 				  SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
-	transport_write(data);
+	struct sipe_transport_purple *transport = data;
+	PurpleConnection *gc = transport->gc;
+
+	/* Ignore spurious "can write" events during closing */
+	if (PURPLE_CONNECTION_IS_VALID(gc) &&
+	    !gc->account->disconnecting)
+		transport_write(data);
 }
 
 void sipe_backend_transport_message(struct sipe_transport_connection *conn,
