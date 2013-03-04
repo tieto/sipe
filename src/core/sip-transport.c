@@ -1767,7 +1767,16 @@ struct sip_address_data {
 static const struct sip_address_data addresses[] = {
 	{ "sipinternal", 5061 },
 	{ "sipexternal",  443 },
-	{ "sip",         5061 },
+/*
+ * Our implementation supports only one port per host name. If the host name
+ * resolves OK, we abort the search and try to connect. If we would know if we
+ * are trying to connect from "Intranet" or "Internet" then we could choose
+ * between those two ports.
+ *
+ * We drop port 5061 in order to cover the "Internet" case.
+ *
+ *	{ "sip",         5061 },
+ */
 	{ "sip",          443 },
 	{ NULL,             0 }
 };
