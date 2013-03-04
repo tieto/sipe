@@ -1781,11 +1781,17 @@ static void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
 	sipe_private->dns_query = NULL;
 
 	if (hostname) {
+		gchar *host;
 		guint type;
 
 		if (service) {
+			host = g_strdup(hostname);
 			type = sipe_private->service_data->type;
 		} else {
+			/* DNS A resolver returns an IP address */
+			host = g_strdup_printf("%s.%s",
+					       sipe_private->address_data->prefix,
+					       sipe_private->public.sip_domain);
 			port = sipe_private->address_data->port;
 			type = sipe_private->transport_type;
 			if (type == SIPE_TRANSPORT_AUTO)
@@ -1794,8 +1800,7 @@ static void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
 
 		SIPE_DEBUG_INFO("sipe_core_dns_resolved - %s hostname: %s port: %d",
 				service ? "SRV" : "A", hostname, port);
-		sipe_server_register(sipe_private, type,
-				     g_strdup(hostname), port);
+		sipe_server_register(sipe_private, type, host, port);
 	} else {
 		if (service)
 			resolve_next_service(SIPE_CORE_PRIVATE, NULL);
