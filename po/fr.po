@@ -5,16 +5,17 @@
 # 
 # 
 # Translators:
+# Translators:
 #   <djanoiup@yahoo.fr>, 2011.
 # Julien Rabier <>, 2012.
-# Stefan Becker <chemobejk@gmail.com>, 2011.
+# Stefan Becker <chemobejk@gmail.com>, 2011,2013.
 # Stéphane Aulery <lkppo@free.fr>, 2012.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-02-25 17:14+0000\n"
+"PO-Revision-Date: 2013-03-05 18:42+0000\n"
 "Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -913,7 +914,7 @@ msgid ""
 "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
-msgstr ""
+msgstr "Saisissez l'adresse de conversation que vous avez reçu dans l'invitation.\n\nUne adresse valide devrait ressembler à ceci :\nmeet:sip:quelquun@societeexemple.com;gruu;opaque=app:conf:focus:id:abcdef1234\nconf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nou cela :\nhttps://rencontrer.societeexemple.com/quelquun/abcdef1234"
 
 #: ../src/purple/purple-plugin.c:874
 msgid "_Join"
