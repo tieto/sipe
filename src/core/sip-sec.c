@@ -121,6 +121,9 @@ sip_sec_create_context(guint type,
 		sip_sec_create_context__TLS_DSK,   /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
 	};
 
+	SIPE_DEBUG_INFO("sip_sec_create_context: type: %d, Single Sign-On: %s, protocol: %s",
+			type, sso ? "yes" : "no", http ? "HTTP" : "SIP");
+
 	context = (*(auth_to_hook[type]))(type);
 	if (context) {
 
