@@ -71,7 +71,7 @@
 - (NSImage *)defaultServiceIconOfType:(AIServiceIconType)iconType {
 	NSImage *baseImage = [NSImage imageNamed:@"sipe" forClass:[self class]];
     
-	if (iconType == AIServiceIconSmall) {
+	if ((iconType == AIServiceIconSmall) || (iconType == AIServiceIconList)) { {
         [baseImage setSize:NSMakeSize(16, 16)];
 	}
     
