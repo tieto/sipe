@@ -127,7 +127,7 @@ sip_sec_create_context(guint type,
 	context = (*(auth_to_hook[type]))(type);
 	if (context) {
 
-		context->flags = 0;
+		/* set common flags */
 		if (sso)
 			context->flags |= SIP_SEC_FLAG_COMMON_SSO;
 		if (http)
