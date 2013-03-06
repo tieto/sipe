@@ -1,7 +1,7 @@
 Source: pidgin-sipe
 Section: misc
 Priority: optional
-Maintainer: Stefan Becker <stefan.becker@nokia.com>
+Maintainer: Stefan Becker <chemobejk@gmail.com>
 XSBC-Original-Maintainer: Anibal Avelar <aavelar@cofradia.org>
 Homepage: http://sipe.sourceforge.net/
 # Maemo 4:  pidgin-dev needed for libpurple-dev

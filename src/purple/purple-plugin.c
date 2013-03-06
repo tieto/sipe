@@ -944,11 +944,12 @@ static PurplePluginInfo sipe_purple_info = {
 	PACKAGE_VERSION,                                  /**< version        */
 	"Microsoft Office Communicator Protocol Plugin",  /**< summary        */
 	"A plugin for the extended SIP/SIMPLE protocol used by "          /**< description */
-	"Microsoft Live/Office Communications Server (LCS2005/OCS2007+)", /**< description */
-	"Anibal Avelar <avelar@gmail.com>, "              /**< author         */
-	"Gabriel Burt <gburt@novell.com>, "               /**< author         */
-	"Stefan Becker <stefan.becker@nokia.com>, "       /**< author         */
-	"pier11 <pier11@operamail.com>",                  /**< author         */
+	"Microsoft Live/Office Communications/Lync Server (LCS2005/OCS2007+)", /**< description */
+	"Stefan Becker <chemobejk@gmail.com>, "           /**< author         */
+	"Jakub Adam <jakub.adam@tieto.com>, "             /**< author         */
+	"Anibal Avelar <avelar@gmail.com> (retired), "    /**< author         */
+	"pier11 <pier11@operamail.com> (retired),"        /**< author         */
+	"Gabriel Burt <gburt@novell.com> (retired)",      /**< author         */
 	PACKAGE_URL,                                      /**< homepage       */
 	sipe_purple_plugin_load,                          /**< load           */
 	sipe_purple_plugin_unload,                        /**< unload         */
