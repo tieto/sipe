@@ -948,7 +948,7 @@ static PurplePluginInfo sipe_purple_info = {
 	"Stefan Becker <chemobejk@gmail.com>, "           /**< author         */
 	"Jakub Adam <jakub.adam@tieto.com>, "             /**< author         */
 	"Anibal Avelar <avelar@gmail.com> (retired), "    /**< author         */
-	"pier11 <pier11@operamail.com> (retired),"        /**< author         */
+	"pier11 <pier11@operamail.com> (retired), "       /**< author         */
 	"Gabriel Burt <gburt@novell.com> (retired)",      /**< author         */
 	PACKAGE_URL,                                      /**< homepage       */
 	sipe_purple_plugin_load,                          /**< load           */
