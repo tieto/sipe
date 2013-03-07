@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-02-25 17:14+0000\n"
+"PO-Revision-Date: 2013-03-07 16:05+0000\n"
 "Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -20,53 +20,122 @@ msgstr ""
 "Language: zh_CN\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ../src/core/sip-transport.c:230 ../src/core/sip-transport.c:297
+#. SIPE_ACTIVITY_UNSET
+#. SIPE_ACTIVITY_AVAILABLE
+#. SIPE_ACTIVITY_ONLINE
+#. SIPE_ACTIVITY_INACTIVE
+#. 
+#. * This has nothing to do with Availability numbers, like 3500 (online).
+#. * Just a mapping of Communicator Activities to tokens/translations
+#. 
+#. @TODO: NULL means "default translation from Pidgin"?
+#. *        What about other backends?
+#. SIPE_ACTIVITY_UNSET
+#. SIPE_ACTIVITY_AVAILABLE
+#. SIPE_ACTIVITY_ONLINE
+#. SIPE_ACTIVITY_INACTIVE
+#: ../src/adium/ESPurpleSIPEAccount.h:37 ../src/core/sipe-status.c:60
+msgid "Inactive"
+msgstr "不活动"
+
+#. SIPE_ACTIVITY_BUSY
+#: ../src/adium/ESPurpleSIPEAccount.h:38 ../src/core/sipe-cal.c:947
+#: ../src/core/sipe-status.c:61
+msgid "Busy"
+msgstr "忙碌"
+
+#. SIPE_ACTIVITY_BUSYIDLE
+#: ../src/adium/ESPurpleSIPEAccount.h:39 ../src/core/sipe-status.c:62
+msgid "Busy-Idle"
+msgstr "忙碌-发呆"
+
+#. SIPE_ACTIVITY_DND
+#. SIPE_ACTIVITY_BRB
+#: ../src/adium/ESPurpleSIPEAccount.h:41 ../src/core/sipe-status.c:64
+msgid "Be right back"
+msgstr "马上回来"
+
+#. SIPE_ACTIVITY_AWAY
+#. SIPE_ACTIVITY_LUNCH
+#: ../src/adium/ESPurpleSIPEAccount.h:43 ../src/core/sipe-status.c:66
+msgid "Out to lunch"
+msgstr "外出就餐"
+
+#. SIPE_ACTIVITY_INVISIBLE
+#. SIPE_ACTIVITY_OFFLINE
+#. SIPE_ACTIVITY_ON_PHONE
+#: ../src/adium/ESPurpleSIPEAccount.h:46 ../src/core/sipe-status.c:69
+msgid "In a call"
+msgstr "接电话中"
+
+#. SIPE_ACTIVITY_IN_CONF
+#: ../src/adium/ESPurpleSIPEAccount.h:47 ../src/core/sipe-status.c:70
+msgid "In a conference"
+msgstr "在会议中"
+
+#. SIPE_ACTIVITY_IN_MEETING
+#: ../src/adium/ESPurpleSIPEAccount.h:48 ../src/core/sipe-status.c:71
+msgid "In a meeting"
+msgstr "在会谈中"
+
+#. SIPE_ACTIVITY_OOF
+#: ../src/adium/ESPurpleSIPEAccount.h:49 ../src/core/sipe-cal.c:948
+#: ../src/core/sipe-status.c:72
+msgid "Out of office"
+msgstr "不在办公室"
+
+#. SIPE_ACTIVITY_URGENT_ONLY
+#: ../src/adium/ESPurpleSIPEAccount.h:50 ../src/core/sipe-status.c:73
+msgid "Urgent interruptions only"
+msgstr "非紧急事件勿扰"
+
+#: ../src/core/sip-transport.c:230 ../src/core/sip-transport.c:292
 msgid "Failed to authenticate to server"
 msgstr "到服务器的认证失败"
 
-#: ../src/core/sip-transport.c:255
+#: ../src/core/sip-transport.c:250
 #, c-format
 msgid "Can't request certificate from %s"
 msgstr ""
 
-#: ../src/core/sip-transport.c:265
+#: ../src/core/sip-transport.c:260
 msgid "No URI for certificate provisioning service provided"
 msgstr ""
 
-#: ../src/core/sip-transport.c:1206
+#: ../src/core/sip-transport.c:1201
 msgid "Authentication failed"
 msgstr "认证失败"
 
-#: ../src/core/sip-transport.c:1214
+#: ../src/core/sip-transport.c:1209
 msgid "Incompatible authentication scheme chosen"
 msgstr "选择了不兼容的认证方案"
 
-#: ../src/core/sip-transport.c:1231 ../src/core/sipe-notify.c:1028
+#: ../src/core/sip-transport.c:1226 ../src/core/sipe-notify.c:1028
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "您已被服务器拒绝：%s"
 
-#: ../src/core/sip-transport.c:1232 ../src/core/sip-transport.c:1248
-#: ../src/core/sip-transport.c:1272 ../src/core/sip-transport.c:1296
+#: ../src/core/sip-transport.c:1227 ../src/core/sip-transport.c:1243
+#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
 #: ../src/core/sipe-conf.c:266 ../src/core/sipe-notify.c:1028
 msgid "no reason given"
 msgstr "未给出原因"
 
-#: ../src/core/sip-transport.c:1247
+#: ../src/core/sip-transport.c:1242
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "没找到：%s。请和您的管理员联系"
 
-#: ../src/core/sip-transport.c:1249
+#: ../src/core/sip-transport.c:1244
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "目标 URI 没有启用 SIP 或不存在"
 
-#: ../src/core/sip-transport.c:1272 ../src/core/sip-transport.c:1296
+#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "服务不可用：%s"
 
-#: ../src/core/sip-transport.c:1638
+#: ../src/core/sip-transport.c:1633
 msgid "Invalid message signature received"
 msgstr "收到无效消息签名"
 
@@ -175,16 +244,6 @@ msgstr "自由"
 #: ../src/core/sipe-cal.c:946
 msgid "Tentative"
 msgstr "待定"
-
-#. SIPE_ACTIVITY_BUSY
-#: ../src/core/sipe-cal.c:947 ../src/core/sipe-status.c:61
-msgid "Busy"
-msgstr "忙碌"
-
-#. SIPE_ACTIVITY_OOF
-#: ../src/core/sipe-cal.c:948 ../src/core/sipe-status.c:72
-msgid "Out of office"
-msgstr "不在办公室"
 
 #: ../src/core/sipe-cal.c:949
 msgid "No data"
@@ -356,11 +415,11 @@ msgstr "作者"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "中文化 (zh_CN): 神州散人"
 
-#: ../src/core/sipe-core.c:258
+#: ../src/core/sipe-core.c:259
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "SIP Exchange 用户名包含无效字符"
 
-#: ../src/core/sipe-core.c:266 ../src/purple/purple-buddy.c:452
+#: ../src/core/sipe-core.c:267 ../src/purple/purple-buddy.c:452
 #: ../src/telepathy/telepathy-protocol.c:89
 #: ../src/telepathy/telepathy-protocol.c:179
 #, c-format
@@ -369,17 +428,21 @@ msgid ""
 "Example: user@company.com"
 msgstr "用户名必须是有效的 SIP URI\n例如：user@company.com"
 
-#: ../src/core/sipe-core.c:276
+#: ../src/core/sipe-core.c:273
+msgid "Login and password are required when Single Sign-On is not enabled"
+msgstr ""
+
+#: ../src/core/sipe-core.c:283
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr "如果提供了电子邮件地址那么它应该是有效的\n例如：user@company.com"
 
-#: ../src/core/sipe-core.c:285
+#: ../src/core/sipe-core.c:292
 msgid "SIP Exchange user name contains whitespace"
 msgstr "SIP Exchange 用户名包含空格"
 
-#: ../src/core/sipe-core.c:299
+#: ../src/core/sipe-core.c:306
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
@@ -562,7 +625,7 @@ msgstr "团队"
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
 #: ../src/core/sipe-ocs2007.c:472 ../src/purple/purple-buddy.c:55
-#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:809
+#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:836
 #: ../src/purple/purple-search.c:58
 msgid "Company"
 msgstr "公司"
@@ -608,58 +671,6 @@ msgstr "在线帮助..."
 #: ../src/core/sipe-ocs2007.c:2639
 msgid "Access groups"
 msgstr "访问组"
-
-#. * This has nothing to do with Availability numbers, like 3500 (online).
-#. * Just a mapping of Communicator Activities to tokens/translations
-#. 
-#. @TODO: NULL means "default translation from Pidgin"?
-#. *        What about other backends?
-#. SIPE_ACTIVITY_UNSET
-#. SIPE_ACTIVITY_AVAILABLE
-#. SIPE_ACTIVITY_ONLINE
-#. SIPE_ACTIVITY_INACTIVE
-#: ../src/core/sipe-status.c:60
-msgid "Inactive"
-msgstr "不活动"
-
-#. SIPE_ACTIVITY_BUSYIDLE
-#: ../src/core/sipe-status.c:62
-msgid "Busy-Idle"
-msgstr "忙碌-发呆"
-
-#. SIPE_ACTIVITY_DND
-#. SIPE_ACTIVITY_BRB
-#: ../src/core/sipe-status.c:64
-msgid "Be right back"
-msgstr "马上回来"
-
-#. SIPE_ACTIVITY_AWAY
-#. SIPE_ACTIVITY_LUNCH
-#: ../src/core/sipe-status.c:66
-msgid "Out to lunch"
-msgstr "外出就餐"
-
-#. SIPE_ACTIVITY_INVISIBLE
-#. SIPE_ACTIVITY_OFFLINE
-#. SIPE_ACTIVITY_ON_PHONE
-#: ../src/core/sipe-status.c:69
-msgid "In a call"
-msgstr "接电话中"
-
-#. SIPE_ACTIVITY_IN_CONF
-#: ../src/core/sipe-status.c:70
-msgid "In a conference"
-msgstr "在会议中"
-
-#. SIPE_ACTIVITY_IN_MEETING
-#: ../src/core/sipe-status.c:71
-msgid "In a meeting"
-msgstr "在会谈中"
-
-#. SIPE_ACTIVITY_URGENT_ONLY
-#: ../src/core/sipe-status.c:73
-msgid "Urgent interruptions only"
-msgstr "非紧急事件勿扰"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -726,7 +737,7 @@ msgstr "职务"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
-#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:811
+#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:838
 #: ../src/purple/purple-search.c:61
 msgid "Country"
 msgstr "国家"
@@ -838,69 +849,69 @@ msgstr ""
 
 #. Macros to reduce code repetition.
 #. Translators: noun
-#: ../src/purple/purple-plugin.c:173
+#: ../src/purple/purple-plugin.c:185
 msgid "Message"
 msgstr "消息"
 
-#: ../src/purple/purple-plugin.c:352
+#: ../src/purple/purple-plugin.c:379
 msgid "Connecting"
 msgstr "正在连接"
 
-#: ../src/purple/purple-plugin.c:384
+#: ../src/purple/purple-plugin.c:411
 msgid "Password required"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:535
+#: ../src/purple/purple-plugin.c:562
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: ../src/purple/purple-plugin.c:803
+#: ../src/purple/purple-plugin.c:830
 msgid "First name"
 msgstr "姓"
 
-#: ../src/purple/purple-plugin.c:805
+#: ../src/purple/purple-plugin.c:832
 msgid "Last name"
 msgstr "名"
 
-#: ../src/purple/purple-plugin.c:807 ../src/purple/purple-search.c:64
+#: ../src/purple/purple-plugin.c:834 ../src/purple/purple-search.c:64
 msgid "Email"
 msgstr "电子邮件"
 
-#: ../src/purple/purple-plugin.c:815
+#: ../src/purple/purple-plugin.c:842
 msgid "Search"
 msgstr "搜索"
 
-#: ../src/purple/purple-plugin.c:816
+#: ../src/purple/purple-plugin.c:843
 msgid "Search for a contact"
 msgstr "搜索联系人"
 
-#: ../src/purple/purple-plugin.c:817
+#: ../src/purple/purple-plugin.c:844
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "输入您要查找的人的信息。空字段将被忽略。"
 
-#: ../src/purple/purple-plugin.c:819
+#: ../src/purple/purple-plugin.c:846
 msgid "_Search"
 msgstr "搜索(_S)"
 
-#: ../src/purple/purple-plugin.c:820 ../src/purple/purple-plugin.c:875
+#: ../src/purple/purple-plugin.c:847 ../src/purple/purple-plugin.c:902
 msgid "_Cancel"
 msgstr "取消(_C)"
 
-#: ../src/purple/purple-plugin.c:860
+#: ../src/purple/purple-plugin.c:887
 msgid "Meeting location"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:864
+#: ../src/purple/purple-plugin.c:891
 msgid "Join conference"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:865
+#: ../src/purple/purple-plugin.c:892
 msgid "Join scheduled conference"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:866
+#: ../src/purple/purple-plugin.c:893
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
@@ -911,31 +922,35 @@ msgid ""
 "https://meet.company.com/someone/abcdef1234"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:874
+#: ../src/purple/purple-plugin.c:901
 msgid "_Join"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:897
+#: ../src/purple/purple-plugin.c:913 ../src/purple/purple-plugin.c:927
+msgid "Publishing of calendar information has been disabled"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:940
 msgid "About SIPE plugin..."
 msgstr "关于 SIPE 插件"
 
-#: ../src/purple/purple-plugin.c:900
+#: ../src/purple/purple-plugin.c:943
 msgid "Contact search..."
 msgstr "联系人搜索..."
 
-#: ../src/purple/purple-plugin.c:904
+#: ../src/purple/purple-plugin.c:947
 msgid "Test call"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:908
+#: ../src/purple/purple-plugin.c:951
 msgid "Join scheduled conference..."
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:911
+#: ../src/purple/purple-plugin.c:954
 msgid "Republish Calendar"
 msgstr "重新发布日历"
 
-#: ../src/purple/purple-plugin.c:914
+#: ../src/purple/purple-plugin.c:957
 msgid "Reset status"
 msgstr "复位状态"
 
@@ -946,32 +961,32 @@ msgstr "复位状态"
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #. 
-#: ../src/purple/purple-plugin.c:971
+#: ../src/purple/purple-plugin.c:1015
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr "登录\n   用户  或  域\\用户  或\n   user@company.com"
 
-#: ../src/purple/purple-plugin.c:975
+#: ../src/purple/purple-plugin.c:1019
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr "服务器[:端口]\n(留空使用自动发现)"
 
-#: ../src/purple/purple-plugin.c:978
+#: ../src/purple/purple-plugin.c:1022
 msgid "Connection type"
 msgstr "连接类型"
 
-#: ../src/purple/purple-plugin.c:979
+#: ../src/purple/purple-plugin.c:1023
 msgid "Auto"
 msgstr "自动"
 
-#: ../src/purple/purple-plugin.c:980
+#: ../src/purple/purple-plugin.c:1024
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:981
+#: ../src/purple/purple-plugin.c:1025
 msgid "TCP"
 msgstr "TCP"
 
@@ -979,45 +994,57 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:987
+#: ../src/purple/purple-plugin.c:1031
 msgid "User Agent"
 msgstr "用户代理"
 
-#: ../src/purple/purple-plugin.c:990
+#: ../src/purple/purple-plugin.c:1034
 msgid "Authentication scheme"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:991
+#: ../src/purple/purple-plugin.c:1035
 msgid "NTLM"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:993
+#: ../src/purple/purple-plugin.c:1037
 msgid "Kerberos"
 msgstr ""
 
-#. see above
-#: ../src/purple/purple-plugin.c:997
+#: ../src/purple/purple-plugin.c:1039
 msgid "TLS-DSK"
 msgstr ""
 
-#. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
-#. * No login/password is taken into account if this option present,
-#. * instead used default credentials stored in OS.
+#. * When the user selects Single Sign-On then SIPE will ignore the
+#. * settings for "login name" and "password". Instead it will use the
+#. * default credentials provided by the OS.
+#. *
+#. * NOTE: the default must be *OFF*, i.e. it is up to the user to tell
+#. *       SIPE that it is OK to use Single Sign-On or not.
+#. *
+#. * Configurations that are known to support Single Sign-On:
+#. *
+#. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
+#. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
+#. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 #. 
-#: ../src/purple/purple-plugin.c:1006
+#: ../src/purple/purple-plugin.c:1057
 msgid "Use Single Sign-On"
 msgstr "使用单点登录"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #. 
-#: ../src/purple/purple-plugin.c:1013
+#: ../src/purple/purple-plugin.c:1064
+msgid "Don't publish my calendar information"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1067
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr "电子邮件服务 URL\n(留空使用自动发现)"
 
-#: ../src/purple/purple-plugin.c:1016
+#: ../src/purple/purple-plugin.c:1070
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1026,13 +1053,13 @@ msgstr "电子邮件地址\n(如果与用户名不同)"
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #. 
-#: ../src/purple/purple-plugin.c:1022
+#: ../src/purple/purple-plugin.c:1076
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr "电子邮件登录名\n(如果与登录名不同)"
 
-#: ../src/purple/purple-plugin.c:1025
+#: ../src/purple/purple-plugin.c:1079
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1041,7 +1068,7 @@ msgstr "电子邮件密码\n(如果与密码不同)"
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
 #. 
-#: ../src/purple/purple-plugin.c:1037
+#: ../src/purple/purple-plugin.c:1091
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"

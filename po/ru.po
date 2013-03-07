@@ -13,7 +13,7 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-02-25 17:14+0000\n"
+"PO-Revision-Date: 2013-03-07 16:05+0000\n"
 "Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -22,53 +22,122 @@ msgstr ""
 "Language: ru\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: ../src/core/sip-transport.c:230 ../src/core/sip-transport.c:297
+#. SIPE_ACTIVITY_UNSET
+#. SIPE_ACTIVITY_AVAILABLE
+#. SIPE_ACTIVITY_ONLINE
+#. SIPE_ACTIVITY_INACTIVE
+#. 
+#. * This has nothing to do with Availability numbers, like 3500 (online).
+#. * Just a mapping of Communicator Activities to tokens/translations
+#. 
+#. @TODO: NULL means "default translation from Pidgin"?
+#. *        What about other backends?
+#. SIPE_ACTIVITY_UNSET
+#. SIPE_ACTIVITY_AVAILABLE
+#. SIPE_ACTIVITY_ONLINE
+#. SIPE_ACTIVITY_INACTIVE
+#: ../src/adium/ESPurpleSIPEAccount.h:37 ../src/core/sipe-status.c:60
+msgid "Inactive"
+msgstr "Неактивен"
+
+#. SIPE_ACTIVITY_BUSY
+#: ../src/adium/ESPurpleSIPEAccount.h:38 ../src/core/sipe-cal.c:947
+#: ../src/core/sipe-status.c:61
+msgid "Busy"
+msgstr "Занят"
+
+#. SIPE_ACTIVITY_BUSYIDLE
+#: ../src/adium/ESPurpleSIPEAccount.h:39 ../src/core/sipe-status.c:62
+msgid "Busy-Idle"
+msgstr "Занят-Неактивен"
+
+#. SIPE_ACTIVITY_DND
+#. SIPE_ACTIVITY_BRB
+#: ../src/adium/ESPurpleSIPEAccount.h:41 ../src/core/sipe-status.c:64
+msgid "Be right back"
+msgstr "Скоро вернусь"
+
+#. SIPE_ACTIVITY_AWAY
+#. SIPE_ACTIVITY_LUNCH
+#: ../src/adium/ESPurpleSIPEAccount.h:43 ../src/core/sipe-status.c:66
+msgid "Out to lunch"
+msgstr "На обеде"
+
+#. SIPE_ACTIVITY_INVISIBLE
+#. SIPE_ACTIVITY_OFFLINE
+#. SIPE_ACTIVITY_ON_PHONE
+#: ../src/adium/ESPurpleSIPEAccount.h:46 ../src/core/sipe-status.c:69
+msgid "In a call"
+msgstr "Говорю по телефону"
+
+#. SIPE_ACTIVITY_IN_CONF
+#: ../src/adium/ESPurpleSIPEAccount.h:47 ../src/core/sipe-status.c:70
+msgid "In a conference"
+msgstr "На конференции"
+
+#. SIPE_ACTIVITY_IN_MEETING
+#: ../src/adium/ESPurpleSIPEAccount.h:48 ../src/core/sipe-status.c:71
+msgid "In a meeting"
+msgstr "На собрании"
+
+#. SIPE_ACTIVITY_OOF
+#: ../src/adium/ESPurpleSIPEAccount.h:49 ../src/core/sipe-cal.c:948
+#: ../src/core/sipe-status.c:72
+msgid "Out of office"
+msgstr "Нет на месте"
+
+#. SIPE_ACTIVITY_URGENT_ONLY
+#: ../src/adium/ESPurpleSIPEAccount.h:50 ../src/core/sipe-status.c:73
+msgid "Urgent interruptions only"
+msgstr "Беспокоить только по срочным делам"
+
+#: ../src/core/sip-transport.c:230 ../src/core/sip-transport.c:292
 msgid "Failed to authenticate to server"
 msgstr "Не удалось проверить подлинность сервера"
 
-#: ../src/core/sip-transport.c:255
+#: ../src/core/sip-transport.c:250
 #, c-format
 msgid "Can't request certificate from %s"
 msgstr "Невозможно запросить сертификат от %s"
 
-#: ../src/core/sip-transport.c:265
+#: ../src/core/sip-transport.c:260
 msgid "No URI for certificate provisioning service provided"
 msgstr "Нет URI для сертификата"
 
-#: ../src/core/sip-transport.c:1206
+#: ../src/core/sip-transport.c:1201
 msgid "Authentication failed"
 msgstr "Ошибка аутентификации"
 
-#: ../src/core/sip-transport.c:1214
+#: ../src/core/sip-transport.c:1209
 msgid "Incompatible authentication scheme chosen"
 msgstr "Выбрана несовместимая схема проверки подлинности пользователя"
 
-#: ../src/core/sip-transport.c:1231 ../src/core/sipe-notify.c:1028
+#: ../src/core/sip-transport.c:1226 ../src/core/sipe-notify.c:1028
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Вы были отклонены сервером: %s"
 
-#: ../src/core/sip-transport.c:1232 ../src/core/sip-transport.c:1248
-#: ../src/core/sip-transport.c:1272 ../src/core/sip-transport.c:1296
+#: ../src/core/sip-transport.c:1227 ../src/core/sip-transport.c:1243
+#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
 #: ../src/core/sipe-conf.c:266 ../src/core/sipe-notify.c:1028
 msgid "no reason given"
 msgstr "причина не указана"
 
-#: ../src/core/sip-transport.c:1247
+#: ../src/core/sip-transport.c:1242
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Не найден: %s. Пожалуйста, обратитесь к администратору"
 
-#: ../src/core/sip-transport.c:1249
+#: ../src/core/sip-transport.c:1244
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP-адрес либо не включен для URI назначения либо не существует"
 
-#: ../src/core/sip-transport.c:1272 ../src/core/sip-transport.c:1296
+#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Сервис недоступен: %s"
 
-#: ../src/core/sip-transport.c:1638
+#: ../src/core/sip-transport.c:1633
 msgid "Invalid message signature received"
 msgstr "Получена недопустимая подпись сообщения"
 
@@ -179,16 +248,6 @@ msgstr "Свободен"
 #: ../src/core/sipe-cal.c:946
 msgid "Tentative"
 msgstr "Под вопросом"
-
-#. SIPE_ACTIVITY_BUSY
-#: ../src/core/sipe-cal.c:947 ../src/core/sipe-status.c:61
-msgid "Busy"
-msgstr "Занят"
-
-#. SIPE_ACTIVITY_OOF
-#: ../src/core/sipe-cal.c:948 ../src/core/sipe-status.c:72
-msgid "Out of office"
-msgstr "Нет на месте"
 
 #: ../src/core/sipe-cal.c:949
 msgid "No data"
@@ -360,11 +419,11 @@ msgstr "Авторы"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Русский перевод (ru): pier11"
 
-#: ../src/core/sipe-core.c:258
+#: ../src/core/sipe-core.c:259
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Имя пользователя содержит недопустимые символы"
 
-#: ../src/core/sipe-core.c:266 ../src/purple/purple-buddy.c:452
+#: ../src/core/sipe-core.c:267 ../src/purple/purple-buddy.c:452
 #: ../src/telepathy/telepathy-protocol.c:89
 #: ../src/telepathy/telepathy-protocol.c:179
 #, c-format
@@ -373,17 +432,21 @@ msgid ""
 "Example: user@company.com"
 msgstr "Имя пользователя должно быть верным SIP URI\nПример: user@company.com"
 
-#: ../src/core/sipe-core.c:276
+#: ../src/core/sipe-core.c:273
+msgid "Login and password are required when Single Sign-On is not enabled"
+msgstr ""
+
+#: ../src/core/sipe-core.c:283
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr "Адрес электронной почты должен быть верным если введен\nПример: user@company.com"
 
-#: ../src/core/sipe-core.c:285
+#: ../src/core/sipe-core.c:292
 msgid "SIP Exchange user name contains whitespace"
 msgstr "Имя пользователя не может содержать пробелы"
 
-#: ../src/core/sipe-core.c:299
+#: ../src/core/sipe-core.c:306
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
@@ -566,7 +629,7 @@ msgstr "Группа"
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
 #: ../src/core/sipe-ocs2007.c:472 ../src/purple/purple-buddy.c:55
-#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:809
+#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:836
 #: ../src/purple/purple-search.c:58
 msgid "Company"
 msgstr "Компания"
@@ -612,58 +675,6 @@ msgstr "Онлайн помощь..."
 #: ../src/core/sipe-ocs2007.c:2639
 msgid "Access groups"
 msgstr "Группы доступа"
-
-#. * This has nothing to do with Availability numbers, like 3500 (online).
-#. * Just a mapping of Communicator Activities to tokens/translations
-#. 
-#. @TODO: NULL means "default translation from Pidgin"?
-#. *        What about other backends?
-#. SIPE_ACTIVITY_UNSET
-#. SIPE_ACTIVITY_AVAILABLE
-#. SIPE_ACTIVITY_ONLINE
-#. SIPE_ACTIVITY_INACTIVE
-#: ../src/core/sipe-status.c:60
-msgid "Inactive"
-msgstr "Неактивен"
-
-#. SIPE_ACTIVITY_BUSYIDLE
-#: ../src/core/sipe-status.c:62
-msgid "Busy-Idle"
-msgstr "Занят-Неактивен"
-
-#. SIPE_ACTIVITY_DND
-#. SIPE_ACTIVITY_BRB
-#: ../src/core/sipe-status.c:64
-msgid "Be right back"
-msgstr "Скоро вернусь"
-
-#. SIPE_ACTIVITY_AWAY
-#. SIPE_ACTIVITY_LUNCH
-#: ../src/core/sipe-status.c:66
-msgid "Out to lunch"
-msgstr "На обеде"
-
-#. SIPE_ACTIVITY_INVISIBLE
-#. SIPE_ACTIVITY_OFFLINE
-#. SIPE_ACTIVITY_ON_PHONE
-#: ../src/core/sipe-status.c:69
-msgid "In a call"
-msgstr "Говорю по телефону"
-
-#. SIPE_ACTIVITY_IN_CONF
-#: ../src/core/sipe-status.c:70
-msgid "In a conference"
-msgstr "На конференции"
-
-#. SIPE_ACTIVITY_IN_MEETING
-#: ../src/core/sipe-status.c:71
-msgid "In a meeting"
-msgstr "На собрании"
-
-#. SIPE_ACTIVITY_URGENT_ONLY
-#: ../src/core/sipe-status.c:73
-msgid "Urgent interruptions only"
-msgstr "Беспокоить только по срочным делам"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -730,7 +741,7 @@ msgstr "Офис"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
-#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:811
+#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:838
 #: ../src/purple/purple-search.c:61
 msgid "Country"
 msgstr "Страна"
@@ -842,69 +853,69 @@ msgstr "Тема обсуждения: %s"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
-#: ../src/purple/purple-plugin.c:173
+#: ../src/purple/purple-plugin.c:185
 msgid "Message"
 msgstr "Сообщение"
 
-#: ../src/purple/purple-plugin.c:352
+#: ../src/purple/purple-plugin.c:379
 msgid "Connecting"
 msgstr "Установка соединения"
 
-#: ../src/purple/purple-plugin.c:384
+#: ../src/purple/purple-plugin.c:411
 msgid "Password required"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:535
+#: ../src/purple/purple-plugin.c:562
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: ../src/purple/purple-plugin.c:803
+#: ../src/purple/purple-plugin.c:830
 msgid "First name"
 msgstr "Имя"
 
-#: ../src/purple/purple-plugin.c:805
+#: ../src/purple/purple-plugin.c:832
 msgid "Last name"
 msgstr "Фамилия"
 
-#: ../src/purple/purple-plugin.c:807 ../src/purple/purple-search.c:64
+#: ../src/purple/purple-plugin.c:834 ../src/purple/purple-search.c:64
 msgid "Email"
 msgstr "Email"
 
-#: ../src/purple/purple-plugin.c:815
+#: ../src/purple/purple-plugin.c:842
 msgid "Search"
 msgstr "Искать"
 
-#: ../src/purple/purple-plugin.c:816
+#: ../src/purple/purple-plugin.c:843
 msgid "Search for a contact"
 msgstr "Поиск контактов"
 
-#: ../src/purple/purple-plugin.c:817
+#: ../src/purple/purple-plugin.c:844
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "Введите информацию о человеке, которого вы хотите найти. Пустые поля будут игнорироваться."
 
-#: ../src/purple/purple-plugin.c:819
+#: ../src/purple/purple-plugin.c:846
 msgid "_Search"
 msgstr "_Искать"
 
-#: ../src/purple/purple-plugin.c:820 ../src/purple/purple-plugin.c:875
+#: ../src/purple/purple-plugin.c:847 ../src/purple/purple-plugin.c:902
 msgid "_Cancel"
 msgstr "О_тменить"
 
-#: ../src/purple/purple-plugin.c:860
+#: ../src/purple/purple-plugin.c:887
 msgid "Meeting location"
 msgstr "Место совещания"
 
-#: ../src/purple/purple-plugin.c:864
+#: ../src/purple/purple-plugin.c:891
 msgid "Join conference"
 msgstr "Присоединиться к конференции"
 
-#: ../src/purple/purple-plugin.c:865
+#: ../src/purple/purple-plugin.c:892
 msgid "Join scheduled conference"
 msgstr "Присоедениться к запланированной конференции"
 
-#: ../src/purple/purple-plugin.c:866
+#: ../src/purple/purple-plugin.c:893
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
@@ -915,31 +926,35 @@ msgid ""
 "https://meet.company.com/someone/abcdef1234"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:874
+#: ../src/purple/purple-plugin.c:901
 msgid "_Join"
 msgstr "_Регистрация"
 
-#: ../src/purple/purple-plugin.c:897
+#: ../src/purple/purple-plugin.c:913 ../src/purple/purple-plugin.c:927
+msgid "Publishing of calendar information has been disabled"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:940
 msgid "About SIPE plugin..."
 msgstr "О плагине SIPE..."
 
-#: ../src/purple/purple-plugin.c:900
+#: ../src/purple/purple-plugin.c:943
 msgid "Contact search..."
 msgstr "Поиск контактов..."
 
-#: ../src/purple/purple-plugin.c:904
+#: ../src/purple/purple-plugin.c:947
 msgid "Test call"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:908
+#: ../src/purple/purple-plugin.c:951
 msgid "Join scheduled conference..."
 msgstr "Регистрация на запланированной конференции ..."
 
-#: ../src/purple/purple-plugin.c:911
+#: ../src/purple/purple-plugin.c:954
 msgid "Republish Calendar"
 msgstr "Опубликовать календарь"
 
-#: ../src/purple/purple-plugin.c:914
+#: ../src/purple/purple-plugin.c:957
 msgid "Reset status"
 msgstr "Сбросить состояние"
 
@@ -950,32 +965,32 @@ msgstr "Сбросить состояние"
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #. 
-#: ../src/purple/purple-plugin.c:971
+#: ../src/purple/purple-plugin.c:1015
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr "Логин\n   user  или  DOMAIN\\user  или\n   user@company.com"
 
-#: ../src/purple/purple-plugin.c:975
+#: ../src/purple/purple-plugin.c:1019
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr "Сервер[:Порт]\n(оставьте пустым для авто-обнаружения)"
 
-#: ../src/purple/purple-plugin.c:978
+#: ../src/purple/purple-plugin.c:1022
 msgid "Connection type"
 msgstr "Тип подключения"
 
-#: ../src/purple/purple-plugin.c:979
+#: ../src/purple/purple-plugin.c:1023
 msgid "Auto"
 msgstr "Автоматически"
 
-#: ../src/purple/purple-plugin.c:980
+#: ../src/purple/purple-plugin.c:1024
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:981
+#: ../src/purple/purple-plugin.c:1025
 msgid "TCP"
 msgstr "TCP"
 
@@ -983,45 +998,57 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:987
+#: ../src/purple/purple-plugin.c:1031
 msgid "User Agent"
 msgstr "Агент пользователя"
 
-#: ../src/purple/purple-plugin.c:990
+#: ../src/purple/purple-plugin.c:1034
 msgid "Authentication scheme"
 msgstr "Схема проверки подлинности "
 
-#: ../src/purple/purple-plugin.c:991
+#: ../src/purple/purple-plugin.c:1035
 msgid "NTLM"
 msgstr "NTLM"
 
-#: ../src/purple/purple-plugin.c:993
+#: ../src/purple/purple-plugin.c:1037
 msgid "Kerberos"
 msgstr "Kerberos"
 
-#. see above
-#: ../src/purple/purple-plugin.c:997
+#: ../src/purple/purple-plugin.c:1039
 msgid "TLS-DSK"
 msgstr "TLS-DSK"
 
-#. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
-#. * No login/password is taken into account if this option present,
-#. * instead used default credentials stored in OS.
+#. * When the user selects Single Sign-On then SIPE will ignore the
+#. * settings for "login name" and "password". Instead it will use the
+#. * default credentials provided by the OS.
+#. *
+#. * NOTE: the default must be *OFF*, i.e. it is up to the user to tell
+#. *       SIPE that it is OK to use Single Sign-On or not.
+#. *
+#. * Configurations that are known to support Single Sign-On:
+#. *
+#. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
+#. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
+#. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 #. 
-#: ../src/purple/purple-plugin.c:1006
+#: ../src/purple/purple-plugin.c:1057
 msgid "Use Single Sign-On"
 msgstr "Использовать Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #. 
-#: ../src/purple/purple-plugin.c:1013
+#: ../src/purple/purple-plugin.c:1064
+msgid "Don't publish my calendar information"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1067
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr "URL службы электронной почты\n(оставьте пустым для авто-обнаружения)"
 
-#: ../src/purple/purple-plugin.c:1016
+#: ../src/purple/purple-plugin.c:1070
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1030,13 +1057,13 @@ msgstr "Адрес электронной почты\n(если отличен �
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #. 
-#: ../src/purple/purple-plugin.c:1022
+#: ../src/purple/purple-plugin.c:1076
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr "Логин электронной почты\n(если отличен от Логина)"
 
-#: ../src/purple/purple-plugin.c:1025
+#: ../src/purple/purple-plugin.c:1079
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1045,7 +1072,7 @@ msgstr "Пароль электронной почты\n(если отличен
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
 #. 
-#: ../src/purple/purple-plugin.c:1037
+#: ../src/purple/purple-plugin.c:1091
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
