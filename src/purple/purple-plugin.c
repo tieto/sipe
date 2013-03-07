@@ -306,27 +306,34 @@ static void connect_to_core(PurpleConnection *gc,
 	const gchar *errmsg;
 	guint transport_type;
 	struct sipe_backend_private *purple_private;
+	gboolean sso = get_sso_flag(account);
 
 	/* username format: <username>,[<optional login>] */
 	SIPE_DEBUG_INFO("sipe_purple_login: username '%s'", username);
 	username_split = g_strsplit(username, ",", 2);
 
-	/* login name specified? */
-	if (username_split[1] && strlen(username_split[1])) {
-		/* Allowed domain-account separators are / or \ */
-		gchar **domain_user = g_strsplit_set(username_split[1], "/\\", 2);
-		gboolean has_domain = domain_user[1] != NULL;
-		SIPE_DEBUG_INFO("sipe_purple_login: login '%s'", username_split[1]);
-		login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
-		login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
-		SIPE_DEBUG_INFO("sipe_purple_login: auth domain '%s' user '%s'",
-				login_domain ? login_domain : "",
-				login_account);
-		g_strfreev(domain_user);
+	/* login name is ignored when SSO has been selected */
+	if (!sso) {
+		/* login name specified? */
+		if (username_split[1] && strlen(username_split[1])) {
+			/* Allowed domain-account separators are / or \ */
+			gchar **domain_user = g_strsplit_set(username_split[1], "/\\", 2);
+			gboolean has_domain = domain_user[1] != NULL;
+			SIPE_DEBUG_INFO("sipe_purple_login: login '%s'", username_split[1]);
+			login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
+			login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
+			SIPE_DEBUG_INFO("sipe_purple_login: auth domain '%s' user '%s'",
+					login_domain ? login_domain : "",
+					login_account);
+			g_strfreev(domain_user);
+		} else {
+			/* No -> duplicate username */
+			login_account = g_strdup(username_split[0]);
+		}
 	}
 
 	sipe_public = sipe_core_allocate(username_split[0],
-					 get_sso_flag(account),
+					 sso,
 					 login_domain, login_account,
 					 password,
 					 email,
