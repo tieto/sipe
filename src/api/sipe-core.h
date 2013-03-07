@@ -97,7 +97,8 @@ struct sipe_backend_private;
 /**
  * Flags
  */
-/* None defined at the moment */
+/* user disabled calendar information publishing */
+#define SIPE_CORE_FLAG_DONT_PUBLISH 0x00000001
 
 #define SIPE_CORE_FLAG_IS(flag)    \
 	((sipe_public->flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)

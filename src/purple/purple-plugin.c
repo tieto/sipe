@@ -291,6 +291,12 @@ static gboolean get_sso_flag(PurpleAccount *account)
 #endif
 }
 
+static gboolean get_dont_publish_flag(PurpleAccount *account)
+{
+	/* default is to publish calendar information */
+	return(purple_account_get_bool(account, "dont-publish", FALSE));
+}
+
 static void connect_to_core(PurpleConnection *gc,
 			    PurpleAccount *account,
 			    const gchar *password)
@@ -361,6 +367,10 @@ static void connect_to_core(PurpleConnection *gc,
 	purple_private->account = account;
 
 	sipe_purple_chat_setup_rejoin(purple_private);
+
+	SIPE_CORE_FLAG_UNSET(DONT_PUBLISH);
+	if (get_dont_publish_flag(account))
+		SIPE_CORE_FLAG_SET(DONT_PUBLISH);
 
 	gc->proto_data = sipe_public;
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
@@ -896,13 +906,29 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 static void sipe_purple_republish_calendar(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	sipe_core_update_calendar(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	PurpleAccount *account = purple_connection_get_account(gc);
+
+	if (get_dont_publish_flag(account)) {
+		sipe_backend_notify_error(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+					  _("Publishing of calendar information has been disabled"),
+					  NULL);
+	} else {
+		sipe_core_update_calendar(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	}
 }
 
 static void sipe_purple_reset_status(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	sipe_core_reset_status(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	PurpleAccount *account = purple_connection_get_account(gc);
+
+	if (get_dont_publish_flag(account)) {
+		sipe_backend_notify_error(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+					  _("Publishing of calendar information has been disabled"),
+					  NULL);
+	} else {
+		sipe_core_reset_status(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	}
 }
 
 static GList *sipe_purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
@@ -1035,6 +1061,9 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	/** Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 	 */
+	option = purple_account_option_bool_new(_("Don't publish my calendar information"), "dont-publish", FALSE);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 

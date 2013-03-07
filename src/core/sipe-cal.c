@@ -1141,12 +1141,14 @@ void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private)
 {
 #define UPDATE_CALENDAR_DELAY		1*60	/* 1 min */
 
-	sipe_schedule_seconds(sipe_private,
-			      "<+update-calendar>",
-			      NULL,
-			      UPDATE_CALENDAR_DELAY,
-			      (sipe_schedule_action) sipe_core_update_calendar,
-			      NULL);
+	/* only start periodic calendar updating if user hasn't disabled it */
+	if (!SIPE_CORE_PUBLIC_FLAG_IS(DONT_PUBLISH))
+		sipe_schedule_seconds(sipe_private,
+				      "<+update-calendar>",
+				      NULL,
+				      UPDATE_CALENDAR_DELAY,
+				      (sipe_schedule_action) sipe_core_update_calendar,
+				      NULL);
 }
 
 /*
