@@ -179,7 +179,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__krb5: started");
 
 	/* remember authentication information */
-	ctx->domain     = domain;
+	ctx->domain     = domain ? domain : "";
 	ctx->username   = username;
 	ctx->password   = password;
 
@@ -418,7 +418,7 @@ static gboolean sip_sec_krb5_obtain_tgt(context_krb5 ctx)
 		username = g_strdup(user_realm[0]);
 	} else {
 		/* use provided domain as realm */
-		realm    = g_ascii_strup(ctx->domain ? ctx->domain : "", -1);
+		realm    = g_ascii_strup(ctx->domain, -1);
 		username = g_strdup(ctx->username);
 	}
 	g_strfreev(user_realm);

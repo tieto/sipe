@@ -171,6 +171,8 @@ struct sipe_core_private {
 #define SIPE_CORE_PRIVATE_FLAG_ACCESS_LEVEL_SET   0x02000000
 /* whether subscribed to buddies presence or not */
 #define SIPE_CORE_PRIVATE_FLAG_SUBSCRIBED_BUDDIES 0x01000000
+/* user enabled Single-Sign On */
+#define SIPE_CORE_PRIVATE_FLAG_SSO                0x00800000
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)

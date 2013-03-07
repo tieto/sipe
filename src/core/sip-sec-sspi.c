@@ -22,12 +22,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifndef _WIN32
+#error sip-sec-sspi.c can only be compiled for Windows builds
+#endif
+
 #include <windows.h>
 #include <rpc.h>
 #ifndef SECURITY_WIN32
 #define SECURITY_WIN32 1
 #endif
 #include <security.h>
+
+#include <string.h>
 
 #include <glib.h>
 
@@ -36,6 +42,7 @@
 #include "sip-sec-sspi.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
+#include "sipe-utils.h"
 
 /* Mechanism names */
 static const gchar * const mech_names[] = {
@@ -108,7 +115,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		memset(&auth_identity, 0, sizeof(auth_identity));
 		auth_identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
 
-		if ( domain && (strlen(domain) > 0) ) {
+		if (!is_empty(domain)) {
 			auth_identity.Domain = (unsigned char*)domain;
 			auth_identity.DomainLength = strlen(domain);
 		}

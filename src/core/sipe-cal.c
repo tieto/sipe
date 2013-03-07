@@ -243,11 +243,11 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 									    SIPE_SETTING_EMAIL_PASSWORD));
 			g_strfreev(domain_user);
 
-		} else if (!SIPE_CORE_PUBLIC_FLAG_IS(SSO)) {
+		} else if (!SIPE_CORE_PRIVATE_FLAG_IS(SSO)) {
 			/* re-use SIP credentials when SSO is not selected */
 			cal->auth = g_new0(HttpConnAuth, 1);
 			cal->auth->domain   = g_strdup(sipe_private->authdomain);
-			cal->auth->user     = sipe_private->authuser ? g_strdup(sipe_private->authuser) : g_strdup(sipe_private->username);
+			cal->auth->user     = g_strdup(sipe_private->authuser);
 			cal->auth->password = g_strdup(sipe_private->password);
 		}
 		return TRUE;

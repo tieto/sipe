@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -241,6 +241,7 @@ static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
 }
 
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
+					    gboolean sso,
 					    const gchar *login_domain,
 					    const gchar *login_account,
 					    const gchar *password,
@@ -264,6 +265,12 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	    g_str_has_prefix(signin_name, "@") ||
 	    g_str_has_suffix(signin_name, "@")) {
 		*errmsg = _("User name should be a valid SIP URI\nExample: user@company.com");
+		return NULL;
+	}
+
+	/* ensure that Login & Password are valid when SSO is not selected */
+	if (!sso && (is_empty(login_account) || is_empty(password))) {
+		*errmsg = _("Login and password are required when Single Sign-On is not enabled");
 		return NULL;
 	}
 
@@ -307,11 +314,14 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sipe_private = g_new0(struct sipe_core_private, 1);
 	SIPE_CORE_PRIVATE_FLAG_UNSET(SUBSCRIBED_BUDDIES);
 	SIPE_CORE_PRIVATE_FLAG_UNSET(INITIAL_PUBLISH);
+	SIPE_CORE_PRIVATE_FLAG_UNSET(SSO);
+	if (sso)
+		SIPE_CORE_PRIVATE_FLAG_SET(SSO);
 	sipe_private->username   = g_strdup(signin_name);
-	sipe_private->email      = is_empty(email)         ? g_strdup(signin_name) : g_strdup(email);
-	sipe_private->authdomain = is_empty(login_domain)  ? NULL                  : g_strdup(login_domain);
-	sipe_private->authuser   = is_empty(login_account) ? NULL                  : g_strdup(login_account);
-	sipe_private->password   = g_strdup(password);
+	sipe_private->email      = is_empty(email) ? g_strdup(signin_name) : g_strdup(email);
+	sipe_private->authdomain = sso             ? NULL                  : g_strdup(login_domain);
+	sipe_private->authuser   = sso             ? NULL                  : g_strdup(login_account);
+	sipe_private->password   = sso             ? NULL                  : g_strdup(password);
 	sipe_private->public.sip_name   = g_strdup(user_domain[0]);
 	sipe_private->public.sip_domain = g_strdup(user_domain[1]);
 	g_strfreev(user_domain);

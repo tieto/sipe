@@ -326,6 +326,7 @@ static void connect_to_core(PurpleConnection *gc,
 	}
 
 	sipe_public = sipe_core_allocate(username_split[0],
+					 get_sso_flag(account),
 					 login_domain, login_account,
 					 password,
 					 email,
@@ -353,10 +354,6 @@ static void connect_to_core(PurpleConnection *gc,
 	purple_private->account = account;
 
 	sipe_purple_chat_setup_rejoin(purple_private);
-
-	SIPE_CORE_FLAG_UNSET(SSO);
-	if (get_sso_flag(account))
-		SIPE_CORE_FLAG_SET(SSO);
 
 	gc->proto_data = sipe_public;
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |

@@ -542,7 +542,7 @@ NTOWFv2 (const char* password, const char *user, const char *domain, unsigned ch
 {
 	unsigned char response_key_nt_v1 [16];
 	int len_user = user ? strlen(user) : 0;
-	int len_domain = domain ? strlen(domain) : 0;
+	int len_domain = strlen(domain);
 	int len_user_u = 2 * len_user; // utf16 should not be more
 	int len_domain_u = 2 * len_domain; // utf16 should not be more
 	unsigned char *user_upper = g_malloc(len_user + 1);
@@ -1691,16 +1691,17 @@ sip_sec_ntlm_message_describe(SipSecBuffer *buff,
 /* Security context for NTLM */
 typedef struct _context_ntlm {
 	struct sip_sec_context common;
-	gchar *domain;
-	gchar *username;
-	gchar *password;
+	const gchar *domain;
+	const gchar *username;
+	const gchar *password;
 	guchar *client_sign_key;
 	guchar *server_sign_key;
 	guchar *client_seal_key;
 	guchar *server_seal_key;
 	guint32 flags;
-	gboolean initial;
 } *context_ntlm;
+
+#define SIP_SEC_FLAG_NTLM_INITIAL  0x00010000
 
 
 static gboolean
@@ -1718,10 +1719,9 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 	if (!domain || is_empty(username) || is_empty(password))
 		return FALSE;
 
-	ctx->domain   = g_strdup(domain);
-	ctx->username = g_strdup(username);
-	ctx->password = g_strdup(password);
-	ctx->initial  = TRUE;
+	ctx->domain   = domain ? domain : "";
+	ctx->username = username;
+	ctx->password = password;
 
 	return TRUE;
 }
@@ -1736,8 +1736,8 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__ntlm: in use");
 
-	if (ctx->initial) {
-		ctx->initial = FALSE;
+	if (context->flags & SIP_SEC_FLAG_NTLM_INITIAL) {
+		context->flags &= ~SIP_SEC_FLAG_NTLM_INITIAL;
 
 		/* HTTP */
 		if (context->flags & SIP_SEC_FLAG_COMMON_HTTP) {
@@ -1879,9 +1879,6 @@ sip_sec_destroy_sec_context__ntlm(SipSecContext context)
 {
 	context_ntlm ctx = (context_ntlm) context;
 
-	g_free(ctx->domain);
-	g_free(ctx->username);
-	g_free(ctx->password);
 	g_free(ctx->client_sign_key);
 	g_free(ctx->server_sign_key);
 	g_free(ctx->client_seal_key);
@@ -1900,6 +1897,7 @@ sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__ntlm;
 	context->common.make_signature_func   = sip_sec_make_signature__ntlm;
 	context->common.verify_signature_func = sip_sec_verify_signature__ntlm;
+	context->common.flags |= SIP_SEC_FLAG_NTLM_INITIAL;
 
 	return((SipSecContext) context);
 }

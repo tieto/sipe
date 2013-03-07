@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -635,6 +635,9 @@ void sipe_miranda_login(SIPPROTO *pr) {
 
 	LOCK;
 	pr->sip = sipe_core_allocate(username,
+//	/* @TODO: is this correct?
+//	   "sso" is only available when SSPI/Kerberos support is compiled in */
+				     sipe_miranda_getBool(pr, "sso", FALSE),
 				     domain_user[0], domain_user[0] != NULL ? domain_user[1] : "",
 				     password,
 				     email,
@@ -667,11 +670,6 @@ void sipe_miranda_login(SIPPROTO *pr) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
 #endif
 	/* TODO: configuration option for TLS-DSK? */
-
-//	/* @TODO: is this correct?
-//	   "sso" is only available when Kerberos support is compiled in */
-	if (sipe_miranda_getBool(pr, "sso", FALSE))
-		SIPE_CORE_FLAG_SET(SSO);
 
 	/* Set display name */
 	sipe_miranda_setStringUtf(pr, "Nick", pr->sip->sip_name);

@@ -178,7 +178,7 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 
 	/* re-use SIP credentials */
 	data->auth.domain   = sipe_private->authdomain;
-	data->auth.user     = sipe_private->authuser ? sipe_private->authuser : sipe_private->username;
+	data->auth.user     = sipe_private->authuser;
 	data->auth.password = sipe_private->password;
 
 	data->conn = http_conn_create(SIPE_CORE_PUBLIC,
@@ -191,7 +191,7 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				      content_type,
 				      data->soap_action,
 				      /* use credentials only when SSO is not selected */
-				      SIPE_CORE_PUBLIC_FLAG_IS(SSO) ? NULL : &data->auth,
+				      SIPE_CORE_PRIVATE_FLAG_IS(SSO) ? NULL : &data->auth,
 				      sipe_svc_https_response,
 				      data);
 
