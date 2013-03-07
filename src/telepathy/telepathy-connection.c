@@ -158,6 +158,9 @@ static gboolean connect_to_core(SipeConnection *self,
 				login_domain ? login_domain : "",
 				login_account);
 		g_strfreev(domain_user);
+	} else {
+		/* No -> duplicate username */
+		login_account = g_strdup(self->account);
 	}
 
 	sipe_public = sipe_core_allocate(self->account,
