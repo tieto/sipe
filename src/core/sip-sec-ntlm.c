@@ -556,7 +556,7 @@ NTOWFv2 (const char* password, const char *user, const char *domain, unsigned ch
 	user_upper[len_user] = 0;
 
 	len_user_u = unicode_strconvcopy((gchar *)buff, (gchar *)user_upper, len_user_u);
-	len_domain_u = unicode_strconvcopy((gchar *)(buff+len_user_u), domain ? (gchar *)domain : "", len_domain_u);
+	len_domain_u = unicode_strconvcopy((gchar *)(buff+len_user_u), (gchar *)domain, len_domain_u);
 
 	NTOWFv1(password, user, domain, response_key_nt_v1);
 
@@ -1719,7 +1719,7 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 	if (!domain || is_empty(username) || is_empty(password))
 		return FALSE;
 
-	ctx->domain   = domain ? domain : "";
+	ctx->domain   = domain;
 	ctx->username = username;
 	ctx->password = password;
 
