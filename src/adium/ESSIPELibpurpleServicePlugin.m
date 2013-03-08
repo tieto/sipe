@@ -7,13 +7,14 @@
 //  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
 //
 
-//#import <libpurple/libpurple.h>
+#import <libpurple/debug.h>
 #import "ESSIPEService.h"
 #import "ESSIPELibpurpleServicePlugin.h"
 
-//#include "sipe-core.h"
-
+// C declarations  
+extern BOOL AIDebugLoggingIsEnabled();
 extern void purple_init_sipe_plugin(void);
+extern void purple_debug_set_enabled(gboolean);
 
 @implementation ESSIPELibpurpleServicePlugin
 
@@ -24,8 +25,12 @@ extern void purple_init_sipe_plugin(void);
 - (void)loadLibpurplePlugin 
 {
 	purple_init_sipe_plugin();
-    // TODO: Check that Adium is in debug mode rather than blindly enabling
-    purple_debug_set_enabled(true);
+
+    if(AIDebugLoggingIsEnabled()) {
+        purple_debug_set_enabled(true);
+        purple_debug_set_verbose(true);
+    }
+    
 }
 
 - (void)installPlugin
@@ -48,12 +53,12 @@ extern void purple_init_sipe_plugin(void);
 }
 
 - (NSString*) pluginAuthor {
-    return @"Harris Kauffman/Michael Lamb";
+    return @"Harris Kauffman, Michael Lamb";
 }
 
 - (NSString*) pluginVersion {
-    // TODO: Get this dynamically from the sipe-core release version
-    return @"1.13.3";
+    // TODO: Get this dynamically from sipe-core 
+    return @"1.15.0";
 }
 
 - (NSString*) pluginDescription {
@@ -61,6 +66,7 @@ extern void purple_init_sipe_plugin(void);
 }
 
 - (NSString*) pluginWebsite {
+    // TODO: Get this dynamically from sipe-core 
     return @"sipe.sf.net";
 }
 

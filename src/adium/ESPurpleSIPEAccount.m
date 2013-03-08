@@ -17,6 +17,9 @@
 #include "sipe-core.h"
 #include "sipe-backend.h"
 
+// C Declarations
+extern void AILog(NSString *fmt, ...);
+
 @implementation ESPurpleSIPEAccount
 
 - (const char*)protocolPlugin
@@ -24,7 +27,6 @@
 	return "prpl-sipe";
 }
 
- 
 - (NSString *)hostForPurple
 {
     NSString *server = [self preferenceForKey:KEY_SIPE_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
@@ -44,7 +46,7 @@
 	[super configurePurpleAccount];
     
     // Account preferences
-    NSLog(@"Configuring account: %s\n", self.purpleAccountName);
+    AILog(@"Configuring account: %s\n", self.purpleAccountName);
     
     // !!! ------  HACK/Kludge alert!  ------
     /*
@@ -97,7 +99,13 @@
     }
     
     // Connection preferences
-    NSString *connType = [self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS];
+    id connType = [self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS];
+    if([connType isKindOfClass:[NSNumber class]])
+	{
+	// For backwards compatibility, we pick from an array if the preference is a NSNumber
+    	NSMutableArray *myArray = [[NSMutableArray alloc] initWithObjects:@"auto", @"tls", @"tcp", nil];
+    	connType = (NSString *)[myArray objectAtIndex:[self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS]];
+	} 
     purple_account_set_string(account, "transport", [connType UTF8String]);
     
     NSString *authScheme = [self preferenceForKey:KEY_SIPE_AUTH_SCHEME group:GROUP_ACCOUNT_STATUS];
