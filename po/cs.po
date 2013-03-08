@@ -12,8 +12,8 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-03-07 16:05+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2013-03-07 20:52+0000\n"
+"Last-Translator: Jakub Adam <jakub.adam@ktknet.cz>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -433,7 +433,7 @@ msgstr "Uživatelské jméno musí být platné SIP URI\nNapříklad: uzivatel@s
 
 #: ../src/core/sipe-core.c:273
 msgid "Login and password are required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Pokud není povoleno jednotné přihlašování (Single Sign-On), je nutné zadat přihlašovací jméno a heslo"
 
 #: ../src/core/sipe-core.c:283
 msgid ""
@@ -931,7 +931,7 @@ msgstr "_Připojit"
 
 #: ../src/purple/purple-plugin.c:913 ../src/purple/purple-plugin.c:927
 msgid "Publishing of calendar information has been disabled"
-msgstr ""
+msgstr "Zveřejňování informací z kalendáře bylo zakázáno"
 
 #: ../src/purple/purple-plugin.c:940
 msgid "About SIPE plugin..."
@@ -1039,7 +1039,7 @@ msgstr "Použít Single Sign-On"
 #. 
 #: ../src/purple/purple-plugin.c:1064
 msgid "Don't publish my calendar information"
-msgstr ""
+msgstr "Nezveřejňovat informace z mého kalendáře"
 
 #: ../src/purple/purple-plugin.c:1067
 msgid ""
