@@ -8,6 +8,7 @@
 #define IDD_SEARCHUI                            142
 #define IDC_USESSO                              1000
 #define IDC_CONNTYPE                            1001
+#define IDC_AUTHTYPE                            1002
 #define IDC_ABOUTSIPE                           1003
 #define IDC_IPPROGEXE                           1005
 #define IDC_IPLOCALFOUND                        1006
@@ -15,7 +16,6 @@
 #define IDC_LOGIN                               1021
 #define IDC_HANDLE                              1022
 #define IDC_PUBLICIP                            1024
-#define IDC_USEKRB                              1026
 #define IDC_SSO                                 1030
 #define IDC_MSO                                 1031
 #define IDC_IPLOCAL                             1040

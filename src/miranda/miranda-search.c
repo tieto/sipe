@@ -51,6 +51,7 @@ void sipe_backend_search_failed(struct sipe_core_public *sipe_public,
 				SIPE_UNUSED_PARAMETER struct sipe_backend_search_token *token,
 				const gchar *msg)
 {
+	sipe_miranda_SendBroadcast(sipe_public->backend_private, NULL, ACKTYPE_SEARCH, ACKRESULT_FAILED, (HANDLE)1, 0);
 	sipe_backend_notify_error(sipe_public, msg, NULL);
 }
 
@@ -177,6 +178,8 @@ HWND sipe_miranda_SearchAdvanced( SIPPROTO *pr, HWND owner )
 	g_string_free(msg, TRUE);
 
 	LOCK;
+	sipe_backend_search_failed(pr->sip, NULL, "Not implemented");
+
 /*	ret = (HANDLE)sipe_core_buddy_search( pr->sip, NULL, query, sipsimple_search_contact_cb, pr); */
 	UNLOCK;
 
