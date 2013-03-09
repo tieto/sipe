@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -114,10 +114,8 @@ void sipe_backend_debug_literal(sipe_debug_level level,
 {
 	if (flags & SIPE_TELEPATHY_DEBUG) {
 		GLogLevelFlags g_level = debug_level_mapping[level];
-		GTimeVal now;
 		g_log(SIPE_TELEPATHY_DOMAIN, g_level, "%s", msg);
-		g_get_current_time(&now);
-		tp_debug_sender_add_message(debug, &now,
+		tp_debug_sender_add_message(debug, NULL,
 					    SIPE_TELEPATHY_DOMAIN,
 					    g_level,
 					    msg);
@@ -132,14 +130,9 @@ void sipe_backend_debug(sipe_debug_level level,
 
 	va_start(ap, format);
 	if (flags & SIPE_TELEPATHY_DEBUG) {
-		GLogLevelFlags g_level = debug_level_mapping[level];
-		GTimeVal now;
-		g_logv(SIPE_TELEPATHY_DOMAIN, g_level, format, ap);
-		g_get_current_time(&now);
-		tp_debug_sender_add_message_vprintf(debug, &now, NULL,
-						    SIPE_TELEPATHY_DOMAIN,
-						    g_level,
-						    format, ap);
+		gchar *msg = g_strdup_vprintf(format, ap);
+		sipe_backend_debug_literal(level, msg);
+		g_free(msg);
 	}
 	va_end(ap);
 }
