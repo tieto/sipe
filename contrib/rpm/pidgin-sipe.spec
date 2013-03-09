@@ -249,7 +249,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* DDD MMM DD 2013 J. D. User <jduser@noreply.com> 1.15.0
+* Sat Mar 09 2013 J. D. User <jduser@noreply.com> 1.15.0
 - update to 1.15.0
 
 * Wed Dec 26 2012 J. D. User <jduser@noreply.com> 1.14.1
