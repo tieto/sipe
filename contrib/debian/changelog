@@ -31,7 +31,7 @@ pidgin-sipe (1.15.0-1) unstable; urgency=low
 	- support conf:sip: meeting URIs (Jakub Adam)
 	- updated Adium port (Michael Lamb)
 
- -- Stefan Becker <chemobejk@gmail.com>  Tue, 05 Mar 2013 21:20:00 +0200
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 09 Mar 2013 15:25:00 +0200
 
 pidgin-sipe (1.14.1-1) unstable; urgency=low
 

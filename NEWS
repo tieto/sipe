@@ -1,4 +1,4 @@
-version 1.15.0 "Authentication & Autodiscovery Update" (2013-XX-XX)
+version 1.15.0 "Authentication & Autodiscovery Update" (2013-03-09)
 	- Feature #3578135: Support Kerberos for HTTP(S) authentication w/o SSPI (Stefan Becker)
 	  * effective for all platforms that support --with-krb5
 	  * this triggered a series of cleanup & simplification changes and
