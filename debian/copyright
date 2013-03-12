@@ -4,18 +4,18 @@ Source: http://repo.or.cz/w/siplcs.git
 
 Files: *
 Copyright: 2007-2010, Anibal Avelar <debianmx@gmail.com>
-           2010-2012, Jakub Adam <jakub.adam@ktknet.cz>
+           2010-2013, Jakub Adam <jakub.adam@ktknet.cz>
            2008, Novell, Inc.
            2009-2010, pier11 <pier11@operamail.com>
            2007-2012, SIPE Project
-           2011-2012, Stefan Becker <chemobejk@gmail.com>
+           2011-2013, Stefan Becker <chemobejk@gmail.com>
            2005, Thomas Butter <butter@uni-mannheim.de>
            2010, Tomáš Hrabčík <tomas.hrabcik@tieto.com>
 License: GPL-2+
 
 Files: debian/*
 Copyright: 2007, Anibal Avelar <aavelar@cofradia.org>
-           2012, Jakub Adam <jakub.adam@ktknet.cz>
+           2013, Jakub Adam <jakub.adam@ktknet.cz>
 License: GPL-2+
 
 License: GPL-2+
