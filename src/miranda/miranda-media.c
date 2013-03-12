@@ -134,7 +134,8 @@ gboolean sipe_backend_media_accepted(struct sipe_backend_media *media)
 }
 
 gboolean
-sipe_backend_candidates_prepared(struct sipe_backend_media *media)
+sipe_backend_stream_initialized(struct sipe_backend_media *media,
+				struct sipe_backend_stream *stream)
 {
 	_NIF();
 	return FALSE;
@@ -156,7 +157,7 @@ sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media
 	return NULL;
 }
 
-gchar *
+const gchar *
 sipe_backend_stream_get_id(struct sipe_backend_stream *stream)
 {
 	_NIF();

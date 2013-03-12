@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -41,7 +41,6 @@ struct http_conn_auth {
 	char *domain;
 	char *user;
 	char *password;
-	int use_negotiate;
 };
 typedef struct http_conn_auth HttpConnAuth;
 
@@ -55,6 +54,8 @@ typedef void (*HttpConnCallback) (int return_code, const char *body, GSList* hea
 
 /**
  * Creates SSL connection and sends.
+ *
+ * @param auth Authentication data. Must be @c NULL for Single Sign-On
  */
 HttpConn *
 http_conn_create(struct sipe_core_public *sipe_public,

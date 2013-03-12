@@ -50,6 +50,21 @@ done >checksums.txt
 for d in *.dsc; do cat checksums.txt >>${d}; done
 rm checksums.txt
 
+# Overwrite those .dsc's that have support for Voice & Video
+for os in \
+    xUbuntu_11.10; \
+do \
+    cp pidgin-sipe-VandV.dsc pidgin-sipe-${os}.dsc; \
+done
+
+# Overwrite those .dsc's that have support for telepathy
+for os in \
+    xUbuntu_12.10 \
+    xUbuntu_12.04; \
+do \
+    cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
+done
+
 # That's all folks...
 echo "Done."
 osc status

@@ -194,7 +194,8 @@ void sipe_backend_media_add_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_
 gboolean sipe_backend_media_is_initiator(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
 					 SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(FALSE); }
 gboolean sipe_backend_media_accepted(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) { return(FALSE); }
-gboolean sipe_backend_candidates_prepared(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) { return(FALSE); }
+gboolean sipe_backend_stream_initialized(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+					 SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(FALSE); }
 GList *sipe_backend_media_get_active_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
 						      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(NULL); }
 GList *sipe_backend_media_get_active_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,

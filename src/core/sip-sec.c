@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -39,50 +39,54 @@
 #include "sipe-utils.h"
 
 #include "sip-sec-mech.h"
-#ifndef _WIN32
-#include "sip-sec-ntlm.h"
-#include "sip-sec-tls-dsk.h"
-#define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
-#define sip_sec_password__NTLM			sip_sec_password__ntlm
-#define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
-/* #define sip_sec_password__Negotiate: see below */
-#define sip_sec_create_context__TLS_DSK		sip_sec_create_context__tls_dsk
-#define sip_sec_password__TLS_DSK		sip_sec_password__tls_dsk
 
-#ifdef HAVE_LIBKRB5
-#include "sip-sec-krb5.h"
-#define sip_sec_create_context__Kerberos	sip_sec_create_context__krb5
-#define sip_sec_password__Kerberos		sip_sec_password__krb5
+/* SSPI is only supported on Windows platform */
+#if defined(_WIN32) && defined(HAVE_SSPI)
+#include "sip-sec-sspi.h"
+#define SIP_SEC_WINDOWS_SSPI 1
 #else
-#define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
-#define sip_sec_password__Kerberos		sip_sec_password__NONE
+#define SIP_SEC_WINDOWS_SSPI 0
 #endif
 
-#else /* _WIN32 */
-#ifdef HAVE_SSPI
-#include "sip-sec-sspi.h"
-#define sip_sec_create_context__NTLM		sip_sec_create_context__sspi
-#define sip_sec_password__NTLM			sip_sec_password__sspi
-#define sip_sec_create_context__Negotiate	sip_sec_create_context__sspi
-/* #define sip_sec_password__Negotiate: see below */
-#define sip_sec_create_context__Kerberos	sip_sec_create_context__sspi
-#define sip_sec_password__Kerberos		sip_sec_password__sspi
-#define sip_sec_create_context__TLS_DSK		sip_sec_create_context__sspi
-#define sip_sec_password__TLS_DSK		sip_sec_password__sspi
-#else /* !HAVE_SSPI */
+/* SIPE_AUTHENTICATION_TYPE_NTLM */
+#if SIP_SEC_WINDOWS_SSPI
+#define sip_sec_create_context__NTLM       sip_sec_create_context__sspi
+#define sip_sec_password__NTLM             sip_sec_password__sspi
+#else
 #include "sip-sec-ntlm.h"
-#include "sip-sec-tls-dsk.h"
-#define sip_sec_create_context__NTLM		sip_sec_create_context__ntlm
-#define sip_sec_password__NTLM			sip_sec_password__ntlm
-#define sip_sec_create_context__Negotiate	sip_sec_create_context__NONE
-/* #define sip_sec_password__Negotiate: see below */
-#define sip_sec_create_context__Kerberos	sip_sec_create_context__NONE
-#define sip_sec_password__Kerberos		sip_sec_password__NONE
-#define sip_sec_create_context__TLS_DSK		sip_sec_create_context__tls_dsk
-#define sip_sec_password__TLS_DSK		sip_sec_password__tls_dsk
-#endif /* HAVE_SSPI */
+#define sip_sec_create_context__NTLM       sip_sec_create_context__ntlm
+#define sip_sec_password__NTLM             sip_sec_password__ntlm
+#endif
 
-#endif /* _WIN32 */
+/* SIPE_AUTHENTICATION_TYPE_KERBEROS */
+#if SIP_SEC_WINDOWS_SSPI
+#define sip_sec_create_context__Kerberos   sip_sec_create_context__sspi
+#define sip_sec_password__Kerberos         sip_sec_password__sspi
+#elif defined(HAVE_LIBKRB5)
+#include "sip-sec-krb5.h"
+#define sip_sec_create_context__Kerberos   sip_sec_create_context__krb5
+#define sip_sec_password__Kerberos         sip_sec_password__krb5
+#else
+#define sip_sec_create_context__Kerberos   sip_sec_create_context__NONE
+#define sip_sec_password__Kerberos         sip_sec_password__NONE
+#endif
+
+/* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
+#if SIP_SEC_WINDOWS_SSPI
+#define sip_sec_create_context__Negotiate  sip_sec_create_context__sspi
+#elif defined(HAVE_LIBKRB5)
+#include "sip-sec-negotiate.h"
+#define sip_sec_create_context__Negotiate  sip_sec_create_context__negotiate
+#else
+#define sip_sec_create_context__Negotiate  sip_sec_create_context__NONE
+#endif
+/* Negotiate is only used for HTTP, not for SIP */
+#define sip_sec_password__Negotiate        sip_sec_password__NONE
+
+/* SIPE_AUTHENTICATION_TYPE_TLS_DSK */
+#include "sip-sec-tls-dsk.h"
+#define sip_sec_create_context__TLS_DSK    sip_sec_create_context__tls_dsk
+#define sip_sec_password__TLS_DSK          sip_sec_password__tls_dsk
 
 /* Dummy initialization hook */
 static SipSecContext
@@ -91,6 +95,7 @@ sip_sec_create_context__NONE(SIPE_UNUSED_PARAMETER guint type)
 	return(NULL);
 }
 
+/* Dummy SIP password hook */
 static gboolean sip_sec_password__NONE(void)
 {
 	return(TRUE);
@@ -99,11 +104,11 @@ static gboolean sip_sec_password__NONE(void)
 /* sip_sec API methods */
 SipSecContext
 sip_sec_create_context(guint type,
-		       const int  sso,
-		       int is_connection_based,
-		       const char *domain,
-		       const char *username,
-		       const char *password)
+		       gboolean sso,
+		       gboolean http,
+		       const gchar *domain,
+		       const gchar *username,
+		       const gchar *password)
 {
 	SipSecContext context = NULL;
 
@@ -116,17 +121,20 @@ sip_sec_create_context(guint type,
 		sip_sec_create_context__TLS_DSK,   /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
 	};
 
+	SIPE_DEBUG_INFO("sip_sec_create_context: type: %d, Single Sign-On: %s, protocol: %s",
+			type, sso ? "yes" : "no", http ? "HTTP" : "SIP");
+
 	context = (*(auth_to_hook[type]))(type);
 	if (context) {
-		sip_uint32 ret;
 
-		context->sso = sso;
-		context->is_connection_based = is_connection_based;
-		context->is_ready = TRUE;
+		/* set common flags */
+		if (sso)
+			context->flags |= SIP_SEC_FLAG_COMMON_SSO;
+		if (http)
+			context->flags |= SIP_SEC_FLAG_COMMON_HTTP;
 
-		ret = (*context->acquire_cred_func)(context, domain, username, password);
-		if (ret != SIP_SEC_E_OK) {
-			SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_init_context failed to acquire credentials.");
+		if (!(*context->acquire_cred_func)(context, domain, username, password)) {
+			SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_create_context: failed to acquire credentials.");
 			(*context->destroy_context_func)(context);
 			context = NULL;
 		}
@@ -135,14 +143,14 @@ sip_sec_create_context(guint type,
 	return(context);
 }
 
-unsigned long
+gboolean
 sip_sec_init_context_step(SipSecContext context,
-			  const char *target,
-			  const char *input_toked_base64,
-			  char **output_toked_base64,
-			  int *expires)
+			  const gchar *target,
+			  const gchar *input_toked_base64,
+			  gchar **output_toked_base64,
+			  guint *expires)
 {
-	sip_uint32 ret = SIP_SEC_E_INTERNAL_ERROR;
+	gboolean ret = FALSE;
 
 	if (context) {
 		SipSecBuffer in_buff  = {0, NULL};
@@ -157,12 +165,16 @@ sip_sec_init_context_step(SipSecContext context,
 		if (input_toked_base64)
 			g_free(in_buff.value);
 
-		if (ret == SIP_SEC_E_OK || ret == SIP_SEC_I_CONTINUE_NEEDED) {
+		if (ret) {
 
-			if (out_buff.length > 0 && out_buff.value) {
-				*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
-			} else {
-				*output_toked_base64 = NULL;
+			if (out_buff.value) {
+				if (out_buff.length > 0) {
+					*output_toked_base64 = g_base64_encode(out_buff.value, out_buff.length);
+				} else {
+					/* special string: caller takes ownership */
+					*output_toked_base64 = (gchar *) out_buff.value;
+					out_buff.value = NULL;
+				}
 			}
 
 			g_free(out_buff.value);
@@ -176,58 +188,9 @@ sip_sec_init_context_step(SipSecContext context,
 	return ret;
 }
 
-char *
-sip_sec_init_context(SipSecContext *context,
-		     int *expires,
-		     guint type,
-		     const int  sso,
-		     const char *domain,
-		     const char *username,
-		     const char *password,
-		     const char *target,
-		     const char *input_toked_base64)
-{
-	sip_uint32 ret;
-	char *output_toked_base64 = NULL;
-	int exp;
-
-	*context = sip_sec_create_context(type,
-					  sso,
-					  0, /* Connectionless for SIP */
-					  domain,
-					  username,
-					  password);
-	if (!*context) {
-		SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_init_context: failed sip_sec_create_context()");
-		return NULL;
-	}
-
-	ret = sip_sec_init_context_step(*context,
-					target,
-					NULL,
-					&output_toked_base64,
-					&exp);
-
-	/* for NTLM type 3 */
-	if (ret == SIP_SEC_I_CONTINUE_NEEDED) {
-		g_free(output_toked_base64);
-		ret = sip_sec_init_context_step(*context,
-						target,
-						input_toked_base64,
-						&output_toked_base64,
-						&exp);
-	}
-
-	if (expires) {
-		*expires = exp;
-	}
-
-	return output_toked_base64;
-}
-
 gboolean sip_sec_context_is_ready(SipSecContext context)
 {
-	return(context && (context->is_ready != 0));
+	return(context && (context->flags & SIP_SEC_FLAG_COMMON_READY));
 }
 
 void
@@ -236,12 +199,12 @@ sip_sec_destroy_context(SipSecContext context)
 	if (context) (*context->destroy_context_func)(context);
 }
 
-char * sip_sec_make_signature(SipSecContext context, const char *message)
+gchar *sip_sec_make_signature(SipSecContext context, const gchar *message)
 {
 	SipSecBuffer signature;
-	char *signature_hex;
+	gchar *signature_hex;
 
-	if(((*context->make_signature_func)(context, message, &signature)) != SIP_SEC_E_OK) {
+	if (!(*context->make_signature_func)(context, message, &signature)) {
 		SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_make_signature failed. Unable to sign message!");
 		return NULL;
 	}
@@ -250,15 +213,18 @@ char * sip_sec_make_signature(SipSecContext context, const char *message)
 	return signature_hex;
 }
 
-int sip_sec_verify_signature(SipSecContext context, const char *message, const char *signature_hex)
+gboolean sip_sec_verify_signature(SipSecContext context,
+				  const gchar *message,
+				  const gchar *signature_hex)
 {
 	SipSecBuffer signature;
-	sip_uint32 res;
+	gboolean res;
 
 	SIPE_DEBUG_INFO("sip_sec_verify_signature: message is:%s signature to verify is:%s",
 			message ? message : "", signature_hex ? signature_hex : "");
 
-	if (!message || !signature_hex) return SIP_SEC_E_INTERNAL_ERROR;
+	if (!message || !signature_hex)
+		return FALSE;
 
 	signature.length = hex_str_to_buff(signature_hex, &signature.value);
 	res = (*context->verify_signature_func)(context, message, signature);
@@ -272,12 +238,11 @@ gboolean sip_sec_requires_password(guint authentication,
 {
 	/* Map authentication type to module initialization hook & name */
 	static sip_sec_password_func const auth_to_hook[] = {
-		sip_sec_password__NONE,     /* SIPE_AUTHENTICATION_TYPE_UNSET     */
-		sip_sec_password__NTLM,     /* SIPE_AUTHENTICATION_TYPE_NTLM      */
-		sip_sec_password__Kerberos, /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
-		/* Negotiate is only used internally so pasword requirement doesn't make sense */
-		sip_sec_password__NONE,     /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
-		sip_sec_password__TLS_DSK,  /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+		sip_sec_password__NONE,      /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+		sip_sec_password__NTLM,      /* SIPE_AUTHENTICATION_TYPE_NTLM      */
+		sip_sec_password__Kerberos,  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
+		sip_sec_password__Negotiate, /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
+		sip_sec_password__TLS_DSK,   /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
 	};
 
 	/* If Single-Sign On is disabled then a password is required */

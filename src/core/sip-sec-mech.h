@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -28,12 +28,6 @@
  * Current mechanisms are: Kerberos/GSS-API, sipe's NTLM and SSPI.
  */
 
-#define SIP_SEC_E_OK 0
-#define SIP_SEC_E_INTERNAL_ERROR (-2146893052)
-#define SIP_SEC_I_CONTINUE_NEEDED 590610
-
-typedef unsigned long sip_uint32;
-
 typedef struct {
 	gsize   length;
 	guint8 *value;
@@ -42,29 +36,29 @@ typedef struct {
 typedef SipSecContext
 (*sip_sec_create_context_func)(guint type);
 
-typedef sip_uint32
+typedef gboolean
 (*sip_sec_acquire_cred_func)(SipSecContext context,
-			     const char *domain,
-			     const char *username,
-			     const char *password);
+			     const gchar *domain,
+			     const gchar *username,
+			     const gchar *password);
 
-typedef sip_uint32
+typedef gboolean
 (*sip_sec_init_context_func)(SipSecContext context,
 			     SipSecBuffer in_buff,
 			     SipSecBuffer *out_buff,
-			     const char *service_name);
+			     const gchar *service_name);
 
 typedef void
 (*sip_sec_destroy_context_func)(SipSecContext context);
 
-typedef sip_uint32
+typedef gboolean
 (*sip_sec_make_signature_func)(SipSecContext context,
-			       const char *message,
+			       const gchar *message,
 			       SipSecBuffer *signature);
 
-typedef sip_uint32
+typedef gboolean
 (*sip_sec_verify_signature_func)(SipSecContext context,
-				 const char *message,
+				 const gchar *message,
 				 SipSecBuffer signature);
 
 typedef gboolean (*sip_sec_password_func)(void);
@@ -76,12 +70,17 @@ struct sip_sec_context {
 	sip_sec_destroy_context_func  destroy_context_func;
 	sip_sec_make_signature_func   make_signature_func;
 	sip_sec_verify_signature_func verify_signature_func;
-	/** Single Sign-On request flag 0=FALSE */
-	int sso;
 	/** Security Context expiration interval in seconds */
-	int expires;
-	/** 0 - FALSE; otherwise TRUE */
-	int is_connection_based;
-	/** 0 - FALSE, otherwise TRUE */
-	int is_ready;
+	guint expires;
+	guint flags;
 };
+
+/**
+ * sip_sec_context.flags
+ *
+ * 0x00000001 - 0x00008000: common flags
+ * 0x00010000 - 0x80000000: mechanism private flags
+ */
+#define SIP_SEC_FLAG_COMMON_SSO   0x00000001
+#define SIP_SEC_FLAG_COMMON_HTTP  0x00000002
+#define SIP_SEC_FLAG_COMMON_READY 0x00000004

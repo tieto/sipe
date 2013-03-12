@@ -1,7 +1,16 @@
 -------------------------------------------------------------------
-Wed Dec 26 14:23:00 UTC 2012 - chemobejk@gmail.com
+Sat Mar  9 13:26:00 UTC 2013 - chemobejk@gmail.com
 
-- Update to version 1.14.1
+- Update to version 1.15.0
+
+-------------------------------------------------------------------
+Tue Feb  5 22:32:56 UTC 2013 - zaitor@opensuse.org
+
+- Update to version 1.14.1:
+  + Kerberos configuration should be passwordless (sf#3578132).
+    - purple: non Single Sign-on users are asked for the password
+      again.
+  + Bug & memory leak fixes in sipe-buddy.c.
 
 -------------------------------------------------------------------
 Mon Dec 17 10:46:21 UTC 2012 - dimstar@opensuse.org

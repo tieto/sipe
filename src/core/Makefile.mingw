@@ -1,6 +1,6 @@
 ################################### tell Emacs this is a -*- makefile-gmake -*-
 #
-# Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #
@@ -11,9 +11,12 @@
 ###############################################################################
 #
 # Configuration option:
-#  - USE_SSPI defined:     NTLM, Kerberos & Single-Signon supported
-#  - USE_SSPI not defined: only NTLM without Single-Signon supported
+#  - USE_SSPI defined:     NTLM, Kerberos, TLS-DSK & Single Sign-On supported
+#  - USE_SSPI not defined: NTLM & TLS-DSK but without Single Sign-On support
 #             [eg.: make -f Makefile.mingw USE_SSPI= ]
+#
+# @TODO: HAVE_LIBKRB5 support for USE_SSPI=. Where to find the libraries?
+#        Those would need to be packaged alongside the plugin.
 #
 USE_SSPI := 1
 
@@ -102,6 +105,7 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \
+			sip-sec-tls-dsk.c \
 			sip-csta.c \
 			sipe-webticket.c \
 			sipe-xml.c \
@@ -134,8 +138,7 @@ ifdef USE_SSPI
 CLEAN_C_SRC +=		sip-sec-sspi.c
 else
 CLEAN_C_SRC +=		md4.c \
-			sip-sec-ntlm.c \
-			sip-sec-tls-dsk.c
+			sip-sec-ntlm.c
 
 C_TEST_SRC += 		sip-sec-ntlm-tests.c \
 			../purple/tests.c

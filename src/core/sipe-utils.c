@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,28 +103,79 @@ gchar *sip_uri(const gchar *string)
 	return(strstr(string, "sip:") ? g_strdup(string) : sip_uri_from_name(string));
 }
 
-/* can't use g_uri_escape_string as it requires glib-2.0 >= 2.16.0  :-( */
+static gchar *escape_uri_part(const gchar *in, guint len)
+{
+	gchar *escaped = NULL;
+
+	if (len) {
+		gchar *s;
+
+		/* reserve space for worst case, i.e. every character needs escaping */
+		escaped = s = g_malloc(3 * len + 1);
+		while (len--) {
+			gchar c = *in++;
+
+			/* only allow ASCII characters */
+			if (!isascii(c)) {
+				g_free(escaped);
+				return(NULL);
+			}
+
+			/*
+			 * RFC 3986 Appendix A
+			 *
+			 * authority     = [ userinfo "@" ] host [ ":" port ]
+			 * userinfo      = *( unreserved / pct-encoded / sub-delims / ":" )
+			 * host          = IP-literal / IPv4address / reg-name
+			 * reg-name      = *( unreserved / pct-encoded / sub-delims )
+			 * pct-encoded   = "%" HEXDIG HEXDIG
+			 * unreserved    = ALPHA / DIGIT / "-" / "." / "_" / "~"
+			 *
+			 * Escape everything that isn't in "unreserved"
+			 */
+			if (isalnum(c) ||
+			    (c == '.') ||
+			    (c == '-') ||
+			    (c == '_') ||
+			    (c == '~')) {
+				*s++ = c;
+			} else {
+				sprintf(s, "%%%1X%1X", c / 16, c % 16);
+				s += 3;
+			}
+		}
+		*s = '\0';
+	}
+
+	return(escaped);
+}
+
 gchar *sip_uri_if_valid(const gchar *string)
 {
 	/* strip possible sip: prefix */
-	const gchar *s = sipe_get_no_sip_uri(string);
-	if (!s) return(NULL);
+	const gchar *uri = sipe_get_no_sip_uri(string);
+	const gchar *at;
+	gchar *result    = NULL;
 
-	/* scan string for invalid URI characters */
-	while (*s) {
-		gchar c = *s++;
+	/* only XXX@YYY is valid */
+	if (uri && ((at = strchr(uri, '@')) != NULL)) {
+		gchar *userinfo = escape_uri_part(uri, at - uri);
 
-		if (!(isascii(c) &&
-		      (isalnum(c) ||
-		       (c == '.') ||
-		       (c == '-') ||
-		       (c == '_') ||
-		       (c == '@'))))
-			return(NULL);
+		if (userinfo) {
+			gchar *host = escape_uri_part(at + 1, strlen(at + 1));
+
+			if (host) {
+				/* name is valid for URI, convert it */
+				result = g_strdup_printf("sip:%s@%s",
+							 userinfo,
+							 host);
+				g_free(host);
+			}
+			g_free(userinfo);
+		}
 	}
 
-	/* name is valid for URI, convert it */
-	return(sip_uri(string));
+	return(result);
 }
 
 const gchar *sipe_get_no_sip_uri(const gchar *sip_uri)
@@ -318,7 +369,7 @@ gint sipe_strcompare(gconstpointer a, gconstpointer b)
 	if (!b)
 		return a != b;
 	return strcmp(a, b);
-#endif	
+#endif
 }
 
 time_t

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -97,7 +97,8 @@ struct sipe_backend_private;
 /**
  * Flags
  */
-#define SIPE_CORE_FLAG_SSO     0x00000001 /* user enabled Single-Sign On */
+/* user disabled calendar information publishing */
+#define SIPE_CORE_FLAG_DONT_PUBLISH 0x00000001
 
 #define SIPE_CORE_FLAG_IS(flag)    \
 	((sipe_public->flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
@@ -278,6 +279,7 @@ void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
  * Setup core data
  */
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
+					    gboolean sso,
 					    const gchar *login_domain,
 					    const gchar *login_account,
 					    const gchar *password,

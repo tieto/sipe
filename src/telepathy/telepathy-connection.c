@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -158,9 +158,14 @@ static gboolean connect_to_core(SipeConnection *self,
 				login_domain ? login_domain : "",
 				login_account);
 		g_strfreev(domain_user);
+	} else {
+		/* No -> duplicate username */
+		login_account = g_strdup(self->account);
 	}
 
 	sipe_public = sipe_core_allocate(self->account,
+					 /* @TODO: add parameter for SSO */
+					 FALSE,
 					 login_domain, login_account,
 					 self->password,
 					 NULL, /* @TODO: email     */
@@ -198,9 +203,6 @@ static gboolean connect_to_core(SipeConnection *self,
 		     == 0))
 			SIPE_DEBUG_INFO("connect_to_core: created cache directory %s",
 					telepathy_private->cache_dir);
-
-		/* @TODO: add parameter for SSO */
-		SIPE_CORE_FLAG_UNSET(SSO);
 
 		sipe_core_transport_sip_connect(sipe_public,
 						self->transport,

@@ -4,10 +4,14 @@
 #
 #   http://code.google.com/p/pidgin-privacy-please/wiki/HowToCrossCompileForWindowsAgainstLatestPidgin
 #
-# Check this page for latest MinGW/Pidgin URLs if you get fetch errors!
+# Latest Windows Pidgin build instractions:
+#
+#   https://developer.pidgin.im/wiki/BuildingWinPidgin
+#
+# Check these page for latest MinGW/Pidgin URLs if you get fetch errors!
 #
 # update Pidgin version here
-export PIDGIN_VERSION=2.10.6
+export PIDGIN_VERSION=2.10.7
 
 # must be absolute path
 export PIDGIN_DEV_ROOT=$(pwd -P)/build-${PIDGIN_VERSION}
@@ -47,15 +51,15 @@ cd ${SOURCES_DIR}
 wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/gtk+/2.14/gtk+-bundle_2.14.7-20090119_win32.zip
 wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/gettext-tools-0.17.zip
 wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/gettext-runtime-0.17-1.zip
-wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/libxml2-dev_2.7.4-1_win32.zip
-wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/libxml2_2.7.4-1_win32.zip
-wget -nv http://developer.pidgin.im/static/win32/tcl-8.4.5.tar.gz
-wget -nv http://developer.pidgin.im/static/win32/gtkspell-2.0.16.tar.bz2
-wget -nv http://developer.pidgin.im/static/win32/enchant_1.6.0_win32.zip
-wget -nv http://developer.pidgin.im/static/win32/nss-3.12.5-nspr-4.8.2.tar.gz
-wget -nv http://developer.pidgin.im/static/win32/silc-toolkit-1.1.8.tar.gz
-wget -nv http://developer.pidgin.im/static/win32/meanwhile-1.0.2_daa2-win32.zip
-wget -nv http://developer.pidgin.im/static/win32/cyrus-sasl-2.1.22-daa1.zip
+wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/libxml2-dev_2.9.0-1_win32.zip
+wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/libxml2_2.9.0-1_win32.zip
+wget -nv https://developer.pidgin.im/static/win32/tcl-8.4.5.tar.gz
+wget -nv https://developer.pidgin.im/static/win32/gtkspell-2.0.16.tar.bz2
+wget -nv https://developer.pidgin.im/static/win32/enchant_1.6.0_win32.zip
+wget -nv https://developer.pidgin.im/static/win32/nss-3.13.6-nspr-4.9.2.tar.gz
+wget -nv https://developer.pidgin.im/static/win32/silc-toolkit-1.1.10.tar.gz
+wget -nv https://developer.pidgin.im/static/win32/meanwhile-1.0.2_daa3-win32.zip
+wget -nv https://developer.pidgin.im/static/win32/cyrus-sasl-2.1.25.tar.gz
 wget -nv http://ftp.acc.umu.se/pub/GNOME/binaries/win32/intltool/0.40/intltool_0.40.4-1_win32.zip
 wget -nv http://prdownloads.sourceforge.net/pidgin/pidgin-${PIDGIN_VERSION}.tar.bz2
 
@@ -63,18 +67,19 @@ echo 1>&2 unpacking pidgin dev stuff...
 unzip ${SOURCES_DIR}/gtk+-bundle_2.14.7-20090119_win32.zip -d ${DEV_DIR}/gtk_2_0-2.14
 unzip ${SOURCES_DIR}/gettext-tools-0.17.zip -d ${DEV_DIR}/gettext-0.17
 unzip ${SOURCES_DIR}/gettext-runtime-0.17-1.zip -d ${DEV_DIR}/gettext-0.17
-unzip ${SOURCES_DIR}/libxml2-dev_2.7.4-1_win32.zip -d ${DEV_DIR}/libxml2-2.7.4
-unzip ${SOURCES_DIR}/libxml2_2.7.4-1_win32.zip -d ${DEV_DIR}/libxml2-2.7.4
+unzip ${SOURCES_DIR}/libxml2-dev_2.9.0-1_win32.zip -d ${DEV_DIR}/libxml2-2.9.0
+unzip ${SOURCES_DIR}/libxml2_2.9.0-1_win32.zip -d ${DEV_DIR}/libxml2-2.9.0
 unzip ${SOURCES_DIR}/enchant_1.6.0_win32.zip -d ${DEV_DIR}/enchant_1.6.0_win32
-unzip ${SOURCES_DIR}/meanwhile-1.0.2_daa2-win32.zip -d ${DEV_DIR}
-unzip ${SOURCES_DIR}/cyrus-sasl-2.1.22-daa1.zip -d ${DEV_DIR}
+unzip ${SOURCES_DIR}/meanwhile-1.0.2_daa3-win32.zip -d ${DEV_DIR}
 unzip ${SOURCES_DIR}/intltool_0.40.4-1_win32.zip -d ${DEV_DIR}/intltool_0.40.4-1_win32
 
 cd ${DEV_DIR}
 tar xzf ${SOURCES_DIR}/tcl-8.4.5.tar.gz
 tar xjf ${SOURCES_DIR}/gtkspell-2.0.16.tar.bz2
-tar xzf ${SOURCES_DIR}/nss-3.12.5-nspr-4.8.2.tar.gz
-tar xzf ${SOURCES_DIR}/silc-toolkit-1.1.8.tar.gz
+# Doesn't seem to be compressed, despite the name...
+tar xf  ${SOURCES_DIR}/nss-3.13.6-nspr-4.9.2.tar.gz
+tar xzf ${SOURCES_DIR}/silc-toolkit-1.1.10.tar.gz
+tar xzf ${SOURCES_DIR}/cyrus-sasl-2.1.25.tar.gz
 
 cd ${PIDGIN_DEV_ROOT}
 tar xjf ${SOURCES_DIR}/pidgin-${PIDGIN_VERSION}.tar.bz2

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -183,8 +183,8 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 		g_free(cal->auth->domain);
 		g_free(cal->auth->user);
 		g_free(cal->auth->password);
+		g_free(cal->auth);
 	}
-	g_free(cal->auth);
 	g_free(cal->as_url);
 	g_free(cal->oof_url);
 	g_free(cal->oab_url);
@@ -229,27 +229,23 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 			cal->domino_url  = g_strdup(value);
 		}
 
-		cal->auth = g_new0(HttpConnAuth, 1);
-		cal->auth->use_negotiate =
-			(sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_KERBEROS);
-
 		/* user specified email login? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
 		if (!is_empty(value)) {
+			/* Allowed domain-account separators are / or \ */
+			gchar **domain_user = g_strsplit_set(value, "/\\", 2);
+			gboolean has_domain = domain_user[1] != NULL;
 
-			/* user specified email login domain? */
-			const char *tmp = strstr(value, "\\");
-			if (tmp) {
-				cal->auth->domain = g_strndup(value, tmp - value);
-				cal->auth->user   = g_strdup(tmp + 1);
-			} else {
-				cal->auth->user   = g_strdup(value);
-			}
+			cal->auth = g_new0(HttpConnAuth, 1);
+			cal->auth->domain   = has_domain ? g_strdup(domain_user[0]) : NULL;
+			cal->auth->user     = g_strdup(domain_user[has_domain ? 1 : 0]);
 			cal->auth->password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
-										 SIPE_SETTING_EMAIL_PASSWORD));
+									    SIPE_SETTING_EMAIL_PASSWORD));
+			g_strfreev(domain_user);
 
-		} else {
-			/* re-use SIPE credentials */
+		} else if (!SIPE_CORE_PRIVATE_FLAG_IS(SSO)) {
+			/* re-use SIP credentials when SSO is not selected */
+			cal->auth = g_new0(HttpConnAuth, 1);
 			cal->auth->domain   = g_strdup(sipe_private->authdomain);
 			cal->auth->user     = g_strdup(sipe_private->authuser);
 			cal->auth->password = g_strdup(sipe_private->password);
@@ -1145,12 +1141,14 @@ void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private)
 {
 #define UPDATE_CALENDAR_DELAY		1*60	/* 1 min */
 
-	sipe_schedule_seconds(sipe_private,
-			      "<+update-calendar>",
-			      NULL,
-			      UPDATE_CALENDAR_DELAY,
-			      (sipe_schedule_action) sipe_core_update_calendar,
-			      NULL);
+	/* only start periodic calendar updating if user hasn't disabled it */
+	if (!SIPE_CORE_PUBLIC_FLAG_IS(DONT_PUBLISH))
+		sipe_schedule_seconds(sipe_private,
+				      "<+update-calendar>",
+				      NULL,
+				      UPDATE_CALENDAR_DELAY,
+				      (sipe_schedule_action) sipe_core_update_calendar,
+				      NULL);
 }
 
 /*
