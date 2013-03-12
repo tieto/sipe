@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -22,13 +22,18 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include <stdio.h>
+#ifndef _WIN32
+#error sip-sec-sspi.c can only be compiled for Windows builds
+#endif
+
 #include <windows.h>
 #include <rpc.h>
 #ifndef SECURITY_WIN32
 #define SECURITY_WIN32 1
 #endif
 #include <security.h>
+
+#include <string.h>
 
 #include <glib.h>
 
@@ -37,12 +42,16 @@
 #include "sip-sec-sspi.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
+#include "sipe-utils.h"
 
 /* Mechanism names */
-#define SSPI_MECH_NTLM      "NTLM"
-#define SSPI_MECH_KERBEROS  "Kerberos"
-#define SSPI_MECH_NEGOTIATE "Negotiate"
-#define SSPI_MECH_TLS_DSK   "Schannel" /* SSL/TLS provider, is this correct? */
+static const gchar * const mech_names[] = {
+	"",          /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+	"NTLM",      /* SIPE_AUTHENTICATION_TYPE_NTLM      */
+	"Kerberos",  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
+	"Negotiate", /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
+	"",          /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+};
 
 #ifndef ISC_REQ_IDENTIFY
 #define ISC_REQ_IDENTIFY               0x00002000
@@ -52,49 +61,61 @@ typedef struct _context_sspi {
 	struct sip_sec_context common;
 	CredHandle* cred_sspi;
 	CtxtHandle* ctx_sspi;
-	/** Kerberos or NTLM */
-	const char *mech;
+	guint type;
 } *context_sspi;
+
+#define SIP_SEC_FLAG_SSPI_INITIAL  0x00010000
+#define SIP_SEC_FLAG_SSPI_SIP_NTLM 0x00020000
 
 static int
 sip_sec_get_interval_from_now_sec(TimeStamp timestamp);
 
-void
-sip_sec_sspi_print_error(const char *func,
+static void
+sip_sec_sspi_print_error(const gchar *func,
 			 SECURITY_STATUS ret);
 
 /** internal method */
 static void
 sip_sec_destroy_sspi_context(context_sspi context)
 {
-	if (context->ctx_sspi)
+	if (context->ctx_sspi) {
 		DeleteSecurityContext(context->ctx_sspi);
-	if (context->cred_sspi)
+		g_free(context->ctx_sspi);
+		context->ctx_sspi = NULL;
+	}
+	if (context->cred_sspi) {
 		FreeCredentialsHandle(context->cred_sspi);
+		g_free(context->cred_sspi);
+		context->cred_sspi = NULL;
+	}
 }
 
 /* sip-sec-mech.h API implementation for SSPI - Kerberos and NTLM */
 
-static sip_uint32
+static gboolean
 sip_sec_acquire_cred__sspi(SipSecContext context,
-			   const char *domain,
-			   const char *username,
-			   const char *password)
+			   const gchar *domain,
+			   const gchar *username,
+			   const gchar *password)
 {
 	SECURITY_STATUS ret;
 	TimeStamp expiry;
 	SEC_WINNT_AUTH_IDENTITY auth_identity;
 	context_sspi ctx = (context_sspi)context;
 
-	if (username) {
-		if (!password) {
-			return SIP_SEC_E_INTERNAL_ERROR;
+	if (((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
+	    (ctx->type == SIPE_AUTHENTICATION_TYPE_NTLM))
+		context->flags |= SIP_SEC_FLAG_SSPI_SIP_NTLM;
+
+	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
+		if (!username || !password) {
+			return FALSE;
 		}
 
 		memset(&auth_identity, 0, sizeof(auth_identity));
 		auth_identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
 
-		if ( domain && (strlen(domain) > 0) ) {
+		if (!is_empty(domain)) {
 			auth_identity.Domain = (unsigned char*)domain;
 			auth_identity.DomainLength = strlen(domain);
 		}
@@ -108,14 +129,11 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 
 	ctx->cred_sspi = g_malloc0(sizeof(CredHandle));
 
-	/* @TODO: this does not work for "Schannel" (TLS-DSK) as it expects
-	          a SCHANNEL_CRED datastructure, pointing to the private key
-		  and the client certificate */
 	ret = AcquireCredentialsHandleA(NULL,
-					(SEC_CHAR *)ctx->mech,
+					(SEC_CHAR *)mech_names[ctx->type],
 					SECPKG_CRED_OUTBOUND,
 					NULL,
-					(context->sso || !username) ? NULL : &auth_identity,
+					(context->flags & SIP_SEC_FLAG_COMMON_SSO) ? NULL : &auth_identity,
 					NULL,
 					NULL,
 					ctx->cred_sspi,
@@ -125,17 +143,17 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		sip_sec_sspi_print_error("sip_sec_acquire_cred__sspi: AcquireCredentialsHandleA", ret);
 		g_free(ctx->cred_sspi);
 		ctx->cred_sspi = NULL;
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	} else {
-		return SIP_SEC_E_OK;
+		return TRUE;
 	}
 }
 
-static sip_uint32
+static gboolean
 sip_sec_init_sec_context__sspi(SipSecContext context,
 			       SipSecBuffer in_buff,
 			       SipSecBuffer *out_buff,
-			       const char *service_name)
+			       const gchar *service_name)
 {
 	TimeStamp expiry;
 	SecBufferDesc input_desc, output_desc;
@@ -144,9 +162,51 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	ULONG req_flags;
 	ULONG ret_flags;
 	context_sspi ctx = (context_sspi)context;
-	CtxtHandle* out_context = g_malloc0(sizeof(CtxtHandle));
+	CtxtHandle* out_context;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
+
+	if (context->flags & SIP_SEC_FLAG_SSPI_SIP_NTLM) {
+		if (context->flags & SIP_SEC_FLAG_SSPI_INITIAL) {
+			/* empty initial message for connection-less NTLM */
+			if (in_buff.value == NULL) {
+				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: initial message for connection-less NTLM");
+				out_buff->length = 0;
+				out_buff->value = (guint8 *) g_strdup("");
+				return TRUE;
+
+				/* call again to create context for connection-less NTLM */
+			} else {
+				SipSecBuffer empty = { 0, NULL };
+
+				context->flags &= ~SIP_SEC_FLAG_SSPI_INITIAL;
+				if (sip_sec_init_sec_context__sspi(context,
+								   empty,
+								   out_buff,
+								   service_name)) {
+					SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: connection-less NTLM second round");
+					g_free(out_buff->value);
+				} else {
+					return FALSE;
+				}
+			}
+		}
+	} else if ((context->flags & SIP_SEC_FLAG_COMMON_HTTP) &&
+		   ctx->ctx_sspi &&
+		   (in_buff.value == NULL)) {
+		/*
+		 * We already have an initialized connection-based context
+		 * and we're asked to initialize it with a NULL token. This
+		 * will fail with "invalid token". Drop old context instead.
+		 */
+		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: dropping old context");
+		DeleteSecurityContext(ctx->ctx_sspi);
+		g_free(ctx->ctx_sspi);
+		ctx->ctx_sspi = NULL;
+	}
+
+	/* reuse existing context on following calls */
+	out_context = ctx->ctx_sspi ? ctx->ctx_sspi : g_malloc0(sizeof(CtxtHandle));
 
 	input_desc.cBuffers = 1;
 	input_desc.pBuffers = &in_token;
@@ -170,9 +230,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		     ISC_REQ_INTEGRITY |
 		     ISC_REQ_IDENTIFY);
 
-	if (ctx->mech && !strcmp(ctx->mech, SSPI_MECH_NTLM) &&
-	    !context->is_connection_based)
-	{
+	if (context->flags & SIP_SEC_FLAG_SSPI_SIP_NTLM) {
 		req_flags |= (ISC_REQ_DATAGRAM);
 	}
 
@@ -190,29 +248,33 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 					 &expiry);
 
 	if (ret != SEC_E_OK && ret != SEC_I_CONTINUE_NEEDED) {
+		if (!ctx->ctx_sspi)
+			g_free(out_context);
 		sip_sec_destroy_sspi_context(ctx);
 		sip_sec_sspi_print_error("sip_sec_init_sec_context__sspi: InitializeSecurityContextA", ret);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	}
 
 	out_buff->length = out_token.cbBuffer;
 	out_buff->value = NULL;
 	if (out_token.cbBuffer) {
-		out_buff->value = g_malloc0(out_token.cbBuffer);
-		memmove(out_buff->value, out_token.pvBuffer, out_token.cbBuffer);
+		out_buff->value = g_malloc(out_token.cbBuffer);
+		memcpy(out_buff->value, out_token.pvBuffer, out_token.cbBuffer);
 		FreeContextBuffer(out_token.pvBuffer);
 	}
 
 	ctx->ctx_sspi = out_context;
-	if (ctx->mech && !strcmp(ctx->mech, SSPI_MECH_KERBEROS)) {
+
+	if (ctx->type == SIPE_AUTHENTICATION_TYPE_KERBEROS) {
 		context->expires = sip_sec_get_interval_from_now_sec(expiry);
 	}
 
-	if (ret == SEC_I_CONTINUE_NEEDED) {
-		return SIP_SEC_I_CONTINUE_NEEDED;
-	} else	{
-		return SIP_SEC_E_OK;
+	if (ret != SEC_I_CONTINUE_NEEDED) {
+		/* Authentication is completed */
+		context->flags |= SIP_SEC_FLAG_COMMON_READY;
 	}
+
+	return TRUE;
 }
 
 static void
@@ -226,30 +288,30 @@ sip_sec_destroy_sec_context__sspi(SipSecContext context)
  * @param message a NULL terminated string to sign
  *
  */
-static sip_uint32
+static gboolean
 sip_sec_make_signature__sspi(SipSecContext context,
-			     const char *message,
+			     const gchar *message,
 			     SipSecBuffer *signature)
 {
 	SecBufferDesc buffs_desc;
 	SecBuffer buffs[2];
 	SECURITY_STATUS ret;
 	SecPkgContext_Sizes context_sizes;
-	unsigned char *signature_buff;
+	guchar *signature_buff;
 	size_t signature_buff_length;
 	context_sspi ctx = (context_sspi) context;
 
 	ret = QueryContextAttributes(ctx->ctx_sspi,
-					SECPKG_ATTR_SIZES,
-					&context_sizes);
+				     SECPKG_ATTR_SIZES,
+				     &context_sizes);
 
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_make_signature__sspi: QueryContextAttributes", ret);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	}
 
 	signature_buff_length = context_sizes.cbMaxSignature;
-	signature_buff = g_malloc0(signature_buff_length);
+	signature_buff = g_malloc(signature_buff_length);
 
 	buffs_desc.cBuffers = 2;
 	buffs_desc.pBuffers = buffs;
@@ -272,22 +334,22 @@ sip_sec_make_signature__sspi(SipSecContext context,
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_make_signature__sspi: MakeSignature", ret);
 		g_free(signature_buff);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	}
 
 	signature->value = signature_buff;
 	signature->length = buffs[1].cbBuffer;
 
-	return SIP_SEC_E_OK;
+	return TRUE;
 }
 
 /**
  * @param message a NULL terminated string to check signature of
- * @return SIP_SEC_E_OK on success
+ * @return TRUE on success
  */
-static sip_uint32
+static gboolean
 sip_sec_verify_signature__sspi(SipSecContext context,
-			       const char *message,
+			       const gchar *message,
 			       SipSecBuffer signature)
 {
 	SecBufferDesc buffs_desc;
@@ -315,10 +377,10 @@ sip_sec_verify_signature__sspi(SipSecContext context,
 
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_verify_signature__sspi: VerifySignature", ret);
-		return SIP_SEC_E_INTERNAL_ERROR;
+		return FALSE;
 	}
 
-	return SIP_SEC_E_OK;
+	return TRUE;
 }
 
 SipSecContext
@@ -332,9 +394,8 @@ sip_sec_create_context__sspi(guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->mech = (type == SIPE_AUTHENTICATION_TYPE_NTLM) ? SSPI_MECH_NTLM :
-			((type == SIPE_AUTHENTICATION_TYPE_KERBEROS) ? SSPI_MECH_KERBEROS :
-			 ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ? SSPI_MECH_NEGOTIATE : SSPI_MECH_TLS_DSK));
+	context->common.flags |= SIP_SEC_FLAG_SSPI_INITIAL;
+	context->type          = type;
 
 	return((SipSecContext) context);
 }
@@ -369,13 +430,13 @@ sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
 	return (int)((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
 }
 
-void
-sip_sec_sspi_print_error(const char *func,
+static void
+sip_sec_sspi_print_error(const gchar *func,
 			 SECURITY_STATUS ret)
 {
-	char *error_message;
+	gchar *error_message;
 	static char *buff;
-	int buff_length;
+	guint buff_length;
 
 	buff_length = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
 				    FORMAT_MESSAGE_ALLOCATE_BUFFER |
@@ -389,7 +450,7 @@ sip_sec_sspi_print_error(const char *func,
 	error_message = g_strndup(buff, buff_length);
 	LocalFree(buff);
 
-	printf("SSPI ERROR [%d] in %s: %s", (int)ret, func, error_message);
+	SIPE_DEBUG_ERROR("SSPI ERROR [%d] in %s: %s", (int)ret, func, error_message);
 	g_free(error_message);
 }
 

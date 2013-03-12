@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -178,7 +178,7 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 
 	/* re-use SIP credentials */
 	data->auth.domain   = sipe_private->authdomain;
-	data->auth.user     = sipe_private->authuser ? sipe_private->authuser : sipe_private->username;
+	data->auth.user     = sipe_private->authuser;
 	data->auth.password = sipe_private->password;
 
 	data->conn = http_conn_create(SIPE_CORE_PUBLIC,
@@ -190,7 +190,8 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				      body,
 				      content_type,
 				      data->soap_action,
-				      &data->auth,
+				      /* use credentials only when SSO is not selected */
+				      SIPE_CORE_PRIVATE_FLAG_IS(SSO) ? NULL : &data->auth,
 				      sipe_svc_https_response,
 				      data);
 
@@ -465,7 +466,7 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 					       " <wsse:Password>%s</wsse:Password>"
 					       "</wsse:UsernameToken>",
 					       sipe_private->username,
-					       sipe_private->password);
+					       sipe_private->password ? sipe_private->password : "");
 
 	gboolean ret = request_passport(sipe_private,
 					session,

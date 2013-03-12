@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010,2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -445,8 +445,8 @@ http_conn_process_input_message(HttpConn *http_conn,
 		const char *auth_name;
 		char *authorization;
 		char *output_toked_base64;
-		int use_sso = !http_conn->auth || (http_conn->auth && !http_conn->auth->user);
-		long ret = -1;
+		HttpConnAuth *auth = http_conn->auth;
+		gboolean ret = FALSE;
 
 		http_conn->retries++;
 		if (http_conn->retries > 2) {
@@ -458,13 +458,21 @@ http_conn_process_input_message(HttpConn *http_conn,
 			return;
 		}
 
-#ifdef HAVE_SSPI
-		if (http_conn->auth && http_conn->auth->use_negotiate)
-			auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#define AUTHSTRING "NTLM and Negotiate authentications are"
+		{
+			struct sipe_core_public *sipe_public = http_conn->sipe_public;
+
+			/* Use "Negotiate" unless the user requested "NTLM" */
+			if (SIPE_CORE_PRIVATE->authentication_type != SIPE_AUTHENTICATION_TYPE_NTLM)
+				auth_hdr = sipmsg_find_auth_header(msg, "Negotiate");
+		}
 		if (auth_hdr) {
 			auth_type = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
 			auth_name = "Negotiate";
 		} else
+#else
+#define AUTHSTRING "NTLM authentication is"
 #endif
 		{
 			auth_hdr = sipmsg_find_auth_header(msg, "NTLM");
@@ -476,14 +484,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
-#ifdef HAVE_SSPI
-#define AUTHSTRING				"NTLM and Negotiate authentications are"
-#else /* !HAVE_SSPI */
-#define AUTHSTRING				"NTLM authentication is"
-#endif /* HAVE_SSPI */
-			SIPE_DEBUG_INFO("http_conn_process_input_message: Only %s supported in the moment, exiting",
-					AUTHSTRING
-			);
+			SIPE_DEBUG_INFO_NOFORMAT("http_conn_process_input_message: Only " AUTHSTRING " supported at the moment, exiting");
 			http_conn_set_close(http_conn);
 			return;
 		}
@@ -491,16 +492,18 @@ http_conn_process_input_message(HttpConn *http_conn,
 		if (!http_conn->sec_ctx) {
 			http_conn->sec_ctx =
 				sip_sec_create_context(auth_type,
-						       use_sso,
-						       1,
-						       http_conn->auth && http_conn->auth->domain ? http_conn->auth->domain : "",
-						       http_conn->auth ? http_conn->auth->user : NULL,
-						       http_conn->auth ? http_conn->auth->password : NULL);
+						       auth == NULL, /* Single Sign-On flag */
+						       TRUE, /* connection-based for HTTP */
+						       auth ? auth->domain   : NULL,
+						       auth ? auth->user     : NULL,
+						       auth ? auth->password : NULL);
 		}
 
 		if (http_conn->sec_ctx) {
 			char **parts = g_strsplit(auth_hdr, " ", 0);
 			char *spn = g_strdup_printf("HTTP/%s", http_conn->host);
+			SIPE_DEBUG_INFO("http_conn_process_input_message: init context target '%s' token '%s'",
+					spn, parts[1] ? parts[1] : "<NULL>");
 			ret = sip_sec_init_context_step(http_conn->sec_ctx,
 							spn,
 							parts[1],
@@ -510,7 +513,7 @@ http_conn_process_input_message(HttpConn *http_conn,
 			g_strfreev(parts);
 		}
 
-		if (ret < 0) {
+		if (!ret) {
 			if (http_conn->callback) {
 				(*http_conn->callback)(HTTP_CONN_ERROR_FATAL, NULL, NULL, http_conn, http_conn->data);
 			}
@@ -708,8 +711,10 @@ static void http_conn_input(struct sipe_transport_connection *conn)
 
 	if (http_conn->closed) {
 		http_conn_close(http_conn->do_close, "Server closed connection");
+		http_conn->do_close = NULL;
 	} else if (http_conn->do_close) {
 		http_conn_close(http_conn->do_close, "User initiated");
+		http_conn->do_close = NULL;
 	}
 }
 

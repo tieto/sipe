@@ -2,19 +2,32 @@
 //  ESSIPEAccountViewController.h
 //  SIPEAdiumPlugin
 //
-//  Created by Matthew Duggan on 10/12/23.
-//  Copyright 2010 Matthew Duggan. All rights reserved.
+//  Created by Matt Meissner on 10/30/09.
+//  Modified by Michael Lamb on 2/27/13
+//  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
 //
 
+
 #import <Adium/AIAccountViewController.h>
-#import "PurpleAccountViewController.h"
+#import <AdiumLibpurple/PurpleAccountViewController.h>
 
 @interface ESSIPEAccountViewController : PurpleAccountViewController {
-	IBOutlet NSPopUpButton	*popUp_conntype;
+
+    IBOutlet    NSTextField     *textField_windowsLogin;
+
+    IBOutlet    NSTextField     *textField_server;
     
-    IBOutlet NSMenu *menu_connectionType;
+    IBOutlet	NSTextField		*textField_userAgent;
+	IBOutlet	NSTextField		*textField_emailURL;
+	IBOutlet	NSTextField		*textField_email;
+	IBOutlet	NSTextField		*textField_emailLogin;
+	IBOutlet	NSTextField		*textField_emailPassword;
+	IBOutlet	NSTextField		*textField_groupchatUser;
     
-    IBOutlet NSTextField *textField_windowsLogin;
+    IBOutlet	NSButton		*checkBox_singleSignOn;
+    
+	IBOutlet	NSPopUpButton	*popup_connectionType;
+   	IBOutlet	NSPopUpButton	*popup_authenticationScheme;
 }
 
 

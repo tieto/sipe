@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -240,8 +240,8 @@ void sipe_backend_buddy_request_authorization(struct sipe_core_public *sipe_publ
 		alias,
 		NULL, /* message */
 		on_list,
-		auth_cb,
-		deny_cb,
+		(PurpleAccountRequestAuthorizationCb) auth_cb,
+		(PurpleAccountRequestAuthorizationCb) deny_cb,
 		data);
 
 }

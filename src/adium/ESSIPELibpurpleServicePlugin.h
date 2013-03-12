@@ -3,10 +3,10 @@
 //  SIPEAdiumPlugin
 //
 //  Created by Matt Meissner on 10/30/09.
-//  Copyright 2009 Matt Meissner. All rights reserved.
+//  Modified by Michael Lamb on 2/27/13
+//  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
 //
 
-#import <Cocoa/Cocoa.h>
 #import <Adium/AIPlugin.h>
 #import <AdiumLibpurple/AILibpurplePlugin.h>
 

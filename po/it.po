@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2012-12-06 11:45+0000\n"
+"PO-Revision-Date: 2013-03-07 16:05+0000\n"
 "Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -20,53 +20,122 @@ msgstr ""
 "Language: it\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/core/sip-transport.c:237 ../src/core/sip-transport.c:298
+#. SIPE_ACTIVITY_UNSET
+#. SIPE_ACTIVITY_AVAILABLE
+#. SIPE_ACTIVITY_ONLINE
+#. SIPE_ACTIVITY_INACTIVE
+#. 
+#. * This has nothing to do with Availability numbers, like 3500 (online).
+#. * Just a mapping of Communicator Activities to tokens/translations
+#. 
+#. @TODO: NULL means "default translation from Pidgin"?
+#. *        What about other backends?
+#. SIPE_ACTIVITY_UNSET
+#. SIPE_ACTIVITY_AVAILABLE
+#. SIPE_ACTIVITY_ONLINE
+#. SIPE_ACTIVITY_INACTIVE
+#: ../src/adium/ESPurpleSIPEAccount.h:37 ../src/core/sipe-status.c:60
+msgid "Inactive"
+msgstr "Inattivo"
+
+#. SIPE_ACTIVITY_BUSY
+#: ../src/adium/ESPurpleSIPEAccount.h:38 ../src/core/sipe-cal.c:947
+#: ../src/core/sipe-status.c:61
+msgid "Busy"
+msgstr "Occupato"
+
+#. SIPE_ACTIVITY_BUSYIDLE
+#: ../src/adium/ESPurpleSIPEAccount.h:39 ../src/core/sipe-status.c:62
+msgid "Busy-Idle"
+msgstr "Occupato-Inattivo"
+
+#. SIPE_ACTIVITY_DND
+#. SIPE_ACTIVITY_BRB
+#: ../src/adium/ESPurpleSIPEAccount.h:41 ../src/core/sipe-status.c:64
+msgid "Be right back"
+msgstr "Torno subito"
+
+#. SIPE_ACTIVITY_AWAY
+#. SIPE_ACTIVITY_LUNCH
+#: ../src/adium/ESPurpleSIPEAccount.h:43 ../src/core/sipe-status.c:66
+msgid "Out to lunch"
+msgstr "A pranzo"
+
+#. SIPE_ACTIVITY_INVISIBLE
+#. SIPE_ACTIVITY_OFFLINE
+#. SIPE_ACTIVITY_ON_PHONE
+#: ../src/adium/ESPurpleSIPEAccount.h:46 ../src/core/sipe-status.c:69
+msgid "In a call"
+msgstr "Al telefono"
+
+#. SIPE_ACTIVITY_IN_CONF
+#: ../src/adium/ESPurpleSIPEAccount.h:47 ../src/core/sipe-status.c:70
+msgid "In a conference"
+msgstr "In una conferenza"
+
+#. SIPE_ACTIVITY_IN_MEETING
+#: ../src/adium/ESPurpleSIPEAccount.h:48 ../src/core/sipe-status.c:71
+msgid "In a meeting"
+msgstr "In riunione"
+
+#. SIPE_ACTIVITY_OOF
+#: ../src/adium/ESPurpleSIPEAccount.h:49 ../src/core/sipe-cal.c:948
+#: ../src/core/sipe-status.c:72
+msgid "Out of office"
+msgstr "Fuori ufficio"
+
+#. SIPE_ACTIVITY_URGENT_ONLY
+#: ../src/adium/ESPurpleSIPEAccount.h:50 ../src/core/sipe-status.c:73
+msgid "Urgent interruptions only"
+msgstr "Solo interruzioni urgenti"
+
+#: ../src/core/sip-transport.c:230 ../src/core/sip-transport.c:292
 msgid "Failed to authenticate to server"
 msgstr "Errore di autenticazione con il server"
 
-#: ../src/core/sip-transport.c:262
+#: ../src/core/sip-transport.c:250
 #, c-format
 msgid "Can't request certificate from %s"
 msgstr ""
 
-#: ../src/core/sip-transport.c:272
+#: ../src/core/sip-transport.c:260
 msgid "No URI for certificate provisioning service provided"
 msgstr ""
 
-#: ../src/core/sip-transport.c:1222
+#: ../src/core/sip-transport.c:1201
 msgid "Authentication failed"
 msgstr "Errore di autenticazione"
 
-#: ../src/core/sip-transport.c:1230
+#: ../src/core/sip-transport.c:1209
 msgid "Incompatible authentication scheme chosen"
 msgstr "Lo schema di autenticazione scelto è incompatibile."
 
-#: ../src/core/sip-transport.c:1247 ../src/core/sipe-notify.c:1028
+#: ../src/core/sip-transport.c:1226 ../src/core/sipe-notify.c:1028
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Connessione rifiutata dal server: %s"
 
-#: ../src/core/sip-transport.c:1248 ../src/core/sip-transport.c:1264
-#: ../src/core/sip-transport.c:1288 ../src/core/sip-transport.c:1312
+#: ../src/core/sip-transport.c:1227 ../src/core/sip-transport.c:1243
+#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
 #: ../src/core/sipe-conf.c:266 ../src/core/sipe-notify.c:1028
 msgid "no reason given"
 msgstr "nessun motivo fornito"
 
-#: ../src/core/sip-transport.c:1263
+#: ../src/core/sip-transport.c:1242
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Non trovato: %s. Contattare l'amministratore"
 
-#: ../src/core/sip-transport.c:1265
+#: ../src/core/sip-transport.c:1244
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP non abilitato per la URI di destinazione oppure non esistente"
 
-#: ../src/core/sip-transport.c:1288 ../src/core/sip-transport.c:1312
+#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Servizio non disponibile:%s"
 
-#: ../src/core/sip-transport.c:1654
+#: ../src/core/sip-transport.c:1633
 msgid "Invalid message signature received"
 msgstr "La firma del messaggio ricevuta non è valida"
 
@@ -86,140 +155,130 @@ msgstr "Riunione in"
 msgid "Meeting about"
 msgstr "Riunione su"
 
-#: ../src/core/sipe-buddy.c:388
+#: ../src/core/sipe-buddy.c:389
 msgid "Out of office note"
 msgstr "Nota per il Fuori Ufficio"
 
-#: ../src/core/sipe-buddy.c:388
+#: ../src/core/sipe-buddy.c:389
 msgid "Note"
 msgstr "Nota"
 
-#: ../src/core/sipe-buddy.c:392 ../src/core/sipe-buddy.c:1644
+#: ../src/core/sipe-buddy.c:394 ../src/core/sipe-buddy.c:1651
 #: ../src/purple/purple-buddy.c:583
 msgid "Access level"
 msgstr "Livello di accesso"
 
-#: ../src/core/sipe-buddy.c:581
+#: ../src/core/sipe-buddy.c:583
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "%d contatto%s trovato:"
 msgstr[1] "%d contatti%s trovati:"
 
-#: ../src/core/sipe-buddy.c:583
+#: ../src/core/sipe-buddy.c:585
 msgid " (more matched your query)"
 msgstr " (altri risultati per l'interrogazione)"
 
-#: ../src/core/sipe-buddy.c:614 ../src/core/sipe-buddy.c:751
+#: ../src/core/sipe-buddy.c:616 ../src/core/sipe-buddy.c:753
 msgid "No contacts found"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:626 ../src/core/sipe-buddy.c:764
+#: ../src/core/sipe-buddy.c:628 ../src/core/sipe-buddy.c:766
 msgid "Unable to display the search results"
 msgstr "Non è stato possibile mostrare i risultati della ricerca."
 
-#: ../src/core/sipe-buddy.c:729 ../src/core/sipe-buddy.c:741
+#: ../src/core/sipe-buddy.c:731 ../src/core/sipe-buddy.c:743
 msgid "Contact search failed"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:863
+#: ../src/core/sipe-buddy.c:865
 msgid "Invalid contact search query"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1536
+#: ../src/core/sipe-buddy.c:1543
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Rendi leader di '%s'"
 
-#: ../src/core/sipe-buddy.c:1549
+#: ../src/core/sipe-buddy.c:1556
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Rimuovi da '%s'"
 
-#: ../src/core/sipe-buddy.c:1563
+#: ../src/core/sipe-buddy.c:1570
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Invita a '%s'"
 
-#: ../src/core/sipe-buddy.c:1579
+#: ../src/core/sipe-buddy.c:1586
 msgid "New chat"
 msgstr "Nuova chat"
 
-#: ../src/core/sipe-buddy.c:1592
+#: ../src/core/sipe-buddy.c:1599
 msgid "Work"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1599
+#: ../src/core/sipe-buddy.c:1606
 msgid "Mobile"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1607
+#: ../src/core/sipe-buddy.c:1614
 msgid "Home"
 msgstr "Home"
 
-#: ../src/core/sipe-buddy.c:1615
+#: ../src/core/sipe-buddy.c:1622
 msgid "Other"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1623
+#: ../src/core/sipe-buddy.c:1630
 msgid "Custom1"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1633
+#: ../src/core/sipe-buddy.c:1640
 msgid "Send email..."
 msgstr "Spedisci email..."
 
-#: ../src/core/sipe-cal.c:949
+#: ../src/core/sipe-cal.c:945
 msgid "Free"
 msgstr "Libero"
 
-#: ../src/core/sipe-cal.c:950
+#: ../src/core/sipe-cal.c:946
 msgid "Tentative"
 msgstr "Incerto"
 
-#. SIPE_ACTIVITY_BUSY
-#: ../src/core/sipe-cal.c:951 ../src/core/sipe-status.c:61
-msgid "Busy"
-msgstr "Occupato"
-
-#. SIPE_ACTIVITY_OOF
-#: ../src/core/sipe-cal.c:952 ../src/core/sipe-status.c:72
-msgid "Out of office"
-msgstr "Fuori ufficio"
-
-#: ../src/core/sipe-cal.c:953
+#: ../src/core/sipe-cal.c:949
 msgid "No data"
 msgstr "Nessun dato"
 
-#: ../src/core/sipe-cal.c:1061 ../src/core/sipe-cal.c:1088
+#: ../src/core/sipe-cal.c:1057 ../src/core/sipe-cal.c:1084
 #, c-format
 msgid "Currently %s"
 msgstr "Attualmente %s"
 
-#: ../src/core/sipe-cal.c:1067
+#: ../src/core/sipe-cal.c:1063
 msgid "Outside of working hours for next 8 hours"
 msgstr "Fuori sede per le prossime 8 ore"
 
-#: ../src/core/sipe-cal.c:1069
+#: ../src/core/sipe-cal.c:1065
 #, c-format
 msgid "%s for next 8 hours"
 msgstr "%s per le prossime 8 ore"
 
-#: ../src/core/sipe-cal.c:1078
+#: ../src/core/sipe-cal.c:1074
 msgid "Not working"
 msgstr "Non al lavoro"
 
-#: ../src/core/sipe-cal.c:1082
+#: ../src/core/sipe-cal.c:1078
 #, c-format
 msgid "%s until %.2d:%.2d"
 msgstr "%s fino a %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1090
+#: ../src/core/sipe-cal.c:1086
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
 msgstr "%s. Fuori dagli orari di lavoro al %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1095
+#: ../src/core/sipe-cal.c:1091
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
 msgstr "%s. %s al %.2d:%.2d"
@@ -357,11 +416,11 @@ msgstr "Autori"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Traduzione in Italiano (it): Emanuele Zattin"
 
-#: ../src/core/sipe-core.c:258
+#: ../src/core/sipe-core.c:259
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Il nome utente di SIP Exchange contiene caratteri non validi"
 
-#: ../src/core/sipe-core.c:266 ../src/purple/purple-buddy.c:452
+#: ../src/core/sipe-core.c:267 ../src/purple/purple-buddy.c:452
 #: ../src/telepathy/telepathy-protocol.c:89
 #: ../src/telepathy/telepathy-protocol.c:179
 #, c-format
@@ -370,17 +429,21 @@ msgid ""
 "Example: user@company.com"
 msgstr "Il nome utente deve essere un SIP URI valido\nEsempio: utente@azienda.com"
 
-#: ../src/core/sipe-core.c:276
+#: ../src/core/sipe-core.c:273
+msgid "Login and password are required when Single Sign-On is not enabled"
+msgstr ""
+
+#: ../src/core/sipe-core.c:283
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr "L'indirizzo email deve essere valido se fornito\nEsempio: utente@azienda.com"
 
-#: ../src/core/sipe-core.c:285
+#: ../src/core/sipe-core.c:292
 msgid "SIP Exchange user name contains whitespace"
 msgstr "Il nome utente di SIP Exchange contiene spazi bianchi"
 
-#: ../src/core/sipe-core.c:299
+#: ../src/core/sipe-core.c:306
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
@@ -447,7 +510,7 @@ msgstr "Memoria esaurita"
 msgid "Other Contacts"
 msgstr "Altri Contatti"
 
-#: ../src/core/sipe-groupchat.c:333
+#: ../src/core/sipe-groupchat.c:336
 #, c-format
 msgid ""
 "Group Chat Proxy setting is incorrect:\n"
@@ -457,20 +520,20 @@ msgid ""
 "Please update your Account."
 msgstr ""
 
-#: ../src/core/sipe-groupchat.c:336
+#: ../src/core/sipe-groupchat.c:339
 msgid "Couldn't find Group Chat server!"
 msgstr ""
 
-#: ../src/core/sipe-groupchat.c:434
+#: ../src/core/sipe-groupchat.c:446
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
 msgstr ""
 
-#: ../src/core/sipe-groupchat.c:510
+#: ../src/core/sipe-groupchat.c:522
 msgid "Error retrieving room list"
 msgstr ""
 
-#: ../src/core/sipe-groupchat.c:614
+#: ../src/core/sipe-groupchat.c:626
 msgid "Error joining chat room"
 msgstr ""
 
@@ -485,51 +548,51 @@ msgstr "Errore nell'invitare %s"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "È stato ricevuto un messaggio con contenuti non riconosciuti da %s"
 
-#: ../src/core/sipe-media.c:539 ../src/core/sipe-media.c:838
-#: ../src/core/sipe-media.c:1094 ../src/core/sipe-media.c:1116
+#: ../src/core/sipe-media.c:555 ../src/core/sipe-media.c:856
+#: ../src/core/sipe-media.c:1112 ../src/core/sipe-media.c:1134
 msgid "Unable to establish a call"
 msgstr "Impossibile stabilire una chiamata"
 
-#: ../src/core/sipe-media.c:540 ../src/core/sipe-media.c:1095
+#: ../src/core/sipe-media.c:556 ../src/core/sipe-media.c:1113
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr "I settaggi del criptaggio del peer sono incompatibili con i nostri."
 
-#: ../src/core/sipe-media.c:733 ../src/core/sipe-media.c:746
-#: ../src/core/sipe-media.c:814 ../src/core/sipe-media.c:1115
+#: ../src/core/sipe-media.c:751 ../src/core/sipe-media.c:764
+#: ../src/core/sipe-media.c:832 ../src/core/sipe-media.c:1133
 msgid "Error occured"
 msgstr "Si é verificato un errore"
 
-#: ../src/core/sipe-media.c:734 ../src/core/sipe-media.c:815
+#: ../src/core/sipe-media.c:752 ../src/core/sipe-media.c:833
 msgid "Error creating audio stream"
 msgstr "Errore durante la creazione dello stream audio"
 
-#: ../src/core/sipe-media.c:747
+#: ../src/core/sipe-media.c:765
 msgid "Error creating video stream"
 msgstr "Errore durante la creazione dello stream video"
 
-#: ../src/core/sipe-media.c:839
+#: ../src/core/sipe-media.c:857
 msgid "Audio Test Service is not available."
 msgstr ""
 
-#: ../src/core/sipe-media.c:1067
+#: ../src/core/sipe-media.c:1085
 msgid "User unavailable"
 msgstr "Utente non disponibile:%s"
 
-#: ../src/core/sipe-media.c:1070
+#: ../src/core/sipe-media.c:1088
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr "%s non vuole essere disturbato/a"
 
-#: ../src/core/sipe-media.c:1072
+#: ../src/core/sipe-media.c:1090
 #, c-format
 msgid "User %s is not available"
 msgstr "L'utente %s non é disponibile"
 
-#: ../src/core/sipe-media.c:1077
+#: ../src/core/sipe-media.c:1095
 msgid "Call rejected"
 msgstr "Chiamata rifiutata"
 
-#: ../src/core/sipe-media.c:1078
+#: ../src/core/sipe-media.c:1096
 #, c-format
 msgid "User %s rejected call"
 msgstr "L'utente %s ha rifiutato la chiamata"
@@ -563,7 +626,7 @@ msgstr "Team"
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
 #: ../src/core/sipe-ocs2007.c:472 ../src/purple/purple-buddy.c:55
-#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:756
+#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:836
 #: ../src/purple/purple-search.c:58
 msgid "Company"
 msgstr "Società"
@@ -609,58 +672,6 @@ msgstr "Aiuto online..."
 #: ../src/core/sipe-ocs2007.c:2639
 msgid "Access groups"
 msgstr "Gruppi di accesso"
-
-#. * This has nothing to do with Availability numbers, like 3500 (online).
-#. * Just a mapping of Communicator Activities to tokens/translations
-#. 
-#. @TODO: NULL means "default translation from Pidgin"?
-#. *        What about other backends?
-#. SIPE_ACTIVITY_UNSET
-#. SIPE_ACTIVITY_AVAILABLE
-#. SIPE_ACTIVITY_ONLINE
-#. SIPE_ACTIVITY_INACTIVE
-#: ../src/core/sipe-status.c:60
-msgid "Inactive"
-msgstr "Inattivo"
-
-#. SIPE_ACTIVITY_BUSYIDLE
-#: ../src/core/sipe-status.c:62
-msgid "Busy-Idle"
-msgstr "Occupato-Inattivo"
-
-#. SIPE_ACTIVITY_DND
-#. SIPE_ACTIVITY_BRB
-#: ../src/core/sipe-status.c:64
-msgid "Be right back"
-msgstr "Torno subito"
-
-#. SIPE_ACTIVITY_AWAY
-#. SIPE_ACTIVITY_LUNCH
-#: ../src/core/sipe-status.c:66
-msgid "Out to lunch"
-msgstr "A pranzo"
-
-#. SIPE_ACTIVITY_INVISIBLE
-#. SIPE_ACTIVITY_OFFLINE
-#. SIPE_ACTIVITY_ON_PHONE
-#: ../src/core/sipe-status.c:69
-msgid "In a call"
-msgstr "Al telefono"
-
-#. SIPE_ACTIVITY_IN_CONF
-#: ../src/core/sipe-status.c:70
-msgid "In a conference"
-msgstr "In una conferenza"
-
-#. SIPE_ACTIVITY_IN_MEETING
-#: ../src/core/sipe-status.c:71
-msgid "In a meeting"
-msgstr "In riunione"
-
-#. SIPE_ACTIVITY_URGENT_ONLY
-#: ../src/core/sipe-status.c:73
-msgid "Urgent interruptions only"
-msgstr "Solo interruzioni urgenti"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -727,7 +738,7 @@ msgstr "Ufficio"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
-#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:758
+#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:838
 #: ../src/purple/purple-search.c:61
 msgid "Country"
 msgstr "Paese"
@@ -839,103 +850,108 @@ msgstr ""
 
 #. Macros to reduce code repetition.
 #. Translators: noun
-#: ../src/purple/purple-plugin.c:173
+#: ../src/purple/purple-plugin.c:185
 msgid "Message"
 msgstr "Messaggio"
 
-#: ../src/purple/purple-plugin.c:301
-msgid "Password required"
-msgstr ""
-
-#: ../src/purple/purple-plugin.c:360
+#: ../src/purple/purple-plugin.c:379
 msgid "Connecting"
 msgstr "Connessione in corso"
 
-#: ../src/purple/purple-plugin.c:482
+#: ../src/purple/purple-plugin.c:411
+msgid "Password required"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:562
 msgid "user@company.com"
 msgstr "utente@azienda.com"
 
-#: ../src/purple/purple-plugin.c:750
+#: ../src/purple/purple-plugin.c:830
 msgid "First name"
 msgstr "Nome"
 
-#: ../src/purple/purple-plugin.c:752
+#: ../src/purple/purple-plugin.c:832
 msgid "Last name"
 msgstr "Cognome"
 
-#: ../src/purple/purple-plugin.c:754 ../src/purple/purple-search.c:64
+#: ../src/purple/purple-plugin.c:834 ../src/purple/purple-search.c:64
 msgid "Email"
 msgstr "E-mail"
 
-#: ../src/purple/purple-plugin.c:762
+#: ../src/purple/purple-plugin.c:842
 msgid "Search"
 msgstr "Ricerca"
 
-#: ../src/purple/purple-plugin.c:763
+#: ../src/purple/purple-plugin.c:843
 msgid "Search for a contact"
 msgstr "Cerca un contatto"
 
-#: ../src/purple/purple-plugin.c:764
+#: ../src/purple/purple-plugin.c:844
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "Inserisci le informazioni della persona che vuoi trovare. I campi lasciati vuoti saranno ignorati."
 
-#: ../src/purple/purple-plugin.c:766
+#: ../src/purple/purple-plugin.c:846
 msgid "_Search"
 msgstr "_Cerca"
 
-#: ../src/purple/purple-plugin.c:767 ../src/purple/purple-plugin.c:821
+#: ../src/purple/purple-plugin.c:847 ../src/purple/purple-plugin.c:902
 msgid "_Cancel"
 msgstr "_Annulla"
 
-#: ../src/purple/purple-plugin.c:807
+#: ../src/purple/purple-plugin.c:887
 msgid "Meeting location"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:811
+#: ../src/purple/purple-plugin.c:891
 msgid "Join conference"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:812
+#: ../src/purple/purple-plugin.c:892
 msgid "Join scheduled conference"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:813
+#: ../src/purple/purple-plugin.c:893
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
 "Valid location will be something like\n"
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+"conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:820
+#: ../src/purple/purple-plugin.c:901
 msgid "_Join"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:843
+#: ../src/purple/purple-plugin.c:913 ../src/purple/purple-plugin.c:927
+msgid "Publishing of calendar information has been disabled"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:940
 msgid "About SIPE plugin..."
 msgstr "Informazioni sul plugin SIPE..."
 
-#: ../src/purple/purple-plugin.c:846
+#: ../src/purple/purple-plugin.c:943
 msgid "Contact search..."
 msgstr "Cerca contatto..."
 
-#: ../src/purple/purple-plugin.c:850
+#: ../src/purple/purple-plugin.c:947
 msgid "Test call"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:854
+#: ../src/purple/purple-plugin.c:951
 msgid "Join scheduled conference..."
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:857
+#: ../src/purple/purple-plugin.c:954
 msgid "Republish Calendar"
 msgstr "Ripubblica il Calendario"
 
-#: ../src/purple/purple-plugin.c:860
+#: ../src/purple/purple-plugin.c:957
 msgid "Reset status"
 msgstr "Resetta lo stato"
 
@@ -946,32 +962,32 @@ msgstr "Resetta lo stato"
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #. 
-#: ../src/purple/purple-plugin.c:917
+#: ../src/purple/purple-plugin.c:1015
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr "Login\n   utente  or  DOMINIO\\utente  or\n   utente@azienda.com"
 
-#: ../src/purple/purple-plugin.c:921
+#: ../src/purple/purple-plugin.c:1019
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr "Server[:Porta]\n(lascia vuoto per auto-discovery)"
 
-#: ../src/purple/purple-plugin.c:924
+#: ../src/purple/purple-plugin.c:1022
 msgid "Connection type"
 msgstr "Tipo di connessione"
 
-#: ../src/purple/purple-plugin.c:925
+#: ../src/purple/purple-plugin.c:1023
 msgid "Auto"
 msgstr "Auto"
 
-#: ../src/purple/purple-plugin.c:926
+#: ../src/purple/purple-plugin.c:1024
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:927
+#: ../src/purple/purple-plugin.c:1025
 msgid "TCP"
 msgstr "TCP"
 
@@ -979,45 +995,57 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:933
+#: ../src/purple/purple-plugin.c:1031
 msgid "User Agent"
 msgstr "Agente utente"
 
-#: ../src/purple/purple-plugin.c:936
+#: ../src/purple/purple-plugin.c:1034
 msgid "Authentication scheme"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:937
+#: ../src/purple/purple-plugin.c:1035
 msgid "NTLM"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:939
+#: ../src/purple/purple-plugin.c:1037
 msgid "Kerberos"
 msgstr ""
 
-#. see above
-#: ../src/purple/purple-plugin.c:943
+#: ../src/purple/purple-plugin.c:1039
 msgid "TLS-DSK"
 msgstr ""
 
-#. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
-#. * No login/password is taken into account if this option present,
-#. * instead used default credentials stored in OS.
+#. * When the user selects Single Sign-On then SIPE will ignore the
+#. * settings for "login name" and "password". Instead it will use the
+#. * default credentials provided by the OS.
+#. *
+#. * NOTE: the default must be *OFF*, i.e. it is up to the user to tell
+#. *       SIPE that it is OK to use Single Sign-On or not.
+#. *
+#. * Configurations that are known to support Single Sign-On:
+#. *
+#. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
+#. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
+#. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 #. 
-#: ../src/purple/purple-plugin.c:952
+#: ../src/purple/purple-plugin.c:1057
 msgid "Use Single Sign-On"
 msgstr "Utilizza Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #. 
-#: ../src/purple/purple-plugin.c:959
+#: ../src/purple/purple-plugin.c:1064
+msgid "Don't publish my calendar information"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1067
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr "URL Servizio Email\n(lascia vuoto per ricerca automatica)"
 
-#: ../src/purple/purple-plugin.c:962
+#: ../src/purple/purple-plugin.c:1070
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1026,13 +1054,13 @@ msgstr "Indirizzo Email\n(se diverso dallo Username)"
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #. 
-#: ../src/purple/purple-plugin.c:968
+#: ../src/purple/purple-plugin.c:1076
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr "Email login\n(se diverso da Login)"
 
-#: ../src/purple/purple-plugin.c:971
+#: ../src/purple/purple-plugin.c:1079
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1041,7 +1069,7 @@ msgstr "Email password\n(se diversa da Password)"
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
 #. 
-#: ../src/purple/purple-plugin.c:978
+#: ../src/purple/purple-plugin.c:1091
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"

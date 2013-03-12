@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -84,6 +84,7 @@ static BOOL (WINAPI *pfnEnableThemeDialogTexture)(HANDLE, DWORD) = 0;
 HINSTANCE hInst;
 PLUGINLINK* pluginLink;
 struct MM_INTERFACE mmi;
+int hLangpack;
 
 /*
  * Dialog boxes
@@ -151,6 +152,7 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 
 			lock++;
 
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 			state = sipe_miranda_getBool(pr, "sso", FALSE);
 			if (state)
 			{
@@ -158,16 +160,13 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 				EnableDlgItem(hwndDlg, IDC_LOGIN, FALSE);
 				EnableDlgItem(hwndDlg, IDC_PASSWORD, FALSE);
 			} else {
+#endif
 				CheckDlgItem(hwndDlg, IDC_USESSO, BST_UNCHECKED);
 				EnableDlgItem(hwndDlg, IDC_LOGIN, TRUE);
 				EnableDlgItem(hwndDlg, IDC_PASSWORD, TRUE);
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
 			}
-
-			state = sipe_miranda_getBool(pr, "krb5", FALSE);
-			if (state)
-				CheckDlgItem(hwndDlg, IDC_USEKRB, BST_CHECKED);
-			else
-				CheckDlgItem(hwndDlg, IDC_USEKRB, BST_UNCHECKED);
+#endif
 
 			str = sipe_miranda_getString(pr, "username");
 			SetDlgItemTextA(hwndDlg, IDC_HANDLE, str);
@@ -184,6 +183,22 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 			SetDlgItemTextA(hwndDlg, IDC_PASSWORD, str);
 			SendDlgItemMessage(hwndDlg, IDC_PASSWORD, EM_SETLIMITTEXT, 16, 0);
 			mir_free(str);
+
+			SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_ADDSTRING, 0, (LPARAM)_T("NTLM"));
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+			SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_ADDSTRING, 0, (LPARAM)_T("Kerberos"));
+#endif
+			SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_ADDSTRING, 0, (LPARAM)_T("TLS-DSK"));
+
+			sipe_miranda_getWord(pr, NULL, "authscheme", &iptype);
+			if (iptype == SIPE_AUTHENTICATION_TYPE_NTLM)
+				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_SELECTSTRING, -1, (LPARAM)_T("NTLM"));
+			else if (iptype == SIPE_AUTHENTICATION_TYPE_KERBEROS)
+				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_SELECTSTRING, -1, (LPARAM)_T("Kerberos"));
+			else if (!strcmp(str, "tls-dsk"))
+				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_SELECTSTRING, -1, (LPARAM)_T("TLS-DSK"));
+			else
+				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_SELECTSTRING, -1, (LPARAM)_T("NTLM"));
 
 			SendDlgItemMessage(hwndDlg, IDC_CONNTYPE, CB_ADDSTRING, 0, (LPARAM)_T("Auto"));
 			SendDlgItemMessage(hwndDlg, IDC_CONNTYPE, CB_ADDSTRING, 0, (LPARAM)_T("SSL/TLS"));
@@ -251,8 +266,6 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 				EnableDlgItem(hwndDlg, IDC_PUBLICIP, FALSE);
 				EnableDlgItem(hwndDlg, IDC_IPPROGEXE, TRUE);
 				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
-			} else if (LOWORD(wParam) == IDC_USEKRB) {
-				SendMessage(GetParent(hwndDlg), PSM_CHANGED, 0, 0);
 			} else if (LOWORD(wParam) == IDC_USESSO) {
 				if (IsDlgButtonChecked(hwndDlg, IDC_USESSO) == BST_CHECKED)
 				{
@@ -298,18 +311,20 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 				else if (!_tcscmp(tbuf, _T("TCP")))
 					sipe_miranda_setString(pr, "transport", "tcp");
 
+				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, WM_GETTEXT, 100, (LPARAM)tbuf );
+
+				if (!_tcscmp(tbuf, _T("NTLM")))
+					sipe_miranda_setWord(pr, NULL, "authscheme", SIPE_AUTHENTICATION_TYPE_NTLM);
+				else if (!_tcscmp(tbuf, _T("Kerberos")))
+					sipe_miranda_setWord(pr, NULL, "authscheme", SIPE_AUTHENTICATION_TYPE_KERBEROS);
+				else if (!_tcscmp(tbuf, _T("TLS-DSK")))
+					sipe_miranda_setWord(pr, NULL, "authscheme", SIPE_AUTHENTICATION_TYPE_TLS_DSK);
+
 				GetDlgItemTextA(hwndDlg, IDC_PUBLICIP, buf, sizeof(buf));
 				sipe_miranda_setGlobalString("public_ip", buf);
 
 				GetDlgItemTextA(hwndDlg, IDC_IPPROGEXE, buf, sizeof(buf));
 				sipe_miranda_setGlobalString("ipprog", buf);
-
-				if (IsDlgButtonChecked(hwndDlg, IDC_USEKRB) == BST_CHECKED)
-				{
-					sipe_miranda_setBool(pr, "krb5", TRUE);
-				} else {
-					sipe_miranda_setBool(pr, "krb5", FALSE);
-				}
 
 				if (IsDlgButtonChecked(hwndDlg, IDC_IPLOCAL) == BST_CHECKED)
 				{
@@ -634,6 +649,9 @@ void sipe_miranda_login(SIPPROTO *pr) {
 
 	LOCK;
 	pr->sip = sipe_core_allocate(username,
+//	/* @TODO: is this correct?
+//	   "sso" is only available when SSPI/Kerberos support is compiled in */
+				     sipe_miranda_getBool(pr, "sso", FALSE),
 				     domain_user[0], domain_user[0] != NULL ? domain_user[1] : "",
 				     password,
 				     email,
@@ -660,17 +678,7 @@ void sipe_miranda_login(SIPPROTO *pr) {
 	//sipe_miranda_chat_setup_rejoin(pr);
 
 	/* default is NTLM */
-	authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
-#ifdef HAVE_LIBKRB5
-	if (sipe_miranda_getBool(pr, "krb5", FALSE))
-		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
-#endif
-	/* TODO: configuration option for TLS-DSK? */
-
-//	/* @TODO: is this correct?
-//	   "sso" is only available when Kerberos support is compiled in */
-	if (sipe_miranda_getBool(pr, "sso", FALSE))
-		SIPE_CORE_FLAG_SET(SSO);
+	sipe_miranda_getWord(pr, NULL, "authscheme", &authentication_type);
 
 	/* Set display name */
 	sipe_miranda_setStringUtf(pr, "Nick", pr->sip->sip_name);
@@ -1261,6 +1269,8 @@ static PROTO_INTERFACE* sipsimpleProtoInit( const char* pszProtoName, const TCHA
 	fix_contact_groups(pr);
 
 	/* Fill the function table */
+#define PROTO_FUNC(name,func) ((struct sipe_backend_private)(pr->proto)).vtbl->name = func;
+
 	pr->proto.vtbl->AddToList              = AddToList;
 	pr->proto.vtbl->AddToListByEvent       = AddToListByEvent;
 
