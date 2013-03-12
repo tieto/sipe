@@ -1,8 +1,37 @@
-pidgin-sipe (1.14.1-2) UNRELEASED; urgency=low
+pidgin-sipe (1.15.0-1) UNRELEASED; urgency=low
 
+  * New upstream release.
+        - Feature #3578135: Support Kerberos for HTTP(S) authentication w/o SSPI
+          * effective for all platforms that support --with-krb5
+          * this triggered a series of cleanup & simplification changes and
+            functionality & memory leak fixes in the sip-sec modules
+          * special thanks to Jarek Polok for the logs and testing
+        - Feature #3594094: Add HTTPS to autodiscover probe
+        - Feature #3607040: Simple button to disable calendar integration
+        - Fixed #3603228: Crash on 1.14.1 when connecting to server
+        - Fixed #3604671: sip uri with apostrophe is not valid
+        - fixed HTTP redirect crash
+        - unified Single Sign-On handling in all places
+          * if SSO is enabled then "Login" & "Password" settings are ignored
+          * SSO is now off by default for new accounts
+          * NOTE: if you do *NOT* use SSO, then be sure to disable it in the
+                  "Advanced" tab of the account settings after updating!
+        - added implementation for HTTP "WWW-Authenticate: Negotiate" scheme
+          * effective for all platforms that support --with-krb5
+          * it will try Kerberos first, then fall back to NTLM
+          * valid Kerberos Single Sign-On setup will be detected automatically
+          * setup for a mixed Kerberos/NTLM HTTP environment:
+            - login name:     DOMAIN\account
+            - password:       domain password
+            - authentication: Kerberos
+            - Single Sign-On: OFF(!)          (see above)
+        - enabled TLS-DSK support in Windows SSPI version
+        - TLS-DSK: don't ask for password if SSPI or Kerberos are compiled in
+        - Farstream 0.1.1 compatibility fix
+        - support conf:sip: meeting URIs
   * Jakub Adam is the new Maintainer (Closes: #694613).
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Sat, 02 Mar 2013 20:33:17 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 12 Mar 2013 16:45:07 +0100
 
 pidgin-sipe (1.14.1-1) experimental; urgency=low
 
