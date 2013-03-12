@@ -57,8 +57,7 @@ extern void purple_debug_set_enabled(gboolean);
 }
 
 - (NSString*) pluginVersion {
-    // TODO: Get this dynamically from sipe-core 
-    return @"1.15.0";
+    return @PACKAGE_VERSION;
 }
 
 - (NSString*) pluginDescription {
@@ -66,8 +65,7 @@ extern void purple_debug_set_enabled(gboolean);
 }
 
 - (NSString*) pluginWebsite {
-    // TODO: Get this dynamically from sipe-core 
-    return @"sipe.sf.net";
+    return @PACKAGE_URL;
 }
 
 @end
