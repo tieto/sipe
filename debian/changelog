@@ -1,5 +1,6 @@
-pidgin-sipe (1.15.0-1) UNRELEASED; urgency=low
+pidgin-sipe (1.15.0-1) experimental; urgency=low
 
+  [ Jakub Adam ]
   * New upstream release.
         - Feature #3578135: Support Kerberos for HTTP(S) authentication w/o SSPI
           * effective for all platforms that support --with-krb5
@@ -31,7 +32,10 @@ pidgin-sipe (1.15.0-1) UNRELEASED; urgency=low
         - support conf:sip: meeting URIs
   * Jakub Adam is the new Maintainer (Closes: #694613).
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 12 Mar 2013 16:45:07 +0100
+  [ Dominique Dumont ]
+  * copyright: updated years
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Wed, 13 Mar 2013 11:27:25 +0100
 
 pidgin-sipe (1.14.1-1) experimental; urgency=low
 
