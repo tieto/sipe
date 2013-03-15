@@ -307,6 +307,9 @@ static char SIPE_DEFAULT_CODESET[] = "ANSI_X3.4-1968";
 static GIConv convert_from_utf16le = (GIConv)-1;
 static GIConv convert_to_utf16le   = (GIConv)-1;
 
+/* Analyzer only needs the _describe() functions */
+#ifndef _SIPE_COMPILING_ANALYZER
+
 static gsize
 unicode_strconvcopy(gchar *dest, const gchar *source, gsize remlen)
 {
@@ -316,6 +319,8 @@ unicode_strconvcopy(gchar *dest, const gchar *source, gsize remlen)
 		g_iconv(convert_to_utf16le, (gchar **)&source, &inbytes, &dest, &outbytes);
 	return(remlen - outbytes);
 }
+
+#endif /* !_SIPE_COMPILING_ANALYZER */
 
 /* UTF-16LE to native encoding
  * Must be g_free'd after use */
@@ -328,6 +333,9 @@ unicode_strconvcopy_back(const gchar *source, gsize len)
 	g_iconv(convert_from_utf16le, (gchar **)&source, &len, &outbuf, &outbytes);
 	return dest;
 }
+
+/* Analyzer only needs the _describe() functions */
+#ifndef _SIPE_COMPILING_ANALYZER
 
 /* crc32 source copy from gg's common.c */
 static guint32 crc32_table[256];
@@ -1303,6 +1311,7 @@ sip_sec_ntlm_sipe_signature_make(guint32 flags,
 	g_free(res);
 }
 
+#endif /* !_SIPE_COMPILING_ANALYZER */
 
 /* Describe NTLM messages functions */
 
@@ -1686,6 +1695,9 @@ sip_sec_ntlm_message_describe(SipSecBuffer *buff,
 	g_free(res);
 }
 
+/* Analyzer only needs the _describe() functions */
+#ifndef _SIPE_COMPILING_ANALYZER
+
 /* sip-sec-mech.h API implementation for NTLM */
 
 /* Security context for NTLM */
@@ -1908,6 +1920,8 @@ gboolean sip_sec_password__ntlm(void)
 {
 	return(TRUE);
 }
+
+#endif /* !_SIPE_COMPILING_ANALYZER */
 
 void sip_sec_init__ntlm(void)
 {

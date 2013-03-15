@@ -172,9 +172,11 @@ sipe_xml_tests_LDADD = \
 TESTS_ENVIRONMENT = G_SLICE="always-malloc"
 TESTS = $(check_PROGRAMS)
 
+noinst_PROGRAMS =
+
 if !SIPE_OS_WIN32
 # TODO: the code needs some TLC from a MinGW expert to compile...
-noinst_PROGRAMS = sipe_tls_tester
+noinst_PROGRAMS += sipe_tls_tester
 sipe_tls_tester_SOURCES = sipe-tls-tester.c
 sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_tls_tester_LDADD = \
@@ -185,3 +187,9 @@ sipe_tls_tester_LDADD = \
 	$(NSS_LIBS) \
 	$(GLIB_LIBS)
 endif
+
+noinst_PROGRAMS += sipe_ntlm_analyzer
+sipe_ntlm_analyzer_SOURCES = sip-sec-ntlm-analyzer.c
+sipe_ntlm_analyzer_CFLAGS = $(libsipe_core_la_CFLAGS)
+sipe_ntlm_analyzer_LDADD = \
+	$(GLIB_LIBS)
