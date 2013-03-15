@@ -127,6 +127,9 @@ sip_sec_create_context(guint type,
 	context = (*(auth_to_hook[type]))(type);
 	if (context) {
 
+		/* NOTE: mechanism must set private flags acquire_cred_func()! */
+		context->flags = 0;
+
 		/* set common flags */
 		if (sso)
 			context->flags |= SIP_SEC_FLAG_COMMON_SSO;

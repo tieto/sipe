@@ -189,7 +189,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 	 * authentication information provided by the user (see above).
 	 *
 	 * This will be FALSE for HTTP connections. If Kerberos authentication
-	 * succeeded for Kerberos, then there is no need to retry.
+	 * succeeded for SIP already, then there is no need to retry.
 	 */
 	if ((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0)
 		context->flags |= SIP_SEC_FLAG_KRB5_RETRY_AUTH;

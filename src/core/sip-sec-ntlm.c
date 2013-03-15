@@ -1719,6 +1719,9 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 	if (!domain || is_empty(username) || is_empty(password))
 		return FALSE;
 
+	/* this is the first time we are allowed to set private flags */
+	context->flags |= SIP_SEC_FLAG_NTLM_INITIAL;
+
 	ctx->domain   = domain;
 	ctx->username = username;
 	ctx->password = password;
@@ -1897,7 +1900,6 @@ sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__ntlm;
 	context->common.make_signature_func   = sip_sec_make_signature__ntlm;
 	context->common.verify_signature_func = sip_sec_verify_signature__ntlm;
-	context->common.flags |= SIP_SEC_FLAG_NTLM_INITIAL;
 
 	return((SipSecContext) context);
 }
