@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Cristian Măgherușan-Stanciu <cristi.magherusan@gmail.com>, 2012.
+# Cristian Măgherușan-Stanciu <cristi.magherusan@gmail.com>, 2012-2013.
 # Stefan Becker <chemobejk@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-03-07 16:05+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2013-03-13 11:06+0000\n"
+"Last-Translator: Cristian Măgherușan-Stanciu <cristi.magherusan@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -433,7 +433,7 @@ msgstr "Numele de utilizator ar trebui să fie un URI valid de SIP\nExemplu: uti
 
 #: ../src/core/sipe-core.c:273
 msgid "Login and password are required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Numele de utilizator și parola sunt necesare dacă opțiunea de Single Sign-On nu este activată"
 
 #: ../src/core/sipe-core.c:283
 msgid ""
@@ -931,7 +931,7 @@ msgstr "_Intră"
 
 #: ../src/purple/purple-plugin.c:913 ../src/purple/purple-plugin.c:927
 msgid "Publishing of calendar information has been disabled"
-msgstr ""
+msgstr "Publicarea orarului personal a fost dezactivată"
 
 #: ../src/purple/purple-plugin.c:940
 msgid "About SIPE plugin..."
@@ -1039,7 +1039,7 @@ msgstr "Utilizați autentificarea unică"
 #. 
 #: ../src/purple/purple-plugin.c:1064
 msgid "Don't publish my calendar information"
-msgstr ""
+msgstr "Nu publica orarul personal"
 
 #: ../src/purple/purple-plugin.c:1067
 msgid ""
