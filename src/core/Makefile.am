@@ -19,6 +19,8 @@ libsipe_core_la_SOURCES = \
 	sip-sec.h \
 	sip-sec.c \
 	sip-sec-mech.h \
+	sip-sec-tls-dsk.h \
+	sip-sec-tls-dsk.c \
 	sip-soap.h \
 	sip-soap.c \
 	sip-transport.h \
@@ -102,9 +104,7 @@ libsipe_core_la_SOURCES += \
 	md4.h \
 	md4.c \
 	sip-sec-ntlm.h \
-	sip-sec-ntlm.c \
-	sip-sec-tls-dsk.h \
-	sip-sec-tls-dsk.c
+	sip-sec-ntlm.c
 
 noinst_LTLIBRARIES += \
 	libsipe_core_tests.la
@@ -135,7 +135,11 @@ libsipe_core_tests_la_CFLAGS = $(libsipe_core_la_CFLAGS)
 endif
 
 if SIP_SEC_KRB5
-libsipe_core_la_SOURCES += sip-sec-krb5.h sip-sec-krb5.c
+libsipe_core_la_SOURCES += \
+	sip-sec-krb5.h \
+	sip-sec-krb5.c \
+	sip-sec-negotiate.h \
+	sip-sec-negotiate.c
 libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
 endif
 
@@ -174,9 +178,11 @@ sipe_xml_tests_LDADD = \
 TESTS_ENVIRONMENT = G_SLICE="always-malloc"
 TESTS = $(check_PROGRAMS)
 
+noinst_PROGRAMS =
+
 if !SIPE_OS_WIN32
 # TODO: the code needs some TLC from a MinGW expert to compile...
-noinst_PROGRAMS = sipe_tls_tester
+noinst_PROGRAMS += sipe_tls_tester
 sipe_tls_tester_SOURCES = sipe-tls-tester.c
 sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_tls_tester_LDADD = \
@@ -187,3 +193,9 @@ sipe_tls_tester_LDADD = \
 	$(NSS_LIBS) \
 	$(GLIB_LIBS)
 endif
+
+noinst_PROGRAMS += sipe_ntlm_analyzer
+sipe_ntlm_analyzer_SOURCES = sip-sec-ntlm-analyzer.c
+sipe_ntlm_analyzer_CFLAGS = $(libsipe_core_la_CFLAGS)
+sipe_ntlm_analyzer_LDADD = \
+	$(GLIB_LIBS)

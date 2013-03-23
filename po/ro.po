@@ -5,13 +5,14 @@
 # 
 # 
 # Translators:
-# Cristian Măgherușan-Stanciu <cristi.magherusan@gmail.com>, 2012.
+# Cristian Măgherușan-Stanciu <cristi.magherusan@gmail.com>, 2012-2013.
+# Stefan Becker <chemobejk@gmail.com>, 2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2012-12-06 17:25+0000\n"
+"PO-Revision-Date: 2013-03-13 11:06+0000\n"
 "Last-Translator: Cristian Măgherușan-Stanciu <cristi.magherusan@gmail.com>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -20,53 +21,122 @@ msgstr ""
 "Language: ro\n"
 "Plural-Forms: nplurals=3; plural=(n==1?0:(((n%100>19)||((n%100==0)&&(n!=0)))?2:1));\n"
 
-#: ../src/core/sip-transport.c:237 ../src/core/sip-transport.c:298
+#. SIPE_ACTIVITY_UNSET
+#. SIPE_ACTIVITY_AVAILABLE
+#. SIPE_ACTIVITY_ONLINE
+#. SIPE_ACTIVITY_INACTIVE
+#. 
+#. * This has nothing to do with Availability numbers, like 3500 (online).
+#. * Just a mapping of Communicator Activities to tokens/translations
+#. 
+#. @TODO: NULL means "default translation from Pidgin"?
+#. *        What about other backends?
+#. SIPE_ACTIVITY_UNSET
+#. SIPE_ACTIVITY_AVAILABLE
+#. SIPE_ACTIVITY_ONLINE
+#. SIPE_ACTIVITY_INACTIVE
+#: ../src/adium/ESPurpleSIPEAccount.h:37 ../src/core/sipe-status.c:60
+msgid "Inactive"
+msgstr "Inactiv"
+
+#. SIPE_ACTIVITY_BUSY
+#: ../src/adium/ESPurpleSIPEAccount.h:38 ../src/core/sipe-cal.c:947
+#: ../src/core/sipe-status.c:61
+msgid "Busy"
+msgstr "Ocupat"
+
+#. SIPE_ACTIVITY_BUSYIDLE
+#: ../src/adium/ESPurpleSIPEAccount.h:39 ../src/core/sipe-status.c:62
+msgid "Busy-Idle"
+msgstr "Ocupat-Absent"
+
+#. SIPE_ACTIVITY_DND
+#. SIPE_ACTIVITY_BRB
+#: ../src/adium/ESPurpleSIPEAccount.h:41 ../src/core/sipe-status.c:64
+msgid "Be right back"
+msgstr "Revin imediat"
+
+#. SIPE_ACTIVITY_AWAY
+#. SIPE_ACTIVITY_LUNCH
+#: ../src/adium/ESPurpleSIPEAccount.h:43 ../src/core/sipe-status.c:66
+msgid "Out to lunch"
+msgstr "La masă"
+
+#. SIPE_ACTIVITY_INVISIBLE
+#. SIPE_ACTIVITY_OFFLINE
+#. SIPE_ACTIVITY_ON_PHONE
+#: ../src/adium/ESPurpleSIPEAccount.h:46 ../src/core/sipe-status.c:69
+msgid "In a call"
+msgstr "Într-un apel"
+
+#. SIPE_ACTIVITY_IN_CONF
+#: ../src/adium/ESPurpleSIPEAccount.h:47 ../src/core/sipe-status.c:70
+msgid "In a conference"
+msgstr "Într-o conferință"
+
+#. SIPE_ACTIVITY_IN_MEETING
+#: ../src/adium/ESPurpleSIPEAccount.h:48 ../src/core/sipe-status.c:71
+msgid "In a meeting"
+msgstr "Într-o ședință"
+
+#. SIPE_ACTIVITY_OOF
+#: ../src/adium/ESPurpleSIPEAccount.h:49 ../src/core/sipe-cal.c:948
+#: ../src/core/sipe-status.c:72
+msgid "Out of office"
+msgstr "În afara serviciului"
+
+#. SIPE_ACTIVITY_URGENT_ONLY
+#: ../src/adium/ESPurpleSIPEAccount.h:50 ../src/core/sipe-status.c:73
+msgid "Urgent interruptions only"
+msgstr "Întrerupeți doar în caz de urgență"
+
+#: ../src/core/sip-transport.c:230 ../src/core/sip-transport.c:292
 msgid "Failed to authenticate to server"
 msgstr "Nu s-a putut face autentificarea la server"
 
-#: ../src/core/sip-transport.c:262
+#: ../src/core/sip-transport.c:250
 #, c-format
 msgid "Can't request certificate from %s"
 msgstr "Nu s-a putut cere certificatul de la %s"
 
-#: ../src/core/sip-transport.c:272
+#: ../src/core/sip-transport.c:260
 msgid "No URI for certificate provisioning service provided"
 msgstr "Nu a fost configurat nici un URI pentru serviciul de distribuție a certificatelor"
 
-#: ../src/core/sip-transport.c:1222
+#: ../src/core/sip-transport.c:1201
 msgid "Authentication failed"
 msgstr "Autentificarea a eșuat"
 
-#: ../src/core/sip-transport.c:1230
+#: ../src/core/sip-transport.c:1209
 msgid "Incompatible authentication scheme chosen"
 msgstr "Schema de autentificare este incompatibilă"
 
-#: ../src/core/sip-transport.c:1247 ../src/core/sipe-notify.c:1028
+#: ../src/core/sip-transport.c:1226 ../src/core/sipe-notify.c:1028
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Ați fost refuzat de către server: %s"
 
-#: ../src/core/sip-transport.c:1248 ../src/core/sip-transport.c:1264
-#: ../src/core/sip-transport.c:1288 ../src/core/sip-transport.c:1312
+#: ../src/core/sip-transport.c:1227 ../src/core/sip-transport.c:1243
+#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
 #: ../src/core/sipe-conf.c:266 ../src/core/sipe-notify.c:1028
 msgid "no reason given"
 msgstr "nu s-a dat nici un motiv"
 
-#: ../src/core/sip-transport.c:1263
+#: ../src/core/sip-transport.c:1242
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Nu s-a putut găsi: %s. Contactați administratorul sistemului"
 
-#: ../src/core/sip-transport.c:1265
+#: ../src/core/sip-transport.c:1244
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "Protocolul SIP este dezactivat pentru URI-ul destinație sau acesta nu există"
 
-#: ../src/core/sip-transport.c:1288 ../src/core/sip-transport.c:1312
+#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Serviciu indisponibil: %s"
 
-#: ../src/core/sip-transport.c:1654
+#: ../src/core/sip-transport.c:1633
 msgid "Invalid message signature received"
 msgstr "Semnătura mesajului primit este invalidă"
 
@@ -86,20 +156,20 @@ msgstr "Ședință în"
 msgid "Meeting about"
 msgstr "Ședință despre"
 
-#: ../src/core/sipe-buddy.c:388
+#: ../src/core/sipe-buddy.c:389
 msgid "Out of office note"
 msgstr "Mesaj de absență"
 
-#: ../src/core/sipe-buddy.c:388
+#: ../src/core/sipe-buddy.c:389
 msgid "Note"
 msgstr "Notă"
 
-#: ../src/core/sipe-buddy.c:392 ../src/core/sipe-buddy.c:1644
+#: ../src/core/sipe-buddy.c:394 ../src/core/sipe-buddy.c:1651
 #: ../src/purple/purple-buddy.c:583
 msgid "Access level"
 msgstr "Nivel de acces"
 
-#: ../src/core/sipe-buddy.c:581
+#: ../src/core/sipe-buddy.c:583
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
@@ -107,120 +177,110 @@ msgstr[0] "S-a găsit %d contact%s:"
 msgstr[1] "S-au găsit %d contacte%s:"
 msgstr[2] "S-au găsit %d contacte%s:"
 
-#: ../src/core/sipe-buddy.c:583
+#: ../src/core/sipe-buddy.c:585
 msgid " (more matched your query)"
 msgstr "(căutarea a avut mai multe rezultate)"
 
-#: ../src/core/sipe-buddy.c:614 ../src/core/sipe-buddy.c:751
+#: ../src/core/sipe-buddy.c:616 ../src/core/sipe-buddy.c:753
 msgid "No contacts found"
 msgstr "Nu s-a găsit nimic"
 
-#: ../src/core/sipe-buddy.c:626 ../src/core/sipe-buddy.c:764
+#: ../src/core/sipe-buddy.c:628 ../src/core/sipe-buddy.c:766
 msgid "Unable to display the search results"
 msgstr "Nu s-au putut afișa rezultatele căutării"
 
-#: ../src/core/sipe-buddy.c:729 ../src/core/sipe-buddy.c:741
+#: ../src/core/sipe-buddy.c:731 ../src/core/sipe-buddy.c:743
 msgid "Contact search failed"
 msgstr "Căutarea contactelor a eșuat"
 
-#: ../src/core/sipe-buddy.c:863
+#: ../src/core/sipe-buddy.c:865
 msgid "Invalid contact search query"
 msgstr "Căutarea de contacte este invalidă"
 
-#: ../src/core/sipe-buddy.c:1536
+#: ../src/core/sipe-buddy.c:1543
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Setează lider pentru '%s'"
 
-#: ../src/core/sipe-buddy.c:1549
+#: ../src/core/sipe-buddy.c:1556
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Elimină din '%s'"
 
-#: ../src/core/sipe-buddy.c:1563
+#: ../src/core/sipe-buddy.c:1570
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Invită în '%s'"
 
-#: ../src/core/sipe-buddy.c:1579
+#: ../src/core/sipe-buddy.c:1586
 msgid "New chat"
 msgstr "Convorbire nouă"
 
-#: ../src/core/sipe-buddy.c:1592
+#: ../src/core/sipe-buddy.c:1599
 msgid "Work"
 msgstr "Muncă"
 
-#: ../src/core/sipe-buddy.c:1599
+#: ../src/core/sipe-buddy.c:1606
 msgid "Mobile"
 msgstr "Mobil"
 
-#: ../src/core/sipe-buddy.c:1607
+#: ../src/core/sipe-buddy.c:1614
 msgid "Home"
 msgstr "Acasă"
 
-#: ../src/core/sipe-buddy.c:1615
+#: ../src/core/sipe-buddy.c:1622
 msgid "Other"
 msgstr "Altceva"
 
-#: ../src/core/sipe-buddy.c:1623
+#: ../src/core/sipe-buddy.c:1630
 msgid "Custom1"
 msgstr "Personalizat1"
 
-#: ../src/core/sipe-buddy.c:1633
+#: ../src/core/sipe-buddy.c:1640
 msgid "Send email..."
 msgstr "Trimite e-mail"
 
-#: ../src/core/sipe-cal.c:949
+#: ../src/core/sipe-cal.c:945
 msgid "Free"
 msgstr "Liber"
 
-#: ../src/core/sipe-cal.c:950
+#: ../src/core/sipe-cal.c:946
 msgid "Tentative"
 msgstr "Încerc"
 
-#. SIPE_ACTIVITY_BUSY
-#: ../src/core/sipe-cal.c:951 ../src/core/sipe-status.c:61
-msgid "Busy"
-msgstr "Ocupat"
-
-#. SIPE_ACTIVITY_OOF
-#: ../src/core/sipe-cal.c:952 ../src/core/sipe-status.c:72
-msgid "Out of office"
-msgstr "În afara serviciului"
-
-#: ../src/core/sipe-cal.c:953
+#: ../src/core/sipe-cal.c:949
 msgid "No data"
 msgstr "Nu există date"
 
-#: ../src/core/sipe-cal.c:1061 ../src/core/sipe-cal.c:1088
+#: ../src/core/sipe-cal.c:1057 ../src/core/sipe-cal.c:1084
 #, c-format
 msgid "Currently %s"
 msgstr "Momentan %s"
 
-#: ../src/core/sipe-cal.c:1067
+#: ../src/core/sipe-cal.c:1063
 msgid "Outside of working hours for next 8 hours"
 msgstr "În afara programului de lucru pentru următoarele 8 ore"
 
-#: ../src/core/sipe-cal.c:1069
+#: ../src/core/sipe-cal.c:1065
 #, c-format
 msgid "%s for next 8 hours"
 msgstr "%s pentru următoarele 8 ore"
 
-#: ../src/core/sipe-cal.c:1078
+#: ../src/core/sipe-cal.c:1074
 msgid "Not working"
 msgstr "Nu lucrez"
 
-#: ../src/core/sipe-cal.c:1082
+#: ../src/core/sipe-cal.c:1078
 #, c-format
 msgid "%s until %.2d:%.2d"
 msgstr "%s până la %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1090
+#: ../src/core/sipe-cal.c:1086
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
 msgstr "%s. În afara orelor de serviciu la %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1095
+#: ../src/core/sipe-cal.c:1091
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
 msgstr "%s. %s la %.2d:%.2d"
@@ -358,11 +418,11 @@ msgstr "Autori"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Texte originale în engleză(en): dezvoltatorii SIPE"
 
-#: ../src/core/sipe-core.c:258
+#: ../src/core/sipe-core.c:259
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Numele de utilizator SIP Exchange conține caractere invalide"
 
-#: ../src/core/sipe-core.c:266 ../src/purple/purple-buddy.c:452
+#: ../src/core/sipe-core.c:267 ../src/purple/purple-buddy.c:452
 #: ../src/telepathy/telepathy-protocol.c:89
 #: ../src/telepathy/telepathy-protocol.c:179
 #, c-format
@@ -371,17 +431,21 @@ msgid ""
 "Example: user@company.com"
 msgstr "Numele de utilizator ar trebui să fie un URI valid de SIP\nExemplu: utilizator@companie.com"
 
-#: ../src/core/sipe-core.c:276
+#: ../src/core/sipe-core.c:273
+msgid "Login and password are required when Single Sign-On is not enabled"
+msgstr "Numele de utilizator și parola sunt necesare dacă opțiunea de Single Sign-On nu este activată"
+
+#: ../src/core/sipe-core.c:283
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr "Adresa de e-mail ar trebui să fie validă, dacă a fost introdusă\nExemplu: utilizator@companie.com"
 
-#: ../src/core/sipe-core.c:285
+#: ../src/core/sipe-core.c:292
 msgid "SIP Exchange user name contains whitespace"
 msgstr "Numele de utilizator SIP Exchange conține spații"
 
-#: ../src/core/sipe-core.c:299
+#: ../src/core/sipe-core.c:306
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
@@ -448,7 +512,7 @@ msgstr "Memorie insuficientă"
 msgid "Other Contacts"
 msgstr "Alte contacte"
 
-#: ../src/core/sipe-groupchat.c:333
+#: ../src/core/sipe-groupchat.c:336
 #, c-format
 msgid ""
 "Group Chat Proxy setting is incorrect:\n"
@@ -458,20 +522,20 @@ msgid ""
 "Please update your Account."
 msgstr "Opțiunea de proxy pentru conversațiile în grup este greșită:\n\n\t%s\n\nVă rog să vă actualizați configurația contului."
 
-#: ../src/core/sipe-groupchat.c:336
+#: ../src/core/sipe-groupchat.c:339
 msgid "Couldn't find Group Chat server!"
 msgstr "Nu s-a putut găsi serverul pentru conversațiile în grup!"
 
-#: ../src/core/sipe-groupchat.c:434
+#: ../src/core/sipe-groupchat.c:446
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
 msgstr "Acest mesaj nu a fost livrat in camera de chat '%s'"
 
-#: ../src/core/sipe-groupchat.c:510
+#: ../src/core/sipe-groupchat.c:522
 msgid "Error retrieving room list"
 msgstr "Eroare la primirea listei camerelor de chat"
 
-#: ../src/core/sipe-groupchat.c:614
+#: ../src/core/sipe-groupchat.c:626
 msgid "Error joining chat room"
 msgstr "Eroare la intrarea in camera de chat"
 
@@ -486,51 +550,51 @@ msgstr "Nu s-a putut invita %s"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "S-a primit un mesaj cu conținut recunoscut de la %s"
 
-#: ../src/core/sipe-media.c:539 ../src/core/sipe-media.c:838
-#: ../src/core/sipe-media.c:1094 ../src/core/sipe-media.c:1116
+#: ../src/core/sipe-media.c:555 ../src/core/sipe-media.c:856
+#: ../src/core/sipe-media.c:1112 ../src/core/sipe-media.c:1134
 msgid "Unable to establish a call"
 msgstr "Nu s-a putut stabili apelul"
 
-#: ../src/core/sipe-media.c:540 ../src/core/sipe-media.c:1095
+#: ../src/core/sipe-media.c:556 ../src/core/sipe-media.c:1113
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr "Configurarea de criptare a partenerului de conversație este incompatibilă cu a dvs."
 
-#: ../src/core/sipe-media.c:733 ../src/core/sipe-media.c:746
-#: ../src/core/sipe-media.c:814 ../src/core/sipe-media.c:1115
+#: ../src/core/sipe-media.c:751 ../src/core/sipe-media.c:764
+#: ../src/core/sipe-media.c:832 ../src/core/sipe-media.c:1133
 msgid "Error occured"
 msgstr "Eroare"
 
-#: ../src/core/sipe-media.c:734 ../src/core/sipe-media.c:815
+#: ../src/core/sipe-media.c:752 ../src/core/sipe-media.c:833
 msgid "Error creating audio stream"
 msgstr "Eroare la crearea semnalului audio"
 
-#: ../src/core/sipe-media.c:747
+#: ../src/core/sipe-media.c:765
 msgid "Error creating video stream"
 msgstr "Eroare la crearea semnalului video"
 
-#: ../src/core/sipe-media.c:839
+#: ../src/core/sipe-media.c:857
 msgid "Audio Test Service is not available."
 msgstr "Serviciul de testare a apelurilor audio este indisponibil"
 
-#: ../src/core/sipe-media.c:1067
+#: ../src/core/sipe-media.c:1085
 msgid "User unavailable"
 msgstr "Utilizator indisponibil"
 
-#: ../src/core/sipe-media.c:1070
+#: ../src/core/sipe-media.c:1088
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr "%s nu dorește să fie deranjat"
 
-#: ../src/core/sipe-media.c:1072
+#: ../src/core/sipe-media.c:1090
 #, c-format
 msgid "User %s is not available"
 msgstr "Utilizatorul %s nu este disponibil"
 
-#: ../src/core/sipe-media.c:1077
+#: ../src/core/sipe-media.c:1095
 msgid "Call rejected"
 msgstr "Apel respins"
 
-#: ../src/core/sipe-media.c:1078
+#: ../src/core/sipe-media.c:1096
 #, c-format
 msgid "User %s rejected call"
 msgstr "Utilizatorul %s a respins apelul"
@@ -564,7 +628,7 @@ msgstr "Echipă"
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
 #: ../src/core/sipe-ocs2007.c:472 ../src/purple/purple-buddy.c:55
-#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:756
+#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:836
 #: ../src/purple/purple-search.c:58
 msgid "Company"
 msgstr "Companie"
@@ -610,58 +674,6 @@ msgstr "Ajutor online"
 #: ../src/core/sipe-ocs2007.c:2639
 msgid "Access groups"
 msgstr "Grupuri de acces"
-
-#. * This has nothing to do with Availability numbers, like 3500 (online).
-#. * Just a mapping of Communicator Activities to tokens/translations
-#. 
-#. @TODO: NULL means "default translation from Pidgin"?
-#. *        What about other backends?
-#. SIPE_ACTIVITY_UNSET
-#. SIPE_ACTIVITY_AVAILABLE
-#. SIPE_ACTIVITY_ONLINE
-#. SIPE_ACTIVITY_INACTIVE
-#: ../src/core/sipe-status.c:60
-msgid "Inactive"
-msgstr "Inactiv"
-
-#. SIPE_ACTIVITY_BUSYIDLE
-#: ../src/core/sipe-status.c:62
-msgid "Busy-Idle"
-msgstr "Ocupat-Absent"
-
-#. SIPE_ACTIVITY_DND
-#. SIPE_ACTIVITY_BRB
-#: ../src/core/sipe-status.c:64
-msgid "Be right back"
-msgstr "Revin imediat"
-
-#. SIPE_ACTIVITY_AWAY
-#. SIPE_ACTIVITY_LUNCH
-#: ../src/core/sipe-status.c:66
-msgid "Out to lunch"
-msgstr "La masă"
-
-#. SIPE_ACTIVITY_INVISIBLE
-#. SIPE_ACTIVITY_OFFLINE
-#. SIPE_ACTIVITY_ON_PHONE
-#: ../src/core/sipe-status.c:69
-msgid "In a call"
-msgstr "Într-un apel"
-
-#. SIPE_ACTIVITY_IN_CONF
-#: ../src/core/sipe-status.c:70
-msgid "In a conference"
-msgstr "Într-o conferință"
-
-#. SIPE_ACTIVITY_IN_MEETING
-#: ../src/core/sipe-status.c:71
-msgid "In a meeting"
-msgstr "Într-o ședință"
-
-#. SIPE_ACTIVITY_URGENT_ONLY
-#: ../src/core/sipe-status.c:73
-msgid "Urgent interruptions only"
-msgstr "Întrerupeți doar în caz de urgență"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -728,7 +740,7 @@ msgstr "Birou"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
-#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:758
+#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:838
 #: ../src/purple/purple-search.c:61
 msgid "Country"
 msgstr "Țara"
@@ -840,103 +852,108 @@ msgstr "Subiectul conversației: %s"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
-#: ../src/purple/purple-plugin.c:173
+#: ../src/purple/purple-plugin.c:185
 msgid "Message"
 msgstr "Mesaj"
 
-#: ../src/purple/purple-plugin.c:301
-msgid "Password required"
-msgstr "Parola este necesară"
-
-#: ../src/purple/purple-plugin.c:360
+#: ../src/purple/purple-plugin.c:379
 msgid "Connecting"
 msgstr "Conectare"
 
-#: ../src/purple/purple-plugin.c:482
+#: ../src/purple/purple-plugin.c:411
+msgid "Password required"
+msgstr "Parola este necesară"
+
+#: ../src/purple/purple-plugin.c:562
 msgid "user@company.com"
 msgstr "utilizator@companie.com"
 
-#: ../src/purple/purple-plugin.c:750
+#: ../src/purple/purple-plugin.c:830
 msgid "First name"
 msgstr "Prenumele"
 
-#: ../src/purple/purple-plugin.c:752
+#: ../src/purple/purple-plugin.c:832
 msgid "Last name"
 msgstr "Numele"
 
-#: ../src/purple/purple-plugin.c:754 ../src/purple/purple-search.c:64
+#: ../src/purple/purple-plugin.c:834 ../src/purple/purple-search.c:64
 msgid "Email"
 msgstr "E-mail"
 
-#: ../src/purple/purple-plugin.c:762
+#: ../src/purple/purple-plugin.c:842
 msgid "Search"
 msgstr "Caută"
 
-#: ../src/purple/purple-plugin.c:763
+#: ../src/purple/purple-plugin.c:843
 msgid "Search for a contact"
 msgstr "Caută un contact"
 
-#: ../src/purple/purple-plugin.c:764
+#: ../src/purple/purple-plugin.c:844
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
 msgstr "Introduceți informații despre persoana pe care o căutați. Câmpurile goale vor fi ignorate."
 
-#: ../src/purple/purple-plugin.c:766
+#: ../src/purple/purple-plugin.c:846
 msgid "_Search"
 msgstr "_Caută"
 
-#: ../src/purple/purple-plugin.c:767 ../src/purple/purple-plugin.c:821
+#: ../src/purple/purple-plugin.c:847 ../src/purple/purple-plugin.c:902
 msgid "_Cancel"
 msgstr "_Anulează"
 
-#: ../src/purple/purple-plugin.c:807
+#: ../src/purple/purple-plugin.c:887
 msgid "Meeting location"
 msgstr "Locația întâlnirii"
 
-#: ../src/purple/purple-plugin.c:811
+#: ../src/purple/purple-plugin.c:891
 msgid "Join conference"
 msgstr "Intră în conferință"
 
-#: ../src/purple/purple-plugin.c:812
+#: ../src/purple/purple-plugin.c:892
 msgid "Join scheduled conference"
 msgstr "Intră în conferință planificată"
 
-#: ../src/purple/purple-plugin.c:813
+#: ../src/purple/purple-plugin.c:893
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
 "Valid location will be something like\n"
 "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+"conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
-msgstr "Introduceți locația întâlnirii pe care ați primit-o în invitație.\n\nExemplu de locație validă: \nmeet:sip:cineva@companie.com;gruu;opaque=app:conf:focus:id:abcdef1234\nsau\nhttps://meet.companie.com/cineva/abcdef1234"
+msgstr "Introduceți locația întâlnirii pe care ați primit-o în invitație.\n\nExemplu de locație validă: \nmeet:sip:cineva@companie.com;gruu;opaque=app:conf:focus:id:abcdef1234\nconf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nsau\nhttps://meet.companie.com/cineva/abcdef1234"
 
-#: ../src/purple/purple-plugin.c:820
+#: ../src/purple/purple-plugin.c:901
 msgid "_Join"
 msgstr "_Intră"
 
-#: ../src/purple/purple-plugin.c:843
+#: ../src/purple/purple-plugin.c:913 ../src/purple/purple-plugin.c:927
+msgid "Publishing of calendar information has been disabled"
+msgstr "Publicarea orarului personal a fost dezactivată"
+
+#: ../src/purple/purple-plugin.c:940
 msgid "About SIPE plugin..."
 msgstr "Despre modulul SIPE..."
 
-#: ../src/purple/purple-plugin.c:846
+#: ../src/purple/purple-plugin.c:943
 msgid "Contact search..."
 msgstr "Caută contacte..."
 
-#: ../src/purple/purple-plugin.c:850
+#: ../src/purple/purple-plugin.c:947
 msgid "Test call"
 msgstr "Apel de test"
 
-#: ../src/purple/purple-plugin.c:854
+#: ../src/purple/purple-plugin.c:951
 msgid "Join scheduled conference..."
 msgstr "Intră într-o conferință planificată..."
 
-#: ../src/purple/purple-plugin.c:857
+#: ../src/purple/purple-plugin.c:954
 msgid "Republish Calendar"
 msgstr "Publică din nou calendarul"
 
-#: ../src/purple/purple-plugin.c:860
+#: ../src/purple/purple-plugin.c:957
 msgid "Reset status"
 msgstr "Resetează statusul"
 
@@ -947,32 +964,32 @@ msgstr "Resetează statusul"
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #. 
-#: ../src/purple/purple-plugin.c:917
+#: ../src/purple/purple-plugin.c:1015
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr "Autentificare\n   utilizator  sau  DOMENIU\\utilizator  sau\n   utilizator@companie.com"
 
-#: ../src/purple/purple-plugin.c:921
+#: ../src/purple/purple-plugin.c:1019
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr "Server[:Port]\n(lăsați gol pentru a se descoperi in mod automat)"
 
-#: ../src/purple/purple-plugin.c:924
+#: ../src/purple/purple-plugin.c:1022
 msgid "Connection type"
 msgstr "Tipul conexiunii"
 
-#: ../src/purple/purple-plugin.c:925
+#: ../src/purple/purple-plugin.c:1023
 msgid "Auto"
 msgstr "Automat"
 
-#: ../src/purple/purple-plugin.c:926
+#: ../src/purple/purple-plugin.c:1024
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:927
+#: ../src/purple/purple-plugin.c:1025
 msgid "TCP"
 msgstr "TCP"
 
@@ -980,45 +997,57 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:933
+#: ../src/purple/purple-plugin.c:1031
 msgid "User Agent"
 msgstr "Agent de utilizator"
 
-#: ../src/purple/purple-plugin.c:936
+#: ../src/purple/purple-plugin.c:1034
 msgid "Authentication scheme"
 msgstr "Un modul adițional care implementează o versiune extinsă a protocolului  SIP/SIMPLE utilizat de diverse produse"
 
-#: ../src/purple/purple-plugin.c:937
+#: ../src/purple/purple-plugin.c:1035
 msgid "NTLM"
 msgstr "NTLM"
 
-#: ../src/purple/purple-plugin.c:939
+#: ../src/purple/purple-plugin.c:1037
 msgid "Kerberos"
 msgstr "Kerberos"
 
-#. see above
-#: ../src/purple/purple-plugin.c:943
+#: ../src/purple/purple-plugin.c:1039
 msgid "TLS-DSK"
 msgstr "TLS-DSK"
 
-#. Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
-#. * No login/password is taken into account if this option present,
-#. * instead used default credentials stored in OS.
+#. * When the user selects Single Sign-On then SIPE will ignore the
+#. * settings for "login name" and "password". Instead it will use the
+#. * default credentials provided by the OS.
+#. *
+#. * NOTE: the default must be *OFF*, i.e. it is up to the user to tell
+#. *       SIPE that it is OK to use Single Sign-On or not.
+#. *
+#. * Configurations that are known to support Single Sign-On:
+#. *
+#. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
+#. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
+#. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 #. 
-#: ../src/purple/purple-plugin.c:952
+#: ../src/purple/purple-plugin.c:1057
 msgid "Use Single Sign-On"
 msgstr "Utilizați autentificarea unică"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #. 
-#: ../src/purple/purple-plugin.c:959
+#: ../src/purple/purple-plugin.c:1064
+msgid "Don't publish my calendar information"
+msgstr "Nu publica orarul personal"
+
+#: ../src/purple/purple-plugin.c:1067
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr "URL-ul serviciilor de e-mail\n(lăsați gol pentru a se descoperi in mod automat)"
 
-#: ../src/purple/purple-plugin.c:962
+#: ../src/purple/purple-plugin.c:1070
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1027,13 +1056,13 @@ msgstr "Adresă de e-mail\n(dacă diferă de numele de utilizator)"
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #. 
-#: ../src/purple/purple-plugin.c:968
+#: ../src/purple/purple-plugin.c:1076
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr "Nume de utilizator pentru e-mail\n(dacă diferă de numele de utilizator SIPE)"
 
-#: ../src/purple/purple-plugin.c:971
+#: ../src/purple/purple-plugin.c:1079
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1042,7 +1071,7 @@ msgstr "Parola de e-mail\n(dacă diferă de parola SIPE)"
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
 #. 
-#: ../src/purple/purple-plugin.c:978
+#: ../src/purple/purple-plugin.c:1091
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"

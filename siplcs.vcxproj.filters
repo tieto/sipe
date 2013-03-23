@@ -30,9 +30,6 @@
     <ClCompile Include="src\core\sip-sec-ntlm.c">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\sip-sec-sspi.c">
-      <Filter>core</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\sip-sec.c">
       <Filter>core</Filter>
     </ClCompile>
@@ -222,6 +219,12 @@
     <ClCompile Include="src\core\sip-sec-tls-dsk.c">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\sip-sec-sspi.c">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="src\core\sip-sec-negotiate.c">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\core\http-conn.h">
@@ -243,9 +246,6 @@
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\sip-sec-ntlm.h">
-      <Filter>core</Filter>
-    </ClInclude>
-    <ClInclude Include="src\core\sip-sec-sspi.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\sip-sec.h">
@@ -384,6 +384,12 @@
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\sip-sec-tls-dsk.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-sec-sspi.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sip-sec-negotiate.h">
       <Filter>core</Filter>
     </ClInclude>
   </ItemGroup>

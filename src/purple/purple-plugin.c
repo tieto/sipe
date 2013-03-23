@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -73,6 +73,18 @@
 /* Backward compatibility when compiling against 2.4.x API */
 #if !PURPLE_VERSION_CHECK(2,5,0) && !PURPLE_VERSION_CHECK(3,0,0)
 #define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
+#endif
+
+/*
+ * NOTE: this flag means two things:
+ *
+ *  - is Single Sign-On supported, and
+ *  - is Kerberos supported
+ */
+#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#define PURPLE_SIPE_SSO_AND_KERBEROS 1
+#else
+#define PURPLE_SIPE_SSO_AND_KERBEROS 0
 #endif
 
 /* Sipe core activity <-> Purple status mapping */
@@ -253,29 +265,36 @@ static guint get_authentication_type(PurpleAccount *account)
 
 	/* map option list to type - default is NTLM */
 	guint authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if PURPLE_SIPE_SSO_AND_KERBEROS
 	if (sipe_strequal(auth, "krb5")) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
 	}
 #endif
-#ifndef HAVE_SSPI
-	/*
-	 * @TODO: SSL handshake support isn't implemented in sip-sec-sspi.c.
-	 *        So ignore configuration setting for now.
-	 */
 	if (sipe_strequal(auth, "tls-dsk")) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
 	}
-#endif
 
 	return(authentication_type);
 }
 
 static gboolean get_sso_flag(PurpleAccount *account)
 {
-	/* @TODO: is this correct?
-	   "sso" is only available when Kerberos/SSPI support is compiled in */
-	return(purple_account_get_bool(account, "sso", TRUE));
+#if PURPLE_SIPE_SSO_AND_KERBEROS
+	/*
+	 * NOTE: the default must be *OFF*, i.e. it is up to the user to tell
+	 *       SIPE that it is OK to use Single Sign-On or not.
+	 */
+	return(purple_account_get_bool(account, "sso", FALSE));
+#else
+	(void) account; /* keep compiler happy */
+	return(FALSE);
+#endif
+}
+
+static gboolean get_dont_publish_flag(PurpleAccount *account)
+{
+	/* default is to publish calendar information */
+	return(purple_account_get_bool(account, "dont-publish", FALSE));
 }
 
 static void connect_to_core(PurpleConnection *gc,
@@ -293,26 +312,34 @@ static void connect_to_core(PurpleConnection *gc,
 	const gchar *errmsg;
 	guint transport_type;
 	struct sipe_backend_private *purple_private;
+	gboolean sso = get_sso_flag(account);
 
 	/* username format: <username>,[<optional login>] */
 	SIPE_DEBUG_INFO("sipe_purple_login: username '%s'", username);
 	username_split = g_strsplit(username, ",", 2);
 
-	/* login name specified? */
-	if (username_split[1] && strlen(username_split[1])) {
-		/* Allowed domain-account separators are / or \ */
-		gchar **domain_user = g_strsplit_set(username_split[1], "/\\", 2);
-		gboolean has_domain = domain_user[1] != NULL;
-		SIPE_DEBUG_INFO("sipe_purple_login: login '%s'", username_split[1]);
-		login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
-		login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
-		SIPE_DEBUG_INFO("sipe_purple_login: auth domain '%s' user '%s'",
-				login_domain ? login_domain : "",
-				login_account);
-		g_strfreev(domain_user);
+	/* login name is ignored when SSO has been selected */
+	if (!sso) {
+		/* login name specified? */
+		if (username_split[1] && strlen(username_split[1])) {
+			/* Allowed domain-account separators are / or \ */
+			gchar **domain_user = g_strsplit_set(username_split[1], "/\\", 2);
+			gboolean has_domain = domain_user[1] != NULL;
+			SIPE_DEBUG_INFO("sipe_purple_login: login '%s'", username_split[1]);
+			login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
+			login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
+			SIPE_DEBUG_INFO("sipe_purple_login: auth domain '%s' user '%s'",
+					login_domain ? login_domain : "",
+					login_account);
+			g_strfreev(domain_user);
+		} else {
+			/* No -> duplicate username */
+			login_account = g_strdup(username_split[0]);
+		}
 	}
 
 	sipe_public = sipe_core_allocate(username_split[0],
+					 sso,
 					 login_domain, login_account,
 					 password,
 					 email,
@@ -341,9 +368,9 @@ static void connect_to_core(PurpleConnection *gc,
 
 	sipe_purple_chat_setup_rejoin(purple_private);
 
-	SIPE_CORE_FLAG_UNSET(SSO);
-	if (get_sso_flag(account))
-		SIPE_CORE_FLAG_SET(SSO);
+	SIPE_CORE_FLAG_UNSET(DONT_PUBLISH);
+	if (get_dont_publish_flag(account))
+		SIPE_CORE_FLAG_SET(DONT_PUBLISH);
 
 	gc->proto_data = sipe_public;
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
@@ -867,6 +894,7 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 		  "\n"
 		  "Valid location will be something like\n"
 		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+		  "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 		  "or\n"
 		  "https://meet.company.com/someone/abcdef1234"),
 		fields,
@@ -878,13 +906,29 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 static void sipe_purple_republish_calendar(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	sipe_core_update_calendar(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	PurpleAccount *account = purple_connection_get_account(gc);
+
+	if (get_dont_publish_flag(account)) {
+		sipe_backend_notify_error(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+					  _("Publishing of calendar information has been disabled"),
+					  NULL);
+	} else {
+		sipe_core_update_calendar(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	}
 }
 
 static void sipe_purple_reset_status(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
-	sipe_core_reset_status(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	PurpleAccount *account = purple_connection_get_account(gc);
+
+	if (get_dont_publish_flag(account)) {
+		sipe_backend_notify_error(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+					  _("Publishing of calendar information has been disabled"),
+					  NULL);
+	} else {
+		sipe_core_reset_status(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	}
 }
 
 static GList *sipe_purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
@@ -930,11 +974,12 @@ static PurplePluginInfo sipe_purple_info = {
 	PACKAGE_VERSION,                                  /**< version        */
 	"Microsoft Office Communicator Protocol Plugin",  /**< summary        */
 	"A plugin for the extended SIP/SIMPLE protocol used by "          /**< description */
-	"Microsoft Live/Office Communications Server (LCS2005/OCS2007+)", /**< description */
-	"Anibal Avelar <avelar@gmail.com>, "              /**< author         */
-	"Gabriel Burt <gburt@novell.com>, "               /**< author         */
-	"Stefan Becker <stefan.becker@nokia.com>, "       /**< author         */
-	"pier11 <pier11@operamail.com>",                  /**< author         */
+	"Microsoft Live/Office Communications/Lync Server (LCS2005/OCS2007+)", /**< description */
+	"Stefan Becker <chemobejk@gmail.com>, "           /**< author         */
+	"Jakub Adam <jakub.adam@tieto.com>, "             /**< author         */
+	"Anibal Avelar <avelar@gmail.com> (retired), "    /**< author         */
+	"pier11 <pier11@operamail.com> (retired), "       /**< author         */
+	"Gabriel Burt <gburt@novell.com> (retired)",      /**< author         */
 	PACKAGE_URL,                                      /**< homepage       */
 	sipe_purple_plugin_load,                          /**< load           */
 	sipe_purple_plugin_unload,                        /**< unload         */
@@ -988,27 +1033,37 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 
 	option = purple_account_option_list_new(_("Authentication scheme"), "authentication", NULL);
 	purple_account_option_add_list_item(option, _("NTLM"), "ntlm");
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if PURPLE_SIPE_SSO_AND_KERBEROS
 	purple_account_option_add_list_item(option, _("Kerberos"), "krb5");
 #endif
-#ifndef HAVE_SSPI
-	/* see above */
 	purple_account_option_add_list_item(option, _("TLS-DSK"), "tls-dsk");
-#endif
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-	/* Suitable for sspi/NTLM, sspi/Kerberos and krb5 security mechanisms
-	 * No login/password is taken into account if this option present,
-	 * instead used default credentials stored in OS.
+#if PURPLE_SIPE_SSO_AND_KERBEROS
+	/*
+	 * When the user selects Single Sign-On then SIPE will ignore the
+	 * settings for "login name" and "password". Instead it will use the
+	 * default credentials provided by the OS.
+	 *
+	 * NOTE: the default must be *OFF*, i.e. it is up to the user to tell
+	 *       SIPE that it is OK to use Single Sign-On or not.
+	 *
+	 * Configurations that are known to support Single Sign-On:
+	 *
+	 *  - Windows, host joined to domain, SIPE with SSPI: NTLM
+	 *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
+	 *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 	 */
-	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", TRUE);
+	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", FALSE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 #endif
 
 	/** Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 	 */
+	option = purple_account_option_bool_new(_("Don't publish my calendar information"), "dont-publish", FALSE);
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 

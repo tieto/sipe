@@ -32,6 +32,7 @@ po/stamp-it
 *.gmo
 src/*/*.o
 src/core/*_tests
+src/core/sipe_ntlm_analyzer
 src/core/sipe_tls_tester
 src/purple/tests
 src/purple/tests_load

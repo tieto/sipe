@@ -298,7 +298,7 @@ parse_ocs_focus_uri(const gchar *uri)
 		return NULL;
 
 	// URI can have this prefix if it was typed in by the user
-	if (g_str_has_prefix(uri, "meet:")) {
+	if (g_str_has_prefix(uri, "meet:") || g_str_has_prefix(uri, "conf:")) {
 		uri += 5;
 	}
 
