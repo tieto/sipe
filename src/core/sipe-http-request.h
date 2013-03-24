@@ -56,9 +56,32 @@ struct sipe_http_connection_public {
 struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_private *sipe_private,
 							     const gchar *host,
 							     guint32 port);
+
+/**
+ * HTTP connection is ready
+ *
+ * @param conn_public HTTP connection public data
+ */
+void sipe_http_request_connected(struct sipe_http_connection_public *conn_public);
+
 /**
  * HTTP connection shutdown
  *
  * @param conn_public HTTP connection public data
  */
 void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public);
+
+/**
+ * Create new HTTP request
+ *
+ * @param sipe_private SIPE core private data
+ * @param host         name of the host to connect to
+ * @param port         port number to connect to
+ * @param path         relative path
+ *
+ * @return TBD!!!
+ */
+void *sipe_http_request_new(struct sipe_core_private *sipe_private,
+			    const gchar *host,
+			    guint32 port,
+			    const gchar *path);

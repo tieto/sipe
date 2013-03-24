@@ -49,3 +49,14 @@ struct sipe_core_private;
 struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_private *sipe_private,
 							    const gchar *host,
 							    guint32 port);
+
+/**
+ * Send HTTP request
+ *
+ * @param conn_public HTTP connection public data
+ * @param header      HTTP header
+ * @param body        HTTP body (may be @c NULL)
+ */
+void sipe_http_transport_send(struct sipe_http_connection_public *conn_public,
+			      const gchar *header,
+			      const gchar *body);

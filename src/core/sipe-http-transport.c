@@ -31,6 +31,7 @@
 #include "sipe-core-private.h"
 #include "sipe-http.h"
 #include "sipe-schedule.h"
+#include "sipe-utils.h"
 
 #define _SIPE_HTTP_PRIVATE_IF_REQUEST
 #include "sipe-http-request.h"
@@ -68,7 +69,7 @@ static void sipe_http_transport_free(gpointer data)
 	struct sipe_http_connection_private *conn_private = conn_public->conn_private;
 	struct sipe_http *http = conn_public->sipe_private->http;
 
-	SIPE_DEBUG_INFO("sipe_http_transport_free: destroying connection to %s",
+	SIPE_DEBUG_INFO("sipe_http_transport_free: destroying connection '%s'",
 			conn_private->host_port);
 
 	sipe_backend_transport_disconnect(conn_private->connection);
@@ -81,8 +82,13 @@ static void sipe_http_transport_free(gpointer data)
 }
 
 static void sipe_http_transport_drop(struct sipe_http *http,
-				     struct sipe_http_connection_private *conn_private)
+				     struct sipe_http_connection_private *conn_private,
+				     const gchar *message)
 {
+	SIPE_DEBUG_INFO("sipe_http_transport_drop: dropping connection '%s': %s",
+			conn_private->host_port,
+			message ? message : "REASON UNKNOWN");
+
 	/* this triggers sipe_http_transport_new */
 	g_hash_table_remove(http->connections,
 			    conn_private->host_port);
@@ -101,9 +107,7 @@ static void sipe_http_transport_timeout(struct sipe_core_private *sipe_private,
 	http->next_timeout = 0;
 
 	while (1) {
-		SIPE_DEBUG_INFO("sipe_http_transport_timeout: dropping connection to %s",
-				conn_private->host_port);
-		sipe_http_transport_drop(http, conn_private);
+		sipe_http_transport_drop(http, conn_private, "timeout");
 		/* conn_private is no longer valid */
 
 		/* is there another active connection? */
@@ -166,9 +170,9 @@ static void sipe_http_transport_connected(struct sipe_transport_connection *conn
 {
 	struct sipe_http_connection_public *conn_public = SIPE_HTTP_CONNECTION;
 
-	/* TBD */
 	SIPE_DEBUG_INFO("sipe_http_transport_connected: %s",
 			conn_public->conn_private->host_port);
+	sipe_http_request_connected(conn_public);
 }
 
 static void sipe_http_transport_input(struct sipe_transport_connection *connection)
@@ -177,18 +181,16 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 
 	/* TBD */
 	(void)conn_public;
+	sipe_utils_message_debug("HTTP", connection->buffer, NULL, FALSE);
 }
 
 static void sipe_http_transport_error(struct sipe_transport_connection *connection,
 				      const gchar *msg)
 {
 	struct sipe_http_connection_public *conn_public = SIPE_HTTP_CONNECTION;
-
-	/* TBD */
-	(void)msg;
-
 	sipe_http_transport_drop(conn_public->sipe_private->http,
-				 conn_public->conn_private);
+				 conn_public->conn_private,
+				 msg);
 	/* conn_public is no longer valid */
 }
 
@@ -248,6 +250,20 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 
 	g_free(host_port);
 	return(conn_public);
+}
+
+void sipe_http_transport_send(struct sipe_http_connection_public *conn_public,
+			      const gchar *header,
+			      const gchar *body)
+{
+	struct sipe_http_connection_private *conn_private = conn_public->conn_private;
+	GString *message = g_string_new(header);
+
+	g_string_append_printf(message, "\r\n%s", body ? body : "");
+
+	sipe_utils_message_debug("HTTP", message->str, NULL, TRUE);
+	sipe_backend_transport_message(conn_private->connection, message->str);
+	g_string_free(message, TRUE);
 }
 
 /*
