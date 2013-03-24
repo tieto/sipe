@@ -341,6 +341,7 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 	g_free(sipe_private->epid);
 	sipe_private->epid = NULL;
 
+	sipe_http_free(sipe_private);
 	sip_transport_disconnect(sipe_private);
 
 	sipe_schedule_cancel_all(sipe_private);
@@ -402,7 +403,6 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 
 	/* pending service requests must be cancelled first */
-	sipe_http_free(sipe_private);
 	sipe_svc_free(sipe_private);
 	sipe_webticket_free(sipe_private);
 
