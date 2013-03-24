@@ -21,6 +21,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <time.h>
+
 #include <glib.h>
 
 #include "sipe-backend.h"
@@ -39,13 +41,14 @@
 #define SIPE_HTTP_DEFAULT_TIMEOUT 60 /* in seconds */
 
 struct sipe_http_connection_private {
-	const gchar *host_port;
-	guint timeout;
+	gchar *host_port;
+	time_t timeout;  /* in seconds from epoch */
 };
 
 struct sipe_http {
 	GHashTable *connections;
 	GQueue *timeouts;
+	time_t next_timeout; /* in seconds from epoch, 0 if timer isn't running */
 };
 
 static gint timeout_compare(gconstpointer a,
@@ -62,67 +65,64 @@ static void sipe_http_connection_free(gpointer data)
 	struct sipe_http_connection_private *conn_private = conn_public->conn_private;
 	struct sipe_http *http = conn_public->sipe_private->http;
 
+	SIPE_DEBUG_INFO("sipe_http_transport_free: destroying connection to %s",
+			conn_private->host_port);
+
 	g_queue_remove(http->timeouts, conn_private);
+	g_free(conn_private->host_port);
 	g_free(conn_private);
 	conn_public->conn_private = NULL;
 
 	sipe_http_request_shutdown(conn_public);
 }
 
-static void adjust_timeout(gpointer data,
-			   gpointer user_data)
-{
-	struct sipe_http_connection_private *conn_private = data;
-	conn_private->timeout -= GPOINTER_TO_UINT(user_data);
-}
-
-
 static void start_timer(struct sipe_core_private *sipe_private,
-			struct sipe_http_connection_private *conn_private,
-			guint timeout);
+			time_t current_time);
 static void sipe_http_transport_timeout(struct sipe_core_private *sipe_private,
 					gpointer data)
 {
 	struct sipe_http *http = sipe_private->http;
 	struct sipe_http_connection_private *conn_private = data;
+	time_t current_time = time(NULL);
+
+	/* timer has expired */
+	http->next_timeout = 0;
 
 	while (1) {
-		guint offset;
-
 		SIPE_DEBUG_INFO("sipe_http_transport_timeout: dropping connection to %s",
 				conn_private->host_port);
 
 		/* drop this connection */
 		g_hash_table_remove(http->connections,
 				    conn_private->host_port);
+		/* conn_private is no longer valid */
 
-		/* restart timer for next connection in queue */
+		/* is there another active connection? */
 		conn_private = g_queue_peek_head(http->timeouts);
 		if (!conn_private)
 			break;
 
-		/* adjust all timeouts in the queue before restarting timer */
-		offset = conn_private->timeout;
-		if (offset) {
-			g_queue_foreach(http->timeouts,
-					adjust_timeout,
-					GUINT_TO_POINTER(offset));
-			start_timer(sipe_private, conn_private, offset);
+		/* restart timer for next connection */
+		if (conn_private->timeout > current_time) {
+			start_timer(sipe_private, current_time);
 			break;
 		}
 
-		/* offset is 0, so next connection timed-out too */
+		/* next connection timed-out too, loop around */
 	}
 }
 
 static void start_timer(struct sipe_core_private *sipe_private,
-			struct sipe_http_connection_private *conn_private,
-			guint timeout)
+			time_t current_time)
 {
+	struct sipe_http *http = sipe_private->http;
+	struct sipe_http_connection_private *conn_private = g_queue_peek_head(http->timeouts);
+
+	http->next_timeout = conn_private->timeout;
 	sipe_schedule_seconds(sipe_private,
 			      SIPE_HTTP_TIMEOUT_ACTION,
 			      conn_private,
-			      timeout,
+			      http->next_timeout - current_time,
 			      sipe_http_transport_timeout,
 			      NULL);
 }
@@ -133,8 +133,9 @@ void sipe_http_free(struct sipe_core_private *sipe_private)
 	if (!http)
 		return;
 
-	g_queue_free(http->timeouts);
+	sipe_schedule_cancel(sipe_private, SIPE_HTTP_TIMEOUT_ACTION);
 	g_hash_table_destroy(http->connections);
+	g_queue_free(http->timeouts);
 	g_free(http);
 	sipe_private->http = NULL;
 }
@@ -147,7 +148,7 @@ static void sipe_http_init(struct sipe_core_private *sipe_private)
 
 	sipe_private->http = http = g_new0(struct sipe_http, 1);
 	http->connections = g_hash_table_new_full(g_str_hash, g_str_equal,
-						  g_free,
+						  NULL,
 						  sipe_http_connection_free);
 	http->timeouts = g_queue_new();
 }
@@ -166,7 +167,7 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 	conn_public = g_hash_table_lookup(http->connections, host_port);
 	if (!conn_public) {
 		struct sipe_http_connection_private *conn_private;
-		struct sipe_http_connection_private *next = g_queue_peek_head(http->timeouts);
+		time_t current_time = time(NULL);
 
 		SIPE_DEBUG_INFO("sipe_http_transport_new: %s", host_port);
 
@@ -177,23 +178,21 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 		conn_public->conn_private = conn_private = g_new0(struct sipe_http_connection_private, 1);
 
 		conn_private->host_port = host_port;
-		conn_private->timeout   = SIPE_HTTP_DEFAULT_TIMEOUT;
+		conn_private->timeout   = current_time + SIPE_HTTP_DEFAULT_TIMEOUT;
 
-		if (next)
-			conn_private->timeout -= next->timeout;
-		else
-			start_timer(sipe_private,
-				    conn_private,
-				    conn_private->timeout);
 		g_queue_insert_sorted(http->timeouts,
 				      conn_private,
 				      timeout_compare,
 				      NULL);
 
+		/* start timeout timer if necessary */
+		if (http->next_timeout == 0)
+			start_timer(sipe_private, current_time);
+
 		g_hash_table_insert(http->connections,
 				    host_port,
 				    conn_public);
-		host_port = NULL; /* hash table takes ownership of the key */
+		host_port = NULL; /* conn_private takes ownership of the key */
 	}
 
 	g_free(host_port);
