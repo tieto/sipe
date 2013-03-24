@@ -1387,6 +1387,7 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 
 	sipe_private->transport    = NULL;
 	sipe_private->service_data = NULL;
+	sipe_private->address_data = NULL;
 
 	if (sipe_private->dns_query)
 		sipe_backend_dns_query_cancel(sipe_private->dns_query);
@@ -1666,6 +1667,7 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 	sipe_private->service_data = NULL;
+	sipe_private->address_data = NULL;
 	do_register(sipe_private, FALSE);
 }
 
