@@ -46,7 +46,7 @@ static struct parsed_uri *sipe_http_parse_uri(const gchar *uri)
 {
 	struct parsed_uri *parsed_uri = NULL;
 
-	SIPE_DEBUG_INFO("sipe_http_parse_uri: '%s'", uri);
+//	SIPE_DEBUG_INFO("sipe_http_parse_uri: '%s'", uri);
 
 	/* Currently only HTTPS is supported */
 	if (g_str_has_prefix(uri, "https://")) {
@@ -55,8 +55,7 @@ static struct parsed_uri *sipe_http_parse_uri(const gchar *uri)
 		if (hostport_path && hostport_path[0] && hostport_path[1]) {
 			gchar **host_port = g_strsplit(hostport_path[0], ":", 2);
 
-			SIPE_DEBUG_INFO("sipe_http_parse_uri: hostport '%s' path '%s'",
-					hostport_path[0], hostport_path[1]);
+//			SIPE_DEBUG_INFO("sipe_http_parse_uri: hostport '%s' path '%s'", hostport_path[0], hostport_path[1]);
 
 			/* ":port" is optional */
 			if (host_port && host_port[0]) {
@@ -81,6 +80,9 @@ static struct parsed_uri *sipe_http_parse_uri(const gchar *uri)
 		}
 		g_strfreev(hostport_path);
 	}
+
+	if (!parsed_uri)
+		SIPE_DEBUG_ERROR("sipe_http_parse_uri: FAILED '%s'", uri);
 
 	return(parsed_uri);
 }
