@@ -31,6 +31,7 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct sipe_http_request;
 
 /**
  * Free HTTP data
@@ -38,3 +39,40 @@ struct sipe_core_private;
  * @param sipe_private SIPE core private data
  */
 void sipe_http_free(struct sipe_core_private *sipe_private);
+
+/**
+ * Cancel pending HTTP request
+ *
+ * @param pointer to opaque HTTP request data structure
+ */
+void sipe_http_request_cancel(struct sipe_http_request *request);
+
+/**
+ * Create HTTP GET request
+ *
+ * @param sipe_private SIPE core private data
+ * @param uri          URI
+ * @param headers      additional headers (may be @c NULL)
+ *
+ * @return pointer to opaque HTTP request data structure (@c NULL if failed)
+ */
+struct sipe_http_request *sipe_http_request_get(struct sipe_core_private *sipe_private,
+						const gchar *uri,
+						const gchar *headers);
+
+/**
+ * Create HTTP POST request
+ *
+ * @param sipe_private SIPE core private data
+ * @param uri          URI
+ * @param headers      additional headers (may be @c NULL)
+ * @param body         body contents
+ * @param content_type body content type
+ *
+ * @return pointer to opaque HTTP request data structure (@c NULL if failed)
+ */
+struct sipe_http_request *sipe_http_request_post(struct sipe_core_private *sipe_private,
+						 const gchar *uri,
+						 const gchar *headers,
+						 const gchar *body,
+						 const gchar *content_type);

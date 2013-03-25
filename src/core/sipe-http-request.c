@@ -25,6 +25,8 @@
 #include "config.h"
 #endif
 
+#include <string.h>
+
 #include <glib.h>
 
 #include "sipe-http.h"
@@ -40,8 +42,11 @@ struct sipe_http_connection {
 };
 
 struct sipe_http_request {
-	gchar *header;
-	const gchar *body; /* NULL for GET */
+	struct sipe_http_connection *connection;
+	gchar *path;
+	gchar *headers;
+	gchar *body;         /* NULL for GET */
+	gchar *content_type; /* NULL if body == NULL */
 };
 
 struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_private *sipe_private,
@@ -61,16 +66,40 @@ static void sipe_http_request_free(gpointer data)
 {
 	struct sipe_http_request *req = data;
 
-	g_free(req->header);
+	g_free(req->path);
+	g_free(req->headers);
+	g_free(req->body);
+	g_free(req->content_type);
 	g_free(req);
 }
 
 static void sipe_http_request_send(struct sipe_http_connection *conn)
 {
 	struct sipe_http_request *req = conn->pending_requests->data;
+	gchar *header;
+	gchar *content = NULL;
+
+	if (req->body)
+		content = g_strdup_printf("Content-Length: %" G_GSIZE_FORMAT "\r\n"
+					  "Content-Type: %s\r\n",
+					  strlen(req->body),
+					  req->content_type);
+
+	header = g_strdup_printf("%s /%s HTTP/1.1\r\n"
+				 "Host: %s\r\n"
+				 "User-Agent: Sipe/" PACKAGE_VERSION "\r\n"
+				 "%s%s",
+				 content ? "POST" : "GET",
+				 req->path,
+				 conn->public.host,
+				 req->headers ? req->headers : "",
+				 content ? content : "");
+	g_free(content);
+
 	sipe_http_transport_send((struct sipe_http_connection_public *) conn,
-				 req->header,
+				 header,
 				 req->body);
+	g_free(header);
 }
 
 void sipe_http_request_connected(struct sipe_http_connection_public *conn_public)
@@ -95,29 +124,39 @@ void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
 	g_free(conn);
 }
 
-void *sipe_http_request_new(struct sipe_core_private *sipe_private,
-			    const gchar *host,
-			    guint32 port,
-			    const gchar *path)
+struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_private,
+						const gchar *host,
+						guint32 port,
+						const gchar *path,
+						const gchar *headers,
+						const gchar *body,
+						const gchar *content_type)
 {
 	struct sipe_http_request *req = g_new0(struct sipe_http_request, 1);
 	struct sipe_http_connection *conn;
 
-	req->header = g_strdup_printf("%s %s HTTP/1.1\r\n"
-				      "Host: %s\r\n"
-				      "User-Agent: Sipe/" PACKAGE_VERSION "\r\n",
-				      "GET", /* TBD: body != NULL -> POST */
-				      path,
-				      host);
+	req->path                 = g_strdup(path);
+	if (headers)
+		req->headers      = g_strdup(headers);
+	if (body) {
+		req->body         = g_strdup(body);
+		req->content_type = g_strdup(content_type);
+	}
 
-	conn = (struct sipe_http_connection *) sipe_http_transport_new(sipe_private,
-								       host,
-								       port);
-
+	req->connection = conn = (struct sipe_http_connection *) sipe_http_transport_new(sipe_private,
+											 host,
+											 port);
 	conn->pending_requests = g_slist_append(conn->pending_requests, req);
 
-	/* TBD: return value type */
-	return(conn);
+	return(req);
+}
+
+void sipe_http_request_cancel(struct sipe_http_request *request)
+{
+	struct sipe_http_connection *conn = request->connection;
+	conn->pending_requests = g_slist_remove(conn->pending_requests,
+						request);
+	sipe_http_request_free(request);
 }
 
 /*

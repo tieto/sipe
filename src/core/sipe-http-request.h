@@ -35,6 +35,7 @@
 /* Forward declarations */
 struct sipe_core_private;
 struct sipe_http_connection_private;
+struct sipe_http_request;
 
 struct sipe_http_connection_public {
 	struct sipe_core_private *sipe_private;
@@ -72,16 +73,22 @@ void sipe_http_request_connected(struct sipe_http_connection_public *conn_public
 void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public);
 
 /**
- * Create new HTTP request
+ * Create new HTTP request (internal raw version)
  *
  * @param sipe_private SIPE core private data
  * @param host         name of the host to connect to
  * @param port         port number to connect to
  * @param path         relative path
+ * @param headers      additional headers to add (may be @c NULL)
+ * @param body         body                      (may be @c NULL)
+ * @param content_type MIME type for body (may be @c NULL if body is @c NULL)
  *
- * @return TBD!!!
+ * @return pointer to opaque HTTP request data structure
  */
-void *sipe_http_request_new(struct sipe_core_private *sipe_private,
-			    const gchar *host,
-			    guint32 port,
-			    const gchar *path);
+struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_private,
+						const gchar *host,
+						guint32 port,
+						const gchar *path,
+						const gchar *headers,
+						const gchar *body,
+						const gchar *content_type);
