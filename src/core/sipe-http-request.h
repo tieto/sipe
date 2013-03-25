@@ -42,7 +42,8 @@ struct sipe_http_connection_public {
 	struct sipe_http_connection_private *conn_private;
 
 	gchar *host;
-        guint32 port;
+	guint32 port;
+	gboolean connected;
 };
 
 /**
@@ -59,11 +60,29 @@ struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_pr
 							     guint32 port);
 
 /**
- * HTTP connection is ready
+ * Is there pending request for HTTP connection?
  *
  * @param conn_public HTTP connection public data
  */
-void sipe_http_request_connected(struct sipe_http_connection_public *conn_public);
+gboolean sipe_http_request_pending(struct sipe_http_connection_public *conn_public);
+
+/**
+ * HTTP connection is ready for next request
+ *
+ * @param conn_public HTTP connection public data
+ */
+void sipe_http_request_next(struct sipe_http_connection_public *conn_public);
+
+/**
+ * HTTP response received
+ *
+ * @param conn_public HTTP connection public data
+ * @param status      status code
+ * @param body        response body
+ */
+void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
+				guint status,
+				const gchar *body);
 
 /**
  * HTTP connection shutdown
@@ -91,4 +110,6 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 						const gchar *path,
 						const gchar *headers,
 						const gchar *body,
-						const gchar *content_type);
+						const gchar *content_type,
+						sipe_http_response_callback *callback,
+						gpointer callback_data);

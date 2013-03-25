@@ -34,6 +34,22 @@ struct sipe_core_private;
 struct sipe_http_request;
 
 /**
+ * HTTP response callback
+ *
+ * @param sipe_private  SIPE core private data
+ * @param status        status code
+ * @param body          response body (@c NULL if request aborted)
+ * @param callback_data callback data
+ */
+typedef void (sipe_http_response_callback)(struct sipe_core_private *sipe_private,
+					   guint status,
+					   const gchar *body,
+					   gpointer callback_data);
+
+/* HTTP status codes */
+#define SIPE_HTTP_STATUS_OK 200
+
+/**
  * Free HTTP data
  *
  * @param sipe_private SIPE core private data
@@ -58,7 +74,9 @@ void sipe_http_request_cancel(struct sipe_http_request *request);
  */
 struct sipe_http_request *sipe_http_request_get(struct sipe_core_private *sipe_private,
 						const gchar *uri,
-						const gchar *headers);
+						const gchar *headers,
+						sipe_http_response_callback *callback,
+						gpointer callback_data);
 
 /**
  * Create HTTP POST request
@@ -75,4 +93,6 @@ struct sipe_http_request *sipe_http_request_post(struct sipe_core_private *sipe_
 						 const gchar *uri,
 						 const gchar *headers,
 						 const gchar *body,
-						 const gchar *content_type);
+						 const gchar *content_type,
+						 sipe_http_response_callback *callback,
+						 gpointer callback_data);

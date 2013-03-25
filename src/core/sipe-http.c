@@ -89,7 +89,9 @@ static struct parsed_uri *sipe_http_parse_uri(const gchar *uri)
 
 struct sipe_http_request *sipe_http_request_get(struct sipe_core_private *sipe_private,
 						const gchar *uri,
-						const gchar *headers)
+						const gchar *headers,
+						sipe_http_response_callback *callback,
+						gpointer callback_data)
 {
 	struct sipe_http_request *req;
 	struct parsed_uri *parsed_uri = sipe_http_parse_uri(uri);
@@ -102,7 +104,9 @@ struct sipe_http_request *sipe_http_request_get(struct sipe_core_private *sipe_p
 				    parsed_uri->path,
 				    headers,
 				    NULL,
-				    NULL);
+				    NULL,
+				    callback,
+				    callback_data);
 	parsed_uri_free(parsed_uri);
 
 	return(req);
@@ -112,7 +116,9 @@ struct sipe_http_request *sipe_http_request_post(struct sipe_core_private *sipe_
 						 const gchar *uri,
 						 const gchar *headers,
 						 const gchar *body,
-						 const gchar *content_type)
+						 const gchar *content_type,
+						 sipe_http_response_callback *callback,
+						 gpointer callback_data)
 {
 	struct sipe_http_request *req;
 	struct parsed_uri *parsed_uri = sipe_http_parse_uri(uri);
@@ -125,7 +131,9 @@ struct sipe_http_request *sipe_http_request_post(struct sipe_core_private *sipe_
 				    parsed_uri->path,
 				    headers,
 				    body,
-				    content_type);
+				    content_type,
+				    callback,
+				    callback_data);
 	parsed_uri_free(parsed_uri);
 
 	return(req);

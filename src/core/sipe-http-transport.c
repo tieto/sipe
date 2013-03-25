@@ -21,10 +21,12 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string.h>
 #include <time.h>
 
 #include <glib.h>
 
+#include "sipmsg.h"
 #include "sipe-backend.h"
 #include "sipe-common.h"
 #include "sipe-core.h"
@@ -72,7 +74,8 @@ static void sipe_http_transport_free(gpointer data)
 	SIPE_DEBUG_INFO("sipe_http_transport_free: destroying connection '%s'",
 			conn_private->host_port);
 
-	sipe_backend_transport_disconnect(conn_private->connection);
+	if (conn_private->connection)
+		sipe_backend_transport_disconnect(conn_private->connection);
 	g_queue_remove(http->timeouts, conn_private);
 	g_free(conn_private->host_port);
 	g_free(conn_private);
@@ -172,16 +175,175 @@ static void sipe_http_transport_connected(struct sipe_transport_connection *conn
 
 	SIPE_DEBUG_INFO("sipe_http_transport_connected: %s",
 			conn_public->conn_private->host_port);
-	sipe_http_request_connected(conn_public);
+	conn_public->connected = TRUE;
+	sipe_http_request_next(conn_public);
 }
 
 static void sipe_http_transport_input(struct sipe_transport_connection *connection)
 {
 	struct sipe_http_connection_public *conn_public = SIPE_HTTP_CONNECTION;
+	char *current = connection->buffer;
+	gboolean drop = FALSE;
+	gboolean next = FALSE;
 
-	/* TBD */
-	(void)conn_public;
-	sipe_utils_message_debug("HTTP", connection->buffer, NULL, FALSE);
+	/* according to the RFC remove CRLF at the beginning */
+	while (*current == '\r' || *current == '\n') {
+		current++;
+	}
+	if (current != connection->buffer)
+		sipe_utils_shrink_buffer(connection, current);
+
+	while ((current = strstr(connection->buffer, "\r\n\r\n")) != NULL) {
+		struct sipmsg *msg;
+		guint remainder;
+
+		current += 2;
+		current[0] = '\0';
+		msg = sipmsg_parse_header(connection->buffer);
+
+		/* HTTP/1.1 Transfer-Encoding: chunked */
+		if (msg && (msg->bodylen == SIPMSG_BODYLEN_CHUNKED)) {
+			gchar *start        = current + 2;
+			GSList *chunks      = NULL;
+			gboolean incomplete = TRUE;
+
+			msg->bodylen = 0;
+			while (strlen(start) > 0) {
+				gchar *tmp;
+				guint length = g_ascii_strtoll(start, &tmp, 16);
+				struct _chunk {
+					guint length;
+					const gchar *start;
+				} *chunk;
+
+				/* Illegal number */
+				if ((length == 0) && (start == tmp))
+					break;
+				msg->bodylen += length;
+
+				/* Chunk header not finished yet */
+				tmp = strstr(tmp, "\r\n");
+				if (tmp == NULL)
+					break;
+
+				/* Chunk not finished yet */
+				tmp += 2;
+				remainder = connection->buffer_used - (tmp - connection->buffer);
+				if (remainder < length + 2)
+					break;
+
+				/* Next chunk */
+				start = tmp + length + 2;
+
+				/* Body completed */
+				if (length == 0) {
+					gchar *dummy  = g_malloc(msg->bodylen + 1);
+					gchar *p      = dummy;
+					GSList *entry = chunks;
+
+					while (entry) {
+						chunk = entry->data;
+						memcpy(p, chunk->start, chunk->length);
+						p += chunk->length;
+						entry = entry->next;
+					}
+					p[0] = '\0';
+
+					msg->body = dummy;
+					sipe_utils_message_debug("HTTP",
+								 connection->buffer,
+								 msg->body,
+								 FALSE);
+
+					current = start;
+					sipe_utils_shrink_buffer(connection,
+								 current);
+
+					incomplete = FALSE;
+					break;
+				}
+
+				/* Append completed chunk */
+				chunk = g_new0(struct _chunk, 1);
+				chunk->length = length;
+				chunk->start  = tmp;
+				chunks = g_slist_append(chunks, chunk);
+			}
+
+			if (chunks) {
+				GSList *entry = chunks;
+				while (entry) {
+					g_free(entry->data);
+					entry = entry->next;
+				}
+				g_slist_free(chunks);
+			}
+
+			if (incomplete) {
+				/* restore header for next try */
+				sipmsg_free(msg);
+				current[0] = '\r';
+				return;
+			}
+
+		} else {
+			current += 2;
+			remainder = connection->buffer_used - (current - connection->buffer);
+			if (msg && remainder >= (guint) msg->bodylen) {
+				char *dummy = g_malloc(msg->bodylen + 1);
+				memcpy(dummy, current, msg->bodylen);
+				dummy[msg->bodylen] = '\0';
+				msg->body = dummy;
+				current += msg->bodylen;
+				sipe_utils_message_debug("HTTP",
+							 connection->buffer,
+							 msg->body,
+							 FALSE);
+				sipe_utils_shrink_buffer(connection, current);
+			} else {
+				if (msg) {
+					SIPE_DEBUG_INFO("sipe_http_transport_input: body too short (%d < %d, strlen %" G_GSIZE_FORMAT ") - ignoring message",
+							remainder, msg->bodylen, strlen(connection->buffer));
+					sipmsg_free(msg);
+				}
+
+				/* restore header for next try */
+				current[-2] = '\r';
+				return;
+			}
+		}
+
+		if (sipe_strcase_equal(sipmsg_find_header(msg, "Connection"), "close"))
+			drop = TRUE;
+
+		sipe_http_request_response(conn_public,
+					   msg->response,
+					   msg->body);
+		next = sipe_http_request_pending(conn_public);
+
+		sipmsg_free(msg);
+	}
+
+
+	if (drop) {
+		/* drop backend connection */
+		struct sipe_http_connection_private *conn_private = conn_public->conn_private;
+		SIPE_DEBUG_INFO("sipe_http_transport_input: server requested close '%s'",
+				conn_private->host_port);
+		sipe_backend_transport_disconnect(conn_private->connection);
+		conn_private->connection = NULL;
+		conn_public->connected   = FALSE;
+
+		/* if we have pending requests we need to trigger re-connect */
+		if (next)
+			sipe_http_transport_new(conn_public->sipe_private,
+						conn_public->host,
+						conn_public->port);
+
+	} else if (next) {
+		/* trigger sending of next pending request */
+		sipe_http_request_next(conn_public);
+	}
 }
 
 static void sipe_http_transport_error(struct sipe_transport_connection *connection,
@@ -200,37 +362,55 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 {
 	struct sipe_http *http;
 	struct sipe_http_connection_public *conn_public;
+	struct sipe_http_connection_private *conn_private;
 	gchar *host_port = g_strdup_printf("%s:%" G_GUINT32_FORMAT, host, port);
 
 	sipe_http_init(sipe_private);
 
 	http = sipe_private->http;
 	conn_public = g_hash_table_lookup(http->connections, host_port);
-	if (!conn_public) {
-		struct sipe_http_connection_private *conn_private;
-		time_t current_time = time(NULL);
-		sipe_connect_setup setup = {
-			SIPE_TRANSPORT_TLS, /* TBD: we only support TLS for now */
-			host,
-			port,
-			NULL,
-			sipe_http_transport_connected,
-			sipe_http_transport_input,
-			sipe_http_transport_error
-		};
 
+	if (conn_public) {
+		/* re-establishing connection */
+		conn_private = conn_public->conn_private;
+		if (!conn_private->connection) {
+			SIPE_DEBUG_INFO("sipe_http_transport_new: re-establishing %s", host_port);
+			g_queue_remove(http->timeouts, conn_private);
+		}
+
+	} else {
+		/* new connection */
 		SIPE_DEBUG_INFO("sipe_http_transport_new: %s", host_port);
 
 		conn_public = sipe_http_connection_new(sipe_private,
 						       host,
 						       port);
-		setup.user_data = conn_public;
 
 		conn_public->conn_private = conn_private = g_new0(struct sipe_http_connection_private, 1);
 
+		conn_private->host_port  = host_port;
+
+		g_hash_table_insert(http->connections,
+				    host_port,
+				    conn_public);
+		host_port = NULL; /* conn_private takes ownership of the key */
+	}
+
+	if (!conn_private->connection) {
+		time_t current_time = time(NULL);
+		sipe_connect_setup setup = {
+			SIPE_TRANSPORT_TLS, /* TBD: we only support TLS for now */
+			host,
+			port,
+			conn_public,
+			sipe_http_transport_connected,
+			sipe_http_transport_input,
+			sipe_http_transport_error
+		};
+
+		conn_public->connected   = FALSE;
 		conn_private->connection = sipe_backend_transport_connect(SIPE_CORE_PUBLIC,
 									  &setup);
-		conn_private->host_port  = host_port;
 		conn_private->timeout    = current_time + SIPE_HTTP_DEFAULT_TIMEOUT;
 
 		g_queue_insert_sorted(http->timeouts,
@@ -241,11 +421,6 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 		/* start timeout timer if necessary */
 		if (http->next_timeout == 0)
 			start_timer(sipe_private, current_time);
-
-		g_hash_table_insert(http->connections,
-				    host_port,
-				    conn_public);
-		host_port = NULL; /* conn_private takes ownership of the key */
 	}
 
 	g_free(host_port);
