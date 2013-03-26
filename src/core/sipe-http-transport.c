@@ -356,12 +356,14 @@ static void sipe_http_transport_error(struct sipe_transport_connection *connecti
 }
 
 struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_private *sipe_private,
-							    const gchar *host,
+							    const gchar *host_in,
 							    const guint32 port)
 {
 	struct sipe_http *http;
 	struct sipe_http_connection_public *conn_public;
 	struct sipe_http_connection_private *conn_private;
+	/* host name matching should be case insensitive */
+	gchar *host = g_ascii_strdown(host_in, -1);
 	gchar *host_port = g_strdup_printf("%s:%" G_GUINT32_FORMAT, host, port);
 
 	sipe_http_init(sipe_private);
@@ -423,6 +425,7 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 	}
 
 	g_free(host_port);
+	g_free(host);
 	return(conn_public);
 }
 
