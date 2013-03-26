@@ -35,7 +35,6 @@
 #include <glib.h>
 
 #include "sipe-common.h"
-#include "http-conn.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -58,9 +57,7 @@ struct svc_request {
 	sipe_svc_callback *cb;
 	gpointer *cb_data;
 	struct sipe_http_request *request;
-	HttpConnAuth auth;
 	gchar *uri;
-	gchar *soap_action;
 };
 
 struct sipe_svc {
@@ -79,7 +76,6 @@ static void sipe_svc_request_free(struct sipe_core_private *sipe_private,
 	if (data->cb)
 		/* Callback: aborted */
 		(*data->cb)(sipe_private, NULL, NULL, NULL, data->cb_data);
-	g_free(data->soap_action);
 	g_free(data->uri);
 	g_free(data);
 }
@@ -155,6 +151,13 @@ static void sipe_svc_https_response(struct sipe_core_private *sipe_private,
 	sipe_svc_request_free(sipe_private, data);
 }
 
+/**
+ * Send GET request when @c body is NULL, otherwise send POST request
+ *
+ * @param content_type MIME type for body content (ignored when body is @c NULL)
+ * @param soap_action  SOAP action header value   (ignored when body is @c NULL)
+ * @param body         body contents              (may be @c NULL)
+ */
 static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				       struct sipe_svc_session *session,
 				       const gchar *uri,
@@ -166,52 +169,47 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				       gpointer callback_data)
 {
 	struct svc_request *data = g_new0(struct svc_request, 1);
-	gboolean ret = FALSE;
-
-	data->uri = g_strdup(uri);
-
-	if (soap_action)
-		data->soap_action = g_strdup_printf("SOAPAction: \"%s\"\r\n",
-						    soap_action);
-
-	/* re-use SIP credentials */
-	data->auth.domain   = sipe_private->authdomain;
-	data->auth.user     = sipe_private->authuser;
-	data->auth.password = sipe_private->password;
+	struct sipe_http_request *request;
 
 	if (body) {
-		data->request = sipe_http_request_post(sipe_private,
-						       uri,
-						       data->soap_action,
-						       body,
-						       content_type,
-						       sipe_svc_https_response,
-						       data);
+		gchar *headers = g_strdup_printf("SOAPAction: \"%s\"\r\n",
+						 soap_action);
+
+		request = sipe_http_request_post(sipe_private,
+						 uri,
+						 headers,
+						 body,
+						 content_type,
+						 sipe_svc_https_response,
+						 data);
+		g_free(headers);
+
 	} else {
-		data->request = sipe_http_request_get(sipe_private,
-						      uri,
-						      data->soap_action,
-						      sipe_svc_https_response,
-						      data);
+		request = sipe_http_request_get(sipe_private,
+						uri,
+						NULL,
+						sipe_svc_https_response,
+						data);
 	}
 
-	if (data->request) {
-		sipe_http_request_session(data->request, session->session);
-
+	if (request) {
 		data->internal_cb = internal_callback;
 		data->cb          = callback;
 		data->cb_data     = callback_data;
+		data->request     = request;
+		data->uri         = g_strdup(uri);
+
+		sipe_http_request_session(request, session->session);
+
 		sipe_svc_init(sipe_private);
 		sipe_private->svc->pending_requests = g_slist_prepend(sipe_private->svc->pending_requests,
 								      data);
-
-		ret = TRUE;
 	} else {
 		SIPE_DEBUG_ERROR("failed to create HTTP connection to %s", uri);
-		sipe_svc_request_free(sipe_private, data);
+		g_free(data);
 	}
 
-	return(ret);
+	return(request != NULL);
 }
 
 static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
@@ -612,7 +610,7 @@ gboolean sipe_svc_realminfo(struct sipe_core_private *sipe_private,
 	gboolean ret = sipe_svc_https_request(sipe_private,
 					      session,
 					      realminfo_uri,
-					      "text",
+					      NULL,
 					      NULL,
 					      NULL,
 					      sipe_svc_metadata_response,
@@ -632,7 +630,7 @@ gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
 	gboolean ret = sipe_svc_https_request(sipe_private,
 					      session,
 					      mex_uri,
-					      "text",
+					      NULL,
 					      NULL,
 					      NULL,
 					      sipe_svc_metadata_response,
