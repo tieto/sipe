@@ -183,8 +183,6 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 {
 	struct sipe_http_connection_public *conn_public = SIPE_HTTP_CONNECTION;
 	char *current = connection->buffer;
-	gboolean drop = FALSE;
-	gboolean next = FALSE;
 
 	/* according to the RFC remove CRLF at the beginning */
 	while (*current == '\r' || *current == '\n') {
@@ -193,16 +191,21 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 	if (current != connection->buffer)
 		sipe_utils_shrink_buffer(connection, current);
 
-	while ((current = strstr(connection->buffer, "\r\n\r\n")) != NULL) {
+	if ((current = strstr(connection->buffer, "\r\n\r\n")) != NULL) {
 		struct sipmsg *msg;
-		guint remainder;
+		gboolean next;
 
 		current += 2;
 		current[0] = '\0';
 		msg = sipmsg_parse_header(connection->buffer);
+		if (!msg) {
+			/* restore header for next try */
+			current[0] = '\r';
+			return;
+		}
 
 		/* HTTP/1.1 Transfer-Encoding: chunked */
-		if (msg && (msg->bodylen == SIPMSG_BODYLEN_CHUNKED)) {
+		if (msg->bodylen == SIPMSG_BODYLEN_CHUNKED) {
 			gchar *start        = current + 2;
 			GSList *chunks      = NULL;
 			gboolean incomplete = TRUE;
@@ -211,6 +214,7 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 			while (strlen(start) > 0) {
 				gchar *tmp;
 				guint length = g_ascii_strtoll(start, &tmp, 16);
+				guint remainder;
 				struct _chunk {
 					guint length;
 					const gchar *start;
@@ -287,10 +291,11 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 			}
 
 		} else {
-			current += 2;
-			remainder = connection->buffer_used - (current - connection->buffer);
-			if (msg && remainder >= (guint) msg->bodylen) {
+			guint remainder = connection->buffer_used - (current + 2 - connection->buffer);
+
+			if (remainder >= (guint) msg->bodylen) {
 				char *dummy = g_malloc(msg->bodylen + 1);
+				current += 2;
 				memcpy(dummy, current, msg->bodylen);
 				dummy[msg->bodylen] = '\0';
 				msg->body = dummy;
@@ -301,48 +306,42 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 							 FALSE);
 				sipe_utils_shrink_buffer(connection, current);
 			} else {
-				if (msg) {
-					SIPE_DEBUG_INFO("sipe_http_transport_input: body too short (%d < %d, strlen %" G_GSIZE_FORMAT ") - ignoring message",
-							remainder, msg->bodylen, strlen(connection->buffer));
-					sipmsg_free(msg);
-				}
+				SIPE_DEBUG_INFO("sipe_http_transport_input: body too short (%d < %d, strlen %" G_GSIZE_FORMAT ") - ignoring message",
+						remainder, msg->bodylen, strlen(connection->buffer));
 
 				/* restore header for next try */
-				current[-2] = '\r';
+				sipmsg_free(msg);
+				current[0] = '\r';
 				return;
 			}
 		}
-
-		if (sipe_strcase_equal(sipmsg_find_header(msg, "Connection"), "close"))
-			drop = TRUE;
 
 		sipe_http_request_response(conn_public,
 					   msg->response,
 					   msg->body);
 		next = sipe_http_request_pending(conn_public);
 
+		if (sipe_strcase_equal(sipmsg_find_header(msg, "Connection"), "close")) {
+			/* drop backend connection */
+			struct sipe_http_connection_private *conn_private = conn_public->conn_private;
+			SIPE_DEBUG_INFO("sipe_http_transport_input: server requested close '%s'",
+					conn_private->host_port);
+			sipe_backend_transport_disconnect(conn_private->connection);
+			conn_private->connection = NULL;
+			conn_public->connected   = FALSE;
+
+			/* if we have pending requests we need to trigger re-connect */
+			if (next)
+				sipe_http_transport_new(conn_public->sipe_private,
+							conn_public->host,
+							conn_public->port);
+
+		} else if (next) {
+			/* trigger sending of next pending request */
+			sipe_http_request_next(conn_public);
+		}
+
 		sipmsg_free(msg);
-	}
-
-
-	if (drop) {
-		/* drop backend connection */
-		struct sipe_http_connection_private *conn_private = conn_public->conn_private;
-		SIPE_DEBUG_INFO("sipe_http_transport_input: server requested close '%s'",
-				conn_private->host_port);
-		sipe_backend_transport_disconnect(conn_private->connection);
-		conn_private->connection = NULL;
-		conn_public->connected   = FALSE;
-
-		/* if we have pending requests we need to trigger re-connect */
-		if (next)
-			sipe_http_transport_new(conn_public->sipe_private,
-						conn_public->host,
-						conn_public->port);
-
-	} else if (next) {
-		/* trigger sending of next pending request */
-		sipe_http_request_next(conn_public);
 	}
 }
 
@@ -380,7 +379,7 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 
 	} else {
 		/* new connection */
-		SIPE_DEBUG_INFO("sipe_http_transport_new: %s", host_port);
+		SIPE_DEBUG_INFO("sipe_http_transport_new: new %s", host_port);
 
 		conn_public = sipe_http_connection_new(sipe_private,
 						       host,
