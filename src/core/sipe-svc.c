@@ -68,7 +68,7 @@ struct sipe_svc {
 };
 
 struct sipe_svc_session {
-	HttpSession *session;
+	struct sipe_http_session *session;
 };
 
 static void sipe_svc_request_free(struct sipe_core_private *sipe_private,
@@ -114,14 +114,14 @@ static void sipe_svc_init(struct sipe_core_private *sipe_private)
 struct sipe_svc_session *sipe_svc_session_start(void)
 {
 	struct sipe_svc_session *session = g_new0(struct sipe_svc_session, 1);
-	session->session = http_conn_session_create();
+	session->session = sipe_http_session_start();
 	return(session);
 }
 
 void sipe_svc_session_close(struct sipe_svc_session *session)
 {
 	if (session) {
-		http_conn_session_free(session->session);
+		sipe_http_session_close(session->session);
 		g_free(session);
 	}
 }
@@ -179,9 +179,6 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 	data->auth.user     = sipe_private->authuser;
 	data->auth.password = sipe_private->password;
 
-	/* keep compiler happy */
-	(void)session;
-
 	if (body) {
 		data->request = sipe_http_request_post(sipe_private,
 						       uri,
@@ -199,6 +196,8 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 	}
 
 	if (data->request) {
+		sipe_http_request_session(data->request, session->session);
+
 		data->internal_cb = internal_callback;
 		data->cb          = callback;
 		data->cb_data     = callback_data;

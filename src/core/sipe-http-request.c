@@ -190,6 +190,16 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 	return(req);
 }
 
+struct sipe_http_session *sipe_http_session_start(void)
+{
+	return(NULL);
+}
+
+void sipe_http_session_close(struct sipe_http_session *session)
+{
+	(void)session;
+}
+
 void sipe_http_request_cancel(struct sipe_http_request *request)
 {
 	struct sipe_http_connection *conn = request->connection;
@@ -200,6 +210,13 @@ void sipe_http_request_cancel(struct sipe_http_request *request)
 	request->cb = NULL;
 
 	sipe_http_request_free(conn->public.sipe_private, request);
+}
+
+void sipe_http_request_session(struct sipe_http_request *request,
+			       const struct sipe_http_session *session)
+{
+	(void)request;
+	(void)session;
 }
 
 /*

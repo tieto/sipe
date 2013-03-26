@@ -32,6 +32,7 @@
 /* Forward declarations */
 struct sipe_core_private;
 struct sipe_http_request;
+struct sipe_http_session;
 
 /**
  * HTTP response callback
@@ -57,11 +58,18 @@ typedef void (sipe_http_response_callback)(struct sipe_core_private *sipe_privat
 void sipe_http_free(struct sipe_core_private *sipe_private);
 
 /**
- * Cancel pending HTTP request
+ * Start HTTP session
  *
- * @param pointer to opaque HTTP request data structure
+ * @return pointer to opaque HTTP session data structure
  */
-void sipe_http_request_cancel(struct sipe_http_request *request);
+struct sipe_http_session *sipe_http_session_start(void);
+
+/**
+ * Close HTTP session
+ *
+ * @param session pointer to opaque HTTP session data structure
+ */
+void sipe_http_session_close(struct sipe_http_session *session);
 
 /**
  * Create HTTP GET request
@@ -96,3 +104,19 @@ struct sipe_http_request *sipe_http_request_post(struct sipe_core_private *sipe_
 						 const gchar *content_type,
 						 sipe_http_response_callback *callback,
 						 gpointer callback_data);
+
+/**
+ * Cancel pending HTTP request
+ *
+ * @param pointer to opaque HTTP request data structure
+ */
+void sipe_http_request_cancel(struct sipe_http_request *request);
+
+/**
+ * Assign request to HTTP session
+ *
+ * @param request pointer to opaque HTTP request data structure
+ * @param session pointer to opaque HTTP session data structure
+ */
+void sipe_http_request_session(struct sipe_http_request *request,
+			       const struct sipe_http_session *session);
