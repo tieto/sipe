@@ -33,6 +33,7 @@
  */
 
 /* Forward declarations */
+struct sipmsg;
 struct sipe_core_private;
 struct sipe_http_connection_private;
 struct sipe_http_request;
@@ -77,12 +78,10 @@ void sipe_http_request_next(struct sipe_http_connection_public *conn_public);
  * HTTP response received
  *
  * @param conn_public HTTP connection public data
- * @param status      status code
- * @param body        response body
+ * @param msg         parsed message
  */
 void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
-				guint status,
-				const gchar *body);
+				struct sipmsg *msg);
 
 /**
  * HTTP connection shutdown

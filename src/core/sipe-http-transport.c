@@ -316,9 +316,7 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 			}
 		}
 
-		sipe_http_request_response(conn_public,
-					   msg->response,
-					   msg->body);
+		sipe_http_request_response(conn_public, msg);
 		next = sipe_http_request_pending(conn_public);
 
 		if (sipe_strcase_equal(sipmsg_find_header(msg, "Connection"), "close")) {

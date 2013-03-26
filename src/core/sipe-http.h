@@ -119,4 +119,4 @@ void sipe_http_request_cancel(struct sipe_http_request *request);
  * @param session pointer to opaque HTTP session data structure
  */
 void sipe_http_request_session(struct sipe_http_request *request,
-			       const struct sipe_http_session *session);
+			       struct sipe_http_session *session);

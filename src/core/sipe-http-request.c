@@ -29,6 +29,8 @@
 
 #include <glib.h>
 
+#include "sipmsg.h"
+#include "sipe-backend.h"
 #include "sipe-http.h"
 
 #define _SIPE_HTTP_PRIVATE_IF_REQUEST
@@ -41,8 +43,14 @@ struct sipe_http_connection {
 	GSList *pending_requests;
 };
 
+struct sipe_http_session {
+	gchar *cookie; /* extremely simplistic cookie jar :-) */
+};
+
 struct sipe_http_request {
 	struct sipe_http_connection *connection;
+
+	struct sipe_http_session *session;
 
 	gchar *path;
 	gchar *headers;
@@ -84,6 +92,7 @@ static void sipe_http_request_send(struct sipe_http_connection *conn)
 	struct sipe_http_request *req = conn->pending_requests->data;
 	gchar *header;
 	gchar *content = NULL;
+	gchar *cookie  = NULL;
 
 	if (req->body)
 		content = g_strdup_printf("Content-Length: %" G_GSIZE_FORMAT "\r\n"
@@ -91,15 +100,20 @@ static void sipe_http_request_send(struct sipe_http_connection *conn)
 					  strlen(req->body),
 					  req->content_type);
 
+	if (req->session && req->session->cookie)
+		cookie = g_strdup_printf("Cookie: %s\r\n", req->session->cookie);
+
 	header = g_strdup_printf("%s /%s HTTP/1.1\r\n"
 				 "Host: %s\r\n"
 				 "User-Agent: Sipe/" PACKAGE_VERSION "\r\n"
-				 "%s%s",
+				 "%s%s%s",
 				 content ? "POST" : "GET",
 				 req->path,
 				 conn->public.host,
 				 req->headers ? req->headers : "",
+				 cookie ? cookie : "",
 				 content ? content : "");
+	g_free(cookie);
 	g_free(content);
 
 	sipe_http_transport_send((struct sipe_http_connection_public *) conn,
@@ -119,15 +133,47 @@ void sipe_http_request_next(struct sipe_http_connection_public *conn_public)
 }
 
 void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
-				guint status,
-				const gchar *body)
+				struct sipmsg *msg)
 {
 	struct sipe_core_private *sipe_private = conn_public->sipe_private;
 	struct sipe_http_connection *conn = (struct sipe_http_connection *) conn_public;
 	struct sipe_http_request *req = conn->pending_requests->data;
+	const gchar *hdr;
+
+	/* Set-Cookie: RMID=732423sdfs73242; expires=Fri, 31-Dec-2010 23:59:59 GMT; path=/; domain=.example.net */
+	if (req->session &&
+	    ((hdr = sipmsg_find_header(msg, "Set-Cookie")) != NULL)) {
+		gchar **parts, **current;
+		const gchar *part;
+		gchar *new = NULL;
+
+		g_free(req->session->cookie);
+		req->session->cookie = NULL;
+
+		current = parts = g_strsplit(hdr, ";", 0);
+		while ((part = *current++) != NULL) {
+			/* strip these parts from cookie */
+			if (!(strstr(part, "path=")    ||
+			      strstr(part, "domain=")  ||
+			      strstr(part, "expires=") ||
+			      strstr(part, "secure"))) {
+				gchar *tmp = new;
+				new = new ?
+					g_strconcat(new, ";", part, NULL) :
+					g_strdup(part);
+				g_free(tmp);
+			}
+		}
+		g_strfreev(parts);
+
+		if (new) {
+			req->session->cookie = new;
+			SIPE_DEBUG_INFO("sipe_http_request_response: cookie: %s", new);
+		}
+	}
 
 	/* Callback: success */
-	(*req->cb)(sipe_private, status, body, req->cb_data);
+	(*req->cb)(sipe_private, msg->response, msg->body, req->cb_data);
 
 	/* remove completed request */
 	sipe_http_request_cancel(req);
@@ -192,12 +238,15 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 
 struct sipe_http_session *sipe_http_session_start(void)
 {
-	return(NULL);
+	return(g_new0(struct sipe_http_session, 1));
 }
 
 void sipe_http_session_close(struct sipe_http_session *session)
 {
-	(void)session;
+	if (session) {
+		g_free(session->cookie);
+		g_free(session);
+	}
 }
 
 void sipe_http_request_cancel(struct sipe_http_request *request)
@@ -213,10 +262,9 @@ void sipe_http_request_cancel(struct sipe_http_request *request)
 }
 
 void sipe_http_request_session(struct sipe_http_request *request,
-			       const struct sipe_http_session *session)
+			       struct sipe_http_session *session)
 {
-	(void)request;
-	(void)session;
+	request->session = session;
 }
 
 /*
