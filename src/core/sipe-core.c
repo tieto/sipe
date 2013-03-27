@@ -97,6 +97,12 @@
 #include "sipe-utils.h"
 #include "sipe-webticket.h"
 
+#ifdef PACKAGE_GIT_COMMIT
+#define SIPE_CORE_VERSION PACKAGE_VERSION " (git commit " PACKAGE_GIT_COMMIT ")"
+#else
+#define SIPE_CORE_VERSION PACKAGE_VERSION
+#endif
+
 /* locale_dir is unused if ENABLE_NLS is not defined */
 void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
 {
@@ -133,7 +139,7 @@ gchar *sipe_core_about(void)
 		 * into the format string. This requires more translatable
 		 * texts but it makes the translations less error prone.
 		 */
-		"<b><font size=\"+1\">SIPE " PACKAGE_VERSION " </font></b><br/>"
+		"<b><font size=\"+1\">SIPE " SIPE_CORE_VERSION " </font></b><br/>"
 		"<br/>"
 		/* 1 */   "%s:<br/>"
 		"<li> - Microsoft Lync Server 2010</li><br/>"
@@ -253,7 +259,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	struct sipe_core_private *sipe_private;
 	gchar **user_domain;
 
-	SIPE_DEBUG_INFO("sipe_core_allocate: SIPE version " PACKAGE_VERSION " signin_name '%s'", signin_name);
+	SIPE_DEBUG_INFO("sipe_core_allocate: SIPE version " SIPE_CORE_VERSION " signin_name '%s'", signin_name);
 
 	/* ensure that sign-in name doesn't contain invalid characters */
 	if (strpbrk(signin_name, "\t\v\r\n") != NULL) {

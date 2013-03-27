@@ -15,6 +15,7 @@ autom4te*
 aclocal.m4
 compile
 depcomp
+GITVERSION
 install-sh
 intltool-extract*
 intltool-merge*

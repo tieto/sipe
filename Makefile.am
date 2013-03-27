@@ -20,6 +20,7 @@ CLEANFILES = \
 
 MAINTAINERCLEANFILES = \
 	compile \
+	GITVERSION \
 	INSTALL \
 	aclocal.m4 \
 	ltmain.sh \
