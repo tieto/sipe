@@ -581,7 +581,8 @@ static void http_conn_input(struct sipe_transport_connection *conn)
 	if (cur != conn->buffer)
 		sipe_utils_shrink_buffer(conn, cur);
 
-	while ((cur = strstr(conn->buffer, "\r\n\r\n")) != NULL) {
+	/* there can only be one response in the buffer at one time */
+	if ((cur = strstr(conn->buffer, "\r\n\r\n")) != NULL) {
 		struct sipmsg *msg;
 		guint remainder;
 
@@ -710,11 +711,15 @@ static void http_conn_input(struct sipe_transport_connection *conn)
 	}
 
 	if (http_conn->closed) {
+		gboolean closing_clone = http_conn != http_conn->do_close;
 		http_conn_close(http_conn->do_close, "Server closed connection");
-		http_conn->do_close = NULL;
+		if (closing_clone)
+			http_conn->do_close = NULL;
+		/* http_conn is invalid if closing_clone == FALSE */
 	} else if (http_conn->do_close) {
+		/* user initiated: http_conn == http_conn->do_close */
 		http_conn_close(http_conn->do_close, "User initiated");
-		http_conn->do_close = NULL;
+		/* http_conn is invalid */
 	}
 }
 
