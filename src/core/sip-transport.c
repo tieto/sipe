@@ -1142,14 +1142,14 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			{
 				gchar *redirect = parse_from(sipmsg_find_header(msg, "Contact"));
 
-				SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
+				SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully (with redirect)");
 
 				if (redirect && (g_ascii_strncasecmp("sip:", redirect, 4) == 0)) {
 					gchar **parts = g_strsplit(redirect + 4, ";", 0);
 					gchar **tmp;
 					gchar *hostname;
 					int port = 0;
-					guint transport = SIPE_TRANSPORT_TLS;
+					guint transport_type = SIPE_TRANSPORT_TLS;
 					int i = 1;
 
 					tmp = g_strsplit(parts[0], ":", 0);
@@ -1162,7 +1162,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						if (tmp[1]) {
 							if (g_ascii_strcasecmp("transport", tmp[0]) == 0) {
 								if (g_ascii_strcasecmp("tcp", tmp[1]) == 0) {
-									transport = SIPE_TRANSPORT_TCP;
+									transport_type = SIPE_TRANSPORT_TCP;
 								}
 							}
 						}
@@ -1173,11 +1173,13 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 					/* Close old connection */
 					sipe_core_connection_cleanup(sipe_private);
+					/* transport and sipe_private->transport are invalid after this */
 
 					/* Create new connection */
-					sipe_server_register(sipe_private, transport, hostname, port);
+					sipe_server_register(sipe_private, transport_type, hostname, port);
+					/* sipe_private->transport has a new value */
 					SIPE_DEBUG_INFO("process_register_response: redirected to host %s port %d transport %d",
-							hostname, port, transport);
+							hostname, port, transport_type);
 				}
 				g_free(redirect);
 			}
@@ -1547,10 +1549,17 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					SIPE_DEBUG_INFO_NOFORMAT("process_input_message: we have a transaction callback");
 					/* call the callback to process response */
 					(trans->callback)(sipe_private, msg, trans);
+					/* transport && trans no longer valid after redirect */
 				}
 
-				SIPE_DEBUG_INFO("process_input_message: removing CSeq %d", transport->cseq);
-				transactions_remove(sipe_private, trans);
+				/*
+				 * Redirect case: sipe_private->transport is
+				 * the new transport with empty queue
+				 */
+				if (sipe_private->transport->transactions) {
+					SIPE_DEBUG_INFO("process_input_message: removing CSeq %d", transport->cseq);
+					transactions_remove(sipe_private, trans);
+				}
 			}
 		} else {
 			SIPE_DEBUG_INFO_NOFORMAT("process_input_message: received response to unknown transaction");
@@ -1627,6 +1636,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 				if (sip_sec_verify_signature(transport->registrar.gssapi_context, signature_input_str, rspauth)) {
 					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: signature of incoming message validated");
 					process_input_message(sipe_private, msg);
+					/* transport is invalid after redirect */
 				} else {
 					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: signature of incoming message is invalid.");
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
@@ -1658,8 +1668,9 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 
 		sipmsg_free(msg);
 
-		/* Redirect: old content of "transport" is no longer valid */
+		/* Redirect: old content of "transport" & "conn" is no longer valid */
 		transport = sipe_private->transport;
+		conn      = transport->connection;
 	}
 }
 
