@@ -149,7 +149,7 @@ gchar *sipe_core_about(void)
 		"<li> - Reuters Messaging</li><br/>"
 		"<br/>"
 		/* 2 */   "%s: <a href=\"" PACKAGE_URL "\">" PACKAGE_URL "</a><br/>"
-		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/projects/sipe/forums/forum/688534\">%s</a><br/>"
+		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/p/sipe/discussion/688534/\">%s</a><br/>"
 		/* 5,6 */   "%s: <a href=\"" PACKAGE_BUGREPORT "\">%s</a><br/>"
 		/* 7 */   "%s: <a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.net</a><br/>"
 		/* 8 */   "%s: GPLv2+<br/>"

@@ -75,7 +75,9 @@ Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -96,7 +98,9 @@ Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -115,7 +119,9 @@ Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -133,7 +139,9 @@ Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -151,7 +159,9 @@ Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -249,6 +259,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Mar 29 2013 J. D. User <jduser@noreply.com> 1.15.0-*git*
+- update package description texts
+
 * Sat Mar 09 2013 J. D. User <jduser@noreply.com> 1.15.0
 - update to 1.15.0
 
