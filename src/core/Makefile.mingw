@@ -39,7 +39,7 @@ DLL_INSTALL_DIR = $(PURPLE_INSTALL_PLUGINS_DIR)
 # dump higher level defines
 DEFINES  =
 DEFINES += -DENABLE_NLS=1
-DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/tracker/?atid=949931\&group_id=194563\"
+DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/p/sipe/bugs/\"
 DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
 DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"

@@ -14,7 +14,7 @@ m4_define([SIPE_HOMEPAGE], [http://sipe.sourceforge.net/])
 
 dnl initialize package name, version, bugtracker & homepage
 AC_INIT([pidgin-sipe], SIPE_VERSION,
-	[https://sourceforge.net/tracker/?atid=949931&group_id=194563], [],
+	[https://sourceforge.net/p/sipe/bugs/], [],
 	SIPE_HOMEPAGE)
 
 AC_DEFINE([SIPE_TRANSLATIONS_URL],

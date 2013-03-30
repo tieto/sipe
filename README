@@ -1,17 +1,19 @@
 Introduction
 ============
 
-pidgin-sipe is a third-party plugin for the Pidgin multi-protocol instant
-messenger. It implements the extended version of SIP/SIMPLE used by various
-products:
+pidgin-sipe is a third-party plugin for the Pidgin/Adium/Miranda/Telepathy
+multi-protocol instant messaging clients/frameworks. It implements the
+extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
 
 With this plugin you should be able to replace your Microsoft Office
-Communicator client with Pidgin.
+Communicator client with Pidgin/Adium/Miranda/Telepathy.
 
 
 Features
@@ -31,15 +33,21 @@ The plugin has support for
     * TLS encryption support
     * Translated to many languages
 
+The plugin has backends for
+
+    * Pidgin/Finch (libpurple)
+    * Adium (libpurple)
+    * Miranda
+    * Telepathy (under development)
 
 Advantages over Office Communicator products
 ============================================
 
     * Available on broader range of platforms: Linux, *BSD, Maemo, OSX,
       commercial UNIX, Windows.
-    * Ability to simultaneously connect to several Office Communicator 
+    * Ability to simultaneously connect to several Office Communicator
       accounts in addition to public IM network accounts like MSN, AOL,
-      Yahoo. For example one account is in vendor company and another is 
+      Yahoo. For example one account is in vendor company and another is
       in client company.
     * Keeps history of communications in environments without Outlook. For
       example in companies where Lotus Notes is deployed as a default
@@ -54,11 +62,11 @@ Support
 The Pidgin project does not support third-party plugins! If you have problems
 with this plugin then please check out the support forums:
 
-    http://sf.net/projects/sipe/forums/
+    http://sourceforge.net/p/sipe/discussion/
 
 Bugs should be reported here:
 
-    https://sourceforge.net/tracker/?atid=949931&group_id=194563
+    https://sourceforge.net/p/sipe/bugs/
 
 
 Localization
