@@ -124,6 +124,7 @@ void sipe_svc_session_close(struct sipe_svc_session *session)
 
 static void sipe_svc_https_response(struct sipe_core_private *sipe_private,
 				    guint status,
+				    SIPE_UNUSED_PARAMETER GSList *headers,
 				    const gchar *body,
 				    gpointer callback_data)
 {

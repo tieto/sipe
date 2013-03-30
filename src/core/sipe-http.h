@@ -39,11 +39,13 @@ struct sipe_http_session;
  *
  * @param sipe_private  SIPE core private data
  * @param status        status code
- * @param body          response body (@c NULL if request aborted)
+ * @param headers       response headers (@c NULL if request aborted)
+ * @param body          response body    (@c NULL if request aborted)
  * @param callback_data callback data
  */
 typedef void (sipe_http_response_callback)(struct sipe_core_private *sipe_private,
 					   guint status,
+					   GSList *headers,
 					   const gchar *body,
 					   gpointer callback_data);
 

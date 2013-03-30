@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,6 @@
 
 #include <glib.h>
 
-#include "http-conn.h"
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
@@ -44,6 +43,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-group.h"
+#include "sipe-http.h"
 #include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2005.h"
@@ -58,10 +58,9 @@
 #include "sipe-xml.h"
 
 struct photo_response_data {
-	struct sipe_core_private *sipe_private;
 	gchar *who;
 	gchar *photo_hash;
-	HttpConn *conn;
+	struct sipe_http_request *request;
 };
 
 static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
@@ -1234,20 +1233,25 @@ static void photo_response_data_free(struct photo_response_data *data)
 {
 	g_free(data->who);
 	g_free(data->photo_hash);
-	if (data->conn) {
-		http_conn_free(data->conn);
+	if (data->request) {
+		sipe_http_request_cancel(data->request);
 	}
 	g_free(data);
 }
 
-static void process_buddy_photo_response(int return_code, const char *body,
-		GSList *headers, SIPE_UNUSED_PARAMETER HttpConn *conn, void *data)
+static void process_buddy_photo_response(struct sipe_core_private *sipe_private,
+					 guint status,
+					 GSList *headers,
+					 const char *body,
+					 gpointer data)
 {
-	struct photo_response_data *rdata = (struct photo_response_data *)data;
-	struct sipe_core_private *sipe_private = rdata->sipe_private;
+	struct photo_response_data *rdata = (struct photo_response_data *) data;
 
-	if (return_code == 200) {
-		const gchar *len_str = sipe_utils_nameval_find(headers, "Content-Length");
+	rdata->request = NULL;
+
+	if (status == SIPE_HTTP_STATUS_OK) {
+		const gchar *len_str = sipe_utils_nameval_find(headers,
+							       "Content-Length");
 		if (len_str) {
 			gsize photo_size = atoi(len_str);
 			gpointer photo = g_new(char, photo_size);
@@ -1266,10 +1270,6 @@ static void process_buddy_photo_response(int return_code, const char *body,
 
 	sipe_private->pending_photo_requests =
 		g_slist_remove(sipe_private->pending_photo_requests, rdata);
-
-	/* Mark connection for close and let it be freed at http_conn_input(). */
-	http_conn_set_close(rdata->conn);
-	rdata->conn = NULL;
 
 	photo_response_data_free(rdata);
 }
@@ -1343,26 +1343,17 @@ static void get_photo_ab_entry_response(struct sipe_core_private *sipe_private,
 		gchar *x_ms_webticket_header = create_x_ms_webticket_header(mdd->wsse_security);
 
 		struct photo_response_data *data = g_new(struct photo_response_data, 1);
-		data->sipe_private = sipe_private;
 		data->who = g_strdup(mdd->other);
 		data->photo_hash = photo_hash;
 		photo_hash = NULL;
 
-		data->conn = http_conn_create(
-			SIPE_CORE_PUBLIC,
-			NULL, /* HttpSession */
-			HTTP_CONN_GET,
-			HTTP_CONN_SSL,
-			HTTP_CONN_NO_REDIRECT,
-			photo_url,
-			NULL, /* body */
-			NULL, /* content-type */
-			x_ms_webticket_header,
-			NULL, /* auth */
-			process_buddy_photo_response,
-			data);
+		data->request = sipe_http_request_get(sipe_private,
+						      photo_url,
+						      x_ms_webticket_header,
+						      process_buddy_photo_response,
+						      data);
 
-		if (data->conn) {
+		if (data->request) {
 			sipe_private->pending_photo_requests =
 				g_slist_append(sipe_private->pending_photo_requests, data);
 		} else {

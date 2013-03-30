@@ -79,7 +79,7 @@ static void sipe_http_request_free(struct sipe_core_private *sipe_private,
 {
 	if (req->cb)
 		/* Callback: aborted */
-		(*req->cb)(sipe_private, 0, NULL, req->cb_data);
+		(*req->cb)(sipe_private, 0, NULL, NULL, req->cb_data);
 	g_free(req->path);
 	g_free(req->headers);
 	g_free(req->body);
@@ -173,7 +173,11 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 	}
 
 	/* Callback: success */
-	(*req->cb)(sipe_private, msg->response, msg->body, req->cb_data);
+	(*req->cb)(sipe_private,
+		   msg->response,
+		   msg->headers,
+		   msg->body,
+		   req->cb_data);
 
 	/* remove completed request */
 	sipe_http_request_cancel(req);
