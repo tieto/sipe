@@ -138,7 +138,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\http-conn.c" />
     <ClCompile Include="src\core\md4.c" />
     <ClCompile Include="src\core\sdpmsg.c" />
     <ClCompile Include="src\core\sip-csta.c" />
@@ -214,7 +213,6 @@
     <ClCompile Include="src\miranda\sipe-miranda.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\http-conn.h" />
     <ClInclude Include="src\core\md4.h" />
     <ClInclude Include="src\core\sdpmsg.h" />
     <ClInclude Include="src\core\sip-csta.h" />

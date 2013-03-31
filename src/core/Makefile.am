@@ -10,8 +10,6 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 libsipe_core_la_SOURCES = \
-	http-conn.h \
-	http-conn.c \
 	sipmsg.h \
 	sipmsg.c \
 	sip-csta.h \

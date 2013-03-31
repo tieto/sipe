@@ -70,8 +70,7 @@ PURPLE_INCLUDE_PATHS += -I$(PURPLE_TOP) \
 ##
 ##  SOURCES, OBJECTS
 ##
-CLEAN_C_SRC = 		http-conn.c \
-			sip-soap.c \
+CLEAN_C_SRC =		sip-soap.c \
 			sip-transport.c \
 			sipe-conf.c \
 			sipe-core.c \
