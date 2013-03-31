@@ -59,7 +59,11 @@ struct sipe_http_request {
 
 	sipe_http_response_callback *cb;
 	gpointer cb_data;
+
+	guint32 flags;
 };
+
+#define SIPE_HTTP_REQUEST_FLAG_FIRST 0x00000001
 
 struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_private *sipe_private,
 							     const gchar *host,
@@ -213,7 +217,6 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 {
 	struct sipe_http_request *req = g_new0(struct sipe_http_request, 1);
 	struct sipe_http_connection *conn;
-	gboolean initial;
 
 	req->path                 = g_strdup(path);
 	if (headers)
@@ -229,15 +232,22 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 	req->connection = conn = (struct sipe_http_connection *) sipe_http_transport_new(sipe_private,
 											 host,
 											 port);
-	initial = conn->pending_requests == NULL;
+	if (conn->pending_requests == NULL)
+		req->flags = SIPE_HTTP_REQUEST_FLAG_FIRST;
 
 	conn->pending_requests = g_slist_append(conn->pending_requests, req);
 
-	/* pass first request on already opened connection through directly */
-	if (initial && conn->public.connected)
-		sipe_http_request_send(conn);
-
 	return(req);
+}
+
+void sipe_http_request_ready(struct sipe_http_request *request)
+{
+	struct sipe_http_connection *conn = request->connection;
+
+	/* pass first request on already opened connection through directly */
+	if ((request->flags & SIPE_HTTP_REQUEST_FLAG_FIRST) &&
+	    conn->public.connected)
+		sipe_http_request_send(conn);
 }
 
 struct sipe_http_session *sipe_http_session_start(void)

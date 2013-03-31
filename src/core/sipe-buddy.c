@@ -1356,6 +1356,7 @@ static void get_photo_ab_entry_response(struct sipe_core_private *sipe_private,
 		if (data->request) {
 			sipe_private->pending_photo_requests =
 				g_slist_append(sipe_private->pending_photo_requests, data);
+			sipe_http_request_ready(data->request);
 		} else {
 			photo_response_data_free(data);
 		}

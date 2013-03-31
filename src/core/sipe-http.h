@@ -49,7 +49,7 @@ typedef void (sipe_http_response_callback)(struct sipe_core_private *sipe_privat
 					   const gchar *body,
 					   gpointer callback_data);
 
-/* HTTP status codes */
+/* HTTP response status codes */
 #define SIPE_HTTP_STATUS_OK 200
 
 /**
@@ -76,9 +76,11 @@ void sipe_http_session_close(struct sipe_http_session *session);
 /**
  * Create HTTP GET request
  *
- * @param sipe_private SIPE core private data
- * @param uri          URI
- * @param headers      additional headers (may be @c NULL)
+ * @param sipe_private  SIPE core private data
+ * @param uri           URI
+ * @param headers       additional headers (may be @c NULL)
+ * @param callback      callback function
+ * @param callback_data callback data
  *
  * @return pointer to opaque HTTP request data structure (@c NULL if failed)
  */
@@ -91,11 +93,13 @@ struct sipe_http_request *sipe_http_request_get(struct sipe_core_private *sipe_p
 /**
  * Create HTTP POST request
  *
- * @param sipe_private SIPE core private data
- * @param uri          URI
- * @param headers      additional headers (may be @c NULL)
- * @param body         body contents
- * @param content_type body content type
+ * @param sipe_private  SIPE core private data
+ * @param uri           URI
+ * @param headers       additional headers (may be @c NULL)
+ * @param body          body contents
+ * @param content_type  body content type
+ * @param callback      callback function
+ * @param callback_data callback data
  *
  * @return pointer to opaque HTTP request data structure (@c NULL if failed)
  */
@@ -106,6 +110,13 @@ struct sipe_http_request *sipe_http_request_post(struct sipe_core_private *sipe_
 						 const gchar *content_type,
 						 sipe_http_response_callback *callback,
 						 gpointer callback_data);
+
+/**
+ * HTTP request is ready to be sent
+ *
+ * @param pointer to opaque HTTP request data structure
+ */
+void sipe_http_request_ready(struct sipe_http_request *request);
 
 /**
  * Cancel pending HTTP request

@@ -200,11 +200,13 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 		data->request     = request;
 		data->uri         = g_strdup(uri);
 
-		sipe_http_request_session(request, session->session);
-
 		sipe_svc_init(sipe_private);
 		sipe_private->svc->pending_requests = g_slist_prepend(sipe_private->svc->pending_requests,
 								      data);
+
+		sipe_http_request_session(request, session->session);
+		sipe_http_request_ready(request);
+
 	} else {
 		SIPE_DEBUG_ERROR("failed to create HTTP connection to %s", uri);
 		g_free(data);
