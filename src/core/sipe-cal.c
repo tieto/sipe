@@ -38,6 +38,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-cal.h"
+#include "sipe-http.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
@@ -203,6 +204,11 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 	if (cal->http_session) {
 		http_conn_session_free(cal->http_session);
 	}
+
+	if (cal->request)
+		sipe_http_request_cancel(cal->request);
+	if (cal->session)
+		sipe_http_session_close(cal->session);
 
 	g_free(cal);
 }
@@ -1149,6 +1155,16 @@ void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private)
 				      UPDATE_CALENDAR_DELAY,
 				      (sipe_schedule_action) sipe_core_update_calendar,
 				      NULL);
+}
+
+void sipe_cal_http_authentication(struct sipe_calendar *cal)
+{
+	if (cal->auth) {
+		sipe_http_request_authentication(cal->request,
+						 cal->auth->domain,
+						 cal->auth->user,
+						 cal->auth->password);
+	}
 }
 
 /*

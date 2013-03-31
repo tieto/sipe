@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,8 @@ struct http_conn_struct;
 struct http_session_struct;
 struct sipe_buddy;
 struct sipe_core_private;
+struct sipe_http_request;
+struct sipe_http_session;
 struct _sipe_xml;
 
 /* Calendar statuses */
@@ -80,6 +82,9 @@ struct sipe_calendar {
 
 	struct http_session_struct *http_session;
 	struct http_conn_struct *http_conn;
+
+	struct sipe_http_session *session;
+	struct sipe_http_request *request;
 
 	time_t fb_start;
 	/* hex form */
@@ -192,3 +197,8 @@ void sipe_cal_presence_publish(struct sipe_core_private *sipe_private,
  * Schedule calendar update
  */
 void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private);
+
+/**
+ * Set authentication for HTTP request
+ */
+void sipe_cal_http_authentication(struct sipe_calendar *cal);

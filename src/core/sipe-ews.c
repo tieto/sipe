@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010, 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -49,13 +49,13 @@ be great to implement too.
 
 #include <glib.h>
 
-#include "http-conn.h"
 #include "sipe-backend.h"
 #include "sipe-common.h"
 #include "sipe-cal.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-ews.h"
+#include "sipe-http.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -175,23 +175,19 @@ sipe_ews_get_oof_note(struct sipe_calendar *cal)
 static void
 sipe_ews_run_state_machine(struct sipe_calendar *cal);
 
-static void
-sipe_ews_process_avail_response(int return_code,
-				const char *body,
-				SIPE_UNUSED_PARAMETER GSList *headers,
-				HttpConn *conn,
-				void *data)
+static void sipe_ews_process_avail_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+					    guint status,
+					    SIPE_UNUSED_PARAMETER GSList *headers,
+					    const gchar *body,
+					    gpointer data)
 {
 	struct sipe_calendar *cal = data;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_avail_response: cb started.");
 
-	if(!sipe_strequal(cal->as_url, cal->oof_url)) { /* whether reuse conn */
-		http_conn_set_close(conn);
-		cal->http_conn = NULL;
-	}
+	cal->request = NULL;
 
-	if (return_code == 200 && body) {
+	if ((status == SIPE_HTTP_STATUS_OK) && body) {
 		const sipe_xml *node;
 		const sipe_xml *resp;
 		/** ref: [MS-OXWAVLS] */
@@ -283,29 +279,24 @@ Envelope/Body/GetUserAvailabilityResponse/FreeBusyResponseArray/FreeBusyResponse
 		sipe_ews_run_state_machine(cal);
 
 	} else {
-		if (return_code < 0) {
-			cal->http_conn = NULL;
-		}
 		cal->state = SIPE_EWS_STATE_AVAILABILITY_FAILURE;
 		sipe_ews_run_state_machine(cal);
 	}
 }
 
-static void
-sipe_ews_process_oof_response(int return_code,
-			      const char *body,
-			      SIPE_UNUSED_PARAMETER GSList *headers,
-			      HttpConn *conn,
-			      void *data)
+static void sipe_ews_process_oof_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+					  guint status,
+					  SIPE_UNUSED_PARAMETER GSList *headers,
+					  const gchar *body,
+					  gpointer data)
 {
 	struct sipe_calendar *cal = data;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_oof_response: cb started.");
 
-	http_conn_set_close(conn);
-	cal->http_conn = NULL;
+	cal->request = NULL;
 
-	if (return_code == 200 && body) {
+	if ((status == SIPE_HTTP_STATUS_OK) && body) {
 		char *old_note;
 		const sipe_xml *resp;
 		const sipe_xml *xn_duration;
@@ -370,29 +361,24 @@ sipe_ews_process_oof_response(int return_code,
 		sipe_ews_run_state_machine(cal);
 
 	} else {
-		if (return_code < 0) {
-			cal->http_conn = NULL;
-		}
 		cal->state = SIPE_EWS_STATE_OOF_FAILURE;
 		sipe_ews_run_state_machine(cal);
 	}
 }
 
-static void
-sipe_ews_process_autodiscover(int return_code,
-			      const char *body,
-			      SIPE_UNUSED_PARAMETER GSList *headers,
-			      HttpConn *conn,
-			      void *data)
+static void sipe_ews_process_autodiscover(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+					  guint status,
+					  SIPE_UNUSED_PARAMETER GSList *headers,
+					  const gchar *body,
+					  gpointer data)
 {
 	struct sipe_calendar *cal = data;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_autodiscover: cb started.");
 
-	http_conn_set_close(conn);
-	cal->http_conn = NULL;
+	cal->request = NULL;
 
-	if (return_code == 200 && body) {
+	if ((status == SIPE_HTTP_STATUS_OK) && body) {
 		const sipe_xml *node;
 		/** ref: [MS-OXDSCLI] */
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
@@ -433,9 +419,6 @@ sipe_ews_process_autodiscover(int return_code,
 		sipe_ews_run_state_machine(cal);
 
 	} else {
-		if (return_code < 0) {
-			cal->http_conn = NULL;
-		}
 		switch (cal->auto_disco_method) {
 			case 1:
 				cal->state = SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE; break;
@@ -446,33 +429,35 @@ sipe_ews_process_autodiscover(int return_code,
 	}
 }
 
-static void
-sipe_ews_do_autodiscover(struct sipe_calendar *cal,
-			 const char* autodiscover_url)
+static void sipe_ews_send_http_request(struct sipe_calendar *cal)
 {
-	char *body;
-
-	SIPE_DEBUG_INFO("sipe_ews_do_autodiscover: going autodiscover url=%s", autodiscover_url ? autodiscover_url : "");
-
-	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, cal->email);
-	cal->http_conn = http_conn_create(
-				 (struct sipe_core_public *) cal->sipe_private,
-				 NULL, /* HttpSession */
-				 HTTP_CONN_POST,
-				 HTTP_CONN_SSL,
-				 HTTP_CONN_ALLOW_REDIRECT,
-				 autodiscover_url,
-				 body,
-				 "text/xml",
-				 NULL,
-				 cal->auth,
-				 sipe_ews_process_autodiscover,
-				 cal);
-	g_free(body);
+	sipe_cal_http_authentication(cal);
+	sipe_http_request_allow_redirect(cal->request);
+	sipe_http_request_ready(cal->request);
 }
 
-static void
-sipe_ews_do_avail_request(struct sipe_calendar *cal)
+static void sipe_ews_do_autodiscover(struct sipe_calendar *cal,
+				     const gchar *autodiscover_url)
+{
+	gchar *body;
+
+	SIPE_DEBUG_INFO("sipe_ews_do_autodiscover: going autodiscover url=%s",
+			autodiscover_url ? autodiscover_url : "");
+
+	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, cal->email);
+	cal->request = sipe_http_request_post(cal->sipe_private,
+					      autodiscover_url,
+					      NULL,
+					      body,
+					      "text/xml",
+					      sipe_ews_process_autodiscover,
+					      cal);
+	g_free(body);
+
+	sipe_ews_send_http_request(cal);
+}
+
+static void sipe_ews_do_avail_request(struct sipe_calendar *cal)
 {
 	if (cal->as_url) {
 		char *body;
@@ -498,58 +483,39 @@ sipe_ews_do_avail_request(struct sipe_calendar *cal)
 		end_str = sipe_utils_time_to_str(end);
 
 		body = g_strdup_printf(SIPE_EWS_USER_AVAILABILITY_REQUEST, cal->email, start_str, end_str);
-		cal->http_conn = http_conn_create(
-					 (struct sipe_core_public *) cal->sipe_private,
-					 NULL, /* HttpSession */
-					 HTTP_CONN_POST,
-					 HTTP_CONN_SSL,
-					 HTTP_CONN_ALLOW_REDIRECT,
-					 cal->as_url,
-					 body,
-					 "text/xml; charset=UTF-8",
-					 NULL,
-					 cal->auth,
-					 sipe_ews_process_avail_response,
-					 cal);
+		cal->request = sipe_http_request_post(cal->sipe_private,
+						      cal->as_url,
+						      NULL,
+						      body,
+						      "text/xml; charset=UTF-8",
+						      sipe_ews_process_avail_response,
+						      cal);
 		g_free(body);
 		g_free(start_str);
 		g_free(end_str);
+
+		sipe_ews_send_http_request(cal);
 	}
 }
 
-static void
-sipe_ews_do_oof_request(struct sipe_calendar *cal)
+static void sipe_ews_do_oof_request(struct sipe_calendar *cal)
 {
 	if (cal->oof_url) {
 		char *body;
-		const char *content_type = "text/xml; charset=UTF-8";
 
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_do_oof_request: going OOF req.");
 
 		body = g_strdup_printf(SIPE_EWS_USER_OOF_SETTINGS_REQUEST, cal->email);
-		if (!cal->http_conn || http_conn_is_closed(cal->http_conn)) {
-			cal->http_conn = http_conn_create((struct sipe_core_public *)cal->sipe_private,
-							  NULL, /* HttpSession */
-							  HTTP_CONN_POST,
-							  HTTP_CONN_SSL,
-							  HTTP_CONN_ALLOW_REDIRECT,
-							  cal->oof_url,
-							  body,
-							  content_type,
-							  NULL,
-							  cal->auth,
-							  sipe_ews_process_oof_response,
-							  cal);
-		} else {
-			http_conn_send(cal->http_conn,
-				       HTTP_CONN_POST,
-				       cal->oof_url,
-				       body,
-				       content_type,
-				       sipe_ews_process_oof_response,
-				       cal);
-		}
+		cal->request = sipe_http_request_post(cal->sipe_private,
+						      cal->as_url,
+						      NULL,
+						      body,
+						      "text/xml; charset=UTF-8",
+						      sipe_ews_process_oof_response,
+						      cal);
 		g_free(body);
+
+		sipe_ews_send_http_request(cal);
 	}
 }
 

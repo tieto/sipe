@@ -114,14 +114,14 @@ struct sipe_http_request *sipe_http_request_post(struct sipe_core_private *sipe_
 /**
  * HTTP request is ready to be sent
  *
- * @param pointer to opaque HTTP request data structure
+ * @param request pointer to opaque HTTP request data structure
  */
 void sipe_http_request_ready(struct sipe_http_request *request);
 
 /**
  * Cancel pending HTTP request
  *
- * @param pointer to opaque HTTP request data structure
+ * @param request pointer to opaque HTTP request data structure
  */
 void sipe_http_request_cancel(struct sipe_http_request *request);
 
@@ -133,3 +133,23 @@ void sipe_http_request_cancel(struct sipe_http_request *request);
  */
 void sipe_http_request_session(struct sipe_http_request *request,
 			       struct sipe_http_session *session);
+
+/**
+ * Allow redirection of HTTP request
+ *
+ * @param request pointer to opaque HTTP request data structure
+ */
+void sipe_http_request_allow_redirect(struct sipe_http_request *request);
+
+/**
+ * Provide authentication information for HTTP request
+ *
+ * @param request  pointer to opaque HTTP request data structure
+ * @param domain   domain name (MUST stay valid for duration of request!)
+ * @param user     user name   (MUST stay valid for duration of request!)
+ * @param password Password    (MUST stay valid for duration of request!)
+ */
+void sipe_http_request_authentication(struct sipe_http_request *request,
+				      const gchar *domain,
+				      const gchar *user,
+				      const gchar *password);

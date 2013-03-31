@@ -31,6 +31,8 @@
 
 #include "sipmsg.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-http.h"
 
 #define _SIPE_HTTP_PRIVATE_IF_REQUEST
@@ -54,8 +56,12 @@ struct sipe_http_request {
 
 	gchar *path;
 	gchar *headers;
-	gchar *body;         /* NULL for GET */
-	gchar *content_type; /* NULL if body == NULL */
+	gchar *body;           /* NULL for GET */
+	gchar *content_type;   /* NULL if body == NULL */
+
+	const gchar *domain;   /* not copied */
+	const gchar *user;     /* not copied */
+	const gchar *password; /* not copied */
 
 	sipe_http_response_callback *cb;
 	gpointer cb_data;
@@ -63,7 +69,8 @@ struct sipe_http_request {
 	guint32 flags;
 };
 
-#define SIPE_HTTP_REQUEST_FLAG_FIRST 0x00000001
+#define SIPE_HTTP_REQUEST_FLAG_FIRST    0x00000001
+#define SIPE_HTTP_REQUEST_FLAG_REDIRECT 0x00000002
 
 struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_private *sipe_private,
 							     const gchar *host,
@@ -226,6 +233,11 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 		req->content_type = g_strdup(content_type);
 	}
 
+	/* default authentication */
+	req->domain   = sipe_private->authdomain;
+	req->user     = sipe_private->authuser;
+	req->password = sipe_private->password;
+
 	req->cb      = callback;
 	req->cb_data = callback_data;
 
@@ -279,6 +291,21 @@ void sipe_http_request_session(struct sipe_http_request *request,
 			       struct sipe_http_session *session)
 {
 	request->session = session;
+}
+
+void sipe_http_request_allow_redirect(struct sipe_http_request *request)
+{
+	request->flags |= SIPE_HTTP_REQUEST_FLAG_REDIRECT;
+}
+
+void sipe_http_request_authentication(struct sipe_http_request *request,
+				      const gchar *domain,
+				      const gchar *user,
+				      const gchar *password)
+{
+	request->domain   = domain;
+	request->user     = user;
+	request->password = password;
 }
 
 /*
