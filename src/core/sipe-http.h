@@ -50,7 +50,8 @@ typedef void (sipe_http_response_callback)(struct sipe_core_private *sipe_privat
 					   gpointer callback_data);
 
 /* HTTP response status codes */
-#define SIPE_HTTP_STATUS_OK 200
+#define SIPE_HTTP_STATUS_OK           200
+#define SIPE_HTTP_STATUS_CLIENT_ERROR 400 /* - 499 */
 
 /**
  * Free HTTP data
