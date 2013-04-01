@@ -205,8 +205,11 @@ static void sipe_http_request_response_unauthorized(struct sipe_core_private *si
 								     token ? token : "");
 				g_free(token);
 
-				/* resend request with authorization */
-				sipe_http_request_send(conn_public);
+				/*
+				 * Keep the request in the queue. As it is at
+				 * the head it will be pulled automatically
+				 * by the transport layer after returning.
+				 */
 				failed = FALSE;
 
 			} else
@@ -223,7 +226,7 @@ static void sipe_http_request_response_unauthorized(struct sipe_core_private *si
 		/* Callback: authentication failed */
 		(*req->cb)(sipe_private, 0, NULL, NULL, req->cb_data);
 
-		/* remove completed request */
+		/* remove failed request */
 		sipe_http_request_cancel(req);
 	}
 }
