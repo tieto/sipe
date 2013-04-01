@@ -1,6 +1,6 @@
 /**
  * @file sipe-http-request.c
- *
+*
  * pidgin-sipe
  *
  * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
@@ -49,20 +49,12 @@
 #define _SIPE_HTTP_PRIVATE_IF_TRANSPORT
 #include "sipe-http-transport.h"
 
-#define SIPE_HTTP_CONNECTION        ((struct sipe_http_connection *) conn_public)
-#define SIPE_HTTP_CONNECTION_PUBLIC ((struct sipe_http_connection_public *) conn)
-
-struct sipe_http_connection {
-	struct sipe_http_connection_public public;
-	GSList *pending_requests;
-};
-
 struct sipe_http_session {
 	gchar *cookie; /* extremely simplistic cookie jar :-) */
 };
 
 struct sipe_http_request {
-	struct sipe_http_connection *connection;
+	struct sipe_http_connection_public *connection;
 
 	struct sipe_http_session *session;
 
@@ -84,19 +76,6 @@ struct sipe_http_request {
 #define SIPE_HTTP_REQUEST_FLAG_FIRST    0x00000001
 #define SIPE_HTTP_REQUEST_FLAG_REDIRECT 0x00000002
 
-struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_private *sipe_private,
-							     const gchar *host,
-							     guint32 port)
-{
-	struct sipe_http_connection *conn = g_new0(struct sipe_http_connection, 1);
-
-	conn->public.sipe_private = sipe_private;
-	conn->public.host         = g_strdup(host);
-	conn->public.port         = port;
-
-	return(SIPE_HTTP_CONNECTION_PUBLIC);
-}
-
 static void sipe_http_request_free(struct sipe_core_private *sipe_private,
 				   struct sipe_http_request *req)
 {
@@ -110,9 +89,9 @@ static void sipe_http_request_free(struct sipe_core_private *sipe_private,
 	g_free(req);
 }
 
-static void sipe_http_request_send(struct sipe_http_connection *conn)
+static void sipe_http_request_send(struct sipe_http_connection_public *conn_public)
 {
-	struct sipe_http_request *req = conn->pending_requests->data;
+	struct sipe_http_request *req = conn_public->pending_requests->data;
 	gchar *header;
 	gchar *content = NULL;
 	gchar *cookie  = NULL;
@@ -132,14 +111,14 @@ static void sipe_http_request_send(struct sipe_http_connection *conn)
 				 "%s%s%s",
 				 content ? "POST" : "GET",
 				 req->path,
-				 conn->public.host,
+				 conn_public->host,
 				 req->headers ? req->headers : "",
 				 cookie ? cookie : "",
 				 content ? content : "");
 	g_free(cookie);
 	g_free(content);
 
-	sipe_http_transport_send(SIPE_HTTP_CONNECTION_PUBLIC,
+	sipe_http_transport_send(conn_public,
 				 header,
 				 req->body);
 	g_free(header);
@@ -147,20 +126,19 @@ static void sipe_http_request_send(struct sipe_http_connection *conn)
 
 gboolean sipe_http_request_pending(struct sipe_http_connection_public *conn_public)
 {
-	return(SIPE_HTTP_CONNECTION->pending_requests != NULL);
+	return(conn_public->pending_requests != NULL);
 }
 
 void sipe_http_request_next(struct sipe_http_connection_public *conn_public)
 {
-	sipe_http_request_send(SIPE_HTTP_CONNECTION);
+	sipe_http_request_send(conn_public);
 }
 
 void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 				struct sipmsg *msg)
 {
 	struct sipe_core_private *sipe_private = conn_public->sipe_private;
-	struct sipe_http_connection *conn = SIPE_HTTP_CONNECTION;
-	struct sipe_http_request *req = conn->pending_requests->data;
+	struct sipe_http_request *req = conn_public->pending_requests->data;
 	const gchar *hdr;
 
 	/* Set-Cookie: RMID=732423sdfs73242; expires=Fri, 31-Dec-2010 23:59:59 GMT; path=/; domain=.example.net */
@@ -208,20 +186,16 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 
 void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
 {
-	struct sipe_http_connection *conn = SIPE_HTTP_CONNECTION;
-
-	if (conn->pending_requests) {
-		GSList *entry = conn->pending_requests;
+	if (conn_public->pending_requests) {
+		GSList *entry = conn_public->pending_requests;
 		while (entry) {
 			sipe_http_request_free(conn_public->sipe_private,
 					       entry->data);
 			entry = entry->next;
 		}
-		g_slist_free(conn->pending_requests);
+		g_slist_free(conn_public->pending_requests);
+		conn_public->pending_requests = NULL;
 	}
-
-	g_free(conn->public.host);
-	g_free(conn);
 }
 
 struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_private,
@@ -235,7 +209,7 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 						gpointer callback_data)
 {
 	struct sipe_http_request *req = g_new0(struct sipe_http_request, 1);
-	struct sipe_http_connection *conn;
+	struct sipe_http_connection_public *conn_public;
 
 	req->path                 = g_strdup(path);
 	if (headers)
@@ -253,25 +227,26 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 	req->cb      = callback;
 	req->cb_data = callback_data;
 
-	req->connection = conn = (struct sipe_http_connection *) sipe_http_transport_new(sipe_private,
-											 host,
-											 port);
-	if (!sipe_http_request_pending(SIPE_HTTP_CONNECTION_PUBLIC))
+	req->connection = conn_public = sipe_http_transport_new(sipe_private,
+								host,
+								port);
+	if (!sipe_http_request_pending(conn_public))
 		req->flags = SIPE_HTTP_REQUEST_FLAG_FIRST;
 
-	conn->pending_requests = g_slist_append(conn->pending_requests, req);
+	conn_public->pending_requests = g_slist_append(conn_public->pending_requests,
+						       req);
 
 	return(req);
 }
 
 void sipe_http_request_ready(struct sipe_http_request *request)
 {
-	struct sipe_http_connection *conn = request->connection;
+	struct sipe_http_connection_public *conn_public = request->connection;
 
 	/* pass first request on already opened connection through directly */
 	if ((request->flags & SIPE_HTTP_REQUEST_FLAG_FIRST) &&
-	    conn->public.connected)
-		sipe_http_request_send(conn);
+	    conn_public->connected)
+		sipe_http_request_send(conn_public);
 }
 
 struct sipe_http_session *sipe_http_session_start(void)
@@ -289,14 +264,14 @@ void sipe_http_session_close(struct sipe_http_session *session)
 
 void sipe_http_request_cancel(struct sipe_http_request *request)
 {
-	struct sipe_http_connection *conn = request->connection;
-	conn->pending_requests = g_slist_remove(conn->pending_requests,
-						request);
+	struct sipe_http_connection_public *conn_public = request->connection;
+	conn_public->pending_requests = g_slist_remove(conn_public->pending_requests,
+						       request);
 
 	/* cancelled by requester, don't use callback */
 	request->cb = NULL;
 
-	sipe_http_request_free(conn->public.sipe_private, request);
+	sipe_http_request_free(conn_public->sipe_private, request);
 }
 
 void sipe_http_request_session(struct sipe_http_request *request,

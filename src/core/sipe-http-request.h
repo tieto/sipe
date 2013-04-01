@@ -35,30 +35,8 @@
 /* Forward declarations */
 struct sipmsg;
 struct sipe_core_private;
-struct sipe_http_connection_private;
+struct sipe_http_connection_public;
 struct sipe_http_request;
-
-struct sipe_http_connection_public {
-	struct sipe_core_private *sipe_private;
-	struct sipe_http_connection_private *conn_private;
-
-	gchar *host;
-	guint32 port;
-	gboolean connected;
-};
-
-/**
- * Create new HTTP connection data
- *
- * @param sipe_private SIPE core private data
- * @param host         name of the host to connect to
- * @param port         port number to connect to
- *
- * @return HTTP connection public data
- */
-struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_private *sipe_private,
-							     const gchar *host,
-							     guint32 port);
 
 /**
  * Is there pending request for HTTP connection?
