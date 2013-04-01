@@ -19,6 +19,13 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ * SIPE HTTP API implementation
+ *
+ *  - convenience functions for public API: GET & POST requests
+ *  - URL parsing
+ *  - all other public API functions are implemented by lower layers
  */
 
 #include <glib.h>

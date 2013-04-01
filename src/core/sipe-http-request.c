@@ -19,6 +19,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ * SIPE HTTP request layer implementation
+ *
+ *  - request handling: creation, parameters, deletion, cancelling
+ *  - session handling: creation, closing
+ *  - connection request queue handling
+ *  - compile HTTP header contents and hand-off to transport layer
+ *  - process HTTP response and hand-off to user callback
  */
 
 #ifdef HAVE_CONFIG_H
@@ -39,6 +48,9 @@
 #include "sipe-http-request.h"
 #define _SIPE_HTTP_PRIVATE_IF_TRANSPORT
 #include "sipe-http-transport.h"
+
+#define SIPE_HTTP_CONNECTION        ((struct sipe_http_connection *) conn_public)
+#define SIPE_HTTP_CONNECTION_PUBLIC ((struct sipe_http_connection_public *) conn)
 
 struct sipe_http_connection {
 	struct sipe_http_connection_public public;
@@ -82,7 +94,7 @@ struct sipe_http_connection_public *sipe_http_connection_new(struct sipe_core_pr
 	conn->public.host         = g_strdup(host);
 	conn->public.port         = port;
 
-	return((struct sipe_http_connection_public *) conn);
+	return(SIPE_HTTP_CONNECTION_PUBLIC);
 }
 
 static void sipe_http_request_free(struct sipe_core_private *sipe_private,
@@ -127,7 +139,7 @@ static void sipe_http_request_send(struct sipe_http_connection *conn)
 	g_free(cookie);
 	g_free(content);
 
-	sipe_http_transport_send((struct sipe_http_connection_public *) conn,
+	sipe_http_transport_send(SIPE_HTTP_CONNECTION_PUBLIC,
 				 header,
 				 req->body);
 	g_free(header);
@@ -135,19 +147,19 @@ static void sipe_http_request_send(struct sipe_http_connection *conn)
 
 gboolean sipe_http_request_pending(struct sipe_http_connection_public *conn_public)
 {
-	return(((struct sipe_http_connection *) conn_public)->pending_requests != NULL);
+	return(SIPE_HTTP_CONNECTION->pending_requests != NULL);
 }
 
 void sipe_http_request_next(struct sipe_http_connection_public *conn_public)
 {
-	sipe_http_request_send((struct sipe_http_connection *) conn_public);
+	sipe_http_request_send(SIPE_HTTP_CONNECTION);
 }
 
 void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 				struct sipmsg *msg)
 {
 	struct sipe_core_private *sipe_private = conn_public->sipe_private;
-	struct sipe_http_connection *conn = (struct sipe_http_connection *) conn_public;
+	struct sipe_http_connection *conn = SIPE_HTTP_CONNECTION;
 	struct sipe_http_request *req = conn->pending_requests->data;
 	const gchar *hdr;
 
@@ -196,7 +208,7 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 
 void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
 {
-	struct sipe_http_connection *conn = (struct sipe_http_connection *) conn_public;
+	struct sipe_http_connection *conn = SIPE_HTTP_CONNECTION;
 
 	if (conn->pending_requests) {
 		GSList *entry = conn->pending_requests;
@@ -244,7 +256,7 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 	req->connection = conn = (struct sipe_http_connection *) sipe_http_transport_new(sipe_private,
 											 host,
 											 port);
-	if (conn->pending_requests == NULL)
+	if (!sipe_http_request_pending(SIPE_HTTP_CONNECTION_PUBLIC))
 		req->flags = SIPE_HTTP_REQUEST_FLAG_FIRST;
 
 	conn->pending_requests = g_slist_append(conn->pending_requests, req);
