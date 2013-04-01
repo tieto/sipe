@@ -36,22 +36,16 @@
 #define _SIPE_HTTP_PRIVATE_IF_REQUEST
 #include "sipe-http-request.h"
 
-struct parsed_uri {
-	gchar *host;
-	gchar *path;
-	guint port;
-};
-
-static void parsed_uri_free(struct parsed_uri *parsed_uri)
+void sipe_http_parsed_uri_free(struct sipe_http_parsed_uri *parsed_uri)
 {
 	g_free(parsed_uri->host);
 	g_free(parsed_uri->path);
 	g_free(parsed_uri);
 }
 
-static struct parsed_uri *sipe_http_parse_uri(const gchar *uri)
+struct sipe_http_parsed_uri *sipe_http_parse_uri(const gchar *uri)
 {
-	struct parsed_uri *parsed_uri = NULL;
+	struct sipe_http_parsed_uri *parsed_uri = NULL;
 
 //	SIPE_DEBUG_INFO("sipe_http_parse_uri: '%s'", uri);
 
@@ -67,7 +61,7 @@ static struct parsed_uri *sipe_http_parse_uri(const gchar *uri)
 			/* ":port" is optional */
 			if (host_port && host_port[0]) {
 
-				parsed_uri = g_new0(struct parsed_uri, 1);
+				parsed_uri = g_new0(struct sipe_http_parsed_uri, 1);
 				parsed_uri->host = g_strdup(host_port[0]);
 				parsed_uri->path = g_strdup(hostport_path[1]);
 
@@ -101,20 +95,16 @@ struct sipe_http_request *sipe_http_request_get(struct sipe_core_private *sipe_p
 						gpointer callback_data)
 {
 	struct sipe_http_request *req;
-	struct parsed_uri *parsed_uri = sipe_http_parse_uri(uri);
-	if (!parsed_uri)
-		return(NULL);
+	struct sipe_http_parsed_uri *parsed_uri = sipe_http_parse_uri(uri);
 
 	req = sipe_http_request_new(sipe_private,
-				    parsed_uri->host,
-				    parsed_uri->port,
-				    parsed_uri->path,
+				    parsed_uri,
 				    headers,
 				    NULL,
 				    NULL,
 				    callback,
 				    callback_data);
-	parsed_uri_free(parsed_uri);
+	sipe_http_parsed_uri_free(parsed_uri);
 
 	return(req);
 }
@@ -128,20 +118,16 @@ struct sipe_http_request *sipe_http_request_post(struct sipe_core_private *sipe_
 						 gpointer callback_data)
 {
 	struct sipe_http_request *req;
-	struct parsed_uri *parsed_uri = sipe_http_parse_uri(uri);
-	if (!parsed_uri)
-		return(NULL);
+	struct sipe_http_parsed_uri *parsed_uri = sipe_http_parse_uri(uri);
 
 	req = sipe_http_request_new(sipe_private,
-				    parsed_uri->host,
-				    parsed_uri->port,
-				    parsed_uri->path,
+				    parsed_uri,
 				    headers,
 				    body,
 				    content_type,
 				    callback,
 				    callback_data);
-	parsed_uri_free(parsed_uri);
+	sipe_http_parsed_uri_free(parsed_uri);
 
 	return(req);
 }

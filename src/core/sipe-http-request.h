@@ -38,6 +38,29 @@ struct sipe_core_private;
 struct sipe_http_connection_public;
 struct sipe_http_request;
 
+struct sipe_http_parsed_uri {
+	gchar *host;
+	gchar *path;
+	guint port;
+};
+
+/**
+ * Parse URI
+ *
+ * @param uri text to parse
+ *
+ * @return pointer to parsed URI. Must be freed with @c sipe_http_parsed_uri_free()
+ */
+struct sipe_http_parsed_uri *sipe_http_parse_uri(const gchar *uri);
+
+/**
+ * Free parsed URI data structure
+ *
+ * @param pointer to parsed URI.
+ */
+void sipe_http_parsed_uri_free(struct sipe_http_parsed_uri *parsed_uri);
+
+
 /**
  * Is there pending request for HTTP connection?
  *
@@ -72,9 +95,7 @@ void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
  * Create new HTTP request (internal raw version)
  *
  * @param sipe_private  SIPE core private data
- * @param host          name of the host to connect to
- * @param port          port number to connect to
- * @param path          relative path
+ * @param parsed_uri    pointer to parsed URI
  * @param headers       additional headers to add (may be @c NULL)
  * @param body          body                      (may be @c NULL)
  * @param content_type  MIME type for body (may be @c NULL if body is @c NULL)
@@ -84,9 +105,7 @@ void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
  * @return pointer to opaque HTTP request data structure
  */
 struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_private,
-						const gchar *host,
-						guint32 port,
-						const gchar *path,
+						const struct sipe_http_parsed_uri *parsed_uri,
 						const gchar *headers,
 						const gchar *body,
 						const gchar *content_type,

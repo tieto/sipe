@@ -144,9 +144,62 @@ void sipe_http_request_next(struct sipe_http_connection_public *conn_public)
 	sipe_http_request_send(conn_public);
 }
 
-static void sipe_http_request_response_unauthorized(struct sipe_core_private *sipe_private,
-						    struct sipe_http_request *req,
-						    struct sipmsg *msg)
+static void sipe_http_request_enqueue(struct sipe_core_private *sipe_private,
+				      struct sipe_http_request *req,
+				      const struct sipe_http_parsed_uri *parsed_uri)
+{
+	struct sipe_http_connection_public *conn_public;
+
+	req->path       = g_strdup(parsed_uri->path);
+	req->connection = conn_public = sipe_http_transport_new(sipe_private,
+								parsed_uri->host,
+								parsed_uri->port);
+	if (!sipe_http_request_pending(conn_public))
+		req->flags |= SIPE_HTTP_REQUEST_FLAG_FIRST;
+
+	conn_public->pending_requests = g_slist_append(conn_public->pending_requests,
+						       req);
+}
+
+/* TRUE indicates failure */
+static gboolean sipe_http_request_response_redirection(struct sipe_core_private *sipe_private,
+						   struct sipe_http_request *req,
+						   struct sipmsg *msg)
+{
+	const gchar *location = sipmsg_find_header(msg, "Location");
+	gboolean failed = TRUE;
+
+	if (location) {
+		struct sipe_http_parsed_uri *parsed_uri = sipe_http_parse_uri(location);
+
+		if (parsed_uri) {
+			/* remove request from old connection */
+			struct sipe_http_connection_public *conn_public = req->connection;
+			conn_public->pending_requests = g_slist_remove(conn_public->pending_requests,
+								       req);
+
+			/* free old request data */
+			g_free(req->path);
+			req->flags &= ~SIPE_HTTP_REQUEST_FLAG_FIRST;
+
+			/* resubmit request on other connection */
+			sipe_http_request_enqueue(sipe_private, req, parsed_uri);
+			failed = FALSE;
+
+			sipe_http_parsed_uri_free(parsed_uri);
+		} else
+			SIPE_DEBUG_INFO("sipe_http_request_response_redirection: invalid redirection to '%s'",
+					location);
+	} else
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_redirection: no URL found?!?");
+
+	return(failed);
+}
+
+/* TRUE indicates failure */
+static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private *sipe_private,
+							struct sipe_http_request *req,
+							struct sipmsg *msg)
 {
 	const gchar *header = NULL;
 	const gchar *name;
@@ -222,13 +275,7 @@ static void sipe_http_request_response_unauthorized(struct sipe_core_private *si
 	} else
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: only " DEBUG_STRING " supported");
 
-	if (failed) {
-		/* Callback: authentication failed */
-		(*req->cb)(sipe_private, 0, NULL, NULL, req->cb_data);
-
-		/* remove failed request */
-		sipe_http_request_cancel(req);
-	}
+	return(failed);
 }
 
 static void sipe_http_request_response_callback(struct sipe_core_private *sipe_private,
@@ -285,14 +332,34 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 {
 	struct sipe_core_private *sipe_private = conn_public->sipe_private;
 	struct sipe_http_request *req = conn_public->pending_requests->data;
+	gboolean failed;
 
-	if (msg->response == SIPE_HTTP_STATUS_CLIENT_UNAUTHORIZED) {
-		sipe_http_request_response_unauthorized(sipe_private, req, msg);
-		/* req may no longer be valid */
+	if ((req->flags & SIPE_HTTP_REQUEST_FLAG_REDIRECT)   &&
+	    (msg->response >= SIPE_HTTP_STATUS_REDIRECTION)  &&
+	    (msg->response <  SIPE_HTTP_STATUS_CLIENT_ERROR)) {
+		failed = sipe_http_request_response_redirection(sipe_private,
+								req,
+								msg);
+
+	} else if (msg->response == SIPE_HTTP_STATUS_CLIENT_UNAUTHORIZED) {
+		failed = sipe_http_request_response_unauthorized(sipe_private,
+								 req,
+								 msg);
+
 	} else {
 		/* All other cases are passed on to the user */
 		sipe_http_request_response_callback(sipe_private, req, msg);
+
 		/* req is no longer valid */
+		failed = FALSE;
+	}
+
+	if (failed) {
+		/* Callback: request failed */
+		(*req->cb)(sipe_private, 0, NULL, NULL, req->cb_data);
+
+		/* remove failed request */
+		sipe_http_request_cancel(req);
 	}
 }
 
@@ -316,27 +383,27 @@ void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
 }
 
 struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_private,
-						const gchar *host,
-						guint32 port,
-						const gchar *path,
+						const struct sipe_http_parsed_uri *parsed_uri,
 						const gchar *headers,
 						const gchar *body,
 						const gchar *content_type,
 						sipe_http_response_callback *callback,
 						gpointer callback_data)
 {
-	struct sipe_http_request *req = g_new0(struct sipe_http_request, 1);
-	struct sipe_http_connection_public *conn_public;
+	struct sipe_http_request *req;
+	if (!parsed_uri)
+		return(NULL);
 
-	req->path                 = g_strdup(path);
+	req          = g_new0(struct sipe_http_request, 1);
+	req->flags   = 0;
+	req->cb      = callback;
+	req->cb_data = callback_data;
 	if (headers)
 		req->headers      = g_strdup(headers);
 	if (body) {
 		req->body         = g_strdup(body);
 		req->content_type = g_strdup(content_type);
 	}
-
-	req->flags = 0;
 
 	/* default authentication */
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(SSO))
@@ -345,17 +412,7 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 						 sipe_private->authuser,
 						 sipe_private->password);
 
-	req->cb      = callback;
-	req->cb_data = callback_data;
-
-	req->connection = conn_public = sipe_http_transport_new(sipe_private,
-								host,
-								port);
-	if (!sipe_http_request_pending(conn_public))
-		req->flags |= SIPE_HTTP_REQUEST_FLAG_FIRST;
-
-	conn_public->pending_requests = g_slist_append(conn_public->pending_requests,
-						       req);
+	sipe_http_request_enqueue(sipe_private, req, parsed_uri);
 
 	return(req);
 }
