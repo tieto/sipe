@@ -34,11 +34,13 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct sip_sec_context;
 
 struct sipe_http_connection_public {
 	struct sipe_core_private *sipe_private;
 
-	GSList *pending_requests; /* handled by sipe-http-request.c */
+	GSList *pending_requests;        /* handled by sipe-http-request.c */
+	struct sip_sec_context *context; /* handled by sipe-http-request.c */
 
 	gchar *host;
 	guint32 port;
