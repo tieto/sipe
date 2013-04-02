@@ -217,6 +217,7 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 	} else
 #else
 #define DEBUG_STRING "NTLM authentication is"
+	(void) sipe_private; /* keep compiler happy */
 #endif
 	{
 		header = sipmsg_find_auth_header(msg, "NTLM");
