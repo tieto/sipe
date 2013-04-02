@@ -158,6 +158,38 @@ static void start_timer(struct sipe_core_private *sipe_private,
 			      NULL);
 }
 
+static void sipe_http_transport_update_timeout_queue(struct sipe_http_connection *conn,
+						     gboolean remove)
+{
+	struct sipe_core_private *sipe_private = conn->public.sipe_private;
+	struct sipe_http *http = sipe_private->http;
+	GQueue *timeouts = http->timeouts;
+	time_t current_time = time(NULL);
+
+	/* is this connection at head of queue? */
+	gboolean update = (conn == g_queue_peek_head(timeouts));
+
+	/* update timeout queue */
+	if (remove) {
+		g_queue_remove(timeouts, conn);
+	} else {
+		conn->timeout = current_time + SIPE_HTTP_DEFAULT_TIMEOUT;
+		g_queue_sort(timeouts,
+			     timeout_compare,
+			     NULL);
+	}
+
+	/* update timer if necessary */
+	if (update) {
+		sipe_schedule_cancel(sipe_private, SIPE_HTTP_TIMEOUT_ACTION);
+		if (g_queue_is_empty(timeouts)) {
+			http->next_timeout = 0;
+		} else {
+			start_timer(sipe_private, current_time);
+		}
+	}
+}
+
 void sipe_http_free(struct sipe_core_private *sipe_private)
 {
 	struct sipe_http *http = sipe_private->http;
@@ -187,9 +219,24 @@ static void sipe_http_init(struct sipe_core_private *sipe_private)
 static void sipe_http_transport_connected(struct sipe_transport_connection *connection)
 {
 	struct sipe_http_connection *conn = SIPE_HTTP_CONNECTION;
+	struct sipe_core_private *sipe_private = conn->public.sipe_private;
+	struct sipe_http *http = sipe_private->http;
+	time_t current_time = time(NULL);
 
 	SIPE_DEBUG_INFO("sipe_http_transport_connected: %s", conn->host_port);
 	conn->public.connected = TRUE;
+
+	/* add active connection to timeout queue */
+	conn->timeout = current_time + SIPE_HTTP_DEFAULT_TIMEOUT;
+	g_queue_insert_sorted(http->timeouts,
+			      conn,
+			      timeout_compare,
+			      NULL);
+
+	/* start timeout timer if necessary */
+	if (http->next_timeout == 0)
+		start_timer(sipe_private, current_time);
+
 	sipe_http_request_next(SIPE_HTTP_CONNECTION_PUBLIC);
 }
 
@@ -385,7 +432,9 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 		/* re-establishing connection */
 		if (!conn->connection) {
 			SIPE_DEBUG_INFO("sipe_http_transport_new: re-establishing %s", host_port);
-			g_queue_remove(http->timeouts, conn);
+
+			/* will be re-inserted after connect */
+			sipe_http_transport_update_timeout_queue(conn, TRUE);
 		}
 
 	} else {
@@ -407,7 +456,6 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 	}
 
 	if (!conn->connection) {
-		time_t current_time = time(NULL);
 		sipe_connect_setup setup = {
 			SIPE_TRANSPORT_TLS, /* TBD: we only support TLS for now */
 			host,
@@ -421,16 +469,6 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 		conn->public.connected = FALSE;
 		conn->connection = sipe_backend_transport_connect(SIPE_CORE_PUBLIC,
 								  &setup);
-
-		conn->timeout = current_time + SIPE_HTTP_DEFAULT_TIMEOUT;
-		g_queue_insert_sorted(http->timeouts,
-				      conn,
-				      timeout_compare,
-				      NULL);
-
-		/* start timeout timer if necessary */
-		if (http->next_timeout == 0)
-			start_timer(sipe_private, current_time);
 	}
 
 	g_free(host_port);
@@ -450,6 +488,8 @@ void sipe_http_transport_send(struct sipe_http_connection_public *conn_public,
 	sipe_utils_message_debug("HTTP", message->str, NULL, TRUE);
 	sipe_backend_transport_message(conn->connection, message->str);
 	g_string_free(message, TRUE);
+
+	sipe_http_transport_update_timeout_queue(conn, FALSE);
 }
 
 /*
