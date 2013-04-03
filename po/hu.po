@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Laszlo Pal <vlad@vlad.hu>, 2012.
+# Laszlo Pal <vlad@vlad.hu>, 2012-2013.
 # Stefan Becker <chemobejk@gmail.com>, 2011,2013.
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-03-07 16:05+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2013-04-03 18:55+0000\n"
+"Last-Translator: László Pál <vlad@vlad.hu>\n"
 "Language-Team: English <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -103,40 +103,40 @@ msgstr "Nem sikerült tanúsítványt kérni %s tól/től"
 msgid "No URI for certificate provisioning service provided"
 msgstr "Nincs megadva URI a tanúsítvány elosztó szolgáltatáshoz"
 
-#: ../src/core/sip-transport.c:1201
+#: ../src/core/sip-transport.c:1203
 msgid "Authentication failed"
 msgstr "Sikertelen azonosítás"
 
-#: ../src/core/sip-transport.c:1209
+#: ../src/core/sip-transport.c:1211
 msgid "Incompatible authentication scheme chosen"
 msgstr "Nem kompatibilis azonosítási módszer"
 
-#: ../src/core/sip-transport.c:1226 ../src/core/sipe-notify.c:1028
+#: ../src/core/sip-transport.c:1228 ../src/core/sipe-notify.c:1028
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "A(z) %s kiszolgáló elutasította"
 
-#: ../src/core/sip-transport.c:1227 ../src/core/sip-transport.c:1243
-#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
+#: ../src/core/sip-transport.c:1229 ../src/core/sip-transport.c:1245
+#: ../src/core/sip-transport.c:1269 ../src/core/sip-transport.c:1293
 #: ../src/core/sipe-conf.c:266 ../src/core/sipe-notify.c:1028
 msgid "no reason given"
 msgstr "nincs ok megadva"
 
-#: ../src/core/sip-transport.c:1242
+#: ../src/core/sip-transport.c:1244
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "%s nem található. Kérem lépjen kapcsolatba a rendszergazdával"
 
-#: ../src/core/sip-transport.c:1244
+#: ../src/core/sip-transport.c:1246
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "A SIP protokol nincs engedélyezve a megadott URI-n, vagy az URI nem létezik <http://hu.wikipedia.org/wiki/URI>"
 
-#: ../src/core/sip-transport.c:1267 ../src/core/sip-transport.c:1291
+#: ../src/core/sip-transport.c:1269 ../src/core/sip-transport.c:1293
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "A(z) %s szolgáltatás nem érhető el"
 
-#: ../src/core/sip-transport.c:1633
+#: ../src/core/sip-transport.c:1644
 msgid "Invalid message signature received"
 msgstr "Érvénytelen üzenetaláírás érkezett"
 
@@ -346,66 +346,66 @@ msgstr "Ön eltávolításra került a megbeszélésről"
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
-#: ../src/core/sipe-core.c:181
+#: ../src/core/sipe-core.c:187
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
 msgstr "Egy harmadik féltől származó kiegészítés amely a SIP/SIMPLE egy kiterjesztett verzióját valósítja meg."
 
 #. About note, part 2/13: home page URL (label)
-#: ../src/core/sipe-core.c:183
+#: ../src/core/sipe-core.c:189
 msgid "Home Page"
 msgstr "Web-lap"
 
 #. About note, part 3/13: support forum URL (label)
-#: ../src/core/sipe-core.c:185
+#: ../src/core/sipe-core.c:191
 msgid "Support"
 msgstr "Támogatás"
 
 #. About note, part 4/13: support forum name (hyperlink text)
-#: ../src/core/sipe-core.c:187
+#: ../src/core/sipe-core.c:193
 msgid "Help Forum"
 msgstr "Közösségi segítség"
 
 #. About note, part 5/13: bug tracker URL (label)
-#: ../src/core/sipe-core.c:189
+#: ../src/core/sipe-core.c:195
 msgid "Report Problems"
 msgstr "Problémák jelzése"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
-#: ../src/core/sipe-core.c:191
+#: ../src/core/sipe-core.c:197
 msgid "Bug Tracker"
 msgstr "Hiba követés"
 
 #. About note, part 7/13: translation service URL (label)
-#: ../src/core/sipe-core.c:193
+#: ../src/core/sipe-core.c:199
 msgid "Translations"
 msgstr "Fordítás"
 
 #. About note, part 8/13: license type (label)
-#: ../src/core/sipe-core.c:195
+#: ../src/core/sipe-core.c:201
 msgid "License"
 msgstr "Licensz"
 
 #. About note, part 9/13: known users
-#: ../src/core/sipe-core.c:197
+#: ../src/core/sipe-core.c:203
 msgid "We support users in such organizations as"
 msgstr "A következő szervezeteknél lévő felhasználókat támogatjuk például"
 
 #. About note, part 10/13: translation request, text before Transifex.net URL
 #. append a space if text is not empty
-#: ../src/core/sipe-core.c:200
+#: ../src/core/sipe-core.c:206
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr "Kérem segítse munkánkat a a SIPE fordításával más nyelvekre a következő címen: "
 
 #. About note, part 11/13: translation request, text after Transifex.net URL
 #. start with a space if text is not empty
-#: ../src/core/sipe-core.c:203
+#: ../src/core/sipe-core.c:209
 msgid " using convenient web interface"
 msgstr "egy könnyen használható web-es interfész használatával"
 
 #. About note, part 12/13: author list (header)
-#: ../src/core/sipe-core.c:205
+#: ../src/core/sipe-core.c:211
 msgid "Authors"
 msgstr "Fejlesztők"
 
@@ -413,15 +413,15 @@ msgstr "Fejlesztők"
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe-core.c:210
+#: ../src/core/sipe-core.c:216
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Az eredeti szöveg Angolul (en): SIPE Developers"
 
-#: ../src/core/sipe-core.c:259
+#: ../src/core/sipe-core.c:265
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Az Exchange SIP felhasználó név tiltott karaktereket tartalmaz"
 
-#: ../src/core/sipe-core.c:267 ../src/purple/purple-buddy.c:452
+#: ../src/core/sipe-core.c:273 ../src/purple/purple-buddy.c:452
 #: ../src/telepathy/telepathy-protocol.c:89
 #: ../src/telepathy/telepathy-protocol.c:179
 #, c-format
@@ -430,21 +430,21 @@ msgid ""
 "Example: user@company.com"
 msgstr "A felhasználó névnek egy valós SIP URI-nak kell lennie⏎\nmint például \"felhasznalo@ceg.hu\""
 
-#: ../src/core/sipe-core.c:273
+#: ../src/core/sipe-core.c:279
 msgid "Login and password are required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Ha az egyszeri bejelentkezés szolgáltatás nincs engedélyezve, felhasználónév és jelszó megadása szükséges"
 
-#: ../src/core/sipe-core.c:283
+#: ../src/core/sipe-core.c:289
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr "Ha megadott e-mail címet, akkor ennek valósnak kell lennie⏎\nmint például \"felhasznalo@ceg.hu\""
 
-#: ../src/core/sipe-core.c:292
+#: ../src/core/sipe-core.c:298
 msgid "SIP Exchange user name contains whitespace"
 msgstr "Az Exchange SIP felhasználó név üres karaktert tartalmaz"
 
-#: ../src/core/sipe-core.c:306
+#: ../src/core/sipe-core.c:312
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
@@ -930,7 +930,7 @@ msgstr "_Csatlakozás"
 
 #: ../src/purple/purple-plugin.c:913 ../src/purple/purple-plugin.c:927
 msgid "Publishing of calendar information has been disabled"
-msgstr ""
+msgstr "A naptár információk közzététele letiltva"
 
 #: ../src/purple/purple-plugin.c:940
 msgid "About SIPE plugin..."
@@ -1038,7 +1038,7 @@ msgstr "Egyszeri-bejelentkezés (SSO) használata"
 #. 
 #: ../src/purple/purple-plugin.c:1064
 msgid "Don't publish my calendar information"
-msgstr ""
+msgstr "Ne publikáld a naptár információkat!"
 
 #: ../src/purple/purple-plugin.c:1067
 msgid ""
