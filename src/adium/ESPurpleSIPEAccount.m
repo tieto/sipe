@@ -8,17 +8,24 @@
 //
 
 #import <AISharedAdium.h>
+#import <AIAdium.h>
 #import <Adium/AIStatus.h>
 #import <Adium/AIStatusControllerProtocol.h>
+#import <AIUtilities/AIHostReachabilityMonitor.h>
 
 #import "ESPurpleSIPEAccount.h"
 #import "ESSIPEService.h"
 
 #include "sipe-core.h"
 #include "sipe-backend.h"
+#include "sipe-core-private.h"
+#include "purple-private.h"
 
 // C Declarations
 extern void AILog(NSString *fmt, ...);
+extern guint sipe_status_token_to_activity(const gchar *token);
+
+@class AICoreComponentLoader; 
 
 @implementation ESPurpleSIPEAccount
 
@@ -38,6 +45,44 @@ extern void AILog(NSString *fmt, ...);
     } else {
         return server;
     }
+}
+
+struct sip_transport {
+	struct sipe_transport_connection *connection;
+    
+	gchar *server_name;
+	guint  server_port;
+	gchar *server_version;
+    
+	gchar *user_agent;
+};
+
+
+-(void) didConnect
+{
+    PurpleConnection *gc = purple_account_get_connection(account);
+    struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;    
+    struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+    // get the resolved hostname from sipe_private
+    NSString *host = [NSString stringWithUTF8String:(sipe_private->transport)->server_name];
+    AILog(@"(didConnect) server: %@",host);
+    
+    // if we autodetected, the KEY_CONNECT_HOST will be "autodetect", we need to replace it with the real hostname
+    if([[self preferenceForKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS] compare:@"autodetect" options:NSCaseInsensitiveSearch] == NSOrderedSame )
+    {
+        [self setPreference:host forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+    }
+        [self setPreference:host forKey:KEY_SIPE_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+
+    
+    // Adium Host reachability depends on having KEY_CONNECT_HOST filled in earlier, so we have to hack ourselves into the reachabilityMonitor
+    // TODO: Check with Adium team to see if there is a more elegant way to do this.
+    AIHostReachabilityMonitor	*monitor = [AIHostReachabilityMonitor defaultMonitor];
+    AICoreComponentLoader       *theComponentLoader = adium.componentLoader;
+    [monitor addObserver:[theComponentLoader pluginWithClassName:@"ESAccountNetworkConnectivityPlugin"] forHost:host];
+    
+    [super didConnect];
 }
 
 #pragma mark Account Configuration
@@ -104,7 +149,7 @@ extern void AILog(NSString *fmt, ...);
 	{
 	// For backwards compatibility, we pick from an array if the preference is a NSNumber
     	NSMutableArray *myArray = [[NSMutableArray alloc] initWithObjects:@"auto", @"tls", @"tcp", nil];
-    	connType = (NSString *)[myArray objectAtIndex:[self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS]];
+    	connType = (NSString *)[myArray objectAtIndex:(NSUInteger)[self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS]];
 	} 
     purple_account_set_string(account, "transport", [connType UTF8String]);
     
@@ -135,7 +180,6 @@ extern void AILog(NSString *fmt, ...);
     purple_account_set_string(account, "groupchat_user", (!groupchatUser.length) ? [groupchatUser UTF8String] : "" );
     
 }
-
 
 #pragma mark File transfer
 
