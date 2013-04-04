@@ -859,7 +859,7 @@
 					dynamic_lookup,
 				);
 				PRODUCT_NAME = SIPEAdiumPlugin;
-				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../core ../purple ../api";
+				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../purple ../api";
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Debug;
@@ -880,7 +880,7 @@
 					dynamic_lookup,
 				);
 				PRODUCT_NAME = SIPEAdiumPlugin;
-				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../core ../purple ../api";
+				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../purple ../api";
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Release;

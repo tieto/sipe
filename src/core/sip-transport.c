@@ -1960,6 +1960,12 @@ void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public)
 				       "\r\n\r\n");
 }
 
+const gchar *sipe_core_transport_sip_server_name(struct sipe_core_public *sipe_public)
+{
+	struct sip_transport *transport = SIPE_CORE_PRIVATE->transport;
+	return(transport ? transport->server_name : NULL);
+}
+
 int sip_transaction_cseq(struct transaction *trans)
 {
 	int cseq;
