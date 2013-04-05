@@ -1,3 +1,17 @@
+version 1.15.1 "Bug Fixes I" (2013-04-XX)
+	- NOTE: SIPE SourceForge project got updated. Because of this all bug
+	        and feature request numbers have changed.
+	- Fixed #190: SIP 407 response rejected with invalid message signature (Stefan Becker)
+	- Fixed #189: Adium SIPE plugin vs. libpurple linking issues (Michal Lamb)
+	- fixed free-after-use issue that caused crashes for some users (Stefan Becker)
+	- fixed broken NTLM fallback in Negotiate (Stefan Becker)
+	- allow different user name and login for Office 365 authentication (Stefan Becker)
+	- add SIPE version & git commit ID to debug log (Stefan Becker)
+	- added valgrind log analyzer script (Stefan Becker)
+	- added NTLM message anaylzer (Stefan Becker)
+	- updated translations: Hungarion (hu), Romanian (ro)
+	- updated Adium port (Michael Lamb, Harris P. Kauffman)
+
 version 1.15.0 "Authentication & Autodiscovery Update" (2013-03-09)
 	- Feature #3578135: Support Kerberos for HTTP(S) authentication w/o SSPI (Stefan Becker)
 	  * effective for all platforms that support --with-krb5
