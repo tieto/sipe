@@ -896,6 +896,11 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 	sipe_auth_free(&transport->proxy);
 	sipe_schedule_cancel(sipe_private, "<registration>");
 	transport->reregister_set = FALSE;
+	/*
+	 * temporary fix for subscriptions expiration: reset the subscribed flag
+	 * so that the subscriptions will be re-newed after re-authentication.
+	 */
+	transport->subscribed     = FALSE;
 	transport->register_attempt = 0;
 	do_register(sipe_private, FALSE);
 	transport->reauthenticate_set = FALSE;
@@ -1066,8 +1071,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				/* rejoin open chats to be able to use them by continue to send messages */
 				sipe_backend_chat_rejoin_all(SIPE_CORE_PUBLIC);
 
-				/* subscriptions */
-				if (!transport->subscribed) { //do it just once, not every re-register
+				/* subscriptions, done only once */
+				if (!transport->subscribed) {
 
 					if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-contacts",
 								(GCompareFunc)g_ascii_strcasecmp)) {

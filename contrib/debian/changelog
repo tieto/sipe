@@ -7,6 +7,7 @@ pidgin-sipe (1.15.1-1) unstable; urgency=low
 	- Fixed #189: Adium SIPE plugin vs. libpurple linking issues (Michal Lamb)
 	- fixed free-after-use issue that caused crashes for some users (Stefan Becker)
 	- fixed broken NTLM fallback in Negotiate (Stefan Becker)
+	- fixed subscriptions expiration by subscribing again after re-authentication (Stefan Becker)
 	- allow different user name and login for Office 365 authentication (Stefan Becker)
 	- add SIPE version & git commit ID to debug log (Stefan Becker)
 	- added valgrind log analyzer script (Stefan Becker)
