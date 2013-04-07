@@ -1,3 +1,22 @@
+pidgin-sipe (1.15.1-1) unstable; urgency=low
+
+  * New upstream version 1.15.1 "Bug Fixes I"
+	- NOTE: SIPE SourceForge project got updated. Because of this all bug
+	        and feature request numbers have changed.
+	- Fixed #190: SIP 407 response rejected with invalid message signature (Stefan Becker)
+	- Fixed #189: Adium SIPE plugin vs. libpurple linking issues (Michal Lamb)
+	- fixed free-after-use issue that caused crashes for some users (Stefan Becker)
+	- fixed broken NTLM fallback in Negotiate (Stefan Becker)
+	- fixed subscriptions expiration by subscribing again after re-authentication (Stefan Becker)
+	- allow different user name and login for Office 365 authentication (Stefan Becker)
+	- add SIPE version & git commit ID to debug log (Stefan Becker)
+	- added valgrind log analyzer script (Stefan Becker)
+	- added NTLM message anaylzer (Stefan Becker)
+	- updated translations: Hungarion (hu), Romanian (ro)
+	- updated Adium port (Michael Lamb, Harris P. Kauffman)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sun, 07 Apr 2013 15:09:00 +0300
+
 pidgin-sipe (1.15.0-1) unstable; urgency=low
 
   * New upstream version 1.15.0 "Authentication & Autodiscovery Update"
