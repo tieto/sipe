@@ -848,6 +848,45 @@ gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public)
 	return FALSE;
 }
 
+static gboolean phone_number_is_valid(const gchar *phone_number)
+{
+	if (!phone_number || sipe_strequal(phone_number, "")) {
+		return FALSE;
+	}
+
+	if (*phone_number == '+') {
+		++phone_number;
+	}
+
+	while (*phone_number != '\0') {
+		if (!g_ascii_isdigit(*phone_number)) {
+			return FALSE;
+		}
+		++phone_number;
+	}
+
+	return TRUE;
+}
+
+void sipe_core_media_phone_call(struct sipe_core_public *sipe_public,
+				const gchar *phone_number)
+{
+	g_return_if_fail(sipe_public);
+
+	if (phone_number_is_valid(phone_number)) {
+		gchar *phone_uri = g_strdup_printf("sip:%s@%s;user=phone",
+				phone_number, sipe_public->sip_domain);
+
+		sipe_core_media_initiate_call(sipe_public, phone_uri, FALSE);
+
+		g_free(phone_uri);
+	} else {
+		sipe_backend_notify_error(sipe_public,
+					  _("Unable to establish a call"),
+					  _("Invalid phone number"));
+	}
+}
+
 void sipe_core_media_test_call(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;

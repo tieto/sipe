@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -46,7 +46,6 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 	msg->call_id = msg->expires = empty_string;
 
 	if ((hdr = sipmsg_find_header(msg->msg, "Proxy-Authorization")) ||
-	    (hdr = sipmsg_find_header(msg->msg, "Proxy-Authenticate")) ||
 	    (hdr = sipmsg_find_header(msg->msg, "Proxy-Authentication-Info")) ||
 	    (hdr = sipmsg_find_header(msg->msg, "Authentication-Info")) ) {
 		msg->protocol = sipmsg_find_part_of_header(hdr, NULL, " ", empty_string);
