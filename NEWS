@@ -1,4 +1,4 @@
-version 1.15.1 "Bug Fixes I" (2013-04-XX)
+version 1.15.1 "Bug Fixes I" (2013-04-07)
 	- NOTE: SIPE SourceForge project got updated. Because of this all bug
 	        and feature request numbers have changed.
 	- Fixed #190: SIP 407 response rejected with invalid message signature (Stefan Becker)

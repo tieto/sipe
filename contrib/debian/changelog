@@ -15,7 +15,7 @@ pidgin-sipe (1.15.1-1) unstable; urgency=low
 	- updated translations: Hungarion (hu), Romanian (ro)
 	- updated Adium port (Michael Lamb, Harris P. Kauffman)
 
- -- Stefan Becker <chemobejk@gmail.com>  Fri, 05 Apr 2013 21:07:00 +0300
+ -- Stefan Becker <chemobejk@gmail.com>  Sun, 07 Apr 2013 15:09:00 +0300
 
 pidgin-sipe (1.15.0-1) unstable; urgency=low
 
