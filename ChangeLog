@@ -1,3 +1,10 @@
+version 1.16.0 "HTTP Rewrite" (2013-XX-XX)
+	- rewritten HTTP stack from scratch (Stefan Becker)
+	  * cleaner, layered and hopefully less error-prone implementation
+	  * HTTP stack internals no longer exposed to user code
+	  * reduced network traffic and less SSL handshakes by utilizing HTTP/1.1
+	    connection keep alive for multiple HTTP requests to the same host
+
 version 1.15.1 "Bug Fixes I" (2013-04-07)
 	- NOTE: SIPE SourceForge project got updated. Because of this all bug
 	        and feature request numbers have changed.
