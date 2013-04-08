@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,13 +100,47 @@ void sipe_subscriptions_destroy(struct sipe_core_private *sipe_private)
 	g_hash_table_destroy(sipe_private->subscriptions);
 }
 
-void sipe_subscriptions_remove(struct sipe_core_private *sipe_private,
-			       const gchar *key)
+static void sipe_subscription_remove(struct sipe_core_private *sipe_private,
+				     const gchar *key)
 {
 	if (g_hash_table_lookup(sipe_private->subscriptions, key)) {
 		g_hash_table_remove(sipe_private->subscriptions, key);
-		SIPE_DEBUG_INFO("sipe_subscriptions_remove: %s", key);
+		SIPE_DEBUG_INFO("sipe_subscription_remove: %s", key);
 	}
+}
+
+/**
+ * Generate subscription key
+ *
+ * @param event event name
+ * @param uri   presence URI
+ *
+ * @return key string. Must be g_free()'d after use.
+ */
+static gchar *sipe_subscription_key(const gchar *event,
+				    const gchar *uri)
+{
+	gchar *key;
+	if (is_empty(event))
+		return(NULL);
+
+	if (!g_ascii_strcasecmp(event, "presence"))
+		/* Subscription is identified by <presence><uri> key */
+		key = sipe_utils_presence_key(uri);
+	else
+		/* Subscription is identified by <event> key */
+		key = g_strdup_printf("<%s>", event);
+
+	return(key);
+}
+
+void sipe_subscription_terminate(struct sipe_core_private *sipe_private,
+				 const gchar *event,
+				 const gchar *who)
+{
+		gchar *key = sipe_subscription_key(event, who);
+		sipe_subscription_remove(sipe_private, key);
+		g_free(key);
 }
 
 static gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
@@ -123,11 +157,11 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 		event = sipmsg_find_header(request_msg, "Event");
 	}
 
-	key = sipe_utils_subscription_key(event, with);
+	key = sipe_subscription_key(event, with);
 
 	/* 200 OK; 481 Call Leg Does Not Exist */
 	if (key && (msg->response == 200 || msg->response == 481)) {
-		sipe_subscriptions_remove(sipe_private, key);
+		sipe_subscription_remove(sipe_private, key);
 	}
 
 	/* create/store subscription dialog if not yet */
@@ -246,7 +280,7 @@ static void sipe_subscribe_presence_buddy(struct sipe_core_private *sipe_private
 void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
 				      SIPE_UNUSED_PARAMETER void *unused)
 {
-	gchar *key = sipe_utils_subscription_key("presence.wpending", NULL);
+	gchar *key = sipe_subscription_key("presence.wpending", NULL);
 
 	sipe_subscribe_self(sipe_private,
 			    "presence.wpending",

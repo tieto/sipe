@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1668,7 +1668,8 @@ static void sipe_process_presence_timeout(struct sipe_core_private *sipe_private
  */
 void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,
-			     gboolean request, gboolean benotify)
+			     gboolean request,
+			     gboolean benotify)
 {
 	const gchar *content_type = sipmsg_find_header(msg, "Content-Type");
 	const gchar *event = sipmsg_find_header(msg, "Event");
@@ -1726,15 +1727,12 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 	}
 
 	/* The server sends status 'terminated' */
-	if (subscription_state && strstr(subscription_state, "terminated") ) {
+	if (event && subscription_state && strstr(subscription_state, "terminated") ) {
 		gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
-		gchar *key = sipe_utils_subscription_key(event, who);
-
-		SIPE_DEBUG_INFO("process_incoming_notify: server says that subscription to %s was terminated.",  who);
+		SIPE_DEBUG_INFO("process_incoming_notify: server says that subscription '%s' to '%s' was terminated.",
+				event, who);
+		sipe_subscription_terminate(sipe_private, event, who);
 		g_free(who);
-
-		sipe_subscriptions_remove(sipe_private, key);
-		g_free(key);
 	}
 
 	if (!request && event) {

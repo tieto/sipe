@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -459,17 +459,6 @@ gboolean sipe_utils_ip_is_private(const char *ip);
  * @return key string. Must be g_free()'d after use.
  */
 gchar *sipe_utils_presence_key(const gchar *uri);
-
-/**
- * Generate subscription key
- *
- * @param event event name
- * @param uri   presence URI
- *
- * @return key string. Must be g_free()'d after use.
- */
-gchar *sipe_utils_subscription_key(const gchar *event,
-				   const gchar *uri);
 
 /**
  * Decodes a URI into a plain string.

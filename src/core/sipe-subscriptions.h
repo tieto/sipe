@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,13 +32,15 @@ void sipe_subscriptions_unsubscribe(struct sipe_core_private *sipe_private);
 void sipe_subscriptions_destroy(struct sipe_core_private *sipe_private);
 
 /**
- * Remove subscription
+ * Terminate subscription
  *
  * @param sipe_private SIPE core private data
- * @param key subscription to be removed
+ * @param event        subscription event to be removed
+ * @param who          URI the subscription is associated with
  */
-void sipe_subscriptions_remove(struct sipe_core_private *sipe_private,
-			       const gchar *key);
+void sipe_subscription_terminate(struct sipe_core_private *sipe_private,
+				 const gchar *event,
+				 const gchar *who);
 
 /**
  * Subscriptions
