@@ -204,13 +204,13 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 /**
  * common subscription code
  */
-void sipe_subscribe(struct sipe_core_private *sipe_private,
-		    const gchar *uri,
-		    const gchar *event,
-		    const gchar *accept,
-		    const gchar *addheaders,
-		    const gchar *body,
-		    struct sip_dialog *dialog)
+static void sipe_subscribe(struct sipe_core_private *sipe_private,
+			   const gchar *uri,
+			   const gchar *event,
+			   const gchar *accept,
+			   const gchar *addheaders,
+			   const gchar *body,
+			   struct sip_dialog *dialog)
 {
 	gchar *contact = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf(
@@ -571,6 +571,25 @@ static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
 		}
 	}
 }
+
+
+/**
+ * @param expires not respected if set to negative value (E.g. -1)
+ */
+void sipe_subscribe_conference(struct sipe_core_private *sipe_private,
+			       const gchar *id,
+			       gboolean expires)
+{
+	sipe_subscribe(sipe_private,
+		       id,
+		       "conference",
+		       "application/conference-info+xml",
+		       expires ? "Expires: 0\r\n" : NULL,
+		       NULL,
+		       NULL);
+}
+
+
 
 /**
  * Single Category SUBSCRIBE [MS-PRES] ; To send when the server returns a 200 OK message with state="resubscribe" in response.

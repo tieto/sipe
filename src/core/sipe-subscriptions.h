@@ -45,13 +45,9 @@ void sipe_subscription_terminate(struct sipe_core_private *sipe_private,
 /**
  * Subscriptions
  */
-void sipe_subscribe(struct sipe_core_private *sipe_private,
-		    const gchar *uri,
-		    const gchar *event,
-		    const gchar *accept,
-		    const gchar *addheaders,
-		    const gchar *body,
-		    struct sip_dialog *dialog);
+void sipe_subscribe_conference(struct sipe_core_private *sipe_private,
+			       const gchar *id,
+			       gboolean expires);
 
 void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 				    gpointer buddy_name);
