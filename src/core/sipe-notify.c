@@ -38,7 +38,6 @@
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-soap.h"
-#include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-cal.h"
@@ -1668,8 +1667,7 @@ static void sipe_process_presence_timeout(struct sipe_core_private *sipe_private
  */
 void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,
-			     gboolean request,
-			     gboolean benotify)
+			     gboolean request)
 {
 	const gchar *content_type = sipmsg_find_header(msg, "Content-Type");
 	const gchar *event = sipmsg_find_header(msg, "Event");
@@ -1778,12 +1776,6 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 				g_free(who);
 			}
 		}
-	}
-
-	/* The client responses on received a NOTIFY message */
-	if (request && !benotify)
-	{
-		sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 	}
 }
 

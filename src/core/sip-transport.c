@@ -1426,10 +1426,11 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 			process_incoming_message(sipe_private, msg);
 		} else if (sipe_strequal(method, "NOTIFY")) {
 			SIPE_DEBUG_INFO_NOFORMAT("send->process_incoming_notify");
-			process_incoming_notify(sipe_private, msg, TRUE, FALSE);
+			process_incoming_notify(sipe_private, msg, TRUE);
+			sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 		} else if (sipe_strequal(method, "BENOTIFY")) {
 			SIPE_DEBUG_INFO_NOFORMAT("send->process_incoming_benotify");
-			process_incoming_notify(sipe_private, msg, TRUE, TRUE);
+			process_incoming_notify(sipe_private, msg, TRUE);
 		} else if (sipe_strequal(method, "INVITE")) {
 			process_incoming_invite(sipe_private, msg);
 		} else if (sipe_strequal(method, "REFER")) {

@@ -179,7 +179,7 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 	g_free(with);
 
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
-		process_incoming_notify(sipe_private, msg, FALSE, FALSE);
+		process_incoming_notify(sipe_private, msg, FALSE);
 
 	return(TRUE);
 }
