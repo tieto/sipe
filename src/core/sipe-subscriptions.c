@@ -112,26 +112,20 @@ static void sipe_subscription_remove(struct sipe_core_private *sipe_private,
 /**
  * Generate subscription key
  *
- * @param event event name
- * @param uri   presence URI
+ * @param event event name   (must not by @c NULL)
+ * @param uri   presence URI (ignored if @c event != "presence")
  *
  * @return key string. Must be g_free()'d after use.
  */
 static gchar *sipe_subscription_key(const gchar *event,
 				    const gchar *uri)
 {
-	gchar *key;
-	if (is_empty(event))
-		return(NULL);
-
 	if (!g_ascii_strcasecmp(event, "presence"))
 		/* Subscription is identified by <presence><uri> key */
-		key = sipe_utils_presence_key(uri);
+		return(sipe_utils_presence_key(uri));
 	else
 		/* Subscription is identified by <event> key */
-		key = g_strdup_printf("<%s>", event);
-
-	return(key);
+		return(g_strdup_printf("<%s>", event));
 }
 
 void sipe_subscription_terminate(struct sipe_core_private *sipe_private,
@@ -149,7 +143,6 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 {
 	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	const gchar *event = sipmsg_find_header(msg, "Event");
-	gchar *key;
 
 	/* The case with 2005 Public IM Connectivity (PIC) - no Event header */
 	if (!event) {
@@ -157,37 +150,38 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 		event = sipmsg_find_header(request_msg, "Event");
 	}
 
-	key = sipe_subscription_key(event, with);
+	if (event) {
+		gchar *key = sipe_subscription_key(event, with);
 
-	/* 200 OK; 481 Call Leg Does Not Exist */
-	if (key && (msg->response == 200 || msg->response == 481)) {
-		sipe_subscription_remove(sipe_private, key);
+		/* 200 OK; 481 Call Leg Does Not Exist */
+		if (msg->response == 200 || msg->response == 481)
+			sipe_subscription_remove(sipe_private, key);
+
+		/* create/store subscription dialog if not yet */
+		if (msg->response == 200) {
+			struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
+			g_hash_table_insert(sipe_private->subscriptions,
+					    g_strdup(key),
+					    subscription);
+
+			subscription->dialog.callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+			subscription->dialog.cseq = sipmsg_parse_cseq(msg);
+			subscription->dialog.with = g_strdup(with);
+			subscription->event = g_strdup(event);
+			sipe_dialog_parse(&subscription->dialog, msg, TRUE);
+
+			SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog added for: %s",
+					key);
+		}
+
+		g_free(key);
 	}
-
-	/* create/store subscription dialog if not yet */
-	if (key && (msg->response == 200)) {
-		struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
-		g_hash_table_insert(sipe_private->subscriptions,
-				    g_strdup(key),
-				    subscription);
-
-		subscription->dialog.callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-		subscription->dialog.cseq = sipmsg_parse_cseq(msg);
-		subscription->dialog.with = g_strdup(with);
-		subscription->event = g_strdup(event);
-		sipe_dialog_parse(&subscription->dialog, msg, TRUE);
-
-		SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog added for: %s", key);
-	}
-
-	g_free(key);
 	g_free(with);
 
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
-	{
 		process_incoming_notify(sipe_private, msg, FALSE, FALSE);
-	}
-	return TRUE;
+
+	return(TRUE);
 }
 
 /**

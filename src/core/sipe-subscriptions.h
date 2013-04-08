@@ -35,7 +35,7 @@ void sipe_subscriptions_destroy(struct sipe_core_private *sipe_private);
  * Terminate subscription
  *
  * @param sipe_private SIPE core private data
- * @param event        subscription event to be removed
+ * @param event        subscription event to be removed (must not be @c NULL)
  * @param who          URI the subscription is associated with
  */
 void sipe_subscription_terminate(struct sipe_core_private *sipe_private,
