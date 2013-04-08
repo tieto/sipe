@@ -32,6 +32,16 @@ void sipe_subscriptions_unsubscribe(struct sipe_core_private *sipe_private);
 void sipe_subscriptions_destroy(struct sipe_core_private *sipe_private);
 
 /**
+ * Does the server allow a subscription to a certain event?
+ *
+ * @param sipe_private SIPE core private data
+ * @param event        subscription event (must not be @c NULL)
+ */
+gboolean sipe_subscription_is_allowed(struct sipe_core_private *sipe_private,
+				      const gchar *event);
+
+
+/**
  * Terminate subscription
  *
  * @param sipe_private SIPE core private data

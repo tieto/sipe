@@ -1074,8 +1074,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				/* subscriptions, done only once */
 				if (!transport->subscribed) {
 
-					if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-contacts",
-								(GCompareFunc)g_ascii_strcasecmp)) {
+					if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-roaming-contacts")) {
 						sipe_subscribe_roaming_contacts(sipe_private);
 					}
 
@@ -1087,12 +1086,10 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					 */
 					if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
 					{
-						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-self",
-									(GCompareFunc)g_ascii_strcasecmp)) {
+						if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-roaming-self")) {
 							sipe_subscribe_roaming_self(sipe_private);
 						}
-						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-provisioning-v2",
-									(GCompareFunc)g_ascii_strcasecmp)) {
+						if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-provisioning-v2")) {
 							sipe_subscribe_roaming_provisioning_v2(sipe_private);
 						}
 					}
@@ -1101,16 +1098,13 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					{
 						//sipe_options_request(sip, sipe_private->public.sip_domain);
 
-						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-ACL",
-									(GCompareFunc)g_ascii_strcasecmp)) {
+						if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-roaming-ACL")) {
 							sipe_subscribe_roaming_acl(sipe_private);
 						}
-						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-provisioning",
-									(GCompareFunc)g_ascii_strcasecmp)) {
+						if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-provisioning")) {
 							sipe_subscribe_roaming_provisioning(sipe_private);
 						}
-						if (g_slist_find_custom(sipe_private->allowed_events, "presence.wpending",
-									(GCompareFunc)g_ascii_strcasecmp)) {
+						if (sipe_subscription_is_allowed(sipe_private, "presence.wpending")) {
 							sipe_subscribe_presence_wpending(sipe_private,
 											 NULL);
 						}

@@ -140,6 +140,14 @@ void sipe_subscription_terminate(struct sipe_core_private *sipe_private,
 		g_free(key);
 }
 
+gboolean sipe_subscription_is_allowed(struct sipe_core_private *sipe_private,
+				      const gchar *event)
+{
+	return(g_slist_find_custom(sipe_private->allowed_events,
+				   event,
+				   (GCompareFunc) g_ascii_strcasecmp) != NULL);
+}
+
 static void sipe_presence_timeout_mime_cb(gpointer user_data,
 					  SIPE_UNUSED_PARAMETER const GSList *fields,
 					  const gchar *body,
@@ -236,7 +244,8 @@ static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
 		if (timeout > 240) timeout -= 120;
 
 		if (sipe_strcase_equal(event, "presence.wpending") &&
-		    g_slist_find_custom(sipe_private->allowed_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp)) {
+		    sipe_subscription_is_allowed(sipe_private,
+						 "presence.wpending")) {
 			gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
 			sipe_schedule_seconds(sipe_private,
 					      action_name,
@@ -247,7 +256,8 @@ static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
 			g_free(action_name);
 
 		} else if (sipe_strcase_equal(event, "presence") &&
-			   g_slist_find_custom(sipe_private->allowed_events, "presence", (GCompareFunc)g_ascii_strcasecmp)) {
+			   sipe_subscription_is_allowed(sipe_private,
+							"presence")) {
 			gchar *who = parse_from(sipmsg_find_header(msg, "To"));
 			gchar *action_name = sipe_utils_presence_key(who);
 
