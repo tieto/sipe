@@ -1073,55 +1073,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 				/* subscriptions, done only once */
 				if (!transport->subscribed) {
-
-					if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-roaming-contacts")) {
-						sipe_subscribe_roaming_contacts(sipe_private);
-					}
-
-					/* For 2007+ it does not make sence to subscribe to:
-					 *   vnd-microsoft-roaming-ACL
-					 *   vnd-microsoft-provisioning (not v2)
-					 *   presence.wpending
-					 * These are for backward compatibility.
-					 */
-					if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
-					{
-						if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-roaming-self")) {
-							sipe_subscribe_roaming_self(sipe_private);
-						}
-						if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-provisioning-v2")) {
-							sipe_subscribe_roaming_provisioning_v2(sipe_private);
-						}
-					}
-					/* For 2005- servers */
-					else
-					{
-						//sipe_options_request(sip, sipe_private->public.sip_domain);
-
-						if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-roaming-ACL")) {
-							sipe_subscribe_roaming_acl(sipe_private);
-						}
-						if (sipe_subscription_is_allowed(sipe_private, "vnd-microsoft-provisioning")) {
-							sipe_subscribe_roaming_provisioning(sipe_private);
-						}
-						if (sipe_subscription_is_allowed(sipe_private, "presence.wpending")) {
-							sipe_subscribe_presence_wpending(sipe_private,
-											 NULL);
-						}
-
-						/* For 2007+ we publish our initial statuses and calendar data only after
-						 * received our existing publications in sipe_process_roaming_self()
-						 * Only in this case we know versions of current publications made
-						 * on our behalf.
-						 */
-						/* For 2005- we publish our initial statuses only after
-						 * received our existing UserInfo data in response to
-						 * self subscription.
-						 * Only in this case we won't override existing UserInfo data
-						 * set earlier or by other client on our behalf.
-						 */
-					}
-
+					sipe_subscription_self_events(sipe_private);
 					transport->subscribed = TRUE;
 				}
 

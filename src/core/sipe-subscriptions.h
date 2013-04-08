@@ -32,16 +32,6 @@ void sipe_subscriptions_unsubscribe(struct sipe_core_private *sipe_private);
 void sipe_subscriptions_destroy(struct sipe_core_private *sipe_private);
 
 /**
- * Does the server allow a subscription to a certain event?
- *
- * @param sipe_private SIPE core private data
- * @param event        subscription event (must not be @c NULL)
- */
-gboolean sipe_subscription_is_allowed(struct sipe_core_private *sipe_private,
-				      const gchar *event);
-
-
-/**
  * Terminate subscription
  *
  * @param sipe_private SIPE core private data
@@ -62,13 +52,6 @@ void sipe_subscribe(struct sipe_core_private *sipe_private,
 		    const gchar *addheaders,
 		    const gchar *body,
 		    struct sip_dialog *dialog);
-void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
-				      void *unused);
-void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private);
 
 void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 				    gpointer buddy_name);
@@ -81,3 +64,10 @@ void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *sipe_pri
 void sipe_subscribe_poolfqdn_resource_uri(const gchar *host,
 					  GSList *server,
 					  struct sipe_core_private *sipe_private);
+
+/**
+ * Subscribe to all events the server supports after first registration
+ *
+ * @param sipe_private SIPE core private data
+ */
+void sipe_subscription_self_events(struct sipe_core_private *sipe_private);
