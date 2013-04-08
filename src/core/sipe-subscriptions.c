@@ -21,6 +21,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <glib.h>
 
@@ -32,10 +33,12 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-mime.h"
 #include "sipe-notify.h"
 #include "sipe-schedule.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
+#include "sipe-xml.h"
 
 /* RFC3265 subscription */
 struct sip_subscription {
@@ -137,6 +140,134 @@ void sipe_subscription_terminate(struct sipe_core_private *sipe_private,
 		g_free(key);
 }
 
+static void sipe_presence_timeout_mime_cb(gpointer user_data,
+					  SIPE_UNUSED_PARAMETER const GSList *fields,
+					  const gchar *body,
+					  gsize length)
+{
+	GSList **buddies = user_data;
+	sipe_xml *xml = sipe_xml_parse(body, length);
+
+	if (xml && !sipe_strequal(sipe_xml_name(xml), "list")) {
+		const gchar *uri = sipe_xml_attribute(xml, "uri");
+		const sipe_xml *xn_category;
+
+		/**
+		 * automaton: presence is never expected to change
+		 *
+		 * see: http://msdn.microsoft.com/en-us/library/ee354295(office.13).aspx
+		 */
+		for (xn_category = sipe_xml_child(xml, "category");
+		     xn_category;
+		     xn_category = sipe_xml_twin(xn_category)) {
+			if (sipe_strequal(sipe_xml_attribute(xn_category, "name"),
+					  "contactCard")) {
+				const sipe_xml *node = sipe_xml_child(xn_category, "contactCard/automaton");
+				if (node) {
+					char *boolean = sipe_xml_data(node);
+					if (sipe_strequal(boolean, "true")) {
+						SIPE_DEBUG_INFO("sipe_process_presence_timeout: %s is an automaton: - not subscribing to presence updates",
+								uri);
+						uri = NULL;
+					}
+					g_free(boolean);
+				}
+				break;
+			}
+		}
+
+		if (uri) {
+			*buddies = g_slist_append(*buddies, sip_uri(uri));
+		}
+	}
+
+	sipe_xml_free(xml);
+}
+
+static void sipe_process_presence_timeout(struct sipe_core_private *sipe_private,
+					  struct sipmsg *msg,
+					  const gchar *who,
+					  int timeout)
+{
+	const char *ctype = sipmsg_find_header(msg, "Content-Type");
+	gchar *action_name = sipe_utils_presence_key(who);
+
+	SIPE_DEBUG_INFO("sipe_process_presence_timeout: Content-Type: %s", ctype ? ctype : "");
+
+	if (ctype &&
+	    strstr(ctype, "multipart") &&
+	    (strstr(ctype, "application/rlmi+xml") ||
+	     strstr(ctype, "application/msrtc-event-categories+xml"))) {
+		GSList *buddies = NULL;
+
+		sipe_mime_parts_foreach(ctype, msg->body, sipe_presence_timeout_mime_cb, &buddies);
+
+		if (buddies)
+			sipe_subscribe_presence_batched_schedule(sipe_private,
+								 action_name,
+								 who,
+								 buddies,
+								 timeout);
+
+	} else {
+		sipe_schedule_seconds(sipe_private,
+				      action_name,
+				      g_strdup(who),
+				      timeout,
+				      sipe_subscribe_presence_single,
+				      g_free);
+		SIPE_DEBUG_INFO("Resubscription single contact with batched support(%s) in %d", who, timeout);
+	}
+	g_free(action_name);
+}
+
+static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
+					 struct sipmsg *msg,
+					 const gchar *event)
+{
+	const gchar *expires_header = sipmsg_find_header(msg, "Expires");
+	guint timeout = expires_header ? strtol(expires_header, NULL, 10) : 0;
+
+	SIPE_DEBUG_INFO("sipe_subscription_expiration: subscription '%s' expires in %d seconds",
+			event, timeout);
+
+	if (timeout) {
+		/* 2 min ahead of expiration */
+		if (timeout > 240) timeout -= 120;
+
+		if (sipe_strcase_equal(event, "presence.wpending") &&
+		    g_slist_find_custom(sipe_private->allowed_events, "presence.wpending", (GCompareFunc)g_ascii_strcasecmp)) {
+			gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
+			sipe_schedule_seconds(sipe_private,
+					      action_name,
+					      NULL,
+					      timeout,
+					      sipe_subscribe_presence_wpending,
+					      NULL);
+			g_free(action_name);
+
+		} else if (sipe_strcase_equal(event, "presence") &&
+			   g_slist_find_custom(sipe_private->allowed_events, "presence", (GCompareFunc)g_ascii_strcasecmp)) {
+			gchar *who = parse_from(sipmsg_find_header(msg, "To"));
+			gchar *action_name = sipe_utils_presence_key(who);
+
+			if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
+				sipe_process_presence_timeout(sipe_private, msg, who, timeout);
+			} else {
+				sipe_schedule_seconds(sipe_private,
+						      action_name,
+						      g_strdup(who),
+						      timeout,
+						      sipe_subscribe_presence_single,
+						      g_free);
+				SIPE_DEBUG_INFO("Resubscription single contact (%s) in %d", who, timeout);
+			}
+			g_free(action_name);
+			g_free(who);
+		}
+	}
+}
+
 static gboolean process_subscribe_response(struct sipe_core_private *sipe_private,
 					   struct sipmsg *msg,
 					   struct transaction *trans)
@@ -178,8 +309,11 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 	}
 	g_free(with);
 
-	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
+	if (sipmsg_find_header(msg, "ms-piggyback-cseq")) {
 		process_incoming_notify(sipe_private, msg, FALSE);
+		if (event)
+			sipe_subscription_expiration(sipe_private, msg, event);
+	}
 
 	return(TRUE);
 }
