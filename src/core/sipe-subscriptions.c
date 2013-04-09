@@ -131,15 +131,6 @@ static gchar *sipe_subscription_key(const gchar *event,
 		return(g_strdup_printf("<%s>", event));
 }
 
-void sipe_subscription_terminate(struct sipe_core_private *sipe_private,
-				 const gchar *event,
-				 const gchar *who)
-{
-		gchar *key = sipe_subscription_key(event, who);
-		sipe_subscription_remove(sipe_private, key);
-		g_free(key);
-}
-
 static gboolean sipe_subscription_is_allowed(struct sipe_core_private *sipe_private,
 					     const gchar *event)
 {
@@ -165,14 +156,27 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 	}
 
 	if (event) {
+		const gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
+		gboolean terminated = subscription_state && strstr(subscription_state, "terminated");
 		gchar *key = sipe_subscription_key(event, with);
 
+		/*
+		 * @TODO: does the server send this only for one-off
+		 *        subscriptions, i.e. the ones which anyway
+		 *        have "Expires: 0"?
+		 */
+		if (terminated)
+			SIPE_DEBUG_INFO("process_subscribe_response: subscription '%s' to '%s' was terminated",
+					event, with);
+
 		/* 200 OK; 481 Call Leg Does Not Exist */
-		if (msg->response == 200 || msg->response == 481)
+		if ((msg->response == 200) ||
+		    (msg->response == 481) ||
+		    terminated)
 			sipe_subscription_remove(sipe_private, key);
 
 		/* create/store subscription dialog if not yet */
-		if (msg->response == 200) {
+		if (!terminated && (msg->response == 200)) {
 			struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
 			g_hash_table_insert(sipe_private->subscriptions,
 					    g_strdup(key),
@@ -193,7 +197,7 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 	g_free(with);
 
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq")) {
-		process_incoming_notify(sipe_private, msg, FALSE);
+		process_incoming_notify(sipe_private, msg);
 		if (event)
 			sipe_subscription_expiration(sipe_private, msg, event);
 	}

@@ -26,8 +26,7 @@ struct sipmsg;
 struct sipe_core_private;
 
 void process_incoming_notify(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg,
-			     gboolean request);
+			     struct sipmsg *msg);
 
 /*
   Local Variables:

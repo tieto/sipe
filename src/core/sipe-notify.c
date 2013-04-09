@@ -1580,12 +1580,9 @@ static void sipe_process_presence_wpending (struct sipe_core_private *sipe_priva
  * Dispatcher for all incoming subscription information
  * whether it comes from NOTIFY, BENOTIFY requests or
  * piggy-backed to subscription's OK responce.
- *
- * @param request whether initiated from BE/NOTIFY request or OK-response message.
  */
 void process_incoming_notify(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg,
-			     gboolean request)
+			     struct sipmsg *msg)
 {
 	const gchar *content_type = sipmsg_find_header(msg, "Content-Type");
 	const gchar *event = sipmsg_find_header(msg, "Event");
@@ -1596,59 +1593,34 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 	/* implicit subscriptions */
 	if (content_type && g_str_has_prefix(content_type, "application/ms-imdn+xml")) {
 		sipe_process_imdn(sipe_private, msg);
-	}
 
-	if (event) {
-		/* for one off subscriptions (send with Expire: 0) */
-		if (sipe_strcase_equal(event, "vnd-microsoft-provisioning-v2"))
-		{
+	/* event subscriptions */
+	} else if (event) {
+
+		/* One-off subscriptions - sent with "Expires: 0" */
+		if (sipe_strcase_equal(event, "vnd-microsoft-provisioning-v2")) {
 			sipe_process_provisioning_v2(sipe_private, msg);
-		}
-		else if (sipe_strcase_equal(event, "vnd-microsoft-provisioning"))
-		{
+		} else if (sipe_strcase_equal(event, "vnd-microsoft-provisioning")) {
 			sipe_process_provisioning(sipe_private, msg);
-		}
-		else if (sipe_strcase_equal(event, "presence"))
-		{
+		} else if (sipe_strcase_equal(event, "presence")) {
 			sipe_process_presence(sipe_private, msg);
-		}
-		else if (sipe_strcase_equal(event, "registration-notify"))
-		{
+		} else if (sipe_strcase_equal(event, "registration-notify")) {
 			sipe_process_registration_notify(sipe_private, msg);
-		}
 
-		if (!subscription_state || strstr(subscription_state, "active"))
-		{
-			if (sipe_strcase_equal(event, "vnd-microsoft-roaming-contacts"))
-			{
+		/* Subscriptions with timeout */
+		} else if (!subscription_state || strstr(subscription_state, "active")) {
+			if (sipe_strcase_equal(event, "vnd-microsoft-roaming-contacts")) {
 				sipe_process_roaming_contacts(sipe_private, msg);
-			}
-			else if (sipe_strcase_equal(event, "vnd-microsoft-roaming-self"))
-			{
+			} else if (sipe_strcase_equal(event, "vnd-microsoft-roaming-self")) {
 				sipe_ocs2007_process_roaming_self(sipe_private, msg);
-			}
-			else if (sipe_strcase_equal(event, "vnd-microsoft-roaming-ACL"))
-			{
+			} else if (sipe_strcase_equal(event, "vnd-microsoft-roaming-ACL")) {
 				sipe_process_roaming_acl(sipe_private, msg);
-			}
-			else if (sipe_strcase_equal(event, "presence.wpending"))
-			{
+			} else if (sipe_strcase_equal(event, "presence.wpending")) {
 				sipe_process_presence_wpending(sipe_private, msg);
-			}
-			else if (sipe_strcase_equal(event, "conference"))
-			{
+			} else if (sipe_strcase_equal(event, "conference")) {
 				sipe_process_conference(sipe_private, msg);
 			}
 		}
-	}
-
-	/* The server sends status 'terminated' */
-	if (event && subscription_state && strstr(subscription_state, "terminated") ) {
-		gchar *who = parse_from(sipmsg_find_header(msg, request ? "From" : "To"));
-		SIPE_DEBUG_INFO("process_incoming_notify: server says that subscription '%s' to '%s' was terminated.",
-				event, who);
-		sipe_subscription_terminate(sipe_private, event, who);
-		g_free(who);
 	}
 }
 
