@@ -348,6 +348,15 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 								 msg);
 
 	} else {
+		/* On error throw away the security context */
+		if ((msg->response >= SIPE_HTTP_STATUS_CLIENT_ERROR) &&
+		    conn_public->context) {
+			SIPE_DEBUG_INFO("sipe_http_request_response: response was %d, throwing away security context",
+					msg->response);
+			sip_sec_destroy_context(conn_public->context);
+			conn_public->context = NULL;
+		}
+
 		/* All other cases are passed on to the user */
 		sipe_http_request_response_callback(sipe_private, req, msg);
 
