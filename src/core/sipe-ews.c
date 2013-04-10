@@ -418,6 +418,16 @@ static void sipe_ews_process_autodiscover(SIPE_UNUSED_PARAMETER struct sipe_core
 		cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 		sipe_ews_run_state_machine(cal);
 
+	} else if ((status == SIPE_HTTP_STATUS_CLIENT_FORBIDDEN) && cal->retry) {
+		/*
+		 * Authentication succeeded but we still weren't allowed to view the page.
+		 * At least at our work place this error is temporary, i.e. the next access
+		 * with the exact same authentication succeeds. Simply retry once.
+		 */
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_autodiscover: failed, let's retry once.");
+		sipe_ews_run_state_machine(cal);
+		cal->retry = FALSE;
+
 	} else {
 		switch (cal->auto_disco_method) {
 			case 1:
@@ -528,6 +538,7 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 				char *maildomain = strstr(cal->email, "@") + 1;
 				char *autodisc_url = g_strdup_printf("https://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
 
+				cal->retry             = TRUE;
 				cal->auto_disco_method = 1;
 
 				sipe_ews_do_autodiscover(cal, autodisc_url);
@@ -540,6 +551,7 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 				char *maildomain = strstr(cal->email, "@") + 1;
 				char *autodisc_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
 
+				cal->retry             = TRUE;
 				cal->auto_disco_method = 2;
 
 				sipe_ews_do_autodiscover(cal, autodisc_url);

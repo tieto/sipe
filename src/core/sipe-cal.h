@@ -63,6 +63,7 @@ struct sipe_calendar {
 	int is_ews_disabled;
 	int is_domino_disabled;
 	int is_updated;
+	gboolean retry;
 
 	char *as_url;
 	char *oof_url;
