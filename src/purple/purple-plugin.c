@@ -465,6 +465,10 @@ static void sipe_purple_close(PurpleConnection *gc)
 
 		sipe_core_deallocate(sipe_public);
 
+		/* anything left after that must be in pending state... */
+		sipe_purple_dns_query_cancel_all(purple_private);
+		sipe_purple_transport_close_all(purple_private);
+
 		if (purple_private->roomlist_map)
 			g_hash_table_destroy(purple_private->roomlist_map);
 		sipe_purple_chat_destroy_rejoin(purple_private);
