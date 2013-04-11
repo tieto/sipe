@@ -139,6 +139,15 @@ static gboolean sipe_subscription_is_allowed(struct sipe_core_private *sipe_priv
 				   (GCompareFunc) g_ascii_strcasecmp) != NULL);
 }
 
+static struct sip_dialog *sipe_subscribe_dialog(struct sipe_core_private *sipe_private,
+						const gchar *key)
+{
+	struct sip_dialog *dialog = g_hash_table_lookup(sipe_private->subscriptions,
+							key);
+	SIPE_DEBUG_INFO("sipe_subscribe_dialog: dialog for '%s' is %s", key, dialog ? "not NULL" : "NULL");
+	return(dialog);
+}
+
 static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
 					 struct sipmsg *msg,
 					 const gchar *event);
@@ -169,27 +178,32 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 			SIPE_DEBUG_INFO("process_subscribe_response: subscription '%s' to '%s' was terminated",
 					event, with);
 
-		/* 200 OK; 481 Call Leg Does Not Exist */
-		if ((msg->response == 200) ||
-		    (msg->response == 481) ||
-		    terminated)
+		/* 481 Call Leg Does Not Exist */
+		if ((msg->response == 481) || terminated) {
 			sipe_subscription_remove(sipe_private, key);
 
 		/* create/store subscription dialog if not yet */
-		if (!terminated && (msg->response == 200)) {
-			struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
-			g_hash_table_insert(sipe_private->subscriptions,
-					    g_strdup(key),
-					    subscription);
+		} else if (msg->response == 200) {
+			struct sip_dialog *dialog = sipe_subscribe_dialog(sipe_private, key);
 
-			subscription->dialog.callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-			subscription->dialog.cseq = sipmsg_parse_cseq(msg);
-			subscription->dialog.with = g_strdup(with);
-			subscription->event = g_strdup(event);
-			sipe_dialog_parse(&subscription->dialog, msg, TRUE);
+			if (!dialog) {
+				struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
+				g_hash_table_insert(sipe_private->subscriptions,
+						    g_strdup(key),
+						    subscription);
 
-			SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog added for: %s",
-					key);
+				subscription->dialog.callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+				subscription->dialog.cseq = sipmsg_parse_cseq(msg);
+				subscription->dialog.with = g_strdup(with);
+				subscription->event = g_strdup(event);
+
+				dialog = &subscription->dialog;
+
+				SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog added for: %s",
+						key);
+			}
+
+			sipe_dialog_parse(dialog, msg, TRUE);
 		}
 
 		g_free(key);
@@ -250,10 +264,11 @@ static void sipe_subscribe_self(struct sipe_core_private *sipe_private,
 				const gchar *event,
 				const gchar *accept,
 				const gchar *addheaders,
-				const gchar *body,
-				struct sip_dialog *dialog)
+				const gchar *body)
 {
 	gchar *self = sip_uri_self(sipe_private);
+	gchar *key = sipe_subscription_key(event, self);
+	struct sip_dialog *dialog = sipe_subscribe_dialog(sipe_private, key);
 
 	sipe_subscribe(sipe_private,
 		       self,
@@ -263,48 +278,18 @@ static void sipe_subscribe_self(struct sipe_core_private *sipe_private,
 		       body,
 		       dialog);
 
-	g_free(self);
-}
-
-static struct sip_dialog *sipe_subscribe_dialog(struct sipe_core_private *sipe_private,
-						const gchar *key)
-{
-	struct sip_dialog *dialog = g_hash_table_lookup(sipe_private->subscriptions,
-							key);
-	SIPE_DEBUG_INFO("sipe_subscribe_dialog: dialog for '%s' is %s", key, dialog ? "not NULL" : "NULL");
-	return dialog;
-}
-
-static void sipe_subscribe_presence_buddy(struct sipe_core_private *sipe_private,
-					  const gchar *uri,
-					  const gchar *request,
-					  const gchar *body)
-{
-	gchar *key = sipe_utils_presence_key(uri);
-
-	sip_transport_subscribe(sipe_private,
-				uri,
-				request,
-				body,
-				sipe_subscribe_dialog(sipe_private, key),
-				process_subscribe_response);
-
 	g_free(key);
+	g_free(self);
 }
 
 static void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
 				      SIPE_UNUSED_PARAMETER void *unused)
 {
-	gchar *key = sipe_subscription_key("presence.wpending", NULL);
-
 	sipe_subscribe_self(sipe_private,
 			    "presence.wpending",
 			    "text/xml+msrtc.wpending",
 			    NULL,
-			    NULL,
-			    sipe_subscribe_dialog(sipe_private, key));
-
-	g_free(key);
+			    NULL);
 }
 
 /**
@@ -315,7 +300,6 @@ static void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
 	sipe_subscribe_self(sipe_private,
 			    "vnd-microsoft-roaming-ACL",
 			    "application/vnd-microsoft-roaming-acls+xml",
-			    NULL,
 			    NULL,
 			    NULL);
 }
@@ -329,7 +313,6 @@ static void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_priva
 			    "vnd-microsoft-roaming-contacts",
 			    "application/vnd-microsoft-roaming-contacts+xml",
 			    NULL,
-			    NULL,
 			    NULL);
 }
 
@@ -342,7 +325,6 @@ static void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_p
 			    "vnd-microsoft-provisioning",
 			    "application/vnd-microsoft-roaming-provisioning+xml",
 			    "Expires: 0\r\n",
-			    NULL,
 			    NULL);
 }
 
@@ -363,8 +345,7 @@ static void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sip
 			    "<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\">"
 			    "<provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/>"
 			    "<provisioningGroup name=\"ucPolicy\"/>"
-			    "</provisioningGroupList>",
-			    NULL);
+			    "</provisioningGroupList>");
 }
 
 /**
@@ -385,8 +366,7 @@ static void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private)
 			    "<roamingList xmlns=\"http://schemas.microsoft.com/2006/09/sip/roaming-self\">"
 			    "<roaming type=\"categories\"/>"
 			    "<roaming type=\"containers\"/>"
-			    "<roaming type=\"subscribers\"/></roamingList>",
-			    NULL);
+			    "<roaming type=\"subscribers\"/></roamingList>");
 }
 
 void sipe_subscription_self_events(struct sipe_core_private *sipe_private)
@@ -593,7 +573,25 @@ void sipe_subscribe_conference(struct sipe_core_private *sipe_private,
 		       NULL);
 }
 
+/**
+ * code for presence subscription
+ */
+static void sipe_subscribe_presence_buddy(struct sipe_core_private *sipe_private,
+					  const gchar *uri,
+					  const gchar *request,
+					  const gchar *body)
+{
+	gchar *key = sipe_utils_presence_key(uri);
 
+	sip_transport_subscribe(sipe_private,
+				uri,
+				request,
+				body,
+				sipe_subscribe_dialog(sipe_private, key),
+				process_subscribe_response);
+
+	g_free(key);
+}
 
 /**
  * Single Category SUBSCRIBE [MS-PRES] ; To send when the server returns a 200 OK message with state="resubscribe" in response.
