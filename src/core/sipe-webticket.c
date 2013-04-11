@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -636,28 +636,39 @@ static void realminfo(struct sipe_core_private *sipe_private,
 	/* Only try retrieving of RealmInfo once */
 	webticket->retrieved_realminfo = TRUE;
 
-	if (realminfo) {
-		/* detect ADFS setup. See also:
-		 *
-		 *   http://en.wikipedia.org/wiki/Active_Directory_Federation_Services
-		 *
-		 * NOTE: this is based on observed behaviour.
-		 *       It is unkown if this is documented somewhere...
-		 */
-		SIPE_DEBUG_INFO("realminfo: data for user %s retrieved successfully",
-				sipe_private->username);
+	/*
+	 * We must specifically check for abort, because
+	 * realminfo == NULL is a valid response
+	 */
+	if (uri) {
+		if (realminfo) {
+			/* detect ADFS setup. See also:
+			 *
+			 *   http://en.wikipedia.org/wiki/Active_Directory_Federation_Services
+			 *
+			 * NOTE: this is based on observed behaviour.
+			 *       It is unkown if this is documented somewhere...
+			 */
+			SIPE_DEBUG_INFO("realminfo: data for user %s retrieved successfully",
+					sipe_private->username);
 
-		webticket->webticket_adfs_uri = sipe_xml_data(sipe_xml_child(realminfo,
-									     "STSAuthURL"));
+			webticket->webticket_adfs_uri = sipe_xml_data(sipe_xml_child(realminfo,
+										     "STSAuthURL"));
+		}
+
+		if (webticket->webticket_adfs_uri)
+			SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
+					webticket->webticket_adfs_uri);
+		else
+			SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
+
+		if (fedbearer_authentication(sipe_private, wcd)) {
+			/* callback data passed down the line */
+			wcd = NULL;
+		}
 	}
 
-	if (webticket->webticket_adfs_uri)
-		SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
-				webticket->webticket_adfs_uri);
-	else
-		SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
-
-	if (!fedbearer_authentication(sipe_private, wcd)) {
+	if (wcd) {
 		callback_execute(sipe_private,
 				 wcd,
 				 uri,
