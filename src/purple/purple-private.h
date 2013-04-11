@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,6 +42,8 @@ struct sipe_backend_private {
 	struct _PurpleRoomlist *roomlist;
 	GHashTable *roomlist_map; /* name -> uri */
 	GList *rejoin_chats;
+	GSList *transports;
+	GSList *dns_queries;
 	time_t last_keepalive;
 };
 
@@ -54,6 +56,9 @@ struct sipe_backend_fd {
 
 const gchar *sipe_purple_activity_to_token(guint type);
 guint sipe_purple_token_to_activity(const gchar *token);
+
+/* DNS queries */
+void sipe_purple_dns_query_cancel_all(struct sipe_backend_private *purple_private);
 
 /**
  * Initiates outgoing file transfer, sending @c file to remote peer identified
@@ -127,6 +132,9 @@ void sipe_purple_set_idle(struct _PurpleConnection *gc,
 
 /* media */
 void capture_pipeline(const gchar *label);
+
+/* transport */
+void sipe_purple_transport_close_all(struct sipe_backend_private *purple_private);
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) account->gc->proto_data)
