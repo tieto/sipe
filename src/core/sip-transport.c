@@ -896,11 +896,6 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 	sipe_auth_free(&transport->proxy);
 	sipe_schedule_cancel(sipe_private, "<registration>");
 	transport->reregister_set = FALSE;
-	/*
-	 * temporary fix for subscriptions expiration: reset the subscribed flag
-	 * so that the subscriptions will be re-newed after re-authentication.
-	 */
-	transport->subscribed     = FALSE;
 	transport->register_attempt = 0;
 	do_register(sipe_private, FALSE);
 	transport->reauthenticate_set = FALSE;
