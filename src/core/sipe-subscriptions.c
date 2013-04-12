@@ -131,14 +131,6 @@ static gchar *sipe_subscription_key(const gchar *event,
 		return(g_strdup_printf("<%s>", event));
 }
 
-static gboolean sipe_subscription_is_allowed(struct sipe_core_private *sipe_private,
-					     const gchar *event)
-{
-	return(g_slist_find_custom(sipe_private->allowed_events,
-				   event,
-				   (GCompareFunc) g_ascii_strcasecmp) != NULL);
-}
-
 static struct sip_dialog *sipe_subscribe_dialog(struct sipe_core_private *sipe_private,
 						const gchar *key)
 {
@@ -369,63 +361,6 @@ static void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private,
 			    "<roaming type=\"categories\"/>"
 			    "<roaming type=\"containers\"/>"
 			    "<roaming type=\"subscribers\"/></roamingList>");
-}
-
-void sipe_subscription_self_events(struct sipe_core_private *sipe_private)
-{
-	if (sipe_subscription_is_allowed(sipe_private,
-					 "vnd-microsoft-roaming-contacts"))
-		sipe_subscribe_roaming_contacts(sipe_private, NULL);
-
-	/*
-	 * For 2007+ it does not make sence to subscribe to:
-	 *
-	 *   vnd-microsoft-roaming-ACL
-	 *   vnd-microsoft-provisioning (not v2)
-	 *   presence.wpending
-	 *
-	 * These are only needed as backward compatibility for older clients
-	 */
-	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		if (sipe_subscription_is_allowed(sipe_private,
-						 "vnd-microsoft-roaming-self"))
-			sipe_subscribe_roaming_self(sipe_private, NULL);
-
-		if (sipe_subscription_is_allowed(sipe_private,
-						 "vnd-microsoft-provisioning-v2"))
-			sipe_subscribe_roaming_provisioning_v2(sipe_private, NULL);
-
-		/*
-		 * For 2007+ we publish our initial statuses and calendar data only after
-		 * received our existing publications in sipe_process_roaming_self().
-		 * Only in this case we know versions of current publications made
-		 * on our behalf.
-		 */
-
-	} else {
-		/* For 2005- servers */
-		//sipe_options_request(sip, sipe_private->public.sip_domain);
-
-		if (sipe_subscription_is_allowed(sipe_private,
-						 "vnd-microsoft-roaming-ACL"))
-			sipe_subscribe_roaming_acl(sipe_private, NULL);
-
-		if (sipe_subscription_is_allowed(sipe_private,
-						 "vnd-microsoft-provisioning"))
-			sipe_subscribe_roaming_provisioning(sipe_private, NULL);
-
-		if (sipe_subscription_is_allowed(sipe_private,
-						 "presence.wpending"))
-			sipe_subscribe_presence_wpending(sipe_private, NULL);
-
-		/*
-		 * For 2005- we publish our initial statuses only after
-		 * received our existing UserInfo data in response to
-		 * self subscription.
-		 * Only in this case we won't override existing UserInfo data
-		 * set earlier or by other client on our behalf.
-		 */
-	}
 }
 
 static void sipe_presence_timeout_mime_cb(gpointer user_data,
@@ -787,17 +722,46 @@ void sipe_subscribe_poolfqdn_resource_uri(const char *host,
 struct event_subscription_data {
 	const gchar *event;
 	sipe_schedule_action callback;
+	guint flags;
 };
+
+#define EVENT_OCS2005 0x00000001
+#define EVENT_OCS2007 0x00000002
 
 static const struct event_subscription_data events_table[] =
 {
-	{ "presence.wpending",              sipe_subscribe_presence_wpending       },
-	{ "vnd-microsoft-roaming-ACL",      sipe_subscribe_roaming_acl             },
-	{ "vnd-microsoft-roaming-contacts", sipe_subscribe_roaming_contacts        },
-	{ "vnd-microsoft-provisioning",     sipe_subscribe_roaming_provisioning    },
-	{ "vnd-microsoft-provisioning-v2",  sipe_subscribe_roaming_provisioning_v2 },
-	{ "vnd-microsoft-roaming-self",     sipe_subscribe_roaming_self            },
-	{ NULL, NULL }
+	/*
+	 * For 2007+ it does not make sence to subscribe to:
+	 *
+	 *   presence.wpending
+	 *   vnd-microsoft-roaming-ACL
+	 *   vnd-microsoft-provisioning (not v2)
+	 *
+	 * These are only needed as backward compatibility for older clients
+	 *
+	 * For 2005- we publish our initial statuses only after we received
+	 * our existing UserInfo data in response to self subscription.
+	 * Only in this case we won't override existing UserInfo data
+	 * set earlier or by other client on our behalf.
+	 *
+	 * For 2007+ we publish our initial statuses and calendar data only
+	 * after we received our existing publications in roaming_self.
+	 * Only in this case we know versions of current publications made
+	 * on our behalf.
+	 */
+	{ "presence.wpending",              sipe_subscribe_presence_wpending,
+		  EVENT_OCS2005                 },
+	{ "vnd-microsoft-roaming-ACL",      sipe_subscribe_roaming_acl,
+		  EVENT_OCS2005                 },
+	{ "vnd-microsoft-roaming-contacts", sipe_subscribe_roaming_contacts,
+		  EVENT_OCS2005 | EVENT_OCS2007 },
+	{ "vnd-microsoft-provisioning",     sipe_subscribe_roaming_provisioning,
+		  EVENT_OCS2007                 },
+	{ "vnd-microsoft-provisioning-v2",  sipe_subscribe_roaming_provisioning_v2,
+		  EVENT_OCS2007                 },
+	{ "vnd-microsoft-roaming-self",     sipe_subscribe_roaming_self,
+		  EVENT_OCS2007                 },
+	{ NULL, NULL, 0 }
 };
 
 static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
@@ -848,6 +812,24 @@ static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
 			}
 		}
 	}
+}
+
+/*
+ * Initial event subscription
+ */
+void sipe_subscription_self_events(struct sipe_core_private *sipe_private)
+{
+	const guint mask = SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) ? EVENT_OCS2007 : EVENT_OCS2005;
+	const struct event_subscription_data *esd;
+
+	/* subscribe to those events which are selected for
+	 * this version and are allowed by the server */
+	for (esd = events_table; esd->event; esd++)
+		if ((esd->flags & mask) &&
+		    (g_slist_find_custom(sipe_private->allowed_events,
+					 esd->event,
+					 (GCompareFunc) g_ascii_strcasecmp) != NULL))
+			(*esd->callback)(sipe_private, NULL);
 }
 
 /*
