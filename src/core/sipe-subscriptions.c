@@ -188,33 +188,33 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 
 			if (!dialog) {
 				struct sip_subscription *subscription = g_new0(struct sip_subscription, 1);
+
+				SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog added for event '%s'",
+						key);
+
 				g_hash_table_insert(sipe_private->subscriptions,
-						    g_strdup(key),
+						    key,
 						    subscription);
+				key = NULL; /* table takes ownership of key */
 
 				subscription->dialog.callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-				subscription->dialog.cseq = sipmsg_parse_cseq(msg);
-				subscription->dialog.with = g_strdup(with);
-				subscription->event = g_strdup(event);
+				subscription->dialog.cseq   = sipmsg_parse_cseq(msg);
+				subscription->dialog.with   = g_strdup(with);
+				subscription->event         = g_strdup(event);
 
 				dialog = &subscription->dialog;
-
-				SIPE_DEBUG_INFO("process_subscribe_response: subscription dialog added for: %s",
-						key);
 			}
 
 			sipe_dialog_parse(dialog, msg, TRUE);
-		}
 
+			sipe_subscription_expiration(sipe_private, msg, event);
+		}
 		g_free(key);
 	}
 	g_free(with);
 
-	if (sipmsg_find_header(msg, "ms-piggyback-cseq")) {
+	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
 		process_incoming_notify(sipe_private, msg);
-		if (event)
-			sipe_subscription_expiration(sipe_private, msg, event);
-	}
 
 	return(TRUE);
 }
@@ -246,14 +246,12 @@ static void sipe_subscribe(struct sipe_core_private *sipe_private,
 		contact);
 	g_free(contact);
 
-
 	sip_transport_subscribe(sipe_private,
 				uri,
 				hdr,
 				body,
 				dialog,
 				process_subscribe_response);
-
 	g_free(hdr);
 }
 
@@ -277,13 +275,12 @@ static void sipe_subscribe_self(struct sipe_core_private *sipe_private,
 		       addheaders,
 		       body,
 		       dialog);
-
 	g_free(key);
 	g_free(self);
 }
 
 static void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
-				      SIPE_UNUSED_PARAMETER void *unused)
+					     SIPE_UNUSED_PARAMETER void *unused)
 {
 	sipe_subscribe_self(sipe_private,
 			    "presence.wpending",
@@ -295,7 +292,8 @@ static void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_priv
 /**
  * Subscribe roaming ACL
  */
-static void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
+static void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private,
+				       SIPE_UNUSED_PARAMETER void *unused)
 {
 	sipe_subscribe_self(sipe_private,
 			    "vnd-microsoft-roaming-ACL",
@@ -307,7 +305,8 @@ static void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private)
 /**
  * Subscribe roaming contacts
  */
-static void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private)
+static void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private,
+					    SIPE_UNUSED_PARAMETER void *unused)
 {
 	sipe_subscribe_self(sipe_private,
 			    "vnd-microsoft-roaming-contacts",
@@ -319,7 +318,8 @@ static void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_priva
 /**
  *  OCS 2005 version
  */
-static void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private)
+static void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private,
+						SIPE_UNUSED_PARAMETER void *unused)
 {
 	sipe_subscribe_self(sipe_private,
 			    "vnd-microsoft-provisioning",
@@ -335,7 +335,8 @@ static void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_p
  * This subscription asks for server configuration, meeting policies, and
  * policy settings that Communicator must enforce.
  */
-static void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private)
+static void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private,
+						   SIPE_UNUSED_PARAMETER void *unused)
 {
 	sipe_subscribe_self(sipe_private,
 			    "vnd-microsoft-provisioning-v2",
@@ -357,7 +358,8 @@ static void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sip
  * We wait for (BE)NOTIFY messages with some info change (categories,
  * containers, subscribers)
  */
-static void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private)
+static void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private,
+					SIPE_UNUSED_PARAMETER void *unused)
 {
 	sipe_subscribe_self(sipe_private,
 			    "vnd-microsoft-roaming-self",
@@ -373,7 +375,7 @@ void sipe_subscription_self_events(struct sipe_core_private *sipe_private)
 {
 	if (sipe_subscription_is_allowed(sipe_private,
 					 "vnd-microsoft-roaming-contacts"))
-		sipe_subscribe_roaming_contacts(sipe_private);
+		sipe_subscribe_roaming_contacts(sipe_private, NULL);
 
 	/*
 	 * For 2007+ it does not make sence to subscribe to:
@@ -387,11 +389,11 @@ void sipe_subscription_self_events(struct sipe_core_private *sipe_private)
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		if (sipe_subscription_is_allowed(sipe_private,
 						 "vnd-microsoft-roaming-self"))
-			sipe_subscribe_roaming_self(sipe_private);
+			sipe_subscribe_roaming_self(sipe_private, NULL);
 
 		if (sipe_subscription_is_allowed(sipe_private,
 						 "vnd-microsoft-provisioning-v2"))
-			sipe_subscribe_roaming_provisioning_v2(sipe_private);
+			sipe_subscribe_roaming_provisioning_v2(sipe_private, NULL);
 
 		/*
 		 * For 2007+ we publish our initial statuses and calendar data only after
@@ -406,11 +408,11 @@ void sipe_subscription_self_events(struct sipe_core_private *sipe_private)
 
 		if (sipe_subscription_is_allowed(sipe_private,
 						 "vnd-microsoft-roaming-ACL"))
-			sipe_subscribe_roaming_acl(sipe_private);
+			sipe_subscribe_roaming_acl(sipe_private, NULL);
 
 		if (sipe_subscription_is_allowed(sipe_private,
 						 "vnd-microsoft-provisioning"))
-			sipe_subscribe_roaming_provisioning(sipe_private);
+			sipe_subscribe_roaming_provisioning(sipe_private, NULL);
 
 		if (sipe_subscription_is_allowed(sipe_private,
 						 "presence.wpending"))
@@ -502,60 +504,10 @@ static void sipe_process_presence_timeout(struct sipe_core_private *sipe_private
 				      timeout,
 				      sipe_subscribe_presence_single,
 				      g_free);
-		SIPE_DEBUG_INFO("Resubscription single contact with batched support(%s) in %d", who, timeout);
+		SIPE_DEBUG_INFO("Resubscription single contact with batched support(%s) in %d seconds", who, timeout);
 	}
 	g_free(action_name);
 }
-
-static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
-					 struct sipmsg *msg,
-					 const gchar *event)
-{
-	const gchar *expires_header = sipmsg_find_header(msg, "Expires");
-	guint timeout = expires_header ? strtol(expires_header, NULL, 10) : 0;
-
-	SIPE_DEBUG_INFO("sipe_subscription_expiration: subscription '%s' expires in %d seconds",
-			event, timeout);
-
-	if (timeout) {
-		/* 2 min ahead of expiration */
-		if (timeout > 240) timeout -= 120;
-
-		if (sipe_strcase_equal(event, "presence.wpending") &&
-		    sipe_subscription_is_allowed(sipe_private,
-						 "presence.wpending")) {
-			gchar *action_name = g_strdup_printf("<%s>", "presence.wpending");
-			sipe_schedule_seconds(sipe_private,
-					      action_name,
-					      NULL,
-					      timeout,
-					      sipe_subscribe_presence_wpending,
-					      NULL);
-			g_free(action_name);
-
-		} else if (sipe_strcase_equal(event, "presence") &&
-			   sipe_subscription_is_allowed(sipe_private,
-							"presence")) {
-			gchar *who = parse_from(sipmsg_find_header(msg, "To"));
-			gchar *action_name = sipe_utils_presence_key(who);
-
-			if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
-				sipe_process_presence_timeout(sipe_private, msg, who, timeout);
-			} else {
-				sipe_schedule_seconds(sipe_private,
-						      action_name,
-						      g_strdup(who),
-						      timeout,
-						      sipe_subscribe_presence_single,
-						      g_free);
-				SIPE_DEBUG_INFO("Resubscription single contact (%s) in %d", who, timeout);
-			}
-			g_free(action_name);
-			g_free(who);
-		}
-	}
-}
-
 
 /**
  * @param expires not respected if set to negative value (E.g. -1)
@@ -826,6 +778,76 @@ void sipe_subscribe_poolfqdn_resource_uri(const char *host,
 	sipe_subscribe_presence_batched_routed(sipe_private,
 					       payload);
 	sipe_subscribe_presence_batched_routed_free(payload);
+}
+
+
+/*
+ * subscription expiration handling
+ */
+struct event_subscription_data {
+	const gchar *event;
+	sipe_schedule_action callback;
+};
+
+static const struct event_subscription_data events_table[] =
+{
+	{ "presence.wpending",              sipe_subscribe_presence_wpending       },
+	{ "vnd-microsoft-roaming-ACL",      sipe_subscribe_roaming_acl             },
+	{ "vnd-microsoft-roaming-contacts", sipe_subscribe_roaming_contacts        },
+	{ "vnd-microsoft-provisioning",     sipe_subscribe_roaming_provisioning    },
+	{ "vnd-microsoft-provisioning-v2",  sipe_subscribe_roaming_provisioning_v2 },
+	{ "vnd-microsoft-roaming-self",     sipe_subscribe_roaming_self            },
+	{ NULL, NULL }
+};
+
+static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
+					 struct sipmsg *msg,
+					 const gchar *event)
+{
+	const gchar *expires_header = sipmsg_find_header(msg, "Expires");
+	guint timeout = expires_header ? strtol(expires_header, NULL, 10) : 0;
+
+	if (timeout) {
+		/* 2 min ahead of expiration */
+		if (timeout > 240) timeout -= 120;
+
+		if (sipe_strcase_equal(event, "presence")) {
+			gchar *who = parse_from(sipmsg_find_header(msg, "To"));
+
+			if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
+				sipe_process_presence_timeout(sipe_private, msg, who, timeout);
+			} else {
+				gchar *action_name = sipe_utils_presence_key(who);
+				sipe_schedule_seconds(sipe_private,
+						      action_name,
+						      g_strdup(who),
+						      timeout,
+						      sipe_subscribe_presence_single,
+						      g_free);
+				g_free(action_name);
+				SIPE_DEBUG_INFO("Resubscription single contact '%s' in %d seconds", who, timeout);
+			}
+			g_free(who);
+
+		} else {
+			const struct event_subscription_data *esd;
+
+			for (esd = events_table; esd->event; esd++) {
+				if (sipe_strcase_equal(event, esd->event)) {
+					gchar *action_name = g_strdup_printf("<%s>", event);
+					sipe_schedule_seconds(sipe_private,
+							      action_name,
+							      NULL,
+							      timeout,
+							      esd->callback,
+							      NULL);
+					g_free(action_name);
+					SIPE_DEBUG_INFO("Resubscription to event '%s' in %d seconds", event, timeout);
+					break;
+				}
+			}
+		}
+	}
 }
 
 /*
