@@ -107,6 +107,7 @@ CLEAN_C_SRC =		sip-soap.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \
+			sip-sec-digest.c \
 			sip-sec-tls-dsk.c \
 			sip-csta.c \
 			sipe-webticket.c \

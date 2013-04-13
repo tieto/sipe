@@ -21,6 +21,7 @@
 		1CE49FF414A17F4D00663393 /* sipe-notify.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE49FF114A17F4D00663393 /* sipe-notify.c */; };
 		1CE49FF514A17F4D00663393 /* sipe-webticket.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE49FF214A17F4D00663393 /* sipe-webticket.c */; };
 		1CE4A00614A17FD100663393 /* sip-sec-ntlm-tests.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */; };
+		1CE4A00714A17FD100663393 /* sip-sec-digest.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00114A17FD100663393 /* sip-sec-digest.c */; };
 		1CE4A00814A17FD100663393 /* sip-sec-tls-dsk.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */; };
 		1CE4A00A14A17FD100663393 /* sipe-certificate.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00214A17FD100663393 /* sipe-certificate.c */; };
 		1CE4A00C14A17FD100663393 /* sipe-tls-tester.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00414A17FD100663393 /* sipe-tls-tester.c */; };
@@ -226,6 +227,7 @@
 		1CE49FF114A17F4D00663393 /* sipe-notify.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-notify.c"; sourceTree = "<group>"; };
 		1CE49FF214A17F4D00663393 /* sipe-webticket.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-webticket.c"; sourceTree = "<group>"; };
 		1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-ntlm-tests.c"; sourceTree = "<group>"; };
+		1CE4A00114A17FD100663393 /* sip-sec-digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-digest.c"; sourceTree = "<group>"; };
 		1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-tls-dsk.c"; sourceTree = "<group>"; };
 		1CE4A00214A17FD100663393 /* sipe-certificate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-certificate.c"; sourceTree = "<group>"; };
 		1CE4A00414A17FD100663393 /* sipe-tls-tester.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-tls-tester.c"; sourceTree = "<group>"; };
@@ -500,6 +502,7 @@
 				B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */,
 				1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */,
 				B13FABA5119D585A001CE037 /* sip-sec-krb5.c */,
+				1CE4A00114A17FD100663393 /* sip-sec-digest.c */,
 				1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */,
 				7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */,
 				1CE4A00214A17FD100663393 /* sipe-certificate.c */,
@@ -786,6 +789,7 @@
 				1CE49FF414A17F4D00663393 /* sipe-notify.c in Sources */,
 				1CE49FF514A17F4D00663393 /* sipe-webticket.c in Sources */,
 				1CE4A00614A17FD100663393 /* sip-sec-ntlm-tests.c in Sources */,
+				1CE4A00714A17FD100663393 /* sip-sec-digest.c in Sources */,
 				1CE4A00814A17FD100663393 /* sip-sec-tls-dsk.c in Sources */,
 				1CE4A00A14A17FD100663393 /* sipe-certificate.c in Sources */,
 				1CE4A00C14A17FD100663393 /* sipe-tls-tester.c in Sources */,

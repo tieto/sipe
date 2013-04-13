@@ -61,6 +61,7 @@
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
+#include "sip-sec-digest.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -1446,19 +1447,25 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 
 					if (proxy_hdr) {
 						gchar *auth = NULL;
-						guint i;
 
-						transport->proxy.type = SIPE_AUTHENTICATION_TYPE_UNSET;
-						for (i = 0; i < AUTH_PROTOCOLS; i++) {
-							const gchar *protocol = auth_type_to_protocol[i];
-							if (protocol &&
-							    !g_ascii_strncasecmp(proxy_hdr, protocol, strlen(protocol))) {
-								SIPE_DEBUG_INFO("process_input_message: proxy authentication scheme '%s'", protocol);
-								transport->proxy.type     = i;
-								transport->proxy.protocol = protocol;
-								fill_auth(proxy_hdr, &transport->proxy);
-								auth = auth_header(sipe_private, &transport->proxy, trans->msg);
-								break;
+						if (!g_ascii_strncasecmp(proxy_hdr, "Digest", 6)) {
+							auth = sip_sec_digest_authorization(sipe_private,
+											    proxy_hdr + 7);
+						} else {
+							guint i;
+
+							transport->proxy.type = SIPE_AUTHENTICATION_TYPE_UNSET;
+							for (i = 0; i < AUTH_PROTOCOLS; i++) {
+								const gchar *protocol = auth_type_to_protocol[i];
+								if (protocol &&
+								    !g_ascii_strncasecmp(proxy_hdr, protocol, strlen(protocol))) {
+									SIPE_DEBUG_INFO("process_input_message: proxy authentication scheme '%s'", protocol);
+									transport->proxy.type     = i;
+									transport->proxy.protocol = protocol;
+									fill_auth(proxy_hdr, &transport->proxy);
+									auth = auth_header(sipe_private, &transport->proxy, trans->msg);
+									break;
+								}
 							}
 						}
 
