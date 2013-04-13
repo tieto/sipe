@@ -441,7 +441,7 @@ static void sign_outgoing_message(struct sipe_core_private *sipe_private,
 
 	buf = auth_header(sipe_private, &transport->registrar, msg);
 	if (buf) {
-		sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
+		sipmsg_add_header_now(msg, "Authorization", buf);
 		g_free(buf);
 	}
 }
@@ -1441,49 +1441,50 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 
 			} else if (msg->response == 407) { /* Proxy Authentication Required */
 
-				if (transport->proxy.retries > 30) {
-					SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: too many proxy authentication retries. Giving up.");
-				} else {
-					gchar *resend, *auth;
-					const gchar *auth_hdr;
+				if (transport->proxy.retries++ <= 30) {
+					const gchar *proxy_hdr = sipmsg_find_header(msg, "Proxy-Authenticate");
 
-					transport->proxy.retries++;
-
-					/* do proxy authentication */
-					auth_hdr = sipmsg_find_header(msg, "Proxy-Authenticate");
-					if (auth_hdr) {
+					if (proxy_hdr) {
+						gchar *auth = NULL;
 						guint i;
+
 						transport->proxy.type = SIPE_AUTHENTICATION_TYPE_UNSET;
 						for (i = 0; i < AUTH_PROTOCOLS; i++) {
 							const gchar *protocol = auth_type_to_protocol[i];
 							if (protocol &&
-							    !g_ascii_strncasecmp(auth_hdr, protocol, strlen(protocol))) {
-								SIPE_DEBUG_INFO("proxy auth: type %s", protocol);
+							    !g_ascii_strncasecmp(proxy_hdr, protocol, strlen(protocol))) {
+								SIPE_DEBUG_INFO("process_input_message: proxy authentication scheme '%s'", protocol);
 								transport->proxy.type     = i;
 								transport->proxy.protocol = protocol;
+								fill_auth(proxy_hdr, &transport->proxy);
+								auth = auth_header(sipe_private, &transport->proxy, trans->msg);
 								break;
 							}
 						}
-						if (transport->proxy.type == SIPE_AUTHENTICATION_TYPE_UNSET)
-							SIPE_DEBUG_ERROR("Unknown proxy authentication: %s", auth_hdr);
-						fill_auth(auth_hdr, &transport->proxy);
-					}
-					auth = auth_header(sipe_private, &transport->proxy, trans->msg);
-					if (auth) {
-						sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
-						sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
-						g_free(auth);
-					}
 
-					/* resend request */
-					resend = sipmsg_to_string(trans->msg);
-					sipe_utils_message_debug("SIP", resend, NULL, TRUE);
-					sipe_backend_transport_message(sipe_private->transport->connection, resend);
-					g_free(resend);
+						if (auth) {
+							gchar *resend;
 
-					/* Transaction not yet completed */
-					trans = NULL;
-				}
+							/* replace old proxy authentication with new one */
+							sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
+							sipmsg_add_header_now(trans->msg, "Proxy-Authorization", auth);
+							g_free(auth);
+
+							/* resend request with proxy authentication */
+							resend = sipmsg_to_string(trans->msg);
+							sipe_utils_message_debug("SIP", resend, NULL, TRUE);
+							sipe_backend_transport_message(sipe_private->transport->connection, resend);
+							g_free(resend);
+
+							/* Transaction not yet completed */
+							trans = NULL;
+
+						} else
+							SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: can't generate proxy authentication. Giving up.");
+					} else
+						SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: 407 response without 'Proxy-Authenticate' header. Giving up.");
+				} else
+					SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: too many proxy authentication retries. Giving up.");
 
 			} else {
 				transport->registrar.retries = 0;
