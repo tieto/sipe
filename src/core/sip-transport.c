@@ -1450,7 +1450,9 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 
 						if (!g_ascii_strncasecmp(proxy_hdr, "Digest", 6)) {
 							auth = sip_sec_digest_authorization(sipe_private,
-											    proxy_hdr + 7);
+											    proxy_hdr + 7,
+											    msg->method,
+											    msg->target);
 						} else {
 							guint i;
 

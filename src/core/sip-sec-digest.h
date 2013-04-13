@@ -33,4 +33,6 @@ struct sipe_core_private;
  * @return Digest authorization header or @c NULL. Must be @c g_free'd().
  */
 gchar *sip_sec_digest_authorization(struct sipe_core_private *sipe_private,
-				    const gchar *header);
+				    const gchar *header,
+				    const gchar *method,
+				    const gchar *target);
