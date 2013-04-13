@@ -1726,15 +1726,16 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 
 	/*
 	 * Our NTLM implementation does not support Single Sign-On.
-	 * Thus username & password are required. Empty domain is OK.
+	 * Thus username & password are required.
+	 * NULL or empty domain is OK.
 	 */
-	if (!domain || is_empty(username) || is_empty(password))
+	if (is_empty(username) || is_empty(password))
 		return FALSE;
 
 	/* this is the first time we are allowed to set private flags */
 	context->flags |= SIP_SEC_FLAG_NTLM_INITIAL;
 
-	ctx->domain   = domain;
+	ctx->domain   = domain ? domain : "";
 	ctx->username = username;
 	ctx->password = password;
 
