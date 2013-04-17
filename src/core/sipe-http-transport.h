@@ -48,6 +48,15 @@ struct sipe_http_connection_public {
 };
 
 /**
+ * Check if we're shutting down the HTTP stack
+ *
+ * @param sipe_private SIPE core private data
+ *
+ * @return return @c TRUE if HTTP stack is shutting down
+ */
+gboolean sipe_http_shutting_down(struct sipe_core_private *sipe_private);
+
+/**
  * Initiate HTTP connection
  *
  * If a connection to this host/port already exists it will be reused.

@@ -67,6 +67,7 @@ struct sipe_http {
 	GHashTable *connections;
 	GQueue *timeouts;
 	time_t next_timeout; /* in seconds from epoch, 0 if timer isn't running */
+	gboolean shutting_down;
 };
 
 static gint timeout_compare(gconstpointer a,
@@ -190,11 +191,23 @@ static void sipe_http_transport_update_timeout_queue(struct sipe_http_connection
 	}
 }
 
+gboolean sipe_http_shutting_down(struct sipe_core_private *sipe_private)
+{
+	struct sipe_http *http = sipe_private->http;
+	/* We need to return FALSE in case HTTP stack isn't initialized yet */
+	if (!http)
+		return(FALSE);
+	return(http->shutting_down);
+}
+
 void sipe_http_free(struct sipe_core_private *sipe_private)
 {
 	struct sipe_http *http = sipe_private->http;
 	if (!http)
 		return;
+
+	/* HTTP stack is shutting down: reject all new requests */
+	http->shutting_down = TRUE;
 
 	sipe_schedule_cancel(sipe_private, SIPE_HTTP_TIMEOUT_ACTION);
 	g_hash_table_destroy(http->connections);
@@ -418,7 +431,7 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 							    const guint32 port)
 {
 	struct sipe_http *http;
-	struct sipe_http_connection *conn;
+	struct sipe_http_connection *conn = NULL;
 	/* host name matching should be case insensitive */
 	gchar *host = g_ascii_strdown(host_in, -1);
 	gchar *host_port = g_strdup_printf("%s:%" G_GUINT32_FORMAT, host, port);
@@ -426,49 +439,54 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 	sipe_http_init(sipe_private);
 
 	http = sipe_private->http;
-	conn = g_hash_table_lookup(http->connections, host_port);
+	if (http->shutting_down) {
+		SIPE_DEBUG_ERROR("sipe_http_transport_new: new connection requested during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
+				 "Host/Port: %s", host_port);
+	} else {
+		conn = g_hash_table_lookup(http->connections, host_port);
 
-	if (conn) {
-		/* re-establishing connection */
-		if (!conn->connection) {
-			SIPE_DEBUG_INFO("sipe_http_transport_new: re-establishing %s", host_port);
+		if (conn) {
+			/* re-establishing connection */
+			if (!conn->connection) {
+				SIPE_DEBUG_INFO("sipe_http_transport_new: re-establishing %s", host_port);
 
-			/* will be re-inserted after connect */
-			sipe_http_transport_update_timeout_queue(conn, TRUE);
+				/* will be re-inserted after connect */
+				sipe_http_transport_update_timeout_queue(conn, TRUE);
+			}
+
+		} else {
+			/* new connection */
+			SIPE_DEBUG_INFO("sipe_http_transport_new: new %s", host_port);
+
+			conn = g_new0(struct sipe_http_connection, 1);
+
+			conn->public.sipe_private = sipe_private;
+			conn->public.host         = g_strdup(host);
+			conn->public.port         = port;
+
+			conn->host_port           = host_port;
+
+			g_hash_table_insert(http->connections,
+					    host_port,
+					    conn);
+			host_port = NULL; /* conn_private takes ownership of the key */
 		}
 
-	} else {
-		/* new connection */
-		SIPE_DEBUG_INFO("sipe_http_transport_new: new %s", host_port);
+		if (!conn->connection) {
+			sipe_connect_setup setup = {
+				SIPE_TRANSPORT_TLS, /* TBD: we only support TLS for now */
+				host,
+				port,
+				conn,
+				sipe_http_transport_connected,
+				sipe_http_transport_input,
+				sipe_http_transport_error
+			};
 
-		conn = g_new0(struct sipe_http_connection, 1);
-
-		conn->public.sipe_private = sipe_private;
-		conn->public.host         = g_strdup(host);
-		conn->public.port         = port;
-
-		conn->host_port           = host_port;
-
-		g_hash_table_insert(http->connections,
-				    host_port,
-				    conn);
-		host_port = NULL; /* conn_private takes ownership of the key */
-	}
-
-	if (!conn->connection) {
-		sipe_connect_setup setup = {
-			SIPE_TRANSPORT_TLS, /* TBD: we only support TLS for now */
-			host,
-			port,
-			conn,
-			sipe_http_transport_connected,
-			sipe_http_transport_input,
-			sipe_http_transport_error
-		};
-
-		conn->public.connected = FALSE;
-		conn->connection = sipe_backend_transport_connect(SIPE_CORE_PUBLIC,
-								  &setup);
+			conn->public.connected = FALSE;
+			conn->connection = sipe_backend_transport_connect(SIPE_CORE_PUBLIC,
+									  &setup);
+		}
 	}
 
 	g_free(host_port);
