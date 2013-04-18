@@ -21,6 +21,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <stdlib.h>
 #include <string.h>
 
 #include <glib.h>
@@ -33,43 +34,84 @@
 #include "sipe-utils.h"
 
 /*
- * Calculate a session key for HTTP MD5 Digest authentication (RFC 2617)
- */
-static gchar *digest_opaque(const gchar *authuser,
-			    const gchar *password,
-			    const gchar *realm)
-{
-	gchar *string = g_strdup_printf("%s:%s:%s", authuser, realm, password);
-	guchar digest[SIPE_DIGEST_MD5_LENGTH];
-
-	sipe_digest_md5((guchar *)string, strlen(string), digest);
-	g_free(string);
-	return(buff_to_hex_str(digest, sizeof(digest)));
-}
-
-/*
  * Calculate a response for HTTP MD5 Digest authentication (RFC 2617)
  */
-static gchar *digest_response(const gchar *opaque,
+static gchar *digest_HA1(const gchar *user,
+			 const gchar *realm,
+			 const gchar *password)
+{
+	/* H(A1): H(user ":" realm ":" password) */
+	gchar *string = g_strdup_printf("%s:%s:%s", user, realm, password);
+	gchar *HA1;
+	guchar digest[SIPE_DIGEST_MD5_LENGTH];
+	sipe_digest_md5((guchar *)string, strlen(string), digest);
+	g_free(string);
+
+	/* Result: LOWER(HEXSTRING(H(A1))) */
+	string = buff_to_hex_str(digest, sizeof(digest));
+	HA1 = g_ascii_strdown(string, -1);
+	g_free(string);
+	return(HA1);
+}
+
+static gchar *digest_HA2(const gchar *method,
+			 const gchar *target)
+{
+	/* H(A2): H(method ":" target) */
+	gchar *string = g_strdup_printf("%s:%s", method, target);
+	gchar *HA2;
+	guchar digest[SIPE_DIGEST_MD5_LENGTH];
+	sipe_digest_md5((guchar *)string, strlen(string), digest);
+	g_free(string);
+
+	/* Result: LOWER(HEXSTRING(H(A1))) */
+	string = buff_to_hex_str(digest, sizeof(digest));
+	HA2 = g_ascii_strdown(string, -1);
+	g_free(string);
+	return(HA2);
+}
+
+static gchar *generate_cnonce(void)
+{
+#ifdef SIP_SEC_DIGEST_COMPILING_TEST
+	return(g_strdup(cnonce_fixed));
+#else
+	return(g_strdup_printf("%04x%04x", rand() & 0xFFFF, rand() & 0xFFFF));
+#endif
+}
+
+static gchar *digest_response(const gchar *user,
+			      const gchar *realm,
+			      const gchar *password,
 			      const gchar *nonce,
+			      const gchar *nc,
+			      const gchar *cnonce,
+			      const gchar *qop,
 			      const gchar *method,
 			      const gchar *target)
 {
-	gchar *string = g_strdup_printf("%s:%s", method, target);
-	gchar *hex_digest;
+	gchar *HA1 = digest_HA1(user, realm, password);
+	gchar *HA2 = digest_HA2(method, target);
+	gchar *string, *Digest;
 	guchar digest[SIPE_DIGEST_MD5_LENGTH];
 
+#ifdef SIP_SEC_DIGEST_COMPILING_TEST
+	SIPE_DEBUG_INFO("HA1 %s", HA1);
+	SIPE_DEBUG_INFO("HA2 %s", HA2);
+#endif
+
+	/* Digest: H(H(A1) ":" nonce ":" nc ":" cnonce ":" qop ":" H(A2) */
+	string = g_strdup_printf("%s:%s:%s:%s:%s:%s", HA1, nonce, nc, cnonce, qop, HA2);
+	g_free(HA2);
+	g_free(HA1);
 	sipe_digest_md5((guchar *)string, strlen(string), digest);
 	g_free(string);
 
-	hex_digest = buff_to_hex_str(digest, sizeof(digest));
-	string = g_strdup_printf("%s:%s:%s", opaque, nonce, hex_digest);
-	g_free(hex_digest);
-
-	sipe_digest_md5((guchar *)string, strlen(string), digest);
+	/* Result: LOWER(HEXSTRING(H(A1))) */
+	string = buff_to_hex_str(digest, sizeof(digest));
+	Digest = g_ascii_strdown(string, -1);
 	g_free(string);
-
-	return(buff_to_hex_str(digest, sizeof(digest)));
+	return(Digest);
 }
 
 gchar *sip_sec_digest_authorization(struct sipe_core_private *sipe_private,
@@ -78,8 +120,9 @@ gchar *sip_sec_digest_authorization(struct sipe_core_private *sipe_private,
 				    const gchar *target)
 {
 	const gchar *param;
-	gchar *nonce = NULL;
-	gchar *realm = NULL;
+	gchar *nonce  = NULL;
+	gchar *opaque = NULL;
+	gchar *realm  = NULL;
 	gchar *authorization = NULL;
 
 	/* sanity checks */
@@ -116,6 +159,9 @@ gchar *sip_sec_digest_authorization(struct sipe_core_private *sipe_private,
 		if        (g_str_has_prefix(header, "nonce=\"")) {
 			g_free(nonce);
 			nonce = g_strndup(param, end - param);
+		} else if (g_str_has_prefix(header, "opaque=\"")) {
+			g_free(opaque);
+			opaque = g_strndup(param, end - param);
 		} else if (g_str_has_prefix(header, "realm=\"")) {
 			g_free(realm);
 			realm = g_strndup(param, end - param);
@@ -129,27 +175,41 @@ gchar *sip_sec_digest_authorization(struct sipe_core_private *sipe_private,
 
 	if (nonce && realm) {
 		const gchar *authuser = sipe_private->authuser ? sipe_private->authuser : sipe_private->username;
-		gchar *opaque = digest_opaque(authuser,
-					      sipe_private->password,
-					      realm);
-		gchar *response = digest_response(opaque,
+		const gchar *nc       = "00000001";
+		gchar *cnonce         = generate_cnonce();
+		gchar *opt_opaque     = opaque ? g_strdup_printf("opaque=\"%s\", ", opaque) : g_strdup("");
+		gchar *response = digest_response(authuser,
+						  realm,
+						  sipe_private->password,
 						  nonce,
+						  nc,
+						  cnonce,
+						  "auth",
 						  method,
 						  target);
-		g_free(opaque);
 
-		authorization = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", nc=\"1\", response=\"%s\"",
+#ifdef SIP_SEC_DIGEST_COMPILING_TEST
+		SIPE_DEBUG_INFO("RES %s", response);
+#endif
+
+		authorization = g_strdup_printf("Digest username=\"%s\", realm=\"%s\", nonce=\"%s\", uri=\"%s\", qop=auth, nc=%s, cnonce=\"%s\", %sresponse=\"%s\"",
 						authuser,
 						realm,
 						nonce,
 						target,
+						nc,
+						cnonce,
+						opt_opaque,
 						response);
 		g_free(response);
+		g_free(opt_opaque);
+		g_free(cnonce);
 
 	} else
 		SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_digest_authorization: no digest parameters found. Giving up.");
 
 	g_free(realm);
+	g_free(opaque);
 	g_free(nonce);
 
 	return(authorization);

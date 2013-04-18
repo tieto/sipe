@@ -181,6 +181,7 @@ sip_sec_digest_tests_SOURCES = sip-sec-digest-tests.c
 sip_sec_digest_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
 sip_sec_digest_tests_LDADD = \
 	libsipe_core_la-sipe-utils.lo \
+	libsipe_core_crypto_nss_la-sipe-crypt-nss.lo \
 	libsipe_core_crypto_nss_la-sipe-digest-nss.lo \
 	$(NSS_LIBS) \
 	$(GLIB_LIBS)
