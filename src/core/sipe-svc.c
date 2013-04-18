@@ -62,6 +62,7 @@ struct svc_request {
 
 struct sipe_svc {
 	GSList *pending_requests;
+	gboolean shutting_down;
 };
 
 struct sipe_svc_session {
@@ -85,6 +86,9 @@ void sipe_svc_free(struct sipe_core_private *sipe_private)
 	struct sipe_svc *svc = sipe_private->svc;
 	if (!svc)
 		return;
+
+	/* Web Service stack is shutting down: reject all new requests */
+	svc->shutting_down = TRUE;
 
 	if (svc->pending_requests) {
 		GSList *entry = svc->pending_requests;
@@ -170,27 +174,41 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				       gpointer callback_data)
 {
 	struct svc_request *data = g_new0(struct svc_request, 1);
-	struct sipe_http_request *request;
+	struct sipe_http_request *request = NULL;
+	struct sipe_svc *svc;
 
-	if (body) {
-		gchar *headers = g_strdup_printf("SOAPAction: \"%s\"\r\n",
-						 soap_action);
+	sipe_svc_init(sipe_private);
+	svc = sipe_private->svc;
 
-		request = sipe_http_request_post(sipe_private,
-						 uri,
-						 headers,
-						 body,
-						 content_type,
-						 sipe_svc_https_response,
-						 data);
-		g_free(headers);
-
+	if (svc->shutting_down) {
+		SIPE_DEBUG_ERROR("sipe_svc_https_request: new Web Service request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
+				 "URI:    %s\n"
+				 "Action: %s\n"
+				 "Body:   %s\n",
+				 uri,
+				 soap_action ? soap_action : "<NONE>",
+				 body ? body : "<EMPTY>");
 	} else {
-		request = sipe_http_request_get(sipe_private,
-						uri,
-						NULL,
-						sipe_svc_https_response,
-						data);
+		if (body) {
+			gchar *headers = g_strdup_printf("SOAPAction: \"%s\"\r\n",
+							 soap_action);
+
+			request = sipe_http_request_post(sipe_private,
+							 uri,
+							 headers,
+							 body,
+							 content_type,
+							 sipe_svc_https_response,
+							 data);
+			g_free(headers);
+
+		} else {
+			request = sipe_http_request_get(sipe_private,
+							uri,
+							NULL,
+							sipe_svc_https_response,
+							data);
+		}
 	}
 
 	if (request) {
@@ -200,9 +218,8 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 		data->request     = request;
 		data->uri         = g_strdup(uri);
 
-		sipe_svc_init(sipe_private);
-		sipe_private->svc->pending_requests = g_slist_prepend(sipe_private->svc->pending_requests,
-								      data);
+		svc->pending_requests = g_slist_prepend(svc->pending_requests,
+							data);
 
 		sipe_http_request_session(request, session->session);
 		sipe_http_request_ready(request);

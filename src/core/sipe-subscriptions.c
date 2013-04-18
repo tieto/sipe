@@ -756,7 +756,7 @@ static const struct event_subscription_data events_table[] =
 	{ "vnd-microsoft-roaming-contacts", sipe_subscribe_roaming_contacts,
 		  EVENT_OCS2005 | EVENT_OCS2007 },
 	{ "vnd-microsoft-provisioning",     sipe_subscribe_roaming_provisioning,
-		  EVENT_OCS2007                 },
+		  EVENT_OCS2005                 },
 	{ "vnd-microsoft-provisioning-v2",  sipe_subscribe_roaming_provisioning_v2,
 		  EVENT_OCS2007                 },
 	{ "vnd-microsoft-roaming-self",     sipe_subscribe_roaming_self,

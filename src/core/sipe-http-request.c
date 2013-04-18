@@ -403,6 +403,20 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 	struct sipe_http_request *req;
 	if (!parsed_uri)
 		return(NULL);
+	if (sipe_http_shutting_down(sipe_private)) {
+		SIPE_DEBUG_ERROR("sipe_http_request_new: new HTTP request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
+				 "Host:    %s\n"
+				 "Port:    %d\n"
+				 "Path:    %s\n"
+				 "Headers: %s\n"
+				 "Body:    %s\n",
+				 parsed_uri->host,
+				 parsed_uri->port,
+				 parsed_uri->path,
+				 headers ? headers : "<NONE>",
+				 body ? body : "<EMPTY>");
+		return(NULL);
+	}
 
 	req          = g_new0(struct sipe_http_request, 1);
 	req->flags   = 0;
