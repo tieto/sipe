@@ -165,13 +165,24 @@ libsipe_core_la_SOURCES += sipe-media.h sipe-media.c \
 	sdpmsg.h sdpmsg.c
 endif
 
-check_PROGRAMS = sipe_xml_tests
+check_PROGRAMS =
+
+check_PROGRAMS += sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_xml_tests_LDADD = \
 	libsipe_core.la \
 	libsipe_core_libxml2.la \
 	$(LIBXML2_LIBS) \
+	$(GLIB_LIBS)
+
+check_PROGRAMS += sip_sec_digest_tests
+sip_sec_digest_tests_SOURCES = sip-sec-digest-tests.c
+sip_sec_digest_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
+sip_sec_digest_tests_LDADD = \
+	libsipe_core_la-sipe-utils.lo \
+	libsipe_core_crypto_nss_la-sipe-digest-nss.lo \
+	$(NSS_LIBS) \
 	$(GLIB_LIBS)
 
 # disables "caching" of memory blocks in tests
