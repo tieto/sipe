@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 #include <gio/gio.h>
 
 #include "sipe-backend.h"
+#include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-nls.h"
 
@@ -51,6 +52,7 @@ struct sipe_transport_telepathy {
 	GSList *buffers;
 	gboolean is_writing;
 	gboolean do_flush;
+	gboolean wait_for_user;
 };
 
 #define TELEPATHY_TRANSPORT ((struct sipe_transport_telepathy *) conn)
@@ -135,11 +137,16 @@ static void socket_connected(GObject *client,
 							   &error);
 
 	if (transport->socket == NULL) {
-		const gchar *msg = error ? error->message : "UNKNOWN";
-		SIPE_DEBUG_ERROR("socket_connected: failed: %s", msg);
-		if (transport->error)
-			transport->error(SIPE_TRANSPORT_CONNECTION, msg);
-		g_error_free(error);
+		if (transport->wait_for_user) {
+			SIPE_DEBUG_INFO_NOFORMAT("socket_connected: need to wait for user interaction");
+			/* @TODO: trigger user interaction */
+		} else {
+			const gchar *msg = error ? error->message : "UNKNOWN";
+			SIPE_DEBUG_ERROR("socket_connected: failed: %s", msg);
+			if (transport->error)
+				transport->error(SIPE_TRANSPORT_CONNECTION, msg);
+			g_error_free(error);
+		}
 	} else if (g_cancellable_is_cancelled(transport->cancel)) {
 		/* connect already succeeded when transport was disconnected */
 		g_object_unref(transport->socket);
@@ -176,6 +183,42 @@ static void socket_connected(GObject *client,
 	}
 }
 
+static gboolean accept_certificate_signal(GTlsConnection *tls,
+					  SIPE_UNUSED_PARAMETER GTlsCertificate *peer_cert,
+					  SIPE_UNUSED_PARAMETER GTlsCertificateFlags errors,
+					  gpointer user_data)
+{
+	struct sipe_transport_telepathy *transport = user_data;
+
+	SIPE_DEBUG_INFO("accept_certificate_signal: %p", tls);
+
+	/* second connection attempt after feedback from user? */
+	if (transport->wait_for_user) {
+		/* user accepted certificate */
+		transport->wait_for_user = FALSE;
+		return(TRUE);
+	} else {
+		/* retry after user accepted certificate */
+		transport->wait_for_user = TRUE;
+		return(FALSE);
+	}
+}
+
+static void tls_handshake_starts(SIPE_UNUSED_PARAMETER GSocketClient *client,
+				 GSocketClientEvent event,
+				 SIPE_UNUSED_PARAMETER GSocketConnectable *connectable,
+				 GIOStream *connection,
+				 gpointer user_data)
+{
+	if (event == G_SOCKET_CLIENT_TLS_HANDSHAKING) {
+		SIPE_DEBUG_INFO("tls_handshake_starts: %p", connection);
+		g_signal_connect(connection, /* is a GTlsConnection */
+				 "accept-certificate",
+				 G_CALLBACK(accept_certificate_signal),
+				 user_data);
+	}
+}
+
 struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 								 const sipe_connect_setup *setup)
 {
@@ -193,6 +236,7 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 	transport->buffers          = NULL;
 	transport->is_writing       = FALSE;
 	transport->do_flush         = FALSE;
+	transport->wait_for_user    = FALSE;
 
 	if ((setup->type == SIPE_TRANSPORT_TLS) ||
 	    (setup->type == SIPE_TRANSPORT_TCP)) {
@@ -201,10 +245,11 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 		/* request TLS connection */
 		if (setup->type == SIPE_TRANSPORT_TLS) {
 			SIPE_DEBUG_INFO_NOFORMAT("using TLS");
-			g_socket_client_set_tls(client,
-						setup->type == SIPE_TRANSPORT_TLS);
-			/* @TODO certificate handling - now accept all*/
-			g_socket_client_set_tls_validation_flags(client, 0);
+			g_socket_client_set_tls(client, TRUE);
+			g_signal_connect(client,
+					 "event",
+					 G_CALLBACK(tls_handshake_starts),
+					 transport);
 		} else
 			SIPE_DEBUG_INFO_NOFORMAT("using TCP");
 
