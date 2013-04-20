@@ -397,8 +397,9 @@ AS_IF([test "x$enable_telepathy" != xno],
 		 dnl telepathy uses from gio:
 		 dnl  - GIOStream      (>= 2.22.0)
 		 dnl  - GResolver      (>= 2.22.0)
+		 dnl  - GSocketClient  (>= 2.32.0)
 		 dnl  - GTlsConnection (>= 2.28.0)
-		 PKG_CHECK_MODULES(GIO, [gio-2.0 >= 2.28.0])
+		 PKG_CHECK_MODULES(GIO, [gio-2.0 >= 2.32.0])
 
 		],
 		[enable_telepathy=no])])
