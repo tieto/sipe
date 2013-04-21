@@ -183,6 +183,17 @@ static void socket_connected(GObject *client,
 	}
 }
 
+static void certificate_result(SIPE_UNUSED_PARAMETER GObject *unused,
+			       SIPE_UNUSED_PARAMETER GAsyncResult *res,
+			       gpointer data)
+{
+	struct sipe_transport_telepathy *transport = data;
+
+	SIPE_DEBUG_INFO("certificate_result: %p", transport);
+
+	/* @TODO: take action based on result */
+}
+
 static gboolean accept_certificate_signal(GTlsConnection *tls,
 					  SIPE_UNUSED_PARAMETER GTlsCertificate *peer_cert,
 					  SIPE_UNUSED_PARAMETER GTlsCertificateFlags errors,
@@ -200,6 +211,12 @@ static gboolean accept_certificate_signal(GTlsConnection *tls,
 	} else {
 		/* retry after user accepted certificate */
 		transport->wait_for_user = TRUE;
+		/* @TODO: set up correct parameters */
+		sipe_telepathy_tls_verify_async(G_OBJECT(transport->private->connection),
+						"",
+						NULL,
+						certificate_result,
+						transport);
 		return(FALSE);
 	}
 }

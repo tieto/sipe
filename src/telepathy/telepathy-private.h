@@ -25,6 +25,7 @@ struct _GObject;
 struct _GObjectClass;
 struct _SipeConnection;
 struct _SipeContactList;
+struct _SipeTLSManager;
 struct _TpBaseConnection;
 struct _TpBaseConnectionManager;
 struct _TpBaseProtocol;
@@ -48,6 +49,9 @@ struct sipe_backend_private {
 	/* status */
 	guint activity;
 	gchar *message;
+
+	/* TLS certificate verification */
+	struct _SipeTLSManager *tls_manager;
 
 	/* transport */
 	struct sipe_transport_telepathy *transport;
@@ -102,7 +106,12 @@ void sipe_telepathy_status_init(struct _GObjectClass *object_class,
 				gsize struct_offset);
 
 /* TLS certificate verification */
-GObject *sipe_telepathy_tls_new(struct _TpBaseConnection *connection);
+struct _SipeTLSManager *sipe_telepathy_tls_new(struct _TpBaseConnection *connection);
+void sipe_telepathy_tls_verify_async(struct _GObject *connection,
+				     const gchar *hostname,
+				     const gchar **reference_identities,
+				     GAsyncReadyCallback callback,
+				     gpointer user_data);
 
 /*
   Local Variables:

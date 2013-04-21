@@ -62,6 +62,7 @@ typedef struct _SipeConnection {
 	/* channel managers */
 	TpSimplePasswordManager *password_manager;
 	struct _SipeContactList *contact_list;
+	struct _SipeTLSManager  *tls_manager;
 
 	struct sipe_backend_private private;
 	gchar *account;
@@ -192,6 +193,7 @@ static gboolean connect_to_core(SipeConnection *self,
 							       self->account,
 							       NULL);
 		telepathy_private->message      = NULL;
+		telepathy_private->tls_manager  = self->tls_manager;
 		telepathy_private->transport    = NULL;
 		telepathy_private->ipaddress    = NULL;
 
@@ -373,7 +375,9 @@ static GPtrArray *create_channel_managers(TpBaseConnection *base)
 	g_ptr_array_add(channel_managers, self->password_manager);
 
 	g_ptr_array_add(channel_managers, sipe_telepathy_search_new(base));
-	g_ptr_array_add(channel_managers, sipe_telepathy_tls_new(base));
+
+	self->tls_manager = sipe_telepathy_tls_new(base);
+	g_ptr_array_add(channel_managers, self->tls_manager);
 
 	return(channel_managers);
 }
