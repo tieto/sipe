@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -101,6 +101,8 @@ struct _GObject *sipe_telepathy_search_new(struct _TpBaseConnection *connection)
 void sipe_telepathy_status_init(struct _GObjectClass *object_class,
 				gsize struct_offset);
 
+/* TLS certificate verification */
+GObject *sipe_telepathy_tls_new(struct _TpBaseConnection *connection);
 
 /*
   Local Variables:

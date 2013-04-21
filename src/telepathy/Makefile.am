@@ -17,6 +17,7 @@ telepathy_sipe_SOURCES = \
 	telepathy-search.c \
 	telepathy-status.c \
 	telepathy-stubs.c \
+	telepathy-tls.c \
 	telepathy-transport.c
 
 AM_CFLAGS = $(st)
