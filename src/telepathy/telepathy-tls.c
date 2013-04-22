@@ -22,6 +22,8 @@
  * TLS certificate accept/reject user interaction
  */
 
+#include <string.h>
+
 #include <glib-object.h>
 #include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/svc-channel.h>
@@ -38,7 +40,6 @@ struct _SipeTLSCertificate;
 struct sipe_tls_info {
 	gchar *hostname;
 	gchar *cert_path;
-	gchar *cert_type;
 	GPtrArray *cert_data;
 	GStrv reference_identities;
 	struct _SipeTLSCertificate *certificate;
@@ -478,7 +479,7 @@ static void certificate_get_property(GObject *object,
 		g_value_set_uint(value, self->state);
 		break;
 	case CERTIFICATE_PROP_TYPE:
-		g_value_set_string(value, self->tls_info->cert_type);
+		g_value_set_string(value, "x509");
 		break;
 	case CERTIFICATE_PROP_CHAIN_DATA:
 		g_value_set_boxed(value, self->tls_info->cert_data);
@@ -634,7 +635,7 @@ static void tls_certificate_accept(TpSvcAuthenticationTLSCertificate *certificat
 }
 
 static void tls_certificate_reject(TpSvcAuthenticationTLSCertificate *certificate,
-				   SIPE_UNUSED_PARAMETER const GPtrArray *rejections,
+				   const GPtrArray *rejections,
 				   DBusGMethodInvocation *context)
 {
 	SipeTLSCertificate *self = SIPE_TLS_CERTIFICATE(certificate);
@@ -655,7 +656,7 @@ static void tls_certificate_reject(TpSvcAuthenticationTLSCertificate *certificat
 
 	self->state = SIPE_TLS_CERTIFICATE_REJECTED;
 
-	tp_svc_authentication_tls_certificate_emit_rejected(self, NULL);
+	tp_svc_authentication_tls_certificate_emit_rejected(self, rejections);
 
 	tp_svc_authentication_tls_certificate_return_from_reject(context);
 }
@@ -674,17 +675,31 @@ static void tls_certificate_iface_init(gpointer g_iface,
 }
 
 struct sipe_tls_info *sipe_telepathy_tls_info_new(const gchar *hostname,
-						  SIPE_UNUSED_PARAMETER struct _GTlsCertificate *certificate)
+						  GTlsCertificate *certificate)
 {
-	struct sipe_tls_info *tls_info = g_new0(struct sipe_tls_info, 1);
+	struct sipe_tls_info *tls_info = NULL;
+	gchar *pem;
 
-	tls_info->hostname = g_strdup(hostname);
+	g_object_get(certificate, "certificate-pem", &pem, NULL);
+	if (pem) {
+		guint length = strlen(pem);
+		GArray *array = g_array_sized_new(TRUE,
+						  FALSE,
+						  sizeof(guchar),
+						  length);
 
-	/*
-	 * @TODO
-	 * tls_info->reference_identities = g_boxed_copy(G_TYPE_STRV, reference_identities);??
-	 * tls_info->tls_info->cert_path
-	 */
+		SIPE_DEBUG_INFO("sipe_telepathy_tls_info_new: '%s' (%d)", pem, length);
+
+		tls_info = g_new0(struct sipe_tls_info, 1);
+		tls_info->hostname             = g_strdup(hostname);
+		tls_info->reference_identities = g_strsplit("", "", 0);
+
+		array = g_array_append_vals(array, pem, length);
+		g_free(pem);
+
+		tls_info->cert_data = g_ptr_array_new_full(1, (GDestroyNotify) g_array_unref);
+		g_ptr_array_add(tls_info->cert_data, array);
+	}
 
 	return(tls_info);
 }
@@ -694,8 +709,7 @@ void sipe_telepathy_tls_info_free(struct sipe_tls_info *tls_info)
 	g_object_unref(tls_info->certificate);
 	g_free(tls_info->hostname);
 	g_free(tls_info->cert_path);
-	g_free(tls_info->cert_type);
-	/* @TODO g_ptr_array_unref(tls_info->cert_data); */
+	g_ptr_array_unref(tls_info->cert_data);
 	g_strfreev(tls_info->reference_identities);
 	g_free(tls_info);
 }
