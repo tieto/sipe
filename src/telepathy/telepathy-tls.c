@@ -23,7 +23,9 @@
  */
 
 #include <glib-object.h>
+#include <telepathy-glib/dbus-properties-mixin.h>
 #include <telepathy-glib/svc-channel.h>
+#include <telepathy-glib/svc-tls.h>
 #include <telepathy-glib/telepathy-glib.h>
 
 #include "sipe-backend.h"
@@ -32,11 +34,20 @@
 #include "telepathy-private.h"
 
 /* TLS information required for user interaction */
+struct _SipeTLSCertificate;
 struct sipe_tls_info {
 	gchar *hostname;
-	gchar *server_cert_path;
+	gchar *cert_path;
+	gchar *cert_type;
+	GPtrArray *cert_data;
 	GStrv reference_identities;
+	struct _SipeTLSCertificate *certificate;
 };
+
+/* Certificate states */
+#define SIPE_TLS_CERTIFICATE_PENDING  0
+#define SIPE_TLS_CERTIFICATE_REJECTED 1
+#define SIPE_TLS_CERTIFICATE_ACCEPTED 2
 
 G_BEGIN_DECLS
 /*
@@ -88,6 +99,33 @@ static GType sipe_tls_channel_get_type(void) G_GNUC_CONST;
 #define SIPE_TLS_CHANNEL(obj) \
 	(G_TYPE_CHECK_INSTANCE_CAST((obj), SIPE_TYPE_TLS_CHANNEL, \
 				    SipeTLSChannel))
+
+/*
+ * TLS Certificate class - data structures
+ */
+typedef struct _SipeTLSCertificateClass {
+	GObjectClass parent_class;
+
+	TpDBusPropertiesMixinClass dbus_props_class;
+} SipeTLSCertificateClass;
+
+typedef struct _SipeTLSCertificate {
+	GObject parent;
+
+	const struct sipe_tls_info *tls_info;
+
+	guint state;
+} SipeTLSCertificate;
+
+/*
+ * TLS Certificate class - type macros
+ */
+static GType sipe_tls_certificate_get_type(void) G_GNUC_CONST;
+#define SIPE_TYPE_TLS_CERTIFICATE \
+	(sipe_tls_certificate_get_type())
+#define SIPE_TLS_CERTIFICATE(obj) \
+	(G_TYPE_CHECK_INSTANCE_CAST((obj), SIPE_TYPE_TLS_CERTIFICATE, \
+				    SipeTLSCertificate))
 G_END_DECLS
 
 /*
@@ -109,6 +147,19 @@ G_DEFINE_TYPE_WITH_CODE(SipeTLSChannel,
 			TP_TYPE_BASE_CHANNEL,
 			G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_CHANNEL_TYPE_SERVER_TLS_CONNECTION,
 					      NULL);
+)
+
+/*
+ * TLS Certificate class - type definition
+ */
+static void tls_certificate_iface_init(gpointer, gpointer);
+G_DEFINE_TYPE_WITH_CODE (SipeTLSCertificate,
+			 sipe_tls_certificate,
+			 G_TYPE_OBJECT,
+			 G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_AUTHENTICATION_TLS_CERTIFICATE,
+					       tls_certificate_iface_init);
+			 G_IMPLEMENT_INTERFACE(TP_TYPE_SVC_DBUS_PROPERTIES,
+					       tp_dbus_properties_mixin_iface_init);
 )
 
 /*
@@ -255,16 +306,16 @@ enum {
 	CHANNEL_LAST_PROP
 };
 
-static void get_property(GObject *object,
-			 guint property_id,
-			 GValue *value,
-			 GParamSpec *pspec)
+static void channel_get_property(GObject *object,
+				 guint property_id,
+				 GValue *value,
+				 GParamSpec *pspec)
 {
 	SipeTLSChannel *self = SIPE_TLS_CHANNEL(object);
 
 	switch (property_id) {
 	case CHANNEL_PROP_SERVER_CERTIFICATE:
-		g_value_set_boxed(value, self->tls_info->server_cert_path);
+		g_value_set_boxed(value, self->tls_info->cert_path);
 		break;
 	case CHANNEL_PROP_HOSTNAME:
 		g_value_set_string(value, self->tls_info->hostname);
@@ -278,8 +329,8 @@ static void get_property(GObject *object,
 	}
 }
 
-static void fill_immutable_properties(TpBaseChannel *channel,
-				      GHashTable *properties)
+static void channel_fill_immutable_properties(TpBaseChannel *channel,
+					      GHashTable *properties)
 {
 	TP_BASE_CHANNEL_CLASS(sipe_tls_channel_parent_class)->fill_immutable_properties(channel,
 											   properties);
@@ -291,7 +342,7 @@ static void fill_immutable_properties(TpBaseChannel *channel,
 						      NULL);
 }
 
-static gchar *get_object_path_suffix(TpBaseChannel *base)
+static gchar *channel_get_object_path_suffix(TpBaseChannel *base)
 {
 	return(g_strdup_printf("TLSChannel_%p", base));
 }
@@ -353,12 +404,12 @@ static void sipe_tls_channel_class_init(SipeTLSChannelClass *klass)
 
 	object_class->constructed      = sipe_tls_channel_constructed;
 	object_class->finalize         = sipe_tls_channel_finalize;
-	object_class->get_property     = get_property;
+	object_class->get_property     = channel_get_property;
 
 	base_class->channel_type       = TP_IFACE_CHANNEL_TYPE_SERVER_TLS_CONNECTION;
 	base_class->target_handle_type = TP_HANDLE_TYPE_NONE;
-	base_class->fill_immutable_properties = fill_immutable_properties;
-	base_class->get_object_path_suffix    = get_object_path_suffix;
+	base_class->fill_immutable_properties = channel_fill_immutable_properties;
+	base_class->get_object_path_suffix    = channel_get_object_path_suffix;
 	base_class->interfaces         = NULL;
 	base_class->close              = tp_base_channel_destroyed;
 
@@ -401,6 +452,227 @@ static void sipe_tls_channel_init(SIPE_UNUSED_PARAMETER SipeTLSChannel *self)
 	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSChannel::init");
 }
 
+/*
+ * TLS Certificate class - instance methods
+ */
+enum {
+	CERTIFICATE_PROP_OBJECT_PATH = 1,
+	CERTIFICATE_PROP_STATE,
+	CERTIFICATE_PROP_TYPE,
+	CERTIFICATE_PROP_CHAIN_DATA,
+	CERTIFICATE_LAST_PROP
+};
+
+static void certificate_get_property(GObject *object,
+				     guint property_id,
+				     GValue *value,
+				     GParamSpec *pspec)
+{
+	SipeTLSCertificate *self = SIPE_TLS_CERTIFICATE(object);
+
+	switch (property_id) {
+	case CERTIFICATE_PROP_OBJECT_PATH:
+		g_value_set_string(value, self->tls_info->cert_path);
+		break;
+	case CERTIFICATE_PROP_STATE:
+		g_value_set_uint(value, self->state);
+		break;
+	case CERTIFICATE_PROP_TYPE:
+		g_value_set_string(value, self->tls_info->cert_type);
+		break;
+	case CERTIFICATE_PROP_CHAIN_DATA:
+		g_value_set_boxed(value, self->tls_info->cert_data);
+		break;
+	default:
+		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
+		break;
+	}
+}
+
+static void sipe_tls_certificate_constructed(GObject *object)
+{
+	SipeTLSCertificate *self    = SIPE_TLS_CERTIFICATE(object);
+	void (*chain_up)(GObject *) = G_OBJECT_CLASS(sipe_tls_certificate_parent_class)->constructed;
+
+	if (chain_up)
+		chain_up(object);
+
+	self->state = SIPE_TLS_CERTIFICATE_PENDING;
+}
+
+static void sipe_tls_certificate_finalize(GObject *object)
+{
+	SipeTLSCertificate *self = SIPE_TLS_CERTIFICATE(object);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSCertificate::finalize");
+
+	/* @TODO */
+	(void)self;
+
+	G_OBJECT_CLASS(sipe_tls_certificate_parent_class)->finalize(object);
+}
+
+/*
+ * TLS Certificate class - type implementation
+ */
+static void sipe_tls_certificate_class_init(SipeTLSCertificateClass *klass)
+{
+	static TpDBusPropertiesMixinPropImpl props[] = {
+		{
+			.name        = "State",
+			.getter_data = "state",
+			.setter_data = NULL
+		},
+		{
+			.name        = "CertificateType",
+			.getter_data = "certificate-type",
+			.setter_data = NULL
+		},
+		{
+			.name        = "CertificateChainData",
+			.getter_data = "certificate-chain-data",
+			.setter_data = NULL
+		},
+		{
+			.name        = NULL
+		}
+	};
+	static TpDBusPropertiesMixinIfaceImpl prop_interfaces[] = {
+		{
+			.name   = TP_IFACE_AUTHENTICATION_TLS_CERTIFICATE,
+			.getter = tp_dbus_properties_mixin_getter_gobject_properties,
+			.setter = NULL,
+			.props  = props
+		},
+		{
+			.name   = NULL
+		}
+	};
+	GObjectClass *object_class = G_OBJECT_CLASS(klass);
+	GParamSpec *ps;
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSCertificate::class_init");
+
+	klass->dbus_props_class.interfaces = prop_interfaces;
+
+	object_class->constructed      = sipe_tls_certificate_constructed;
+	object_class->finalize         = sipe_tls_certificate_finalize;
+	object_class->get_property     = certificate_get_property;
+
+	ps = g_param_spec_string("object-path",
+				 "D-Bus object path",
+				 "The D-Bus object path used for this object on the bus.",
+				 NULL,
+				 G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+	g_object_class_install_property(object_class,
+					CERTIFICATE_PROP_OBJECT_PATH,
+					ps);
+
+	ps = g_param_spec_uint("state",
+			       "State of this certificate",
+			       "The state of this TLS certificate.",
+			       SIPE_TLS_CERTIFICATE_PENDING,
+			       SIPE_TLS_CERTIFICATE_ACCEPTED,
+			       SIPE_TLS_CERTIFICATE_PENDING,
+			       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+	g_object_class_install_property(object_class,
+					CERTIFICATE_PROP_STATE,
+					ps);
+
+	ps = g_param_spec_string("certificate-type",
+				 "The certificate type",
+				 "The type of this certificate.",
+				 NULL,
+				 G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+	g_object_class_install_property(object_class,
+					CERTIFICATE_PROP_TYPE,
+					ps);
+
+	ps = g_param_spec_boxed("certificate-chain-data",
+				"The certificate chain data",
+				"The raw PEM-encoded trust chain of this certificate.",
+				TP_ARRAY_TYPE_UCHAR_ARRAY_LIST,
+				G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+	g_object_class_install_property(object_class,
+					CERTIFICATE_PROP_CHAIN_DATA, ps);
+
+	tp_dbus_properties_mixin_class_init(object_class,
+					    G_STRUCT_OFFSET(SipeTLSCertificateClass, dbus_props_class));
+}
+
+static void sipe_tls_certificate_init(SIPE_UNUSED_PARAMETER SipeTLSCertificate *self)
+{
+	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSCertificate::init");
+}
+
+/*
+ * TLS Certificate class - interface implementation
+ */
+static void tls_certificate_accept(TpSvcAuthenticationTLSCertificate *certificate,
+				   DBusGMethodInvocation *context)
+{
+	SipeTLSCertificate *self = SIPE_TLS_CERTIFICATE(certificate);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSCertificate::accept");
+
+	if (self->state != SIPE_TLS_CERTIFICATE_PENDING) {
+		GError error = {
+			TP_ERROR,
+			TP_ERROR_INVALID_ARGUMENT,
+			"Calling Accept() on a certificate with state != PENDING "
+			"doesn't make sense."
+			};
+
+		dbus_g_method_return_error(context, &error);
+		return;
+	}
+
+	self->state = SIPE_TLS_CERTIFICATE_ACCEPTED;
+	tp_svc_authentication_tls_certificate_emit_accepted(self);
+
+	tp_svc_authentication_tls_certificate_return_from_accept(context);
+}
+
+static void tls_certificate_reject(TpSvcAuthenticationTLSCertificate *certificate,
+				   SIPE_UNUSED_PARAMETER const GPtrArray *rejections,
+				   DBusGMethodInvocation *context)
+{
+	SipeTLSCertificate *self = SIPE_TLS_CERTIFICATE(certificate);
+
+	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSCertificate::reject");
+
+	if (self->state != SIPE_TLS_CERTIFICATE_PENDING) {
+		GError error = {
+			TP_ERROR,
+			TP_ERROR_INVALID_ARGUMENT,
+			"Calling Reject() on a certificate with state != PENDING "
+			"doesn't make sense."
+		};
+
+		dbus_g_method_return_error(context, &error);
+		return;
+	}
+
+	self->state = SIPE_TLS_CERTIFICATE_REJECTED;
+
+	tp_svc_authentication_tls_certificate_emit_rejected(self, NULL);
+
+	tp_svc_authentication_tls_certificate_return_from_reject(context);
+}
+
+static void tls_certificate_iface_init(gpointer g_iface,
+				       SIPE_UNUSED_PARAMETER gpointer iface_data)
+{
+	TpSvcAuthenticationTLSCertificateClass *klass = g_iface;
+
+#define IMPLEMENT(x) \
+	tp_svc_authentication_tls_certificate_implement_##x(	\
+		klass, tls_certificate_##x)
+	IMPLEMENT(accept);
+	IMPLEMENT(reject);
+#undef IMPLEMENT
+}
+
 struct sipe_tls_info *sipe_telepathy_tls_info_new(const gchar *hostname,
 						  SIPE_UNUSED_PARAMETER struct _GTlsCertificate *certificate)
 {
@@ -411,7 +683,7 @@ struct sipe_tls_info *sipe_telepathy_tls_info_new(const gchar *hostname,
 	/*
 	 * @TODO
 	 * tls_info->reference_identities = g_boxed_copy(G_TYPE_STRV, reference_identities);??
-	 * tls_info->tls_info->server_cert_path
+	 * tls_info->tls_info->cert_path
 	 */
 
 	return(tls_info);
@@ -419,34 +691,51 @@ struct sipe_tls_info *sipe_telepathy_tls_info_new(const gchar *hostname,
 
 void sipe_telepathy_tls_info_free(struct sipe_tls_info *tls_info)
 {
+	g_object_unref(tls_info->certificate);
 	g_free(tls_info->hostname);
-	g_free(tls_info->server_cert_path);
+	g_free(tls_info->cert_path);
+	g_free(tls_info->cert_type);
+	/* @TODO g_ptr_array_unref(tls_info->cert_data); */
 	g_strfreev(tls_info->reference_identities);
 	g_free(tls_info);
 }
 
-/* create new tls channel object */
+/* create new tls certificate object */
 void sipe_telepathy_tls_verify_async(GObject *connection,
 				     struct sipe_tls_info *tls_info,
 				     GAsyncReadyCallback callback,
 				     gpointer user_data)
 {
 	struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(connection);
-
 	/* property "connection" required by TpBaseChannel */
-	SipeTLSChannel *self = g_object_new(SIPE_TYPE_TLS_CHANNEL,
-					    "connection", connection,
-					    NULL);
+	SipeTLSChannel *channel = g_object_new(SIPE_TYPE_TLS_CHANNEL,
+					       "connection", connection,
+					       NULL);
+	TpBaseChannel *base = TP_BASE_CHANNEL(channel);
+	SipeTLSCertificate *certificate = g_object_new(SIPE_TYPE_TLS_CERTIFICATE,
+						       NULL);
+	TpDBusDaemon *daemon = tp_dbus_daemon_dup(NULL);
 
-	self->tls_info = tls_info;
-	self->result = g_simple_async_result_new(G_OBJECT(self),
-						 callback,
-						 user_data,
-						 sipe_telepathy_tls_verify_async);
+	tls_info->certificate = certificate;
+	channel->tls_info     = tls_info;
+	certificate->tls_info = tls_info;
 
-	tp_base_channel_register(TP_BASE_CHANNEL(self));
+	tp_base_channel_register(base);
+	tls_info->cert_path = g_strdup_printf("%s/TLSCertificateObject",
+					      tp_base_channel_get_object_path(base));
 
-	manager_new_channel(telepathy_private->tls_manager, self);
+	/* register the certificate on the bus */
+	tp_dbus_daemon_register_object(daemon,
+				       tls_info->cert_path,
+				       certificate);
+	g_object_unref(daemon);
+
+	channel->result = g_simple_async_result_new(G_OBJECT(channel),
+						    callback,
+						    user_data,
+						    sipe_telepathy_tls_verify_async);
+
+	manager_new_channel(telepathy_private->tls_manager, channel);
 }
 
 /*
