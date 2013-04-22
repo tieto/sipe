@@ -127,14 +127,24 @@ static void read_completed(GObject *stream,
 }
 
 static void certificate_result(SIPE_UNUSED_PARAMETER GObject *unused,
-			       SIPE_UNUSED_PARAMETER GAsyncResult *res,
+			       GAsyncResult *result,
 			       gpointer data)
 {
 	struct sipe_transport_telepathy *transport = data;
+	GError *error = NULL;
 
-	SIPE_DEBUG_INFO("certificate_result: %p", transport);
-
-	/* @TODO: take action based on result */
+	g_simple_async_result_propagate_error(G_SIMPLE_ASYNC_RESULT(result),
+					      &error);
+	if (error) {
+		SIPE_DEBUG_INFO("certificate_result: %s", error->message);
+		if (transport->error)
+			transport->error(SIPE_TRANSPORT_CONNECTION,
+					 error->message);
+		g_error_free(error);
+	} else {
+		SIPE_DEBUG_INFO("certificate_result: trigger reconnect %p", transport);
+		/* @TODO */
+	}
 }
 
 static void socket_connected(GObject *client,
