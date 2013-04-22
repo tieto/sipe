@@ -238,13 +238,12 @@ static void foreach_channel(TpChannelManager *manager,
 			    gpointer user_data)
 {
 	SipeTLSManager *self = SIPE_TLS_MANAGER(manager);
+	GSList *entry;
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSManager::foreach_channel");
 
-	/* @TODO */
-	(void)self;
-	(void)func;
-	(void)user_data;
+	for (entry = self->channels; entry; entry = entry->next)
+		func(entry->data, user_data);
 }
 
 static void channel_manager_iface_init(gpointer g_iface,
@@ -273,6 +272,8 @@ SipeTLSManager *sipe_telepathy_tls_new(TpBaseConnection *connection)
 static void channel_closed_cb(SipeTLSChannel *channel,
 			      SipeTLSManager *self)
 {
+	SIPE_DEBUG_INFO("channel_closed_cb: %p", channel);
+
 	self->channels = g_slist_remove(self->channels, channel);
 	tp_channel_manager_emit_channel_closed_for_object(self,
 							  TP_EXPORTABLE_CHANNEL(channel));
@@ -294,7 +295,6 @@ static void manager_new_channel(SipeTLSManager *self,
 	tp_channel_manager_emit_new_channel(self,
 					    TP_EXPORTABLE_CHANNEL(channel),
 					    NULL);
-
 }
 
 /*
@@ -350,14 +350,10 @@ static gchar *channel_get_object_path_suffix(TpBaseChannel *base)
 
 static void sipe_tls_channel_constructed(GObject *object)
 {
-	SipeTLSChannel *self        = SIPE_TLS_CHANNEL(object);
 	void (*chain_up)(GObject *) = G_OBJECT_CLASS(sipe_tls_channel_parent_class)->constructed;
 
 	if (chain_up)
 		chain_up(object);
-
-	/* @TODO */
-	(void)self;
 }
 
 static void sipe_tls_channel_finalize(GObject *object)
@@ -366,8 +362,14 @@ static void sipe_tls_channel_finalize(GObject *object)
 
 	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSChannel::finalize");
 
-	g_simple_async_result_complete(self->result);
-	g_clear_object(&self->result);
+	if (self->result) {
+		g_simple_async_result_set_error(self->result,
+						TP_ERROR,
+						TP_ERROR_CANCELLED,
+						"The TLS channel is being destroyed");
+		g_simple_async_result_complete_in_idle(self->result);
+		g_clear_object(&self->result);
+	}
 
 	G_OBJECT_CLASS(sipe_tls_channel_parent_class)->finalize(object);
 }
@@ -453,6 +455,61 @@ static void sipe_tls_channel_init(SIPE_UNUSED_PARAMETER SipeTLSChannel *self)
 	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSChannel::init");
 }
 
+static void certificate_accepted_cb(SIPE_UNUSED_PARAMETER SipeTLSCertificate *certificate,
+				    SipeTLSChannel *self)
+{
+	g_simple_async_result_complete(self->result);
+	g_clear_object(&self->result);
+	tp_base_channel_close(TP_BASE_CHANNEL(self));
+}
+
+static void certificate_rejected_cb(SIPE_UNUSED_PARAMETER SipeTLSCertificate *certificate,
+				    SIPE_UNUSED_PARAMETER GPtrArray *rejections,
+				    SipeTLSChannel *self)
+{
+	static GQuark quark = 0;
+
+	if (!quark)
+		quark = g_quark_from_static_string("server-tls-error");
+
+	g_simple_async_result_set_error(self->result,
+					quark,
+					0,
+					"TLS certificate rejected");
+	g_simple_async_result_complete(self->result);
+	g_clear_object(&self->result);
+	tp_base_channel_close(TP_BASE_CHANNEL(self));
+}
+
+static void channel_new_certificate(GObject *connection,
+				    struct sipe_tls_info *tls_info,
+				    SipeTLSChannel *self,
+				    GAsyncReadyCallback callback,
+				    gpointer user_data)
+{
+	struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(connection);
+
+	self->tls_info = tls_info;
+	self->result   = g_simple_async_result_new(G_OBJECT(self),
+						   callback,
+						   user_data,
+						   channel_new_certificate);
+
+	g_signal_connect(tls_info->certificate,
+			 "accepted",
+			 G_CALLBACK(certificate_accepted_cb),
+			 self);
+
+	g_signal_connect(tls_info->certificate,
+			 "rejected",
+			 G_CALLBACK(certificate_rejected_cb),
+			 self);
+
+	manager_new_channel(telepathy_private->tls_manager, self);
+}
+
+
+
 /*
  * TLS Certificate class - instance methods
  */
@@ -503,12 +560,7 @@ static void sipe_tls_certificate_constructed(GObject *object)
 
 static void sipe_tls_certificate_finalize(GObject *object)
 {
-	SipeTLSCertificate *self = SIPE_TLS_CERTIFICATE(object);
-
 	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSCertificate::finalize");
-
-	/* @TODO */
-	(void)self;
 
 	G_OBJECT_CLASS(sipe_tls_certificate_parent_class)->finalize(object);
 }
@@ -688,8 +740,6 @@ struct sipe_tls_info *sipe_telepathy_tls_info_new(const gchar *hostname,
 						  sizeof(guchar),
 						  length);
 
-		SIPE_DEBUG_INFO("sipe_telepathy_tls_info_new: '%s' (%d)", pem, length);
-
 		tls_info = g_new0(struct sipe_tls_info, 1);
 		tls_info->hostname             = g_strdup(hostname);
 		tls_info->reference_identities = g_strsplit("", "", 0);
@@ -720,7 +770,6 @@ void sipe_telepathy_tls_verify_async(GObject *connection,
 				     GAsyncReadyCallback callback,
 				     gpointer user_data)
 {
-	struct sipe_backend_private *telepathy_private = sipe_telepathy_connection_private(connection);
 	/* property "connection" required by TpBaseChannel */
 	SipeTLSChannel *channel = g_object_new(SIPE_TYPE_TLS_CHANNEL,
 					       "connection", connection,
@@ -731,7 +780,6 @@ void sipe_telepathy_tls_verify_async(GObject *connection,
 	TpDBusDaemon *daemon = tp_dbus_daemon_dup(NULL);
 
 	tls_info->certificate = certificate;
-	channel->tls_info     = tls_info;
 	certificate->tls_info = tls_info;
 
 	tp_base_channel_register(base);
@@ -744,12 +792,11 @@ void sipe_telepathy_tls_verify_async(GObject *connection,
 				       certificate);
 	g_object_unref(daemon);
 
-	channel->result = g_simple_async_result_new(G_OBJECT(channel),
-						    callback,
-						    user_data,
-						    sipe_telepathy_tls_verify_async);
-
-	manager_new_channel(telepathy_private->tls_manager, channel);
+	channel_new_certificate(connection,
+				tls_info,
+				channel,
+				callback,
+				user_data);
 }
 
 /*
