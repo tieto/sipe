@@ -52,6 +52,7 @@ struct sipe_transport_telepathy {
 	GInputStream *istream;
 	GOutputStream *ostream;
 	GSList *buffers;
+	guint port;
 	gboolean is_writing;
 	gboolean do_flush;
 };
@@ -126,6 +127,7 @@ static void read_completed(GObject *stream,
 				  transport);
 }
 
+static gboolean internal_connect(gpointer data);
 static void certificate_result(SIPE_UNUSED_PARAMETER GObject *unused,
 			       GAsyncResult *result,
 			       gpointer data)
@@ -143,7 +145,7 @@ static void certificate_result(SIPE_UNUSED_PARAMETER GObject *unused,
 		g_error_free(error);
 	} else {
 		SIPE_DEBUG_INFO("certificate_result: trigger reconnect %p", transport);
-		/* @TODO */
+		g_idle_add(internal_connect, transport);
 	}
 }
 
@@ -246,13 +248,40 @@ static void tls_handshake_starts(SIPE_UNUSED_PARAMETER GSocketClient *client,
 	}
 }
 
+static gboolean internal_connect(gpointer data)
+{
+	struct sipe_transport_telepathy *transport = data;
+	GSocketClient *client = g_socket_client_new();
+
+	SIPE_DEBUG_INFO("internal_connect - hostname: %s port: %d",
+			transport->hostname, transport->port);
+
+	/* request TLS connection */
+	if (transport->public.type == SIPE_TRANSPORT_TLS) {
+		SIPE_DEBUG_INFO_NOFORMAT("using TLS");
+		g_socket_client_set_tls(client, TRUE);
+		g_signal_connect(client,
+				 "event",
+				 G_CALLBACK(tls_handshake_starts),
+				 transport);
+	} else
+		SIPE_DEBUG_INFO_NOFORMAT("using TCP");
+
+	g_socket_client_connect_async(client,
+				      g_network_address_new(transport->hostname,
+							    transport->port),
+				      transport->cancel,
+				      socket_connected,
+				      transport);
+	g_object_unref(client);
+
+	return(FALSE);
+}
+
 struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 								 const sipe_connect_setup *setup)
 {
 	struct sipe_transport_telepathy *transport = g_new0(struct sipe_transport_telepathy, 1);
-
-	SIPE_DEBUG_INFO("sipe_backend_transport_connect - hostname: %s port: %d",
-			setup->server_name, setup->server_port);
 
 	transport->public.type      = setup->type;
 	transport->public.user_data = setup->user_data;
@@ -262,41 +291,24 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 	transport->hostname         = g_strdup(setup->server_name);
 	transport->tls_info         = NULL;
 	transport->private          = sipe_public->backend_private;
+	transport->cancel           = g_cancellable_new();
 	transport->buffers          = NULL;
+	transport->port             = setup->server_port;
 	transport->is_writing       = FALSE;
 	transport->do_flush         = FALSE;
 
 	if ((setup->type == SIPE_TRANSPORT_TLS) ||
 	    (setup->type == SIPE_TRANSPORT_TCP)) {
-		GSocketClient *client = g_socket_client_new();
 
-		/* request TLS connection */
-		if (setup->type == SIPE_TRANSPORT_TLS) {
-			SIPE_DEBUG_INFO_NOFORMAT("using TLS");
-			g_socket_client_set_tls(client, TRUE);
-			g_signal_connect(client,
-					 "event",
-					 G_CALLBACK(tls_handshake_starts),
-					 transport);
-		} else
-			SIPE_DEBUG_INFO_NOFORMAT("using TCP");
+		internal_connect(transport);
+		return(SIPE_TRANSPORT_CONNECTION);
 
-		transport->cancel = g_cancellable_new();
-		g_socket_client_connect_async(client,
-					      g_network_address_new(setup->server_name,
-								    setup->server_port),
-					      transport->cancel,
-					      socket_connected,
-					      transport);
-		g_object_unref(client);
 	} else {
 		setup->error(SIPE_TRANSPORT_CONNECTION,
 			     "This should not happen...");
 		sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
 		return(NULL);
 	}
-
-	return(SIPE_TRANSPORT_CONNECTION);
 }
 
 static gboolean free_transport(gpointer data)
