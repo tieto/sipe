@@ -31,6 +31,13 @@
 
 #include "telepathy-private.h"
 
+/* TLS information required for user interaction */
+struct sipe_tls_info {
+	gchar *hostname;
+	gchar *server_cert_path;
+	GStrv reference_identities;
+};
+
 G_BEGIN_DECLS
 /*
  * TLS Manager class - data structures
@@ -67,9 +74,7 @@ typedef struct _SipeTLSChannelClass {
 typedef struct _SipeTLSChannel {
         TpBaseChannel parent;
 
-	gchar *server_cert_path;
-	gchar *hostname;
-	GStrv reference_identities;
+	const struct sipe_tls_info *tls_info;
 
 	GSimpleAsyncResult *result;
 } SipeTLSChannel;
@@ -259,13 +264,13 @@ static void get_property(GObject *object,
 
 	switch (property_id) {
 	case CHANNEL_PROP_SERVER_CERTIFICATE:
-		g_value_set_boxed(value, self->server_cert_path);
+		g_value_set_boxed(value, self->tls_info->server_cert_path);
 		break;
 	case CHANNEL_PROP_HOSTNAME:
-		g_value_set_string(value, self->hostname);
+		g_value_set_string(value, self->tls_info->hostname);
 		break;
 	case CHANNEL_PROP_REFERENCE_IDENTITIES:
-		g_value_set_boxed(value, self->reference_identities);
+		g_value_set_boxed(value, self->tls_info->reference_identities);
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -311,10 +316,6 @@ static void sipe_tls_channel_finalize(GObject *object)
 
 	g_simple_async_result_complete(self->result);
 	g_clear_object(&self->result);
-
-	g_free(self->server_cert_path);
-	g_free(self->hostname);
-	g_strfreev(self->reference_identities);
 
 	G_OBJECT_CLASS(sipe_tls_channel_parent_class)->finalize(object);
 }
@@ -400,10 +401,33 @@ static void sipe_tls_channel_init(SIPE_UNUSED_PARAMETER SipeTLSChannel *self)
 	SIPE_DEBUG_INFO_NOFORMAT("SipeTLSChannel::init");
 }
 
+struct sipe_tls_info *sipe_telepathy_tls_info_new(const gchar *hostname,
+						  SIPE_UNUSED_PARAMETER struct _GTlsCertificate *certificate)
+{
+	struct sipe_tls_info *tls_info = g_new0(struct sipe_tls_info, 1);
+
+	tls_info->hostname = g_strdup(hostname);
+
+	/*
+	 * @TODO
+	 * tls_info->reference_identities = g_boxed_copy(G_TYPE_STRV, reference_identities);??
+	 * tls_info->tls_info->server_cert_path
+	 */
+
+	return(tls_info);
+}
+
+void sipe_telepathy_tls_info_free(struct sipe_tls_info *tls_info)
+{
+	g_free(tls_info->hostname);
+	g_free(tls_info->server_cert_path);
+	g_strfreev(tls_info->reference_identities);
+	g_free(tls_info);
+}
+
 /* create new tls channel object */
 void sipe_telepathy_tls_verify_async(GObject *connection,
-				     const gchar *hostname,
-				     const gchar **reference_identities,
+				     struct sipe_tls_info *tls_info,
 				     GAsyncReadyCallback callback,
 				     gpointer user_data)
 {
@@ -414,9 +438,7 @@ void sipe_telepathy_tls_verify_async(GObject *connection,
 					    "connection", connection,
 					    NULL);
 
-	self->hostname             = g_strdup(hostname);
-	self->reference_identities = g_boxed_copy(G_TYPE_STRV, reference_identities);
-
+	self->tls_info = tls_info;
 	self->result = g_simple_async_result_new(G_OBJECT(self),
 						 callback,
 						 user_data,

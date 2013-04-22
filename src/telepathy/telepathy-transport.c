@@ -44,6 +44,8 @@ struct sipe_transport_telepathy {
 	transport_connected_cb *connected;
 	transport_input_cb *input;
 	transport_error_cb *error;
+	gchar *hostname;
+	struct sipe_tls_info *tls_info;
 	struct sipe_backend_private *private;
 	GCancellable *cancel;
 	GSocketConnection *socket;
@@ -52,7 +54,6 @@ struct sipe_transport_telepathy {
 	GSList *buffers;
 	gboolean is_writing;
 	gboolean do_flush;
-	gboolean wait_for_user;
 };
 
 #define TELEPATHY_TRANSPORT ((struct sipe_transport_telepathy *) conn)
@@ -125,6 +126,17 @@ static void read_completed(GObject *stream,
 				  transport);
 }
 
+static void certificate_result(SIPE_UNUSED_PARAMETER GObject *unused,
+			       SIPE_UNUSED_PARAMETER GAsyncResult *res,
+			       gpointer data)
+{
+	struct sipe_transport_telepathy *transport = data;
+
+	SIPE_DEBUG_INFO("certificate_result: %p", transport);
+
+	/* @TODO: take action based on result */
+}
+
 static void socket_connected(GObject *client,
 			     GAsyncResult *result,
 			     gpointer data)
@@ -137,9 +149,12 @@ static void socket_connected(GObject *client,
 							   &error);
 
 	if (transport->socket == NULL) {
-		if (transport->wait_for_user) {
+		if (transport->tls_info) {
 			SIPE_DEBUG_INFO_NOFORMAT("socket_connected: need to wait for user interaction");
-			/* @TODO: trigger user interaction */
+			sipe_telepathy_tls_verify_async(G_OBJECT(transport->private->connection),
+							transport->tls_info,
+							certificate_result,
+							transport);
 		} else {
 			const gchar *msg = error ? error->message : "UNKNOWN";
 			SIPE_DEBUG_ERROR("socket_connected: failed: %s", msg);
@@ -183,40 +198,25 @@ static void socket_connected(GObject *client,
 	}
 }
 
-static void certificate_result(SIPE_UNUSED_PARAMETER GObject *unused,
-			       SIPE_UNUSED_PARAMETER GAsyncResult *res,
-			       gpointer data)
-{
-	struct sipe_transport_telepathy *transport = data;
-
-	SIPE_DEBUG_INFO("certificate_result: %p", transport);
-
-	/* @TODO: take action based on result */
-}
-
-static gboolean accept_certificate_signal(GTlsConnection *tls,
-					  SIPE_UNUSED_PARAMETER GTlsCertificate *peer_cert,
+static gboolean accept_certificate_signal(SIPE_UNUSED_PARAMETER GTlsConnection *tls,
+					  GTlsCertificate *peer_cert,
 					  SIPE_UNUSED_PARAMETER GTlsCertificateFlags errors,
 					  gpointer user_data)
 {
 	struct sipe_transport_telepathy *transport = user_data;
 
-	SIPE_DEBUG_INFO("accept_certificate_signal: %p", tls);
+	SIPE_DEBUG_INFO("accept_certificate_signal: %p", transport);
 
 	/* second connection attempt after feedback from user? */
-	if (transport->wait_for_user) {
+	if (transport->tls_info) {
 		/* user accepted certificate */
-		transport->wait_for_user = FALSE;
+		sipe_telepathy_tls_info_free(transport->tls_info);
+		transport->tls_info = NULL;
 		return(TRUE);
 	} else {
 		/* retry after user accepted certificate */
-		transport->wait_for_user = TRUE;
-		/* @TODO: set up correct parameters */
-		sipe_telepathy_tls_verify_async(G_OBJECT(transport->private->connection),
-						"",
-						NULL,
-						certificate_result,
-						transport);
+		transport->tls_info = sipe_telepathy_tls_info_new(transport->hostname,
+								  peer_cert);
 		return(FALSE);
 	}
 }
@@ -249,11 +249,12 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 	transport->connected        = setup->connected;
 	transport->input            = setup->input;
 	transport->error            = setup->error;
+	transport->hostname         = g_strdup(setup->server_name);
+	transport->tls_info         = NULL;
 	transport->private          = sipe_public->backend_private;
 	transport->buffers          = NULL;
 	transport->is_writing       = FALSE;
 	transport->do_flush         = FALSE;
-	transport->wait_for_user    = FALSE;
 
 	if ((setup->type == SIPE_TRANSPORT_TLS) ||
 	    (setup->type == SIPE_TRANSPORT_TCP)) {
@@ -294,6 +295,10 @@ static gboolean free_transport(gpointer data)
 	GSList *entry;
 
 	SIPE_DEBUG_INFO("free_transport %p", transport);
+
+	if (transport->tls_info)
+		sipe_telepathy_tls_info_free(transport->tls_info);
+	g_free(transport->hostname);
 
 	/* free unflushed buffers */
 	for (entry = transport->buffers; entry; entry = entry->next)
