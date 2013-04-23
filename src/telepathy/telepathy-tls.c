@@ -643,7 +643,7 @@ static void sipe_tls_certificate_class_init(SipeTLSCertificateClass *klass)
 
 	ps = g_param_spec_boxed("certificate-chain-data",
 				"The certificate chain data",
-				"The raw PEM-encoded trust chain of this certificate.",
+				"The raw DER-encoded trust chain of this certificate.",
 				TP_ARRAY_TYPE_UCHAR_ARRAY_LIST,
 				G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 	g_object_class_install_property(object_class,
@@ -726,29 +726,62 @@ static void tls_certificate_iface_init(gpointer g_iface,
 #undef IMPLEMENT
 }
 
+static void append_certificate_der(GPtrArray *certificates,
+				   GByteArray *der)
+{
+	GArray *array = g_array_sized_new(FALSE,
+					  FALSE,
+					  sizeof(guchar),
+					  der->len);
+	array = g_array_append_vals(array, der->data, der->len);
+	g_byte_array_unref(der);
+
+	g_ptr_array_add(certificates, array);
+}
+
 struct sipe_tls_info *sipe_telepathy_tls_info_new(const gchar *hostname,
 						  GTlsCertificate *certificate)
 {
 	struct sipe_tls_info *tls_info = NULL;
-	gchar *pem;
+	GByteArray *der = NULL;
 
-	g_object_get(certificate, "certificate-pem", &pem, NULL);
-	if (pem) {
-		guint length = strlen(pem);
-		GArray *array = g_array_sized_new(TRUE,
-						  FALSE,
-						  sizeof(guchar),
-						  length);
+	g_object_get(certificate, "certificate", &der, NULL);
+	if (der) {
+		GPtrArray *identities = g_ptr_array_new();
 
 		tls_info = g_new0(struct sipe_tls_info, 1);
 		tls_info->hostname             = g_strdup(hostname);
-		tls_info->reference_identities = g_strsplit("", "", 0);
 
-		array = g_array_append_vals(array, pem, length);
-		g_free(pem);
+		/* build GStrv of identies */
+		g_ptr_array_add(identities, g_strdup(hostname));
+		g_ptr_array_add(identities, NULL);
+		tls_info->reference_identities = (GStrv) g_ptr_array_free(identities,
+									  FALSE);
 
-		tls_info->cert_data = g_ptr_array_new_full(1, (GDestroyNotify) g_array_unref);
-		g_ptr_array_add(tls_info->cert_data, array);
+		tls_info->cert_data = g_ptr_array_new_full(1,
+							   (GDestroyNotify) g_array_unref);
+		/* unrefs "der" */
+		append_certificate_der(tls_info->cert_data, der);
+
+		/* will be unref'd in loop */
+		g_object_ref(certificate);
+		while (certificate) {
+			GTlsCertificate *issuer = NULL;
+
+			g_object_get(certificate, "issuer", &issuer, NULL);
+			g_object_unref(certificate);
+
+			/* add issuer certificate */
+			if (issuer) {
+				g_object_get(certificate, "certificate", &der, NULL);
+				/* unrefs "der" */
+				if (der)
+					append_certificate_der(tls_info->cert_data, der);
+			}
+
+			/* walk up the chain */
+			certificate = issuer;
+		}
 	}
 
 	return(tls_info);
