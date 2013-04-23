@@ -9,6 +9,9 @@ version 1.16.0 "HTTP Rewrite" (2013-XX-XX)
 	- switch purple backend to deferred destruction approach (Stefan Becker)
 	  * Pidgin should no longer crash at connection close, even in corner cases
 	- add menu entry to make a call with a phone number (Jakub Adam)
+	- some progress on telepathy backend (Stefan Becker)
+	  * add TLS certificate accept/reject user interaction
+	  * add "Single Sign-On" & "Don't Publish Calendar" account options
 
 version 1.15.1 "Bug Fixes I" (2013-04-07)
 	- NOTE: SIPE SourceForge project got updated. Because of this all bug
