@@ -75,6 +75,7 @@ typedef struct _SipeConnection {
 	gchar *user_agent;
 	gchar *authentication;
 	gboolean sso;
+	gboolean dont_publish;
 	gboolean is_disconnecting;
 
 	GPtrArray *contact_info_fields;
@@ -205,6 +206,10 @@ static gboolean connect_to_core(SipeConnection *self,
 		     == 0))
 			SIPE_DEBUG_INFO("connect_to_core: created cache directory %s",
 					telepathy_private->cache_dir);
+
+		SIPE_CORE_FLAG_UNSET(DONT_PUBLISH);
+		if (self->dont_publish)
+			SIPE_CORE_FLAG_SET(DONT_PUBLISH);
 
 		sipe_core_transport_sip_connect(sipe_public,
 						self->transport,
@@ -773,6 +778,13 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 		conn->sso = boolean_value;
 	else
 		conn->sso = FALSE;
+
+	/* Don't publish my calendar information */
+	boolean_value = tp_asv_get_boolean(params, "don't-publish-calendar", &valid);
+	if (valid)
+		conn->dont_publish = boolean_value;
+	else
+		conn->dont_publish = FALSE;
 
 	return(TP_BASE_CONNECTION(conn));
 }
