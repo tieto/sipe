@@ -74,6 +74,7 @@ typedef struct _SipeConnection {
 	guint  authentication_type;
 	gchar *user_agent;
 	gchar *authentication;
+	gboolean sso;
 	gboolean is_disconnecting;
 
 	GPtrArray *contact_info_fields;
@@ -165,8 +166,7 @@ static gboolean connect_to_core(SipeConnection *self,
 	}
 
 	sipe_public = sipe_core_allocate(self->account,
-					 /* @TODO: add parameter for SSO */
-					 FALSE,
+					 self->sso,
 					 login_domain, login_account,
 					 self->password,
 					 NULL, /* @TODO: email     */
@@ -307,9 +307,8 @@ static gboolean start_connecting(TpBaseConnection *base,
 	}
 
 	/* Only ask for a password when required */
-	/* @TODO: add parameter for SSO */
 	if (!sipe_core_transport_sip_requires_password(self->authentication_type,
-						       FALSE) ||
+						       self->sso) ||
 	    (self->password && strlen(self->password)))
 		rc = connect_to_core(self, error);
 	else {
@@ -710,6 +709,7 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 					    NULL);
 	const gchar *value;
 	guint port;
+	gboolean boolean_value;
 	gboolean valid;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_telepathy_connection_new");
@@ -766,6 +766,13 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 		conn->authentication = g_strdup(value);
 	else
 		conn->authentication = NULL; /* NTLM is default */
+
+	/* Single Sign-On */
+	boolean_value = tp_asv_get_boolean(params, "single-sign-on", &valid);
+	if (valid)
+		conn->sso = boolean_value;
+	else
+		conn->sso = FALSE;
 
 	return(TP_BASE_CONNECTION(conn));
 }
