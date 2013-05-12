@@ -465,12 +465,7 @@ struct ms_dlx_data {
 
 static void ms_dlx_free(struct ms_dlx_data *mdd)
 {
-	GSList *entry = mdd->search_rows;
-	while (entry) {
-		g_free(entry->data);
-		entry = entry->next;
-	}
-	g_slist_free(mdd->search_rows);
+	sipe_utils_slist_free_full(mdd->search_rows, g_free);
 	sipe_svc_session_close(mdd->session);
 	g_free(mdd->other);
 	g_free(mdd->wsse_security);
@@ -859,7 +854,7 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 		} else {
 			/* no [MS-DLX] server, use Active Directory search instead */
 			search_soap_request(SIPE_CORE_PRIVATE, token, query_rows);
-			g_slist_free(query_rows);
+			sipe_utils_slist_free_full(query_rows, g_free);
 		}
 	} else
 		sipe_backend_search_failed(sipe_public,

@@ -623,6 +623,21 @@ GSList *sipe_utils_slist_insert_unique_sorted(GSList *list,
 	}
 }
 
+void sipe_utils_slist_free_full(GSList *list,
+				GDestroyNotify free)
+{
+#if GLIB_CHECK_VERSION(2,28,0)
+	g_slist_free_full(list, free);
+#else
+	GSList *entry = list;
+	while (entry) {
+		(*free)(entry->data);
+		entry = entry->next;
+	}
+	g_slist_free(list);
+#endif
+}
+
 /*
   Local Variables:
   mode: c

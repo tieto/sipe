@@ -161,17 +161,9 @@ sipe_cal_event_free(struct sipe_cal_event* cal_event)
 void
 sipe_cal_events_free(GSList *cal_events)
 {
-	GSList *entry = cal_events;
-
 	if (!cal_events) return;
-
-	while (entry) {
-		struct sipe_cal_event *cal_event = entry->data;
-		sipe_cal_event_free(cal_event);
-		entry = entry->next;
-	}
-
-	g_slist_free(cal_events);
+	sipe_utils_slist_free_full(cal_events,
+				   (GDestroyNotify) sipe_cal_event_free);
 }
 
 void

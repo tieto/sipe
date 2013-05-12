@@ -483,3 +483,12 @@ GSList *sipe_utils_slist_insert_unique_sorted(GSList *list,
 					      gpointer data,
 					      GCompareFunc func,
 					      GDestroyNotify destroy);
+
+/**
+ * Same as @c g_slist_free_full() which is only defined for >= 2.28
+ *
+ * @param list a singly linked list
+ * @param free function to free list data
+ */
+void sipe_utils_slist_free_full(GSList *list,
+				GDestroyNotify free);

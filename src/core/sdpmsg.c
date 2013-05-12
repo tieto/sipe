@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -767,24 +768,17 @@ void
 sdpmedia_free(struct sdpmedia *media)
 {
 	if (media) {
-		GSList *item;
-
 		g_free(media->name);
 		g_free(media->ip);
 
 		sipe_utils_nameval_free(media->attributes);
 
-		for (item = media->candidates; item; item = item->next)
-			sdpcandidate_free(item->data);
-		g_slist_free(media->candidates);
-
-		for (item = media->codecs; item; item = item->next)
-			sdpcodec_free(item->data);
-		g_slist_free(media->codecs);
-
-		for (item = media->remote_candidates; item; item = item->next)
-			sdpcandidate_free(item->data);
-		g_slist_free(media->remote_candidates);
+		g_slist_free_full(media->candidates,
+				  (GDestroyNotify) sdpcandidate_free);
+		g_slist_free_full(media->codecs,
+				  (GDestroyNotify) sdpcodec_free);
+		g_slist_free_full(media->remote_candidates,
+				  (GDestroyNotify) sdpcandidate_free);
 
 		g_free(media);
 	}
@@ -794,12 +788,9 @@ void
 sdpmsg_free(struct sdpmsg *msg)
 {
 	if (msg) {
-		GSList *item;
-
 		g_free(msg->ip);
-		for (item = msg->media; item; item = item->next)
-			sdpmedia_free(item->data);
-		g_slist_free(msg->media);
+		g_slist_free_full(msg->media,
+				  (GDestroyNotify) sdpmedia_free);
 		g_free(msg);
 	}
 }

@@ -287,12 +287,8 @@ static void sipe_ocs2007_free_container(struct sipe_container *container)
 void sipe_core_buddy_menu_free(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	GSList *entry = sipe_private->blist_menu_containers;
-	while (entry) {
-		sipe_ocs2007_free_container(entry->data);
-		entry = entry->next;
-	}
-	g_slist_free(sipe_private->blist_menu_containers);
+	sipe_utils_slist_free_full(sipe_private->blist_menu_containers,
+				   (GDestroyNotify) sipe_ocs2007_free_container);
 	sipe_private->blist_menu_containers = NULL;
 }
 
@@ -321,14 +317,8 @@ static struct sipe_container *create_container(guint index,
 
 void sipe_ocs2007_free(struct sipe_core_private *sipe_private)
 {
-	if (sipe_private->containers) {
-		GSList *entry = sipe_private->containers;
-		while (entry) {
-			sipe_ocs2007_free_container((struct sipe_container *)entry->data);
-			entry = entry->next;
-		}
-	}
-	g_slist_free(sipe_private->containers);
+	sipe_utils_slist_free_full(sipe_private->containers,
+				   (GDestroyNotify) sipe_ocs2007_free_container);
 }
 
 /**

@@ -47,23 +47,13 @@ struct sip_subscription {
 	GSList *buddies; /* batched subscriptions */
 };
 
-static void free_buddy_list(GSList *buddies)
-{
-	GSList *entry = buddies;
-	while (entry) {
-		g_free(entry->data);
-		entry = entry->next;
-	}
-	g_slist_free(buddies);
-}
-
 static void sipe_subscription_free(struct sip_subscription *subscription)
 {
 
 	if (!subscription) return;
 
 	g_free(subscription->event);
-	free_buddy_list(subscription->buddies);
+	sipe_utils_slist_free_full(subscription->buddies, g_free);
 
 	/* NOTE: use cast to prevent BAD_FREE warning from Coverity */
 	sipe_dialog_free((struct sip_dialog *) subscription);
@@ -672,7 +662,7 @@ static void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *s
 	struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
 
 	/* @TODO: merge old & new list */
-	free_buddy_list(subscription->buddies);
+	sipe_utils_slist_free_full(subscription->buddies, g_free);
 	subscription->buddies = buddies;
 
 	payload->host    = g_strdup(who);
@@ -738,7 +728,7 @@ void sipe_subscribe_poolfqdn_resource_uri(const char *host,
 	sipe_subscribe_presence_batched_routed(sipe_private,
 					       payload);
 	sipe_subscribe_presence_batched_routed_free(payload);
-	free_buddy_list(server);
+	sipe_utils_slist_free_full(server, g_free);
 }
 
 

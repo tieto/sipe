@@ -348,14 +348,8 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 				chunks = g_slist_append(chunks, chunk);
 			}
 
-			if (chunks) {
-				GSList *entry = chunks;
-				while (entry) {
-					g_free(entry->data);
-					entry = entry->next;
-				}
-				g_slist_free(chunks);
-			}
+			if (chunks)
+				sipe_utils_slist_free_full(chunks, g_free);
 
 			if (incomplete) {
 				/* restore header for next try */

@@ -354,14 +354,8 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 
 	sipe_schedule_cancel_all(sipe_private);
 
-	if (sipe_private->allowed_events) {
-		GSList *entry = sipe_private->allowed_events;
-		while (entry) {
-			g_free(entry->data);
-			entry = entry->next;
-		}
-	}
-	g_slist_free(sipe_private->allowed_events);
+	if (sipe_private->allowed_events)
+		sipe_utils_slist_free_full(sipe_private->allowed_events, g_free);
 
 	sipe_ocs2007_free(sipe_private);
 
@@ -445,14 +439,8 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 			sipe_group_free(sipe_private, entry->data);
 	}
 
-	if (sipe_private->our_publication_keys) {
-		GSList *entry = sipe_private->our_publication_keys;
-		while (entry) {
-			g_free(entry->data);
-			entry = entry->next;
-		}
-	}
-	g_slist_free(sipe_private->our_publication_keys);
+	if (sipe_private->our_publication_keys)
+		sipe_utils_slist_free_full(sipe_private->our_publication_keys, g_free);
 
 #ifdef HAVE_VV
 	g_free(sipe_private->test_call_bot_uri);
