@@ -143,8 +143,6 @@ static void process_incoming_notify_rlmi_resub(struct sipe_core_private *sipe_pr
 	const sipe_xml *xn_resource;
 	GHashTable *servers = g_hash_table_new_full(g_str_hash, g_str_equal,
 						    g_free, NULL);
-	GSList *server;
-	gchar *host;
 
 	xn_list = sipe_xml_parse(data, len);
 
@@ -166,9 +164,10 @@ static void process_incoming_notify_rlmi_resub(struct sipe_core_private *sipe_pr
 			const char *poolFqdn = sipe_xml_attribute(xn_instance, "poolFqdn");
 
 			if (poolFqdn) { //[MS-PRES] Section 3.4.5.1.3 Processing Details
-				gchar *user = g_strdup(uri);
-				host = g_strdup(poolFqdn);
-				server = g_hash_table_lookup(servers, host);
+				gchar *user    = g_strdup(uri);
+				gchar *host    = g_strdup(poolFqdn);
+				GSList *server = g_hash_table_lookup(servers,
+								     host);
 				server = g_slist_append(server, user);
 				g_hash_table_insert(servers, host, server);
 			} else {

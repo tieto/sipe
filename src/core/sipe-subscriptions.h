@@ -41,11 +41,6 @@ void sipe_subscribe_conference(struct sipe_core_private *sipe_private,
 void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 				    gpointer buddy_name);
 void sipe_subscribe_presence_batched(struct sipe_core_private *sipe_private);
-void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *sipe_private,
-					      const gchar *action_name,
-					      const gchar *who,
-					      GSList *buddies,
-					      int timeout);
 void sipe_subscribe_poolfqdn_resource_uri(const gchar *host,
 					  GSList *server,
 					  struct sipe_core_private *sipe_private);

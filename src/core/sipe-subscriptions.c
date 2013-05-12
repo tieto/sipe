@@ -407,6 +407,11 @@ static void sipe_presence_timeout_mime_cb(gpointer user_data,
 	sipe_xml_free(xml);
 }
 
+static void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *sipe_private,
+						     const gchar *action_name,
+						     const gchar *who,
+						     GSList *buddies,
+						     int timeout);
 static void sipe_process_presence_timeout(struct sipe_core_private *sipe_private,
 					  struct sipmsg *msg,
 					  const gchar *who,
@@ -648,11 +653,11 @@ static void sipe_subscribe_presence_batched_routed(struct sipe_core_private *sip
 					   g_strdup(data->host));
 }
 
-void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *sipe_private,
-					      const gchar *action_name,
-					      const gchar *who,
-					      GSList *buddies,
-					      int timeout)
+static void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *sipe_private,
+						     const gchar *action_name,
+						     const gchar *who,
+						     GSList *buddies,
+						     int timeout)
 {
 	struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
 	payload->host    = g_strdup(who);
@@ -674,7 +679,9 @@ static void sipe_subscribe_resource_uri_with_context(const gchar *name,
 	gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
 	gchar *tmp = *resources_uri;
 
-	if (sbuddy) sbuddy->just_added = FALSE; /* should be enought to include context one time */
+	/* should be enough to include context one time */
+	if (sbuddy)
+		sbuddy->just_added = FALSE;
 
 	*resources_uri = g_strdup_printf("%s<resource uri=\"%s\"%s\n", tmp, name, context);
 	g_free(tmp);
@@ -694,10 +701,13 @@ void sipe_subscribe_presence_batched(struct sipe_core_private *sipe_private)
 	gchar *to = sip_uri_self(sipe_private);
 	gchar *resources_uri = g_strdup("");
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		g_hash_table_foreach(sipe_private->buddies, (GHFunc) sipe_subscribe_resource_uri_with_context , &resources_uri);
+		g_hash_table_foreach(sipe_private->buddies,
+				     (GHFunc) sipe_subscribe_resource_uri_with_context,
+				     &resources_uri);
 	} else {
-                g_hash_table_foreach(sipe_private->buddies, (GHFunc) sipe_subscribe_resource_uri, &resources_uri);
-
+                g_hash_table_foreach(sipe_private->buddies,
+				     (GHFunc) sipe_subscribe_resource_uri,
+				     &resources_uri);
 	}
 	sipe_subscribe_presence_batched_to(sipe_private, resources_uri, to);
 }
