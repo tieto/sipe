@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -542,7 +542,10 @@ static GSList *get_access_domains(struct sipe_core_private *sipe_private)
 			member = entry2->data;
 			if (sipe_strcase_equal(member->type, "domain"))
 			{
-				res = slist_insert_unique_sorted(res, g_strdup(member->value), (GCompareFunc)g_ascii_strcasecmp);
+				res = sipe_utils_slist_insert_unique_sorted(res,
+									    g_strdup(member->value),
+									    (GCompareFunc)g_ascii_strcasecmp,
+									    g_free);
 			}
 			entry2 = entry2->next;
 		}
@@ -2058,7 +2061,10 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 	/* set list of categories participating in this XML */
 	for (node = sipe_xml_child(xml, "categories/category"); node; node = sipe_xml_twin(node)) {
 		const gchar *name = sipe_xml_attribute(node, "name");
-		category_names = slist_insert_unique_sorted(category_names, (gchar *)name, (GCompareFunc)strcmp);
+		category_names = sipe_utils_slist_insert_unique_sorted(category_names,
+								       (gchar *)name,
+								       (GCompareFunc)strcmp,
+								       NULL);
 	}
 	SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: category_names length=%d",
 			category_names ? (int) g_slist_length(category_names) : -1);

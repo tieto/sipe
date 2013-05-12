@@ -607,17 +607,20 @@ sipe_utils_uri_unescape(const gchar *string)
 	return unescaped;
 }
 
-/**
- * Only appends if no such value already stored.
- * Like Set in Java.
- */
-GSList *
-slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func) {
-	GSList * res = list;
-	if (!g_slist_find_custom(list, data, func)) {
-		res = g_slist_insert_sorted(list, data, func);
+GSList *sipe_utils_slist_insert_unique_sorted(GSList *list,
+					      gpointer data,
+					      GCompareFunc func,
+					      GDestroyNotify destroy)
+{
+	if (g_slist_find_custom(list, data, func)) {
+		/* duplicate */
+		if (destroy)
+			(*destroy)(data);
+		return(list);
+	} else {
+		/* unique: list takes ownership of "data" */
+		return(g_slist_insert_sorted(list, data, func));
 	}
-	return res;
 }
 
 /*

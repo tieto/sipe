@@ -214,7 +214,10 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 	if (!new_group) {
 		sipe_group_create(SIPE_CORE_PRIVATE, new_group_name, who);
 	} else {
-		buddy->groups = slist_insert_unique_sorted(buddy->groups, new_group, (GCompareFunc)sipe_group_compare);
+		buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+								      new_group,
+								      (GCompareFunc)sipe_group_compare,
+								      NULL);
 		sipe_group_update_buddy(SIPE_CORE_PRIVATE, buddy);
 	}
 }

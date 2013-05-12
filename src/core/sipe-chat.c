@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -515,9 +515,10 @@ sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 		} else {
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_invite_to_chat: no RM available");
 
-			session->pending_invite_queue = slist_insert_unique_sorted(
-				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
-
+			session->pending_invite_queue = sipe_utils_slist_insert_unique_sorted(session->pending_invite_queue,
+											      g_strdup(who),
+											      (GCompareFunc)strcmp,
+											      g_free);
 			sipe_election_start(sipe_private, session);
 		}
 		g_free(self);

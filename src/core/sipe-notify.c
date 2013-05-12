@@ -1190,9 +1190,10 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 				buddy = sipe_buddy_add(sipe_private,
 						       normalized_uri);
 
-			buddy->groups = slist_insert_unique_sorted(buddy->groups,
-								   group,
-								   (GCompareFunc)sipe_group_compare);
+			buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+									      group,
+									      (GCompareFunc)sipe_group_compare,
+									      NULL);
 
 			SIPE_DEBUG_INFO("Added buddy %s to group %s",
 					buddy->name, group->name);
@@ -1356,9 +1357,10 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 										       uri,
 										       alias,
 										       group->name);
-								buddy->groups = slist_insert_unique_sorted(buddy->groups,
-													   group,
-													   (GCompareFunc) sipe_group_compare);
+								buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+														      group,
+														      (GCompareFunc) sipe_group_compare,
+														      NULL);
 								SIPE_DEBUG_INFO("Added buddy %s (alias '%s' to group '%s'",
 										uri, alias, group->name);
 							}

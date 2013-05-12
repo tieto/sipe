@@ -709,8 +709,10 @@ process_conf_add_response(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO("process_conf_add_response: session->focus_uri=%s",
 					session->chat_session->id);
 
-			session->pending_invite_queue = slist_insert_unique_sorted(
-				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
+			session->pending_invite_queue = sipe_utils_slist_insert_unique_sorted(session->pending_invite_queue,
+											      g_strdup(who),
+											      (GCompareFunc)strcmp,
+											      g_free);
 		}
 		sipe_xml_free(xn_response);
 	}

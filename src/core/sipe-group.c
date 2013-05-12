@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -92,7 +92,10 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 		if (ctx->user_name) {
 			buddy = g_hash_table_lookup(sipe_private->buddies, ctx->user_name);
 			if (buddy) {
-				buddy->groups = slist_insert_unique_sorted(buddy->groups, group, (GCompareFunc)sipe_group_compare);
+				buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+										      group,
+										      (GCompareFunc)sipe_group_compare,
+										      NULL);
 				sipe_group_update_buddy(sipe_private, buddy);
 			}
 		}
