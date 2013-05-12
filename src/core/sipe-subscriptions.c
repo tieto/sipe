@@ -661,12 +661,24 @@ static void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *s
 								    action_name);
 	struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
 
-	/* @TODO: merge old & new list */
-	sipe_utils_slist_free_full(subscription->buddies, g_free);
-	subscription->buddies = buddies;
+	if (subscription->buddies) {
+		/* merge old and new list */
+		GSList *entry = buddies;
+		while (entry) {
+			subscription->buddies = sipe_utils_slist_insert_unique_sorted(subscription->buddies,
+										      g_strdup(entry->data),
+										      (GCompareFunc) g_ascii_strcasecmp,
+										      g_free);
+			entry = entry->next;
+		}
+		sipe_utils_slist_free_full(buddies, g_free);
+	} else {
+		/* no list yet, simply take ownership of whole list */
+		subscription->buddies = buddies;
+	}
 
 	payload->host    = g_strdup(who);
-	payload->buddies = buddies;
+	payload->buddies = subscription->buddies;
 	sipe_schedule_seconds(sipe_private,
 			      action_name,
 			      payload,
