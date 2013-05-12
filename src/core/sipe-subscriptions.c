@@ -44,13 +44,27 @@
 struct sip_subscription {
 	struct sip_dialog dialog;
 	gchar *event;
+	GSList *buddies; /* batched subscriptions */
 };
+
+static void free_buddy_list(GSList *buddies)
+{
+	GSList *entry = buddies;
+	while (entry) {
+		g_free(entry->data);
+		entry = entry->next;
+	}
+	g_slist_free(buddies);
+}
 
 static void sipe_subscription_free(struct sip_subscription *subscription)
 {
+
 	if (!subscription) return;
 
 	g_free(subscription->event);
+	free_buddy_list(subscription->buddies);
+
 	/* NOTE: use cast to prevent BAD_FREE warning from Coverity */
 	sipe_dialog_free((struct sip_dialog *) subscription);
 }
@@ -621,18 +635,12 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 
 struct presence_batched_routed {
 	gchar  *host;
-	GSList *buddies;
+	const GSList *buddies; /* points to subscription->buddies */
 };
 
 static void sipe_subscribe_presence_batched_routed_free(gpointer payload)
 {
 	struct presence_batched_routed *data = payload;
-	GSList *buddies = data->buddies;
-	while (buddies) {
-		g_free(buddies->data);
-		buddies = buddies->next;
-	}
-	g_slist_free(data->buddies);
 	g_free(data->host);
 	g_free(payload);
 }
@@ -641,7 +649,7 @@ static void sipe_subscribe_presence_batched_routed(struct sipe_core_private *sip
 						   gpointer payload)
 {
 	struct presence_batched_routed *data = payload;
-	GSList *buddies = data->buddies;
+	const GSList *buddies = data->buddies;
 	gchar *resources_uri = g_strdup("");
 	while (buddies) {
 		gchar *tmp = resources_uri;
@@ -659,7 +667,14 @@ static void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *s
 						     GSList *buddies,
 						     int timeout)
 {
+	struct sip_subscription *subscription = g_hash_table_lookup(sipe_private->subscriptions,
+								    action_name);
 	struct presence_batched_routed *payload = g_malloc(sizeof(struct presence_batched_routed));
+
+	/* @TODO: merge old & new list */
+	free_buddy_list(subscription->buddies);
+	subscription->buddies = buddies;
+
 	payload->host    = g_strdup(who);
 	payload->buddies = buddies;
 	sipe_schedule_seconds(sipe_private,
@@ -723,6 +738,7 @@ void sipe_subscribe_poolfqdn_resource_uri(const char *host,
 	sipe_subscribe_presence_batched_routed(sipe_private,
 					       payload);
 	sipe_subscribe_presence_batched_routed_free(payload);
+	free_buddy_list(server);
 }
 
 
