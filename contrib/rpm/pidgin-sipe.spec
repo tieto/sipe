@@ -52,7 +52,6 @@ BuildRequires:  gettext-devel
 # Use "--with vv" to enable Voice & Video features
 %if 0%{?_with_vv:1}
 BuildRequires:  libpurple-devel >= 2.8.0
-BuildRequires:  glib2-devel >= 2.28.0
 BuildRequires:  libnice-devel >= 0.1.0
 BuildRequires:  gstreamer-devel
 %endif
@@ -259,6 +258,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu May 16 2013 J. D. User <jduser@noreply.com> 1.15.1-*git*
+- BR glib-2.0 >= 2.28.0 no longer required for Voice & Video features
+
 * Sun Apr 07 2013 J. D. User <jduser@noreply.com> 1.15.1
 - update to 1.15.1
 

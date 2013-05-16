@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-13 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -93,7 +93,7 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 			sipmsg_free(call_private->invitation);
 
 		sdpmsg_free(call_private->smsg);
-		g_slist_free_full(call_private->failed_media,
+		sipe_utils_slist_free_full(call_private->failed_media,
 				  (GDestroyNotify)sdpmedia_free);
 		g_free(call_private->with);
 		g_free(call_private);
@@ -490,7 +490,7 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 {
 	GSList *i;
 
-	g_slist_free_full(call_private->failed_media, (GDestroyNotify)sdpmedia_free);
+	sipe_utils_slist_free_full(call_private->failed_media, (GDestroyNotify)sdpmedia_free);
 	call_private->failed_media = NULL;
 
 	for (i = msg->media; i; i = i->next) {

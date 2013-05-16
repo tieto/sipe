@@ -773,11 +773,11 @@ sdpmedia_free(struct sdpmedia *media)
 
 		sipe_utils_nameval_free(media->attributes);
 
-		g_slist_free_full(media->candidates,
+		sipe_utils_slist_free_full(media->candidates,
 				  (GDestroyNotify) sdpcandidate_free);
-		g_slist_free_full(media->codecs,
+		sipe_utils_slist_free_full(media->codecs,
 				  (GDestroyNotify) sdpcodec_free);
-		g_slist_free_full(media->remote_candidates,
+		sipe_utils_slist_free_full(media->remote_candidates,
 				  (GDestroyNotify) sdpcandidate_free);
 
 		g_free(media);
@@ -789,7 +789,7 @@ sdpmsg_free(struct sdpmsg *msg)
 {
 	if (msg) {
 		g_free(msg->ip);
-		g_slist_free_full(msg->media,
+		sipe_utils_slist_free_full(msg->media,
 				  (GDestroyNotify) sdpmedia_free);
 		g_free(msg);
 	}
