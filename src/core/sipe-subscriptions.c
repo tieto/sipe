@@ -499,33 +499,19 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 				    gpointer buddy_name)
 {
 	gchar *to = sip_uri((gchar *)buddy_name);
-	gchar *tmp = get_contact(sipe_private);
+	gchar *contact = get_contact(sipe_private);
 	gchar *request;
 	gchar *content = NULL;
-        gchar *autoextend = "";
-	gchar *content_type = "";
+	const gchar *additional;
+	const gchar *content_type = "";
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, to);
-	gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
+	const gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
 
 	if (sbuddy) sbuddy->just_added = FALSE;
 
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+		additional = "Require: adhoclist, categoryList\r\n";
 		content_type = "Content-Type: application/msrtc-adrl-categorylist+xml\r\n";
-	} else {
-		autoextend = "Supported: com.microsoft.autoextend\r\n";
-	}
-
-	request = g_strdup_printf("Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
-				  "Supported: ms-piggyback-first-notify\r\n"
-				  "%s%sSupported: ms-benotify\r\n"
-				  "Proxy-Require: ms-benotify\r\n"
-				  "Event: presence\r\n"
-				  "Contact: %s\r\n",
-				  autoextend,
-				  content_type,
-				  tmp);
-
-	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		content = g_strdup_printf("<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
 					  "<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
 					  "<resource uri=\"%s\"%s\n"
@@ -541,9 +527,20 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 					  sipe_private->username,
 					  to,
 					  context);
+	} else {
+		additional = "Supported: com.microsoft.autoextend\r\n";
 	}
 
-	g_free(tmp);
+	request = g_strdup_printf("Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
+				  "Supported: ms-piggyback-first-notify\r\n"
+				  "%s%sSupported: ms-benotify\r\n"
+				  "Proxy-Require: ms-benotify\r\n"
+				  "Event: presence\r\n"
+				  "Contact: %s\r\n",
+				  additional,
+				  content_type,
+				  contact);
+	g_free(contact);
 
 	sipe_subscribe_presence_buddy(sipe_private, to, request, content);
 
@@ -566,9 +563,9 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 	gchar *contact = get_contact(sipe_private);
 	gchar *request;
 	gchar *content;
-	gchar *require = "";
-	gchar *accept = "";
-        gchar *autoextend = "";
+	const gchar *require = "";
+	const gchar *accept = "";
+	const gchar *autoextend = "";
 	gchar *content_type;
 
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
