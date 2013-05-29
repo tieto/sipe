@@ -172,7 +172,8 @@ static void process_incoming_notify_rlmi_resub(struct sipe_core_private *sipe_pr
 				g_hash_table_insert(servers, host, server);
 			} else {
 				sipe_subscribe_presence_single(sipe_private,
-							       (void *) uri);
+							       uri,
+							       uri);
 			}
                 }
 	}
@@ -1101,7 +1102,7 @@ static void sipe_buddy_subscribe_cb(char *buddy_name,
 				       action_name,
 				       g_strdup(buddy_name),
 				       timeout,
-				       sipe_subscribe_presence_single,
+				       sipe_subscribe_presence_single_cb,
 				       g_free);
 		g_free(action_name);
 	}

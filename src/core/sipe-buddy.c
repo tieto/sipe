@@ -232,8 +232,7 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 		struct sipe_buddy *b = sipe_buddy_add(sipe_private, uri);
 		b->just_added = TRUE;
 
-		/* @TODO should go to callback */
-		sipe_subscribe_presence_single(sipe_private, b->name);
+		sipe_subscribe_presence_single_cb(sipe_private, b->name);
 
 	} else {
 		SIPE_DEBUG_INFO("sipe_core_buddy_add: buddy %s already in internal list",

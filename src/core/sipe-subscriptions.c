@@ -446,7 +446,7 @@ static void sipe_process_presence_timeout(struct sipe_core_private *sipe_private
 				      action_name,
 				      g_strdup(who),
 				      timeout,
-				      sipe_subscribe_presence_single,
+				      sipe_subscribe_presence_single_cb,
 				      g_free);
 		SIPE_DEBUG_INFO("Resubscription single contact with batched support(%s) in %d seconds", who, timeout);
 	}
@@ -490,27 +490,29 @@ static void sipe_subscribe_presence_buddy(struct sipe_core_private *sipe_private
 }
 
 /**
+ * if to == NULL: initial single subscription -> send to self URI
+ *
+ * if to != NULL:
  * Single Category SUBSCRIBE [MS-PRES] ; To send when the server returns a 200 OK message with state="resubscribe" in response.
  * The user sends a single SUBSCRIBE request to the subscribed contact.
  * The To-URI and the URI listed in the resource list MUST be the same for a single category SUBSCRIBE request.
  *
  */
 void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
-				    gpointer buddy_name)
+				    const gchar *uri,
+				    const gchar *to)
 {
-	gchar *to = sip_uri((gchar *)buddy_name);
+	gchar *self = sip_uri_self(sipe_private);
 	gchar *contact = get_contact(sipe_private);
 	gchar *request;
 	gchar *content = NULL;
 	const gchar *additional;
 	const gchar *content_type = "";
-	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, to);
-	const gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
-
-	if (sbuddy) sbuddy->just_added = FALSE;
+	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
 
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		additional = "Require: adhoclist, categoryList\r\n";
+		additional = "Require: adhoclist, categoryList\r\n" \
+			     "Supported: eventlist\r\n";
 		content_type = "Content-Type: application/msrtc-adrl-categorylist+xml\r\n";
 		content = g_strdup_printf("<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
 					  "<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
@@ -525,11 +527,14 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 					  "</action>\n"
 					  "</batchSub>",
 					  sipe_private->username,
-					  to,
-					  context);
+					  uri,
+					  sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>");
 	} else {
 		additional = "Supported: com.microsoft.autoextend\r\n";
 	}
+
+	if (sbuddy)
+		sbuddy->just_added = FALSE;
 
 	request = g_strdup_printf("Accept: application/msrtc-event-categories+xml, text/xml+msrtc.pidf, application/xpidf+xml, application/pidf+xml, application/rlmi+xml, multipart/related\r\n"
 				  "Supported: ms-piggyback-first-notify\r\n"
@@ -542,12 +547,19 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 				  contact);
 	g_free(contact);
 
-	sipe_subscribe_presence_buddy(sipe_private, to, request, content);
+	sipe_subscribe_presence_buddy(sipe_private, to ? to : self, request, content);
 
 	g_free(content);
-	g_free(to);
+	g_free(self);
 	g_free(request);
 }
+
+void sipe_subscribe_presence_single_cb(struct sipe_core_private *sipe_private,
+				       gpointer uri)
+{
+	sipe_subscribe_presence_single(sipe_private, uri, NULL);
+}
+
 
 /**
  *   Support for Batch Category SUBSCRIBE [MS-PRES] - msrtc-event-categories+xml  OCS 2007
@@ -566,7 +578,7 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 	const gchar *require = "";
 	const gchar *accept = "";
 	const gchar *autoextend = "";
-	gchar *content_type;
+	const gchar *content_type;
 
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		require = ", categoryList";
@@ -811,7 +823,7 @@ static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
 						      action_name,
 						      g_strdup(who),
 						      timeout,
-						      sipe_subscribe_presence_single,
+						      sipe_subscribe_presence_single_cb,
 						      g_free);
 				g_free(action_name);
 				SIPE_DEBUG_INFO("Resubscription single contact '%s' in %d seconds", who, timeout);
