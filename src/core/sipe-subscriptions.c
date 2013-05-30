@@ -490,7 +490,9 @@ static void sipe_subscribe_presence_buddy(struct sipe_core_private *sipe_private
 }
 
 /**
- * if to == NULL: initial single subscription -> send to self URI
+ * if to == NULL: initial single subscription
+ *   OCS2005: send to URI
+ *   OCS2007: send to self URI
  *
  * if to != NULL:
  * Single Category SUBSCRIBE [MS-PRES] ; To send when the server returns a 200 OK message with state="resubscribe" in response.
@@ -502,7 +504,7 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 				    const gchar *uri,
 				    const gchar *to)
 {
-	gchar *self = sip_uri_self(sipe_private);
+	gchar *self = NULL;
 	gchar *contact = get_contact(sipe_private);
 	gchar *request;
 	gchar *content = NULL;
@@ -529,8 +531,12 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 					  sipe_private->username,
 					  uri,
 					  sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>");
+		if (!to)
+			to = self = sip_uri_self(sipe_private);
 	} else {
 		additional = "Supported: com.microsoft.autoextend\r\n";
+		if (!to)
+			to = uri;
 	}
 
 	if (sbuddy)
@@ -547,7 +553,7 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 				  contact);
 	g_free(contact);
 
-	sipe_subscribe_presence_buddy(sipe_private, to ? to : self, request, content);
+	sipe_subscribe_presence_buddy(sipe_private, to, request, content);
 
 	g_free(content);
 	g_free(self);
