@@ -772,7 +772,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 
 	sipe_backend_media_relays_free(backend_media_relays);
 
-	// Processing continues in candidates_prepared_cb
+	// Processing continues in stream_initialized_cb
 }
 
 void
@@ -837,7 +837,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 
 	sipe_backend_media_relays_free(backend_media_relays);
 
-	// Processing continues in candidates_prepared_cb
+	// Processing continues in stream_initialized_cb
 }
 
 gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public)
@@ -985,7 +985,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		call_private->smsg = smsg;
 		sip_transport_response(sipe_private, call_private->invitation,
 				       180, "Ringing", NULL);
-		// Processing continues in candidates_prepared_cb
+		// Processing continues in stream_initialized_cb
 	} else {
 		apply_remote_message(call_private, smsg);
 		send_response_with_session_description(call_private, 200, "OK");
