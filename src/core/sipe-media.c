@@ -279,6 +279,7 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 {
 	gchar *hdr;
 	gchar *contact;
+	gchar *p_preferred_identity = NULL;
 	gchar *body;
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sip_session *session;
@@ -293,15 +294,27 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 		!sipe_strequal(call_private->with, sipe_private->test_call_bot_uri);
 
 	contact = get_contact(sipe_private);
+
+	if (sipe_private->uc_line_uri) {
+		gchar *self = sip_uri_self(sipe_private);
+		p_preferred_identity = g_strdup_printf(
+			"P-Preferred-Identity: <%s>, <%s>\r\n",
+			self, sipe_private->uc_line_uri);
+		g_free(self);
+	}
+
 	hdr = g_strdup_printf(
 		"ms-keep-alive: UAC;hop-hop=yes\r\n"
 		"Contact: %s\r\n"
+		"%s"
 		"Content-Type: %s\r\n",
 		contact,
+		p_preferred_identity ? p_preferred_identity : "",
 		add_2007_fallback ?
 			  "multipart/alternative;boundary=\"----=_NextPart_000_001E_01CB4397.0B5EB570\""
 			: "application/sdp");
 	g_free(contact);
+	g_free(p_preferred_identity);
 
 	msg = sipe_media_to_sdpmsg(call_private);
 	body = sdpmsg_to_string(msg);
