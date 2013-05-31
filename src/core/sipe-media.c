@@ -1175,9 +1175,16 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				break;
 		}
 
-		if (append_responsestr)
+		if (append_responsestr) {
+			gchar *reason = sipmsg_get_ms_diagnostics_reason(msg);
+
 			g_string_append_printf(desc, "\n%d %s",
 					       msg->response, msg->responsestr);
+			if (reason) {
+				g_string_append_printf(desc, "\n\n%s", reason);
+				g_free(reason);
+			}
+		}
 
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC, title, desc->str);
 		g_string_free(desc, TRUE);
