@@ -175,6 +175,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 			   const gchar *password)
 {
 	context_krb5 ctx = (context_krb5) context;
+	gboolean result;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__krb5: started");
 
@@ -194,7 +195,22 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 	if ((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0)
 		context->flags |= SIP_SEC_FLAG_KRB5_RETRY_AUTH;
 
-	return(sip_sec_krb5_acquire_credentials(ctx));
+	result = sip_sec_krb5_acquire_credentials(ctx);
+
+	/*
+	 * If acquire credentials fails then retry after trying to obtaining
+	 * a TGT. This will will only succeed if we have been provided with
+	 * valid authentication information by the user.
+	 */
+	if (!result && (context->flags & SIP_SEC_FLAG_KRB5_RETRY_AUTH)) {
+		result = sip_sec_krb5_obtain_tgt(ctx)          &&
+			 sip_sec_krb5_acquire_credentials(ctx);
+
+		/* Only retry once */
+		context->flags &= ~SIP_SEC_FLAG_KRB5_RETRY_AUTH;
+	}
+
+	return(result);
 }
 
 static gboolean
@@ -228,7 +244,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 						 service_name);
 
 	/*
-	 * If context initialization fails retry after trying to obtaining
+	 * If context initialization fails then retry after trying to obtaining
 	 * a TGT. This will will only succeed if we have been provided with
 	 * valid authentication information by the user.
 	 */
