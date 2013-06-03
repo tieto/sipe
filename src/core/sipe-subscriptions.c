@@ -508,13 +508,11 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 	gchar *contact = get_contact(sipe_private);
 	gchar *request;
 	gchar *content = NULL;
-	const gchar *additional;
+	const gchar *additional = "";
 	const gchar *content_type = "";
 	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
 
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		additional = "Require: adhoclist, categoryList\r\n" \
-			     "Supported: eventlist\r\n";
 		content_type = "Content-Type: application/msrtc-adrl-categorylist+xml\r\n";
 		content = g_strdup_printf("<batchSub xmlns=\"http://schemas.microsoft.com/2006/01/sip/batch-subscribe\" uri=\"sip:%s\" name=\"\">\n"
 					  "<action name=\"subscribe\" id=\"63792024\"><adhocList>\n"
@@ -531,8 +529,12 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 					  sipe_private->username,
 					  uri,
 					  sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>");
-		if (!to)
+		if (!to) {
+			additional = "Require: adhoclist, categoryList\r\n" \
+				     "Supported: eventlist\r\n";
 			to = self = sip_uri_self(sipe_private);
+		}
+
 	} else {
 		additional = "Supported: com.microsoft.autoextend\r\n";
 		if (!to)
