@@ -350,7 +350,7 @@ guint sipe_xml_int_attribute(const sipe_xml *node, const gchar *attr,
 gchar *sipe_xml_data(const sipe_xml *node)
 {
 	if (!node || !node->data || !node->data->str) return NULL;
-	return g_strdup(node->data->str);
+	return sipe_utils_str_trim(node->data->str);
 }
 
 /**

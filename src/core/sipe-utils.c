@@ -544,6 +544,32 @@ gchar *sipe_utils_str_replace(const gchar *string,
 	return result;
 }
 
+gchar *sipe_utils_str_trim(const gchar *string)
+{
+	if (string) {
+		const gchar *end;
+
+		while(isspace(*string)) {
+			++string;
+		}
+
+		if (*string == 0) {
+			/* only spaces, empty string */
+			return g_strdup("");
+		}
+
+		end = string + strlen(string) - 1;
+
+		while (end > string && isspace(*end)) {
+			--end;
+		}
+
+		return g_strndup(string, end - string + 1);
+	}
+
+	return NULL;
+}
+
 void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
 			      const gchar *unread)
 {
