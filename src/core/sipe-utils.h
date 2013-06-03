@@ -436,15 +436,6 @@ gchar *sipe_utils_str_replace(const gchar *string,
 			      const gchar *replacement);
 
 /**
- * Trims leading and trailing whitespace characters from a string.
- *
- * @param string a string to trim
- *
- * @return string with leading and trailing whitespace removed. Must be g_free()'d after use.
- */
-gchar *sipe_utils_str_trim(const gchar *string);
-
-/**
  * Remove read characters from transport buffer
  *
  * @param conn   the transport connection

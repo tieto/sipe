@@ -2281,16 +2281,17 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 				if (sipe_strequal(line_type, "Rcc") || sipe_strequal(line_type, "Dual")) {
 					const gchar *line_server = sipe_xml_attribute(line, "lineServer");
 					if (line_server) {
+						gchar *tmp = g_strstrip(line_uri);
 						SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: line_uri=%s server=%s",
-								line_uri, line_server);
-						sip_csta_open(sipe_private, line_uri, line_server);
+								tmp, line_server);
+						sip_csta_open(sipe_private, tmp, line_server);
 					}
 				}
 #ifdef HAVE_VV
 				else if (sipe_strequal(line_type, "Uc")) {
 
 					if (!sipe_private->uc_line_uri) {
-						sipe_private->uc_line_uri = g_strdup(line_uri);
+						sipe_private->uc_line_uri = g_strdup(g_strstrip(line_uri));
 					} else {
 						SIPE_DEBUG_INFO_NOFORMAT("sipe_ocs2007_process_roaming_self: "
 								"sipe_private->uc_line_uri is already set.");
