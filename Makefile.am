@@ -35,4 +35,5 @@ MAINTAINERCLEANFILES = \
 	intltool-extract.in \
 	intltool-merge.in   \
 	intltool-update.in  \
-	mkinstalldirs
+	mkinstalldirs \
+	test-driver
