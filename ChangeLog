@@ -1,7 +1,8 @@
-version 1.16.0 "HTTP Rewrite" (2013-XX-XX)
+version 1.16.0 "HTTP Rewrite & Subscription Fixes" (2013-XX-XX)
 	- Feature #58: Implement Digest authentication scheme for SIP Proxy Authentication (Stefan Becker)
 	- Fixed #193: Pidgin Status changes stop working (Stefan Becker)
 	- Fixed #186: Users appear offline when they are not (Stefan Becker)
+	- fix kinit-less use case with krb5 >= 1.11 (Stefan Becker)
 	- rewritten HTTP stack from scratch (Stefan Becker)
 	  * cleaner, layered and hopefully less error-prone implementation
 	  * HTTP stack internals no longer exposed to user code
