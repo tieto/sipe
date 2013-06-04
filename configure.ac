@@ -281,8 +281,10 @@ AS_IF([test "x$enable_purple" != xno],
 		 CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
 		 AC_COMPILE_IFELSE(
 			[AC_LANG_PROGRAM([[
+#include <unistd.h>
 #include <glib.h>
 #include <cipher.h>
+#include <version.h>
 
 /* Compile some code that has caused trouble in the past */
 static void testfunc(unsigned long len)
@@ -291,10 +293,15 @@ static void testfunc(unsigned long len)
   guchar *plaintext = NULL;
   gsize plaintext_length = 0;
   guchar *encrypted_text = NULL;
-  gsize dummy;
+  gsize dummy = 0;
   purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(len));
   purple_cipher_context_encrypt(rc4, plaintext, plaintext_length,
-                                encrypted_text, &dummy);
+                                encrypted_text,
+#if PURPLE_VERSION_CHECK(3,0,0)
+                                dummy);
+#else
+                                &dummy);
+#endif
 }
 					]],
 					[[testfunc(16);]])],
