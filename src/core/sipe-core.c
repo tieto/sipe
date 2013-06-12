@@ -154,7 +154,7 @@ gchar *sipe_core_about(void)
 		/* 2 */   "%s: <a href=\"" PACKAGE_URL "\">" PACKAGE_URL "</a><br/>"
 		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/p/sipe/discussion/688534/\">%s</a><br/>"
 		/* 5,6 */   "%s: <a href=\"" PACKAGE_BUGREPORT "\">%s</a><br/>"
-		/* 7 */   "%s: <a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.net</a><br/>"
+		/* 7 */   "%s: <a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.com</a><br/>"
 		/* 8 */   "%s: GPLv2+<br/>"
 		"<br/>"
 		/* 9 */  "%s:<br/>"
@@ -173,7 +173,7 @@ gchar *sipe_core_about(void)
 		" - Alcatel-Lucent<br/>"
 		" - BT<br/>"
 		"<br/>"
-		/* 10,11 */ "%s<a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.net</a>%s.<br/>"
+		/* 10,11 */ "%s<a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.com</a>%s.<br/>"
 		"<br/>"
 		/* 12 */  "<b>%s:</b><br/>"
 		" - Anibal Avelar<br/>"
@@ -204,10 +204,10 @@ gchar *sipe_core_about(void)
 		_("License"),
 		/* About note, part 9/13: known users */
 		_("We support users in such organizations as"),
-		/* About note, part 10/13: translation request, text before Transifex.net URL */
+		/* About note, part 10/13: translation request, text before Transifex.com URL */
 		/* append a space if text is not empty */
 		_("Please help us to translate SIPE to your native language here at "),
-		/* About note, part 11/13: translation request, text after Transifex.net URL */
+		/* About note, part 11/13: translation request, text after Transifex.com URL */
 		/* start with a space if text is not empty */
 		_(" using convenient web interface"),
 		/* About note, part 12/13: author list (header) */
