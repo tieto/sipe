@@ -46,6 +46,9 @@
 		1CF2612C12C2E73F0045B6CC /* ESPurpleSIPEAccount.m in Sources */ = {isa = PBXBuildFile; fileRef = C99F358E109AE68400E79CB2 /* ESPurpleSIPEAccount.m */; };
 		1CF2612D12C2E7420045B6CC /* ESSIPEService.m in Sources */ = {isa = PBXBuildFile; fileRef = C948843C109B2F8100ABFAF7 /* ESSIPEService.m */; };
 		1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = C9488445109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.m */; };
+		7B379594176A2DDF001A02FD /* sipe-http-request.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379591176A2DDF001A02FD /* sipe-http-request.c */; };
+		7B379595176A2DDF001A02FD /* sipe-http-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379592176A2DDF001A02FD /* sipe-http-transport.c */; };
+		7B379596176A2DDF001A02FD /* sipe-http.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379593176A2DDF001A02FD /* sipe-http.c */; };
 		7B50EFAB16DB326100F897D1 /* PurpleDefaultsSIPE.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */; };
 		7B5DD2EB16DB1E0A00B3D188 /* libnss3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B57773F166EC5FB000DBCD5 /* libnss3.dylib */; };
 		7B5DD2EC16DB1E0A00B3D188 /* libsoftokn3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */; };
@@ -227,8 +230,8 @@
 		1CE49FF114A17F4D00663393 /* sipe-notify.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-notify.c"; sourceTree = "<group>"; };
 		1CE49FF214A17F4D00663393 /* sipe-webticket.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-webticket.c"; sourceTree = "<group>"; };
 		1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-ntlm-tests.c"; sourceTree = "<group>"; };
-		1CE4A00114A17FD100663393 /* sip-sec-digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-digest.c"; sourceTree = "<group>"; };
 		1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-tls-dsk.c"; sourceTree = "<group>"; };
+		1CE4A00114A17FD100663393 /* sip-sec-digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-digest.c"; sourceTree = "<group>"; };
 		1CE4A00214A17FD100663393 /* sipe-certificate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-certificate.c"; sourceTree = "<group>"; };
 		1CE4A00414A17FD100663393 /* sipe-tls-tester.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-tls-tester.c"; sourceTree = "<group>"; };
 		1CE4A00514A17FD100663393 /* sipe-tls.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-tls.c"; sourceTree = "<group>"; };
@@ -252,6 +255,9 @@
 		32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIPEAdiumPlugin_Prefix.pch; sourceTree = "<group>"; };
 		7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Adium.xcodeproj; sourceTree = ADIUM_SRCPATH; };
 		7B2AB0931666A17D0020766F /* libnssutil3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnssutil3.dylib; path = mozilla/security/nss/lib/util/Darwin11.4.2_64_OPT.OBJ/libnssutil3.dylib; sourceTree = NSS_SRCPATH; };
+		7B379591176A2DDF001A02FD /* sipe-http-request.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http-request.c"; sourceTree = "<group>"; };
+		7B379592176A2DDF001A02FD /* sipe-http-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http-transport.c"; sourceTree = "<group>"; };
+		7B379593176A2DDF001A02FD /* sipe-http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http.c"; sourceTree = "<group>"; };
 		7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PurpleDefaultsSIPE.plist; sourceTree = "<group>"; };
 		7B5777101668102A000DBCD5 /* libplc4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplc4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/libc/src/libplc4.dylib; sourceTree = NSS_SRCPATH; };
 		7B5777121668103B000DBCD5 /* libplds4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplds4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/ds/libplds4.dylib; sourceTree = NSS_SRCPATH; };
@@ -494,6 +500,9 @@
 		B13FAB9C119D585A001CE037 /* core */ = {
 			isa = PBXGroup;
 			children = (
+				7B379591176A2DDF001A02FD /* sipe-http-request.c */,
+				7B379592176A2DDF001A02FD /* sipe-http-transport.c */,
+				7B379593176A2DDF001A02FD /* sipe-http.c */,
 				1C1DC3CF14A8005A001F6A0F /* md4.c */,
 				1CE4A02214A1816B00663393 /* sipe-cert-crypto-nss.c */,
 				1CE4A02314A1816B00663393 /* sipe-crypt-nss.c */,
@@ -726,6 +735,9 @@
 				1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */,
 				1CDEE46112C35DAD00790CAF /* ESSIPEAccountViewController.m in Sources */,
 				7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */,
+				7B379594176A2DDF001A02FD /* sipe-http-request.c in Sources */,
+				7B379595176A2DDF001A02FD /* sipe-http-transport.c in Sources */,
+				7B379596176A2DDF001A02FD /* sipe-http.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
