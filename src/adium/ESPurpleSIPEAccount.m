@@ -144,7 +144,7 @@ extern void AILog(NSString *fmt, ...);
     purple_account_set_string(account, "authentication", [authScheme UTF8String]);
 
 	NSString *userAgent = [self preferenceForKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
-    purple_account_set_string(account, "useragent", (!userAgent.length) ?  [userAgent UTF8String] : "" );
+    purple_account_set_string(account, "useragent", (userAgent.length != 0) ?  [userAgent UTF8String] : "" );
 
     // Email preferences
     NSString *emailURL = [self preferenceForKey:KEY_SIPE_EMAIL_URL group:GROUP_ACCOUNT_STATUS];
