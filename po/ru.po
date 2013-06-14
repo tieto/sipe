@@ -8,13 +8,14 @@
 # Amber <amber.really@gmail.com>, 2011
 # someone328 <someone328@gmail.com>, 2011
 # Stefan Becker <chemobejk@gmail.com>, 2011
+# G0LDEN_key <the.golden.key@gmail.com>, 2013
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-06-04 18:54+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2013-06-09 00:54+0000\n"
+"Last-Translator: G0LDEN_key <the.golden.key@gmail.com>\n"
 "Language-Team: Russian (http://www.transifex.com/projects/p/pidgin-sipe/language/ru/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -196,7 +197,7 @@ msgstr "Поиск контактов неудачен"
 
 #: ../src/core/sipe-buddy.c:861
 msgid "Invalid contact search query"
-msgstr ""
+msgstr "Неверный запрос поиска контакта"
 
 #: ../src/core/sipe-buddy.c:1532
 #, c-format
@@ -219,11 +220,11 @@ msgstr "Новый чат"
 
 #: ../src/core/sipe-buddy.c:1588
 msgid "Work"
-msgstr ""
+msgstr "Рабочий"
 
 #: ../src/core/sipe-buddy.c:1595
 msgid "Mobile"
-msgstr ""
+msgstr "Мобильный"
 
 #: ../src/core/sipe-buddy.c:1603
 msgid "Home"
@@ -231,11 +232,11 @@ msgstr "Домашняя страница"
 
 #: ../src/core/sipe-buddy.c:1611
 msgid "Other"
-msgstr ""
+msgstr "Другой"
 
 #: ../src/core/sipe-buddy.c:1619
 msgid "Custom1"
-msgstr ""
+msgstr "Свой тип"
 
 #: ../src/core/sipe-buddy.c:1629
 msgid "Send email..."
@@ -309,7 +310,7 @@ msgstr "Не удалось присоединиться к конференци
 #: ../src/core/sipe-conf.c:367
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
-msgstr ""
+msgstr "\"%s\" не верный URI конференции"
 
 #: ../src/core/sipe-conf.c:898
 msgid ""
@@ -357,12 +358,12 @@ msgstr "Независимый плагин реализующий расшир�
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:192
 msgid "Home Page"
-msgstr ""
+msgstr "Домашняя страничка"
 
 #. About note, part 3/13: support forum URL (label)
 #: ../src/core/sipe-core.c:194
 msgid "Support"
-msgstr ""
+msgstr "Поддержка"
 
 #. About note, part 4/13: support forum name (hyperlink text)
 #: ../src/core/sipe-core.c:196
@@ -434,7 +435,7 @@ msgstr "Имя пользователя должно быть верным SIP U
 
 #: ../src/core/sipe-core.c:282
 msgid "Login and password are required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Имя и пароль нужны, если не используется "
 
 #: ../src/core/sipe-core.c:292
 msgid ""
@@ -576,11 +577,11 @@ msgstr "Ошибка при создании видео потокa"
 
 #: ../src/core/sipe-media.c:899
 msgid "Invalid phone number"
-msgstr ""
+msgstr "Неверный номер телефона"
 
 #: ../src/core/sipe-media.c:909
 msgid "Audio Test Service is not available."
-msgstr ""
+msgstr "Служба аудиотеста недоступна"
 
 #: ../src/core/sipe-media.c:1137
 msgid "User unavailable"
@@ -868,7 +869,7 @@ msgstr "Установка соединения"
 
 #: ../src/purple/purple-plugin.c:411
 msgid "Password required"
-msgstr ""
+msgstr "Требуется пароль"
 
 #: ../src/purple/purple-plugin.c:566
 msgid "user@company.com"
@@ -911,15 +912,15 @@ msgstr "О_тменить"
 
 #: ../src/purple/purple-plugin.c:902
 msgid "Phone number"
-msgstr ""
+msgstr "Номер телефона"
 
 #: ../src/purple/purple-plugin.c:906 ../src/purple/purple-plugin.c:907
 msgid "Call a phone number"
-msgstr ""
+msgstr "Позвонить по номеру телефона"
 
 #: ../src/purple/purple-plugin.c:910
 msgid "_Call"
-msgstr ""
+msgstr "_Вызов"
 
 #: ../src/purple/purple-plugin.c:933
 msgid "Meeting location"
@@ -942,7 +943,7 @@ msgid ""
 "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
-msgstr ""
+msgstr "Укажите место встречи из полученного Вами приглашения\nКорректное место встречи выглядит примерно так:\nmeet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nconf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nлибо\nhttps://meet.company.com/someone/abcdef1234\n "
 
 #: ../src/purple/purple-plugin.c:947
 msgid "_Join"
@@ -950,7 +951,7 @@ msgstr "_Регистрация"
 
 #: ../src/purple/purple-plugin.c:959 ../src/purple/purple-plugin.c:973
 msgid "Publishing of calendar information has been disabled"
-msgstr ""
+msgstr "Публикация данных из календаря выключена"
 
 #: ../src/purple/purple-plugin.c:986
 msgid "About SIPE plugin..."
@@ -962,11 +963,11 @@ msgstr "Поиск контактов..."
 
 #: ../src/purple/purple-plugin.c:993
 msgid "Call a phone number..."
-msgstr ""
+msgstr "Позвонить по номеру телефона..."
 
 #: ../src/purple/purple-plugin.c:996
 msgid "Test call"
-msgstr ""
+msgstr "Тестовый звонок"
 
 #: ../src/purple/purple-plugin.c:1000
 msgid "Join scheduled conference..."
@@ -1062,7 +1063,7 @@ msgstr "Использовать Single Sign-On"
 #. 
 #: ../src/purple/purple-plugin.c:1113
 msgid "Don't publish my calendar information"
-msgstr ""
+msgstr "Не публиковать данные из моего календаря"
 
 #: ../src/purple/purple-plugin.c:1116
 msgid ""

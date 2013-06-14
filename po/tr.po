@@ -13,8 +13,8 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-06-04 18:54+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2013-06-05 21:02+0000\n"
+"Last-Translator: onur <astrosmurfie@yahoo.co.uk>\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/pidgin-sipe/language/tr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -575,7 +575,7 @@ msgstr "Video akışını gerçekleştirirken hata oluştu"
 
 #: ../src/core/sipe-media.c:899
 msgid "Invalid phone number"
-msgstr ""
+msgstr "Geçersiz telefon numarası"
 
 #: ../src/core/sipe-media.c:909
 msgid "Audio Test Service is not available."
@@ -910,15 +910,15 @@ msgstr "_İptal et"
 
 #: ../src/purple/purple-plugin.c:902
 msgid "Phone number"
-msgstr ""
+msgstr "Telefon numarası"
 
 #: ../src/purple/purple-plugin.c:906 ../src/purple/purple-plugin.c:907
 msgid "Call a phone number"
-msgstr ""
+msgstr "Bir telefon numarası ara"
 
 #: ../src/purple/purple-plugin.c:910
 msgid "_Call"
-msgstr ""
+msgstr "_Ara"
 
 #: ../src/purple/purple-plugin.c:933
 msgid "Meeting location"
@@ -961,7 +961,7 @@ msgstr "Kişi araması..."
 
 #: ../src/purple/purple-plugin.c:993
 msgid "Call a phone number..."
-msgstr ""
+msgstr "Bir telefon numarası ara..."
 
 #: ../src/purple/purple-plugin.c:996
 msgid "Test call"
