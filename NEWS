@@ -1,5 +1,6 @@
-version 1.16.0 "HTTP Rewrite & Subscription Fixes" (2013-XX-XX)
+version 1.16.0 "HTTP Rewrite & Subscription Fixes" (2013-06-14)
 	- Feature #58: Implement Digest authentication scheme for SIP Proxy Authentication (Stefan Becker)
+	- Fixed #196: Useragent value not forwarded to core (Michael Lamb)
 	- Fixed #193: Pidgin Status changes stop working (Stefan Becker)
 	- Fixed #186: Users appear offline when they are not (Stefan Becker)
 	- fix kinit-less use case with krb5 >= 1.11 (Stefan Becker)

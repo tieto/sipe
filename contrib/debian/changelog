@@ -1,7 +1,8 @@
 pidgin-sipe (1.16.0-1) unstable; urgency=low
 
-  * New upstream version 1.16.0 "HTTP Rewrite & Subscription Fixes" (2013-XX-XX)
+  * New upstream version 1.16.0 "HTTP Rewrite & Subscription Fixes" (2013-06-14)
 	- Feature #58: Implement Digest authentication scheme for SIP Proxy Authentication (Stefan Becker)
+	- Fixed #196: Useragent value not forwarded to core (Michael Lamb)
 	- Fixed #193: Pidgin Status changes stop working (Stefan Becker)
 	- Fixed #186: Users appear offline when they are not (Stefan Becker)
 	- fix kinit-less use case with krb5 >= 1.11 (Stefan Becker)
@@ -17,7 +18,7 @@ pidgin-sipe (1.16.0-1) unstable; urgency=low
 	  * add TLS certificate accept/reject user interaction
 	  * add "Single Sign-On" & "Don't Publish Calendar" account options
 
- -- Stefan Becker <chemobejk@gmail.com>  Sat, 08 Jun 2013 22:15:00 +0300
+ -- Stefan Becker <chemobejk@gmail.com>  Fri, 14 Jun 2013 19:57:00 +0300
 
 pidgin-sipe (1.15.1-1) unstable; urgency=low
 
@@ -25,7 +26,7 @@ pidgin-sipe (1.15.1-1) unstable; urgency=low
 	- NOTE: SIPE SourceForge project got updated. Because of this all bug
 	        and feature request numbers have changed.
 	- Fixed #190: SIP 407 response rejected with invalid message signature (Stefan Becker)
-	- Fixed #189: Adium SIPE plugin vs. libpurple linking issues (Michal Lamb)
+	- Fixed #189: Adium SIPE plugin vs. libpurple linking issues (Michael Lamb)
 	- fixed free-after-use issue that caused crashes for some users (Stefan Becker)
 	- fixed broken NTLM fallback in Negotiate (Stefan Becker)
 	- fixed subscriptions expiration by subscribing again after re-authentication (Stefan Becker)
