@@ -32,12 +32,12 @@
 
 #include <glib.h>
 
-#include "http-conn.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-cal.h"
+#include "sipe-http.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
@@ -161,17 +161,9 @@ sipe_cal_event_free(struct sipe_cal_event* cal_event)
 void
 sipe_cal_events_free(GSList *cal_events)
 {
-	GSList *entry = cal_events;
-
 	if (!cal_events) return;
-
-	while (entry) {
-		struct sipe_cal_event *cal_event = entry->data;
-		sipe_cal_event_free(cal_event);
-		entry = entry->next;
-	}
-
-	g_slist_free(cal_events);
+	sipe_utils_slist_free_full(cal_events,
+				   (GDestroyNotify) sipe_cal_event_free);
 }
 
 void
@@ -179,12 +171,9 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 {
 	g_free(cal->email);
 	g_free(cal->legacy_dn);
-	if (cal->auth) {
-		g_free(cal->auth->domain);
-		g_free(cal->auth->user);
-		g_free(cal->auth->password);
-		g_free(cal->auth);
-	}
+	g_free(cal->auth_domain);
+	g_free(cal->auth_user);
+	g_free(cal->password);
 	g_free(cal->as_url);
 	g_free(cal->oof_url);
 	g_free(cal->oab_url);
@@ -196,13 +185,9 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 
 	sipe_cal_events_free(cal->cal_events);
 
-	if (cal->http_conn) {
-		http_conn_free(cal->http_conn);
-	}
-
-	if (cal->http_session) {
-		http_conn_session_free(cal->http_session);
-	}
+	if (cal->request)
+		sipe_http_request_cancel(cal->request);
+	sipe_http_session_close(cal->session);
 
 	g_free(cal);
 }
@@ -236,19 +221,11 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 			gchar **domain_user = g_strsplit_set(value, "/\\", 2);
 			gboolean has_domain = domain_user[1] != NULL;
 
-			cal->auth = g_new0(HttpConnAuth, 1);
-			cal->auth->domain   = has_domain ? g_strdup(domain_user[0]) : NULL;
-			cal->auth->user     = g_strdup(domain_user[has_domain ? 1 : 0]);
-			cal->auth->password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
-									    SIPE_SETTING_EMAIL_PASSWORD));
+			cal->auth_domain = has_domain ? g_strdup(domain_user[0]) : NULL;
+			cal->auth_user   = g_strdup(domain_user[has_domain ? 1 : 0]);
+			cal->password    = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
+									 SIPE_SETTING_EMAIL_PASSWORD));
 			g_strfreev(domain_user);
-
-		} else if (!SIPE_CORE_PRIVATE_FLAG_IS(SSO)) {
-			/* re-use SIP credentials when SSO is not selected */
-			cal->auth = g_new0(HttpConnAuth, 1);
-			cal->auth->domain   = g_strdup(sipe_private->authdomain);
-			cal->auth->user     = g_strdup(sipe_private->authuser);
-			cal->auth->password = g_strdup(sipe_private->password);
 		}
 		return TRUE;
 	}
@@ -1149,6 +1126,16 @@ void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private)
 				      UPDATE_CALENDAR_DELAY,
 				      (sipe_schedule_action) sipe_core_update_calendar,
 				      NULL);
+}
+
+void sipe_cal_http_authentication(struct sipe_calendar *cal)
+{
+	if (cal->auth_user) {
+		sipe_http_request_authentication(cal->request,
+						 cal->auth_domain,
+						 cal->auth_user,
+						 cal->password);
+	}
 }
 
 /*

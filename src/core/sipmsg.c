@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
@@ -168,24 +168,6 @@ char *sipmsg_to_string(const struct sipmsg *msg) {
 	g_string_append_printf(outstr, "\r\n%s", msg->bodylen ? msg->body : "");
 
 	return g_string_free(outstr, FALSE);
-}
-
-/**
- * Adds header to current message headers at specified position
- */
-void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos) {
-	struct sipnameval *element = g_new0(struct sipnameval,1);
-
-	/* SANITY CHECK: the calling code must be fixed if this happens! */
-	if (!value) {
-		SIPE_DEBUG_ERROR("sipmsg_add_header_now_pos: NULL value for %s (%d)",
-				 name, pos);
-		value = "";
-	}
-
-	element->name = g_strdup(name);
-	element->value = g_strdup(value);
-	msg->headers = g_slist_insert(msg->headers, element,pos);
 }
 
 /**

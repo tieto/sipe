@@ -62,6 +62,7 @@ typedef struct _SipeConnection {
 	/* channel managers */
 	TpSimplePasswordManager *password_manager;
 	struct _SipeContactList *contact_list;
+	struct _SipeTLSManager  *tls_manager;
 
 	struct sipe_backend_private private;
 	gchar *account;
@@ -73,6 +74,8 @@ typedef struct _SipeConnection {
 	guint  authentication_type;
 	gchar *user_agent;
 	gchar *authentication;
+	gboolean sso;
+	gboolean dont_publish;
 	gboolean is_disconnecting;
 
 	GPtrArray *contact_info_fields;
@@ -164,8 +167,7 @@ static gboolean connect_to_core(SipeConnection *self,
 	}
 
 	sipe_public = sipe_core_allocate(self->account,
-					 /* @TODO: add parameter for SSO */
-					 FALSE,
+					 self->sso,
 					 login_domain, login_account,
 					 self->password,
 					 NULL, /* @TODO: email     */
@@ -192,6 +194,7 @@ static gboolean connect_to_core(SipeConnection *self,
 							       self->account,
 							       NULL);
 		telepathy_private->message      = NULL;
+		telepathy_private->tls_manager  = self->tls_manager;
 		telepathy_private->transport    = NULL;
 		telepathy_private->ipaddress    = NULL;
 
@@ -203,6 +206,10 @@ static gboolean connect_to_core(SipeConnection *self,
 		     == 0))
 			SIPE_DEBUG_INFO("connect_to_core: created cache directory %s",
 					telepathy_private->cache_dir);
+
+		SIPE_CORE_FLAG_UNSET(DONT_PUBLISH);
+		if (self->dont_publish)
+			SIPE_CORE_FLAG_SET(DONT_PUBLISH);
 
 		sipe_core_transport_sip_connect(sipe_public,
 						self->transport,
@@ -305,9 +312,8 @@ static gboolean start_connecting(TpBaseConnection *base,
 	}
 
 	/* Only ask for a password when required */
-	/* @TODO: add parameter for SSO */
 	if (!sipe_core_transport_sip_requires_password(self->authentication_type,
-						       FALSE) ||
+						       self->sso) ||
 	    (self->password && strlen(self->password)))
 		rc = connect_to_core(self, error);
 	else {
@@ -373,6 +379,9 @@ static GPtrArray *create_channel_managers(TpBaseConnection *base)
 	g_ptr_array_add(channel_managers, self->password_manager);
 
 	g_ptr_array_add(channel_managers, sipe_telepathy_search_new(base));
+
+	self->tls_manager = sipe_telepathy_tls_new(base);
+	g_ptr_array_add(channel_managers, self->tls_manager);
 
 	return(channel_managers);
 }
@@ -705,6 +714,7 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 					    NULL);
 	const gchar *value;
 	guint port;
+	gboolean boolean_value;
 	gboolean valid;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_telepathy_connection_new");
@@ -761,6 +771,20 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 		conn->authentication = g_strdup(value);
 	else
 		conn->authentication = NULL; /* NTLM is default */
+
+	/* Single Sign-On */
+	boolean_value = tp_asv_get_boolean(params, "single-sign-on", &valid);
+	if (valid)
+		conn->sso = boolean_value;
+	else
+		conn->sso = FALSE;
+
+	/* Don't publish my calendar information */
+	boolean_value = tp_asv_get_boolean(params, "don't-publish-calendar", &valid);
+	if (valid)
+		conn->dont_publish = boolean_value;
+	else
+		conn->dont_publish = FALSE;
 
 	return(TP_BASE_CONNECTION(conn));
 }

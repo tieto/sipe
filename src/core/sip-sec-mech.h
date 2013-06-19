@@ -80,6 +80,8 @@ struct sip_sec_context {
  *
  * 0x00000001 - 0x00008000: common flags
  * 0x00010000 - 0x80000000: mechanism private flags
+ *
+ * NOTE: private flags must be set in acquire_cred_func()!
  */
 #define SIP_SEC_FLAG_COMMON_SSO   0x00000001
 #define SIP_SEC_FLAG_COMMON_HTTP  0x00000002

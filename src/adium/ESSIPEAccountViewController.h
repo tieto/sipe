@@ -14,9 +14,7 @@
 @interface ESSIPEAccountViewController : PurpleAccountViewController {
 
     IBOutlet    NSTextField     *textField_windowsLogin;
-
     IBOutlet    NSTextField     *textField_server;
-    
     IBOutlet	NSTextField		*textField_userAgent;
 	IBOutlet	NSTextField		*textField_emailURL;
 	IBOutlet	NSTextField		*textField_email;
@@ -24,6 +22,7 @@
 	IBOutlet	NSTextField		*textField_emailPassword;
 	IBOutlet	NSTextField		*textField_groupchatUser;
     
+    IBOutlet	NSButton		*checkBox_autoDiscover;
     IBOutlet	NSButton		*checkBox_singleSignOn;
     
 	IBOutlet	NSPopUpButton	*popup_connectionType;

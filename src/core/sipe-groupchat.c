@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -203,12 +203,7 @@ static void sipe_groupchat_allocate(struct sipe_core_private *sipe_private)
 
 static void sipe_groupchat_free_join_queue(struct sipe_groupchat *groupchat)
 {
-	GSList *entry = groupchat->join_queue;
-	while (entry) {
-		g_free(entry->data);
-		entry = entry->next;
-	}
-	g_slist_free(groupchat->join_queue);
+	sipe_utils_slist_free_full(groupchat->join_queue, g_free);
 	groupchat->join_queue = NULL;
 }
 

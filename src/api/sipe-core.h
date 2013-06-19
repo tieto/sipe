@@ -312,6 +312,15 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public);
 
 /**
+ * Get SIP server host name
+ *
+ * @param sipe_public Sipe core public data structure
+ *
+ * @return server host name (may be @c NULL if not fully connected yet)
+ */
+const gchar *sipe_core_transport_sip_server_name(struct sipe_core_public *sipe_public);
+
+/**
  * Invite to chat
  */
 void sipe_core_chat_invite(struct sipe_core_public *sipe_public,
@@ -400,6 +409,15 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
  * @return @c TRUE if media call is in progress
  */
 gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public);
+
+/**
+ * Initiates a call with given phone number
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @parem phone_number (in) a mobile or landline phone number, i.e. +46123456
+ */
+void sipe_core_media_phone_call(struct sipe_core_public *sipe_public,
+				const gchar *phone_number);
 
 /**
  * Checks voice quality by making a call to the test service

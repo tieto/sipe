@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-13 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -93,7 +93,7 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 			sipmsg_free(call_private->invitation);
 
 		sdpmsg_free(call_private->smsg);
-		g_slist_free_full(call_private->failed_media,
+		sipe_utils_slist_free_full(call_private->failed_media,
 				  (GDestroyNotify)sdpmedia_free);
 		g_free(call_private->with);
 		g_free(call_private);
@@ -279,6 +279,7 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 {
 	gchar *hdr;
 	gchar *contact;
+	gchar *p_preferred_identity = NULL;
 	gchar *body;
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sip_session *session;
@@ -293,15 +294,27 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 		!sipe_strequal(call_private->with, sipe_private->test_call_bot_uri);
 
 	contact = get_contact(sipe_private);
+
+	if (sipe_private->uc_line_uri) {
+		gchar *self = sip_uri_self(sipe_private);
+		p_preferred_identity = g_strdup_printf(
+			"P-Preferred-Identity: <%s>, <%s>\r\n",
+			self, sipe_private->uc_line_uri);
+		g_free(self);
+	}
+
 	hdr = g_strdup_printf(
 		"ms-keep-alive: UAC;hop-hop=yes\r\n"
 		"Contact: %s\r\n"
+		"%s"
 		"Content-Type: %s\r\n",
 		contact,
+		p_preferred_identity ? p_preferred_identity : "",
 		add_2007_fallback ?
 			  "multipart/alternative;boundary=\"----=_NextPart_000_001E_01CB4397.0B5EB570\""
 			: "application/sdp");
 	g_free(contact);
+	g_free(p_preferred_identity);
 
 	msg = sipe_media_to_sdpmsg(call_private);
 	body = sdpmsg_to_string(msg);
@@ -490,7 +503,7 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 {
 	GSList *i;
 
-	g_slist_free_full(call_private->failed_media, (GDestroyNotify)sdpmedia_free);
+	sipe_utils_slist_free_full(call_private->failed_media, (GDestroyNotify)sdpmedia_free);
 	call_private->failed_media = NULL;
 
 	for (i = msg->media; i; i = i->next) {
@@ -772,7 +785,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 
 	sipe_backend_media_relays_free(backend_media_relays);
 
-	// Processing continues in candidates_prepared_cb
+	// Processing continues in stream_initialized_cb
 }
 
 void
@@ -837,7 +850,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 
 	sipe_backend_media_relays_free(backend_media_relays);
 
-	// Processing continues in candidates_prepared_cb
+	// Processing continues in stream_initialized_cb
 }
 
 gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public)
@@ -846,6 +859,45 @@ gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public)
 		return SIPE_CORE_PRIVATE->media_call != NULL;
 	}
 	return FALSE;
+}
+
+static gboolean phone_number_is_valid(const gchar *phone_number)
+{
+	if (!phone_number || sipe_strequal(phone_number, "")) {
+		return FALSE;
+	}
+
+	if (*phone_number == '+') {
+		++phone_number;
+	}
+
+	while (*phone_number != '\0') {
+		if (!g_ascii_isdigit(*phone_number)) {
+			return FALSE;
+		}
+		++phone_number;
+	}
+
+	return TRUE;
+}
+
+void sipe_core_media_phone_call(struct sipe_core_public *sipe_public,
+				const gchar *phone_number)
+{
+	g_return_if_fail(sipe_public);
+
+	if (phone_number_is_valid(phone_number)) {
+		gchar *phone_uri = g_strdup_printf("sip:%s@%s;user=phone",
+				phone_number, sipe_public->sip_domain);
+
+		sipe_core_media_initiate_call(sipe_public, phone_uri, FALSE);
+
+		g_free(phone_uri);
+	} else {
+		sipe_backend_notify_error(sipe_public,
+					  _("Unable to establish a call"),
+					  _("Invalid phone number"));
+	}
 }
 
 void sipe_core_media_test_call(struct sipe_core_public *sipe_public)
@@ -946,7 +998,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		call_private->smsg = smsg;
 		sip_transport_response(sipe_private, call_private->invitation,
 				       180, "Ringing", NULL);
-		// Processing continues in candidates_prepared_cb
+		// Processing continues in stream_initialized_cb
 	} else {
 		apply_remote_message(call_private, smsg);
 		send_response_with_session_description(call_private, 200, "OK");
@@ -1136,9 +1188,16 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				break;
 		}
 
-		if (append_responsestr)
+		if (append_responsestr) {
+			gchar *reason = sipmsg_get_ms_diagnostics_reason(msg);
+
 			g_string_append_printf(desc, "\n%d %s",
 					       msg->response, msg->responsestr);
+			if (reason) {
+				g_string_append_printf(desc, "\n\n%s", reason);
+				g_free(reason);
+			}
+		}
 
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC, title, desc->str);
 		g_string_free(desc, TRUE);

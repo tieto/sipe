@@ -35,10 +35,10 @@
 #include <glib.h>
 
 #include "sipe-common.h"
-#include "http-conn.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-http.h"
 #include "sipe-svc.h"
 #include "sipe-tls.h"
 #include "sipe-utils.h"
@@ -47,37 +47,36 @@
 
 /* forward declaration */
 struct svc_request;
-typedef void (svc_callback)(struct svc_request *data,
+typedef void (svc_callback)(struct sipe_core_private *sipe_private,
+			    struct svc_request *data,
 			    const gchar *raw,
 			    sipe_xml *xml);
 
 struct svc_request {
-	struct sipe_core_private *sipe_private;
 	svc_callback *internal_cb;
 	sipe_svc_callback *cb;
 	gpointer *cb_data;
-	HttpConn *conn;
-	HttpConnAuth auth;
+	struct sipe_http_request *request;
 	gchar *uri;
-	gchar *soap_action;
 };
 
 struct sipe_svc {
 	GSList *pending_requests;
+	gboolean shutting_down;
 };
 
 struct sipe_svc_session {
-	HttpSession *session;
+	struct sipe_http_session *session;
 };
 
-static void sipe_svc_request_free(struct svc_request *data)
+static void sipe_svc_request_free(struct sipe_core_private *sipe_private,
+				  struct svc_request *data)
 {
-	if (data->conn)
-		http_conn_free(data->conn);
+	if (data->request)
+		sipe_http_request_cancel(data->request);
 	if (data->cb)
 		/* Callback: aborted */
-		(*data->cb)(data->sipe_private, NULL, NULL, NULL, data->cb_data);
-	g_free(data->soap_action);
+		(*data->cb)(sipe_private, NULL, NULL, NULL, data->cb_data);
 	g_free(data->uri);
 	g_free(data);
 }
@@ -88,10 +87,13 @@ void sipe_svc_free(struct sipe_core_private *sipe_private)
 	if (!svc)
 		return;
 
+	/* Web Service stack is shutting down: reject all new requests */
+	svc->shutting_down = TRUE;
+
 	if (svc->pending_requests) {
 		GSList *entry = svc->pending_requests;
 		while (entry) {
-			sipe_svc_request_free(entry->data);
+			sipe_svc_request_free(sipe_private, entry->data);
 			entry = entry->next;
 		}
 		g_slist_free(svc->pending_requests);
@@ -112,39 +114,38 @@ static void sipe_svc_init(struct sipe_core_private *sipe_private)
 struct sipe_svc_session *sipe_svc_session_start(void)
 {
 	struct sipe_svc_session *session = g_new0(struct sipe_svc_session, 1);
-	session->session = http_conn_session_create();
+	session->session = sipe_http_session_start();
 	return(session);
 }
 
 void sipe_svc_session_close(struct sipe_svc_session *session)
 {
 	if (session) {
-		http_conn_session_free(session->session);
+		sipe_http_session_close(session->session);
 		g_free(session);
 	}
 }
 
-static void sipe_svc_https_response(int return_code,
-				    const gchar *body,
+static void sipe_svc_https_response(struct sipe_core_private *sipe_private,
+				    guint status,
 				    SIPE_UNUSED_PARAMETER GSList *headers,
-				    HttpConn *conn,
-				    void *callback_data)
+				    const gchar *body,
+				    gpointer callback_data)
 {
 	struct svc_request *data = callback_data;
-	struct sipe_svc *svc = data->sipe_private->svc;
+	struct sipe_svc *svc = sipe_private->svc;
 
-	SIPE_DEBUG_INFO("sipe_svc_https_response: code %d", return_code);
-	http_conn_set_close(conn);
-	data->conn = NULL;
+	SIPE_DEBUG_INFO("sipe_svc_https_response: code %d", status);
+	data->request = NULL;
 
-	if ((return_code == 200) && body) {
+	if ((status == SIPE_HTTP_STATUS_OK) && body) {
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 		/* Internal callback: success */
-		(*data->internal_cb)(data, body, xml);
+		(*data->internal_cb)(sipe_private, data, body, xml);
 		sipe_xml_free(xml);
 	} else {
 		/* Internal callback: failed */
-		(*data->internal_cb)(data, NULL, NULL);
+		(*data->internal_cb)(sipe_private, data, NULL, NULL);
 	}
 
 	/* Internal callback has already called this */
@@ -152,11 +153,17 @@ static void sipe_svc_https_response(int return_code,
 
 	svc->pending_requests = g_slist_remove(svc->pending_requests,
 					       data);
-	sipe_svc_request_free(data);
+	sipe_svc_request_free(sipe_private, data);
 }
 
+/**
+ * Send GET request when @c body is NULL, otherwise send POST request
+ *
+ * @param content_type MIME type for body content (ignored when body is @c NULL)
+ * @param soap_action  SOAP action header value   (ignored when body is @c NULL)
+ * @param body         body contents              (may be @c NULL)
+ */
 static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
-				       const gchar *method,
 				       struct sipe_svc_session *session,
 				       const gchar *uri,
 				       const gchar *content_type,
@@ -167,48 +174,62 @@ static gboolean sipe_svc_https_request(struct sipe_core_private *sipe_private,
 				       gpointer callback_data)
 {
 	struct svc_request *data = g_new0(struct svc_request, 1);
-	gboolean ret = FALSE;
+	struct sipe_http_request *request = NULL;
+	struct sipe_svc *svc;
 
-	data->sipe_private = sipe_private;
-	data->uri          = g_strdup(uri);
+	sipe_svc_init(sipe_private);
+	svc = sipe_private->svc;
 
-	if (soap_action)
-		data->soap_action = g_strdup_printf("SOAPAction: \"%s\"\r\n",
-						    soap_action);
+	if (svc->shutting_down) {
+		SIPE_DEBUG_ERROR("sipe_svc_https_request: new Web Service request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
+				 "URI:    %s\n"
+				 "Action: %s\n"
+				 "Body:   %s\n",
+				 uri,
+				 soap_action ? soap_action : "<NONE>",
+				 body ? body : "<EMPTY>");
+	} else {
+		if (body) {
+			gchar *headers = g_strdup_printf("SOAPAction: \"%s\"\r\n",
+							 soap_action);
 
-	/* re-use SIP credentials */
-	data->auth.domain   = sipe_private->authdomain;
-	data->auth.user     = sipe_private->authuser;
-	data->auth.password = sipe_private->password;
+			request = sipe_http_request_post(sipe_private,
+							 uri,
+							 headers,
+							 body,
+							 content_type,
+							 sipe_svc_https_response,
+							 data);
+			g_free(headers);
 
-	data->conn = http_conn_create(SIPE_CORE_PUBLIC,
-				      session->session,
-				      method,
-				      HTTP_CONN_SSL,
-				      HTTP_CONN_NO_REDIRECT,
-				      uri,
-				      body,
-				      content_type,
-				      data->soap_action,
-				      /* use credentials only when SSO is not selected */
-				      SIPE_CORE_PRIVATE_FLAG_IS(SSO) ? NULL : &data->auth,
-				      sipe_svc_https_response,
-				      data);
+		} else {
+			request = sipe_http_request_get(sipe_private,
+							uri,
+							NULL,
+							sipe_svc_https_response,
+							data);
+		}
+	}
 
-	if (data->conn) {
+	if (request) {
 		data->internal_cb = internal_callback;
 		data->cb          = callback;
 		data->cb_data     = callback_data;
-		sipe_svc_init(sipe_private);
-		sipe_private->svc->pending_requests = g_slist_prepend(sipe_private->svc->pending_requests,
-								      data);
-		ret = TRUE;
+		data->request     = request;
+		data->uri         = g_strdup(uri);
+
+		svc->pending_requests = g_slist_prepend(svc->pending_requests,
+							data);
+
+		sipe_http_request_session(request, session->session);
+		sipe_http_request_ready(request);
+
 	} else {
 		SIPE_DEBUG_ERROR("failed to create HTTP connection to %s", uri);
-		sipe_svc_request_free(data);
+		g_free(data);
 	}
 
-	return(ret);
+	return(request != NULL);
 }
 
 static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
@@ -253,7 +274,6 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 				      soap_body);
 
 	gboolean ret = sipe_svc_https_request(sipe_private,
-					      HTTP_CONN_POST,
 					      session,
 					      uri,
 					      content_type ? content_type : "text/xml",
@@ -293,16 +313,17 @@ static gboolean new_soap_req(struct sipe_core_private *sipe_private,
 				     callback_data));
 }
 
-static void sipe_svc_wsdl_response(struct svc_request *data,
+static void sipe_svc_wsdl_response(struct sipe_core_private *sipe_private,
+				   struct svc_request *data,
 				   const gchar *raw,
 				   sipe_xml *xml)
 {
 	if (xml) {
 		/* Callback: success */
-		(*data->cb)(data->sipe_private, data->uri, raw, xml, data->cb_data);
+		(*data->cb)(sipe_private, data->uri, raw, xml, data->cb_data);
 	} else {
 		/* Callback: failed */
-		(*data->cb)(data->sipe_private, data->uri, NULL, NULL, data->cb_data);
+		(*data->cb)(sipe_private, data->uri, NULL, NULL, data->cb_data);
 	}
 }
 
@@ -455,6 +476,7 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 				      struct sipe_svc_session *session,
 				      const gchar *service_uri,
 				      const gchar *auth_uri,
+				      const gchar *authuser,
 				      const gchar *content_type,
 				      const gchar *request_extension,
 				      sipe_svc_callback *callback,
@@ -465,7 +487,7 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 					       " <wsse:Username>%s</wsse:Username>"
 					       " <wsse:Password>%s</wsse:Password>"
 					       "</wsse:UsernameToken>",
-					       sipe_private->username,
+					       authuser,
 					       sipe_private->password ? sipe_private->password : "");
 
 	gboolean ret = request_passport(sipe_private,
@@ -492,6 +514,7 @@ gboolean sipe_svc_webticket_adfs(struct sipe_core_private *sipe_private,
 				     session,
 				     "urn:federation:MicrosoftOnline",
 				     adfs_uri,
+				     sipe_private->username,
 				     /* ADFS is special, *sigh* */
 				     "application/soap+xml; charset=utf-8",
 				     "<wst:KeyType>http://schemas.xmlsoap.org/ws/2005/05/identity/NoProofKey</wst:KeyType>",
@@ -511,6 +534,7 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 				     session,
 				     service_uri,
 				     LMC_URI,
+				     sipe_private->authuser ? sipe_private->authuser : sipe_private->username,
 				     NULL,
 				     NULL,
 				     callback,
@@ -585,16 +609,17 @@ gboolean sipe_svc_webticket(struct sipe_core_private *sipe_private,
 	return(ret);
 }
 
-static void sipe_svc_metadata_response(struct svc_request *data,
+static void sipe_svc_metadata_response(struct sipe_core_private *sipe_private,
+				       struct svc_request *data,
 				       const gchar *raw,
 				       sipe_xml *xml)
 {
 	if (xml) {
 		/* Callback: success */
-		(*data->cb)(data->sipe_private, data->uri, raw, xml, data->cb_data);
+		(*data->cb)(sipe_private, data->uri, raw, xml, data->cb_data);
 	} else {
 		/* Callback: failed */
-		(*data->cb)(data->sipe_private, data->uri, NULL, NULL, data->cb_data);
+		(*data->cb)(sipe_private, data->uri, NULL, NULL, data->cb_data);
 	}
 }
 
@@ -606,10 +631,9 @@ gboolean sipe_svc_realminfo(struct sipe_core_private *sipe_private,
 	gchar *realminfo_uri = g_strdup_printf("https://login.microsoftonline.com/getuserrealm.srf?login=%s&xml=1",
 					       sipe_private->username);
 	gboolean ret = sipe_svc_https_request(sipe_private,
-					      HTTP_CONN_GET,
 					      session,
 					      realminfo_uri,
-					      "text",
+					      NULL,
 					      NULL,
 					      NULL,
 					      sipe_svc_metadata_response,
@@ -627,10 +651,9 @@ gboolean sipe_svc_metadata(struct sipe_core_private *sipe_private,
 {
 	gchar *mex_uri = g_strdup_printf("%s/mex", uri);
 	gboolean ret = sipe_svc_https_request(sipe_private,
-					      HTTP_CONN_GET,
 					      session,
 					      mex_uri,
-					      "text",
+					      NULL,
 					      NULL,
 					      NULL,
 					      sipe_svc_metadata_response,

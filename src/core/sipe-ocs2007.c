@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -287,12 +287,8 @@ static void sipe_ocs2007_free_container(struct sipe_container *container)
 void sipe_core_buddy_menu_free(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	GSList *entry = sipe_private->blist_menu_containers;
-	while (entry) {
-		sipe_ocs2007_free_container(entry->data);
-		entry = entry->next;
-	}
-	g_slist_free(sipe_private->blist_menu_containers);
+	sipe_utils_slist_free_full(sipe_private->blist_menu_containers,
+				   (GDestroyNotify) sipe_ocs2007_free_container);
 	sipe_private->blist_menu_containers = NULL;
 }
 
@@ -321,14 +317,8 @@ static struct sipe_container *create_container(guint index,
 
 void sipe_ocs2007_free(struct sipe_core_private *sipe_private)
 {
-	if (sipe_private->containers) {
-		GSList *entry = sipe_private->containers;
-		while (entry) {
-			sipe_ocs2007_free_container((struct sipe_container *)entry->data);
-			entry = entry->next;
-		}
-	}
-	g_slist_free(sipe_private->containers);
+	sipe_utils_slist_free_full(sipe_private->containers,
+				   (GDestroyNotify) sipe_ocs2007_free_container);
 }
 
 /**
@@ -542,7 +532,10 @@ static GSList *get_access_domains(struct sipe_core_private *sipe_private)
 			member = entry2->data;
 			if (sipe_strcase_equal(member->type, "domain"))
 			{
-				res = slist_insert_unique_sorted(res, g_strdup(member->value), (GCompareFunc)g_ascii_strcasecmp);
+				res = sipe_utils_slist_insert_unique_sorted(res,
+									    g_strdup(member->value),
+									    (GCompareFunc)g_ascii_strcasecmp,
+									    g_free);
 			}
 			entry2 = entry2->next;
 		}
@@ -2058,7 +2051,10 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 	/* set list of categories participating in this XML */
 	for (node = sipe_xml_child(xml, "categories/category"); node; node = sipe_xml_twin(node)) {
 		const gchar *name = sipe_xml_attribute(node, "name");
-		category_names = slist_insert_unique_sorted(category_names, (gchar *)name, (GCompareFunc)strcmp);
+		category_names = sipe_utils_slist_insert_unique_sorted(category_names,
+								       (gchar *)name,
+								       (GCompareFunc)strcmp,
+								       NULL);
 	}
 	SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: category_names length=%d",
 			category_names ? (int) g_slist_length(category_names) : -1);
@@ -2274,19 +2270,35 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		if (!sipe_private->csta &&
 		    sipe_strequal(name, "userProperties")) {
 			const sipe_xml *line;
-			/* line, for Remote Call Control (RCC) */
+			/* line, for Remote Call Control (RCC) or external Lync/Communicator call */
 			for (line = sipe_xml_child(node, "userProperties/lines/line"); line; line = sipe_xml_twin(line)) {
-				const gchar *line_server = sipe_xml_attribute(line, "lineServer");
 				const gchar *line_type = sipe_xml_attribute(line, "lineType");
-				gchar *line_uri;
-
-				if (!line_server || !(sipe_strequal(line_type, "Rcc") || sipe_strequal(line_type, "Dual"))) continue;
-
-				line_uri = sipe_xml_data(line);
-				if (line_uri) {
-					SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: line_uri=%s server=%s", line_uri, line_server);
-					sip_csta_open(sipe_private, line_uri, line_server);
+				gchar *line_uri = sipe_xml_data(line);
+				if (!line_uri) {
+					continue;
 				}
+
+				if (sipe_strequal(line_type, "Rcc") || sipe_strequal(line_type, "Dual")) {
+					const gchar *line_server = sipe_xml_attribute(line, "lineServer");
+					if (line_server) {
+						gchar *tmp = g_strstrip(line_uri);
+						SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: line_uri=%s server=%s",
+								tmp, line_server);
+						sip_csta_open(sipe_private, tmp, line_server);
+					}
+				}
+#ifdef HAVE_VV
+				else if (sipe_strequal(line_type, "Uc")) {
+
+					if (!sipe_private->uc_line_uri) {
+						sipe_private->uc_line_uri = g_strdup(g_strstrip(line_uri));
+					} else {
+						SIPE_DEBUG_INFO_NOFORMAT("sipe_ocs2007_process_roaming_self: "
+								"sipe_private->uc_line_uri is already set.");
+					}
+				}
+#endif
+
 				g_free(line_uri);
 
 				break;

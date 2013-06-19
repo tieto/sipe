@@ -1,3 +1,44 @@
+pidgin-sipe (1.16.0-1) unstable; urgency=low
+
+  * New upstream version 1.16.0 "HTTP Rewrite & Subscription Fixes" (2013-06-14)
+	- Feature #58: Implement Digest authentication scheme for SIP Proxy Authentication (Stefan Becker)
+	- Fixed #196: Useragent value not forwarded to core (Michael Lamb)
+	- Fixed #193: Pidgin Status changes stop working (Stefan Becker)
+	- Fixed #186: Users appear offline when they are not (Stefan Becker)
+	- fix kinit-less use case with krb5 >= 1.11 (Stefan Becker)
+	- rewritten HTTP stack from scratch (Stefan Becker)
+	  * cleaner, layered and hopefully less error-prone implementation
+	  * HTTP stack internals no longer exposed to user code
+	  * reduced network traffic and less SSL handshakes by utilizing HTTP/1.1
+	    connection keep alive for multiple HTTP requests to the same host
+	- switch purple backend to deferred destruction approach (Stefan Becker)
+	  * Pidgin should no longer crash at connection close, even in corner cases
+	- add menu entry to make a call with a phone number (Jakub Adam)
+	- some progress on telepathy backend (Stefan Becker)
+	  * add TLS certificate accept/reject user interaction
+	  * add "Single Sign-On" & "Don't Publish Calendar" account options
+
+ -- Stefan Becker <chemobejk@gmail.com>  Fri, 14 Jun 2013 19:57:00 +0300
+
+pidgin-sipe (1.15.1-1) unstable; urgency=low
+
+  * New upstream version 1.15.1 "Bug Fixes I"
+	- NOTE: SIPE SourceForge project got updated. Because of this all bug
+	        and feature request numbers have changed.
+	- Fixed #190: SIP 407 response rejected with invalid message signature (Stefan Becker)
+	- Fixed #189: Adium SIPE plugin vs. libpurple linking issues (Michael Lamb)
+	- fixed free-after-use issue that caused crashes for some users (Stefan Becker)
+	- fixed broken NTLM fallback in Negotiate (Stefan Becker)
+	- fixed subscriptions expiration by subscribing again after re-authentication (Stefan Becker)
+	- allow different user name and login for Office 365 authentication (Stefan Becker)
+	- add SIPE version & git commit ID to debug log (Stefan Becker)
+	- added valgrind log analyzer script (Stefan Becker)
+	- added NTLM message anaylzer (Stefan Becker)
+	- updated translations: Hungarion (hu), Romanian (ro)
+	- updated Adium port (Michael Lamb, Harris P. Kauffman)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sun, 07 Apr 2013 15:09:00 +0300
+
 pidgin-sipe (1.15.0-1) unstable; urgency=low
 
   * New upstream version 1.15.0 "Authentication & Autodiscovery Update"

@@ -143,6 +143,17 @@ check "automake";		AUTOMAKE=${BIN};
 check "autoconf";		AUTOCONF=${BIN};
 
 ###############################################################################
+# Generate GITVERSION
+###############################################################################
+_gitversion=$(git describe | grep -e -)
+if [ -n "${_gitversion}" ]; then
+	_gitversion=$(echo ${_gitversion} | cut -d- -f3 | sed 's/^g//')
+	echo -n ${_gitversion} >GITVERSION
+else
+	rm -f GITVERSION
+fi
+
+###############################################################################
 # Run all of our helpers
 ###############################################################################
 run_or_die ${LIBTOOLIZE} ${LIBTOOLIZE_FLAGS:-"-c -f --automake"}

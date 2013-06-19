@@ -10,14 +10,14 @@ MAINTAINERCLEANFILES = \
 	Makefile.in
 
 libsipe_core_la_SOURCES = \
-	http-conn.h \
-	http-conn.c \
 	sipmsg.h \
 	sipmsg.c \
 	sip-csta.h \
 	sip-csta.c \
 	sip-sec.h \
 	sip-sec.c \
+	sip-sec-digest.h \
+	sip-sec-digest.c \
 	sip-sec-mech.h \
 	sip-sec-tls-dsk.h \
 	sip-sec-tls-dsk.c \
@@ -51,6 +51,12 @@ libsipe_core_la_SOURCES = \
 	sipe-group.c \
 	sipe-groupchat.h \
 	sipe-groupchat.c \
+	sipe-http.h \
+	sipe-http.c \
+	sipe-http-request.h \
+	sipe-http-request.c \
+	sipe-http-transport.h \
+	sipe-http-transport.c \
 	sipe-im.h \
 	sipe-im.c \
 	sipe-incoming.h \
@@ -159,7 +165,9 @@ libsipe_core_la_SOURCES += sipe-media.h sipe-media.c \
 	sdpmsg.h sdpmsg.c
 endif
 
-check_PROGRAMS = sipe_xml_tests
+check_PROGRAMS =
+
+check_PROGRAMS += sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_xml_tests_LDADD = \
@@ -168,13 +176,25 @@ sipe_xml_tests_LDADD = \
 	$(LIBXML2_LIBS) \
 	$(GLIB_LIBS)
 
+check_PROGRAMS += sip_sec_digest_tests
+sip_sec_digest_tests_SOURCES = sip-sec-digest-tests.c
+sip_sec_digest_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
+sip_sec_digest_tests_LDADD = \
+	libsipe_core_la-sipe-utils.lo \
+	libsipe_core_crypto_nss_la-sipe-crypt-nss.lo \
+	libsipe_core_crypto_nss_la-sipe-digest-nss.lo \
+	$(NSS_LIBS) \
+	$(GLIB_LIBS)
+
 # disables "caching" of memory blocks in tests
 TESTS_ENVIRONMENT = G_SLICE="always-malloc"
 TESTS = $(check_PROGRAMS)
 
+noinst_PROGRAMS =
+
 if !SIPE_OS_WIN32
 # TODO: the code needs some TLC from a MinGW expert to compile...
-noinst_PROGRAMS = sipe_tls_tester
+noinst_PROGRAMS += sipe_tls_tester
 sipe_tls_tester_SOURCES = sipe-tls-tester.c
 sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_tls_tester_LDADD = \
@@ -185,3 +205,9 @@ sipe_tls_tester_LDADD = \
 	$(NSS_LIBS) \
 	$(GLIB_LIBS)
 endif
+
+noinst_PROGRAMS += sipe_ntlm_analyzer
+sipe_ntlm_analyzer_SOURCES = sip-sec-ntlm-analyzer.c
+sipe_ntlm_analyzer_CFLAGS = $(libsipe_core_la_CFLAGS)
+sipe_ntlm_analyzer_LDADD = \
+	$(GLIB_LIBS)

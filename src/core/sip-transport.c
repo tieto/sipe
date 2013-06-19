@@ -61,6 +61,7 @@
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-sec.h"
+#include "sip-sec-digest.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -441,7 +442,7 @@ static void sign_outgoing_message(struct sipe_core_private *sipe_private,
 
 	buf = auth_header(sipe_private, &transport->registrar, msg);
 	if (buf) {
-		sipmsg_add_header_now_pos(msg, "Authorization", buf, 5);
+		sipmsg_add_header_now(msg, "Authorization", buf);
 		g_free(buf);
 	}
 }
@@ -1066,63 +1067,9 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				/* rejoin open chats to be able to use them by continue to send messages */
 				sipe_backend_chat_rejoin_all(SIPE_CORE_PUBLIC);
 
-				/* subscriptions */
-				if (!transport->subscribed) { //do it just once, not every re-register
-
-					if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-contacts",
-								(GCompareFunc)g_ascii_strcasecmp)) {
-						sipe_subscribe_roaming_contacts(sipe_private);
-					}
-
-					/* For 2007+ it does not make sence to subscribe to:
-					 *   vnd-microsoft-roaming-ACL
-					 *   vnd-microsoft-provisioning (not v2)
-					 *   presence.wpending
-					 * These are for backward compatibility.
-					 */
-					if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
-					{
-						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-self",
-									(GCompareFunc)g_ascii_strcasecmp)) {
-							sipe_subscribe_roaming_self(sipe_private);
-						}
-						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-provisioning-v2",
-									(GCompareFunc)g_ascii_strcasecmp)) {
-							sipe_subscribe_roaming_provisioning_v2(sipe_private);
-						}
-					}
-					/* For 2005- servers */
-					else
-					{
-						//sipe_options_request(sip, sipe_private->public.sip_domain);
-
-						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-roaming-ACL",
-									(GCompareFunc)g_ascii_strcasecmp)) {
-							sipe_subscribe_roaming_acl(sipe_private);
-						}
-						if (g_slist_find_custom(sipe_private->allowed_events, "vnd-microsoft-provisioning",
-									(GCompareFunc)g_ascii_strcasecmp)) {
-							sipe_subscribe_roaming_provisioning(sipe_private);
-						}
-						if (g_slist_find_custom(sipe_private->allowed_events, "presence.wpending",
-									(GCompareFunc)g_ascii_strcasecmp)) {
-							sipe_subscribe_presence_wpending(sipe_private,
-											 NULL);
-						}
-
-						/* For 2007+ we publish our initial statuses and calendar data only after
-						 * received our existing publications in sipe_process_roaming_self()
-						 * Only in this case we know versions of current publications made
-						 * on our behalf.
-						 */
-						/* For 2005- we publish our initial statuses only after
-						 * received our existing UserInfo data in response to
-						 * self subscription.
-						 * Only in this case we won't override existing UserInfo data
-						 * set earlier or by other client on our behalf.
-						 */
-					}
-
+				/* subscriptions, done only once */
+				if (!transport->subscribed) {
+					sipe_subscription_self_events(sipe_private);
 					transport->subscribed = TRUE;
 				}
 
@@ -1142,14 +1089,14 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			{
 				gchar *redirect = parse_from(sipmsg_find_header(msg, "Contact"));
 
-				SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
+				SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully (with redirect)");
 
 				if (redirect && (g_ascii_strncasecmp("sip:", redirect, 4) == 0)) {
 					gchar **parts = g_strsplit(redirect + 4, ";", 0);
 					gchar **tmp;
 					gchar *hostname;
 					int port = 0;
-					guint transport = SIPE_TRANSPORT_TLS;
+					guint transport_type = SIPE_TRANSPORT_TLS;
 					int i = 1;
 
 					tmp = g_strsplit(parts[0], ":", 0);
@@ -1162,7 +1109,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						if (tmp[1]) {
 							if (g_ascii_strcasecmp("transport", tmp[0]) == 0) {
 								if (g_ascii_strcasecmp("tcp", tmp[1]) == 0) {
-									transport = SIPE_TRANSPORT_TCP;
+									transport_type = SIPE_TRANSPORT_TCP;
 								}
 							}
 						}
@@ -1173,11 +1120,13 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 					/* Close old connection */
 					sipe_core_connection_cleanup(sipe_private);
+					/* transport and sipe_private->transport are invalid after this */
 
 					/* Create new connection */
-					sipe_server_register(sipe_private, transport, hostname, port);
+					sipe_server_register(sipe_private, transport_type, hostname, port);
+					/* sipe_private->transport has a new value */
 					SIPE_DEBUG_INFO("process_register_response: redirected to host %s port %d transport %d",
-							hostname, port, transport);
+							hostname, port, transport_type);
 				}
 				g_free(redirect);
 			}
@@ -1387,6 +1336,7 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 
 	sipe_private->transport    = NULL;
 	sipe_private->service_data = NULL;
+	sipe_private->address_data = NULL;
 
 	if (sipe_private->dns_query)
 		sipe_backend_dns_query_cancel(sipe_private->dns_query);
@@ -1418,10 +1368,11 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 			process_incoming_message(sipe_private, msg);
 		} else if (sipe_strequal(method, "NOTIFY")) {
 			SIPE_DEBUG_INFO_NOFORMAT("send->process_incoming_notify");
-			process_incoming_notify(sipe_private, msg, TRUE, FALSE);
+			process_incoming_notify(sipe_private, msg);
+			sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 		} else if (sipe_strequal(method, "BENOTIFY")) {
 			SIPE_DEBUG_INFO_NOFORMAT("send->process_incoming_benotify");
-			process_incoming_notify(sipe_private, msg, TRUE, TRUE);
+			process_incoming_notify(sipe_private, msg);
 		} else if (sipe_strequal(method, "INVITE")) {
 			process_incoming_invite(sipe_private, msg);
 		} else if (sipe_strequal(method, "REFER")) {
@@ -1491,49 +1442,58 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 
 			} else if (msg->response == 407) { /* Proxy Authentication Required */
 
-				if (transport->proxy.retries > 30) {
-					SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: too many proxy authentication retries. Giving up.");
-				} else {
-					gchar *resend, *auth;
-					const gchar *auth_hdr;
+				if (transport->proxy.retries++ <= 30) {
+					const gchar *proxy_hdr = sipmsg_find_header(msg, "Proxy-Authenticate");
 
-					transport->proxy.retries++;
+					if (proxy_hdr) {
+						gchar *auth = NULL;
 
-					/* do proxy authentication */
-					auth_hdr = sipmsg_find_header(msg, "Proxy-Authenticate");
-					if (auth_hdr) {
-						guint i;
-						transport->proxy.type = SIPE_AUTHENTICATION_TYPE_UNSET;
-						for (i = 0; i < AUTH_PROTOCOLS; i++) {
-							const gchar *protocol = auth_type_to_protocol[i];
-							if (protocol &&
-							    !g_ascii_strncasecmp(auth_hdr, protocol, strlen(protocol))) {
-								SIPE_DEBUG_INFO("proxy auth: type %s", protocol);
-								transport->proxy.type     = i;
-								transport->proxy.protocol = protocol;
-								break;
+						if (!g_ascii_strncasecmp(proxy_hdr, "Digest", 6)) {
+							auth = sip_sec_digest_authorization(sipe_private,
+											    proxy_hdr + 7,
+											    msg->method,
+											    msg->target);
+						} else {
+							guint i;
+
+							transport->proxy.type = SIPE_AUTHENTICATION_TYPE_UNSET;
+							for (i = 0; i < AUTH_PROTOCOLS; i++) {
+								const gchar *protocol = auth_type_to_protocol[i];
+								if (protocol &&
+								    !g_ascii_strncasecmp(proxy_hdr, protocol, strlen(protocol))) {
+									SIPE_DEBUG_INFO("process_input_message: proxy authentication scheme '%s'", protocol);
+									transport->proxy.type     = i;
+									transport->proxy.protocol = protocol;
+									fill_auth(proxy_hdr, &transport->proxy);
+									auth = auth_header(sipe_private, &transport->proxy, trans->msg);
+									break;
+								}
 							}
 						}
-						if (transport->proxy.type == SIPE_AUTHENTICATION_TYPE_UNSET)
-							SIPE_DEBUG_ERROR("Unknown proxy authentication: %s", auth_hdr);
-						fill_auth(auth_hdr, &transport->proxy);
-					}
-					auth = auth_header(sipe_private, &transport->proxy, trans->msg);
-					if (auth) {
-						sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
-						sipmsg_add_header_now_pos(trans->msg, "Proxy-Authorization", auth, 5);
-						g_free(auth);
-					}
 
-					/* resend request */
-					resend = sipmsg_to_string(trans->msg);
-					sipe_utils_message_debug("SIP", resend, NULL, TRUE);
-					sipe_backend_transport_message(sipe_private->transport->connection, resend);
-					g_free(resend);
+						if (auth) {
+							gchar *resend;
 
-					/* Transaction not yet completed */
-					trans = NULL;
-				}
+							/* replace old proxy authentication with new one */
+							sipmsg_remove_header_now(trans->msg, "Proxy-Authorization");
+							sipmsg_add_header_now(trans->msg, "Proxy-Authorization", auth);
+							g_free(auth);
+
+							/* resend request with proxy authentication */
+							resend = sipmsg_to_string(trans->msg);
+							sipe_utils_message_debug("SIP", resend, NULL, TRUE);
+							sipe_backend_transport_message(sipe_private->transport->connection, resend);
+							g_free(resend);
+
+							/* Transaction not yet completed */
+							trans = NULL;
+
+						} else
+							SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: can't generate proxy authentication. Giving up.");
+					} else
+						SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: 407 response without 'Proxy-Authenticate' header. Giving up.");
+				} else
+					SIPE_DEBUG_ERROR_NOFORMAT("process_input_message: too many proxy authentication retries. Giving up.");
 
 			} else {
 				transport->registrar.retries = 0;
@@ -1546,10 +1506,17 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					SIPE_DEBUG_INFO_NOFORMAT("process_input_message: we have a transaction callback");
 					/* call the callback to process response */
 					(trans->callback)(sipe_private, msg, trans);
+					/* transport && trans no longer valid after redirect */
 				}
 
-				SIPE_DEBUG_INFO("process_input_message: removing CSeq %d", transport->cseq);
-				transactions_remove(sipe_private, trans);
+				/*
+				 * Redirect case: sipe_private->transport is
+				 * the new transport with empty queue
+				 */
+				if (sipe_private->transport->transactions) {
+					SIPE_DEBUG_INFO("process_input_message: removing CSeq %d", transport->cseq);
+					transactions_remove(sipe_private, trans);
+				}
 			}
 		} else {
 			SIPE_DEBUG_INFO_NOFORMAT("process_input_message: received response to unknown transaction");
@@ -1626,6 +1593,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 				if (sip_sec_verify_signature(transport->registrar.gssapi_context, signature_input_str, rspauth)) {
 					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: signature of incoming message validated");
 					process_input_message(sipe_private, msg);
+					/* transport is invalid after redirect */
 				} else {
 					SIPE_DEBUG_INFO_NOFORMAT("sip_transport_input: signature of incoming message is invalid.");
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
@@ -1657,8 +1625,9 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 
 		sipmsg_free(msg);
 
-		/* Redirect: old content of "transport" is no longer valid */
+		/* Redirect: old content of "transport" & "conn" is no longer valid */
 		transport = sipe_private->transport;
+		conn      = transport->connection;
 	}
 }
 
@@ -1666,6 +1635,7 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 	sipe_private->service_data = NULL;
+	sipe_private->address_data = NULL;
 	do_register(sipe_private, FALSE);
 }
 
@@ -1945,6 +1915,12 @@ void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public)
 	sipe_utils_message_debug("SIP", "", NULL, TRUE);
 	sipe_backend_transport_message(SIPE_CORE_PRIVATE->transport->connection,
 				       "\r\n\r\n");
+}
+
+const gchar *sipe_core_transport_sip_server_name(struct sipe_core_public *sipe_public)
+{
+	struct sip_transport *transport = SIPE_CORE_PRIVATE->transport;
+	return(transport ? transport->server_name : NULL);
 }
 
 int sip_transaction_cseq(struct transaction *trans)

@@ -12,9 +12,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\core\http-conn.c">
-      <Filter>core</Filter>
-    </ClCompile>
     <ClCompile Include="src\core\md4.c">
       <Filter>core</Filter>
     </ClCompile>
@@ -227,9 +224,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\http-conn.h">
-      <Filter>core</Filter>
-    </ClInclude>
     <ClInclude Include="src\core\md4.h">
       <Filter>core</Filter>
     </ClInclude>
