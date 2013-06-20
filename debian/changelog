@@ -21,6 +21,7 @@ pidgin-sipe (1.16.0-1) UNRELEASED; urgency=low
           * add TLS certificate accept/reject user interaction
           * add "Single Sign-On" & "Don't Publish Calendar" account options
   * Depend on libnice-dev (>= 0.1.4) for it has voice call related fixes.
+  * Use xz for upstream tarball compression.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 20 Jun 2013 08:15:23 +0200
 
