@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,9 +48,11 @@ struct sipe_dns_query {
 		A,
 		SRV
 	} type;
+	struct sipe_backend_private *purple_private;
 	sipe_dns_resolved_cb  callback;
 	gpointer	      extradata;
 	gpointer	      purple_query_data;
+	gboolean              is_valid;
 };
 
 static void dns_a_response(GSList *hosts,
@@ -62,28 +64,38 @@ static void dns_a_response(GSList *hosts,
 	const void *addrdata;
 	int port;
 
-	if (error_message || !g_slist_next(hosts)) {
-		query->callback(query->extradata, NULL, 0);
-		g_slist_free(hosts);
-		return;
+        /* Ignore spurious responses after disconnect */
+	if (query->is_valid) {
+		struct sipe_backend_private *purple_private = query->purple_private;
+
+		purple_private->dns_queries = g_slist_remove(purple_private->dns_queries,
+							     query);
+
+		if (error_message || !g_slist_next(hosts)) {
+			query->callback(query->extradata, NULL, 0);
+			g_slist_free(hosts);
+			return;
+		}
+
+		addr = g_slist_next(hosts)->data;
+		if (addr->sa_family == AF_INET6) {
+			/* OS provides addr so it must be properly aligned */
+			struct sockaddr_in6 *sin6 = (void *) addr;
+			addrdata = &sin6->sin6_addr;
+			port = sin6->sin6_port;
+		} else {
+			/* OS provides addr so it must be properly aligned */
+			struct sockaddr_in *sin = (void *) addr;
+			addrdata = &sin->sin_addr;
+			port = sin->sin_port;
+		}
+
+		inet_ntop(addr->sa_family, addrdata, ipstr, sizeof (ipstr));
+
+		query->callback(query->extradata, ipstr, port);
+
+		g_free(query);
 	}
-
-	addr = g_slist_next(hosts)->data;
-	if (addr->sa_family == AF_INET6) {
-		/* OS provides addr so it must be properly aligned */
-		struct sockaddr_in6 *sin6 = (void *) addr;
-		addrdata = &sin6->sin6_addr;
-		port = sin6->sin6_port;
-	} else {
-		/* OS provides addr so it must be properly aligned */
-		struct sockaddr_in *sin = (void *) addr;
-		addrdata = &sin->sin_addr;
-		port = sin->sin_port;
-	}
-
-	inet_ntop(addr->sa_family, addrdata, ipstr, sizeof (ipstr));
-
-	query->callback(query->extradata, ipstr, port);
 
 	for (; hosts; hosts = g_slist_delete_link(hosts, hosts)) {
 		// Free the addrlen, no data in this link
@@ -91,24 +103,26 @@ static void dns_a_response(GSList *hosts,
 		// Free the address
 		g_free(hosts->data);
 	}
-
-	g_free(query);
 }
 
-struct sipe_dns_query *sipe_backend_dns_query_a(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_public,
 						const gchar *hostname,
 						guint port,
 						sipe_dns_resolved_cb callback,
 						gpointer data)
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
-#if PURPLE_VERSION_CHECK(2,8,0) || PURPLE_VERSION_CHECK(3,0,0)
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-#endif
 
-	query->type = A;
-	query->callback = callback;
-	query->extradata = data;
+	query->type           = A;
+	query->purple_private = purple_private;
+	query->callback       = callback;
+	query->extradata      = data;
+	query->is_valid       = TRUE;
+
+	purple_private->dns_queries = g_slist_prepend(purple_private->dns_queries,
+						      query);
+
 	query->purple_query_data =
 #if PURPLE_VERSION_CHECK(3,0,0)
 					purple_dnsquery_a(
@@ -132,16 +146,25 @@ static void dns_srv_response(PurpleSrvResponse *resp,
 			     int results,
 			     struct sipe_dns_query *query)
 {
-	if (results)
-		query->callback(query->extradata, resp->hostname, resp->port);
-	else
-		query->callback(query->extradata, NULL, 0);
+        /* Ignore spurious responses after disconnect */
+	if (query->is_valid) {
+		struct sipe_backend_private *purple_private = query->purple_private;
 
-	g_free(query);
+		purple_private->dns_queries = g_slist_remove(purple_private->dns_queries,
+							     query);
+
+		if (results)
+			query->callback(query->extradata, resp->hostname, resp->port);
+		else
+			query->callback(query->extradata, NULL, 0);
+
+		g_free(query);
+	}
+
 	g_free(resp);
 }
 
-struct sipe_dns_query *sipe_backend_dns_query_srv(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_public,
 						  const gchar *protocol,
 						  const gchar *transport,
 						  const gchar *domain,
@@ -149,13 +172,17 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(SIPE_UNUSED_PARAMETER struct s
 						  gpointer data)
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
-#if PURPLE_VERSION_CHECK(2,8,0) || PURPLE_VERSION_CHECK(3,0,0)
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-#endif
 
-	query->type = SRV;
-	query->callback = callback;
-	query->extradata = data;
+	query->type           = SRV;
+	query->purple_private = purple_private;
+	query->callback       = callback;
+	query->extradata      = data;
+	query->is_valid       = TRUE;
+
+	purple_private->dns_queries = g_slist_prepend(purple_private->dns_queries,
+						      query);
+
 	query->purple_query_data =
 #if PURPLE_VERSION_CHECK(3,0,0)
 					purple_srv_resolve(
@@ -175,9 +202,27 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(SIPE_UNUSED_PARAMETER struct s
 	return query;
 }
 
+static gboolean dns_query_deferred_destroy(gpointer user_data)
+{
+	/*
+	 * All pending events on query have been processed.
+	 * Now it is safe to destroy the data structure.
+	 */
+	SIPE_DEBUG_INFO("dns_query_deferred_destroy: %p", user_data);
+	g_free(user_data);
+	return(FALSE);
+}
+
 void sipe_backend_dns_query_cancel(struct sipe_dns_query *query)
 {
-	switch (query->type) {
+	SIPE_DEBUG_INFO("sipe_backend_dns_query_cancel: %p", query);
+
+	if (query->is_valid) {
+		struct sipe_backend_private *purple_private = query->purple_private;
+		purple_private->dns_queries = g_slist_remove(purple_private->dns_queries,
+							     query);
+
+		switch (query->type) {
 		case A:
 			purple_dnsquery_destroy(query->purple_query_data);
 			break;
@@ -188,10 +233,22 @@ void sipe_backend_dns_query_cancel(struct sipe_dns_query *query)
 			purple_srv_cancel(query->purple_query_data);
 #endif
 			break;
-	}
+		}
 
-	g_free(query);
+		/* defer deletion of query data structure to idle callback */
+		query->is_valid = FALSE;
+		g_idle_add(dns_query_deferred_destroy, query);
+	}
 }
+
+void sipe_purple_dns_query_cancel_all(struct sipe_backend_private *purple_private)
+{
+	GSList *entry;
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_dns_query_cancel_all: entered");
+	while ((entry = purple_private->dns_queries) != NULL)
+		sipe_backend_dns_query_cancel(entry->data);
+}
+
 
 /*
   Local Variables:

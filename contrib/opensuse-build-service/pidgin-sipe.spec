@@ -138,7 +138,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.15.0
+Version:        1.16.0
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -238,7 +238,9 @@ BuildRequires:  glib2-devel >= 2.12.0
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -262,7 +264,9 @@ Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -282,7 +286,9 @@ Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -301,7 +307,9 @@ Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -320,7 +328,9 @@ Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -351,7 +361,9 @@ License:        GPL-2.0+
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
-    * Microsoft Lync Server 2010
+    * Microsoft Office 365
+    * Microsoft Business Productivity Online Suite (BPOS)
+    * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
     * Reuters Messaging
@@ -527,6 +539,15 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Jun 14 2013 J. D. User <jduser@noreply.com> 1.16.0
+- update to 1.16.0
+
+* Sun Apr 07 2013 J. D. User <jduser@noreply.com> 1.15.1
+- update to 1.15.1
+
+* Fri Mar 29 2013 J. D. User <jduser@noreply.com> 1.15.0-*git*
+- update package description texts
+
 * Sat Mar 09 2013 J. D. User <jduser@noreply.com> 1.15.0
 - update to 1.15.0
 

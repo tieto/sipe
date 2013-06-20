@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -207,23 +207,6 @@ rand_guid()
 			rand() % 0xAAFF + 0x1111);
 }
 
-/**
- * @param expires not respected if set to negative value (E.g. -1)
- */
-static void
-sipe_subscribe_conference(struct sipe_core_private *sipe_private,
-			  struct sip_session *session,
-			  gboolean expires)
-{
-	sipe_subscribe(sipe_private,
-		       session->chat_session->id,
-		       "conference",
-		       "application/conference-info+xml",
-		       expires ? "Expires: 0\r\n" : NULL,
-		       NULL,
-		       NULL);
-}
-
 /** Invite us to the focus callback */
 static gboolean
 process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
@@ -274,7 +257,9 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 		const gchar *code = sipe_xml_attribute(xn_response, "code");
 		if (sipe_strequal(code, "success")) {
 			/* subscribe to focus */
-			sipe_subscribe_conference(sipe_private, session, FALSE);
+			sipe_subscribe_conference(sipe_private,
+						  session->chat_session->id,
+						  FALSE);
 #ifdef HAVE_VV
 			if (session->is_call)
 				sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
@@ -724,8 +709,10 @@ process_conf_add_response(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_INFO("process_conf_add_response: session->focus_uri=%s",
 					session->chat_session->id);
 
-			session->pending_invite_queue = slist_insert_unique_sorted(
-				session->pending_invite_queue, g_strdup(who), (GCompareFunc)strcmp);
+			session->pending_invite_queue = sipe_utils_slist_insert_unique_sorted(session->pending_invite_queue,
+											      g_strdup(who),
+											      (GCompareFunc)strcmp,
+											      g_free);
 		}
 		sipe_xml_free(xn_response);
 	}
@@ -1192,7 +1179,8 @@ conf_session_close(struct sipe_core_private *sipe_private,
 {
 	if (session) {
 		/* unsubscribe from focus */
-		sipe_subscribe_conference(sipe_private, session, TRUE);
+		sipe_subscribe_conference(sipe_private,
+					  session->chat_session->id, TRUE);
 
 		if (session->focus_dialog) {
 			/* send BYE to focus */

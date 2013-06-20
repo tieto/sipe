@@ -20,6 +20,7 @@ CLEANFILES = \
 
 MAINTAINERCLEANFILES = \
 	compile \
+	GITVERSION \
 	INSTALL \
 	aclocal.m4 \
 	ltmain.sh \
@@ -34,4 +35,5 @@ MAINTAINERCLEANFILES = \
 	intltool-extract.in \
 	intltool-merge.in   \
 	intltool-update.in  \
-	mkinstalldirs
+	mkinstalldirs \
+	test-driver

@@ -17,14 +17,16 @@ Description: Adds support to connect to Microsoft Office Communicator
  A third-party plugin for the Pidgin multi-protocol instant messenger.
  It implements the extended version of SIP/SIMPLE used by various products:
  .
-     * Microsoft Lync Server 2010
+     * Microsoft Office 365
+     * Microsoft Business Productivity Online Suite (BPOS)
+     * Microsoft Lync Server
      * Microsoft Office Communications Server (OCS 2007/2007 R2)
      * Microsoft Live Communications Server (LCS 2003/2005)
      * Reuters Messaging
  .
  With this plugin you should be able to replace your Microsoft Office
  Communicator client with Pidgin.
-XSBC-Bugtracker: https://sourceforge.net/tracker/?atid=949931&group_id=194563
+XSBC-Bugtracker: https://sourceforge.net/p/sipe/bugs/
 XB-Maemo-Display-Name: Pidgin protocol plugin for Office Communicator
 XB-Maemo-Icon-26:
  iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAABHNCSVQICAgI

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>
  *
@@ -55,7 +55,6 @@ struct sipmsg *sipmsg_parse_header(const gchar *header);
 struct sipmsg *sipmsg_copy(const struct sipmsg *other);
 void sipmsg_add_header_now(struct sipmsg *msg, const gchar *name, const gchar *value);
 void sipmsg_add_header(struct sipmsg *msg, const gchar *name, const gchar *value);
-void sipmsg_add_header_now_pos(struct sipmsg *msg, const gchar *name, const gchar *value, int pos);
 void sipmsg_strip_headers(struct sipmsg *msg, const gchar *keepers[]);
 void sipmsg_merge_new_headers(struct sipmsg *msg);
 void sipmsg_free(struct sipmsg *msg);

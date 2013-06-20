@@ -103,6 +103,9 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	SEC_WINNT_AUTH_IDENTITY auth_identity;
 	context_sspi ctx = (context_sspi)context;
 
+	/* this is the first time we are allowed to set private flags */
+	context->flags |= SIP_SEC_FLAG_SSPI_INITIAL;
+
 	if (((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
 	    (ctx->type == SIPE_AUTHENTICATION_TYPE_NTLM))
 		context->flags |= SIP_SEC_FLAG_SSPI_SIP_NTLM;
@@ -394,8 +397,7 @@ sip_sec_create_context__sspi(guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->common.flags |= SIP_SEC_FLAG_SSPI_INITIAL;
-	context->type          = type;
+	context->type = type;
 
 	return((SipSecContext) context);
 }

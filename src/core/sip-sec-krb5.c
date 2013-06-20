@@ -37,7 +37,6 @@
 /* Security context for Kerberos */
 typedef struct _context_krb5 {
 	struct sip_sec_context common;
-	gss_cred_id_t cred_krb5;
 	gss_ctx_id_t ctx_krb5;
 	const gchar *domain;
 	const gchar *username;
@@ -62,41 +61,6 @@ static void sip_sec_krb5_destroy_context(context_krb5 context)
 			SIPE_DEBUG_ERROR("sip_sec_krb5_destroy_context: failed to delete security context (ret=%d)", (int)ret);
 		}
 		context->ctx_krb5 = GSS_C_NO_CONTEXT;
-	}
-
-	if (context->cred_krb5) {
-		ret = gss_release_cred(&minor, &(context->cred_krb5));
-		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_release_cred", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_krb5_destroy_context: failed to release credentials (ret=%d)", (int)ret);
-		}
-		context->cred_krb5 = NULL;
-	}
-}
-
-static gboolean sip_sec_krb5_acquire_credentials(context_krb5 context)
-{
-	OM_uint32 ret;
-	OM_uint32 minor;
-	gss_cred_id_t credentials;
-
-	/* Acquire default user credentials */
-	ret = gss_acquire_cred(&minor,
-			       GSS_C_NO_NAME,
-			       GSS_C_INDEFINITE,
-			       GSS_C_NO_OID_SET,
-			       GSS_C_INITIATE,
-			       &credentials,
-			       NULL,
-			       NULL);
-
-	if (GSS_ERROR(ret)) {
-		sip_sec_krb5_print_gss_error("gss_acquire_cred", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_krb5_acquire_credentials: failed to acquire credentials (ret=%d)", (int)ret);
-		return(FALSE);
-	} else {
-		context->cred_krb5 = credentials;
-		return(TRUE);
 	}
 }
 
@@ -133,7 +97,7 @@ static gboolean sip_sec_krb5_initialize_context(context_krb5 context,
 	output_token.value = NULL;
 
 	ret = gss_init_sec_context(&minor,
-				   context->cred_krb5,
+				   GSS_C_NO_CREDENTIAL,
 				   &(context->ctx_krb5),
 				   target_name,
 				   GSS_C_NO_OID,
@@ -189,12 +153,12 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 	 * authentication information provided by the user (see above).
 	 *
 	 * This will be FALSE for HTTP connections. If Kerberos authentication
-	 * succeeded for Kerberos, then there is no need to retry.
+	 * succeeded for SIP already, then there is no need to retry.
 	 */
 	if ((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0)
 		context->flags |= SIP_SEC_FLAG_KRB5_RETRY_AUTH;
 
-	return(sip_sec_krb5_acquire_credentials(ctx));
+	return(TRUE);
 }
 
 static gboolean
@@ -228,14 +192,13 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 						 service_name);
 
 	/*
-	 * If context initialization fails retry after trying to obtaining
+	 * If context initialization fails then retry after trying to obtaining
 	 * a TGT. This will will only succeed if we have been provided with
 	 * valid authentication information by the user.
 	 */
 	if (!result && (context->flags & SIP_SEC_FLAG_KRB5_RETRY_AUTH)) {
 		sip_sec_krb5_destroy_context(ctx);
 		result = sip_sec_krb5_obtain_tgt(ctx)          &&
-			 sip_sec_krb5_acquire_credentials(ctx) &&
 			 sip_sec_krb5_initialize_context(ctx,
 							 in_buff,
 							 out_buff,

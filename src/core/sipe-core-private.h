@@ -29,6 +29,7 @@ struct sipe_calendar;
 struct sipe_certificate;
 struct sipe_media_call_private;
 struct sipe_groupchat;
+struct sipe_http;
 struct sipe_svc;
 struct sipe_webticket;
 
@@ -116,6 +117,7 @@ struct sipe_core_private {
 	/* Voice call */
 	struct sipe_media_call_private *media_call;
 	gchar *test_call_bot_uri;
+	gchar *uc_line_uri;
 	/**
 	 *  Provides the necessary information on where we can obtain
 	 *  credentials for the A/V Edge server service.
@@ -135,6 +137,9 @@ struct sipe_core_private {
 	struct sip_csta *csta;
 
 	struct sipe_dns_query *dns_query;
+
+	/* HTTP service */
+	struct sipe_http *http;
 
 	/* TLS-DSK: Certificates & Web services */
 	struct sipe_certificate *certificate;

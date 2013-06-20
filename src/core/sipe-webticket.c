@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -91,6 +91,7 @@ struct sipe_webticket {
 	time_t adfs_token_expires;
 
 	gboolean retrieved_realminfo;
+	gboolean shutting_down;
 };
 
 void sipe_webticket_free(struct sipe_core_private *sipe_private)
@@ -98,6 +99,9 @@ void sipe_webticket_free(struct sipe_core_private *sipe_private)
 	struct sipe_webticket *webticket = sipe_private->webticket;
 	if (!webticket)
 		return;
+
+	/* Web Ticket stack is shutting down: reject all new requests */
+	webticket->shutting_down = TRUE;
 
 	g_free(webticket->webticket_adfs_uri);
 	g_free(webticket->adfs_token);
@@ -154,8 +158,6 @@ static const struct webticket_token *cache_hit(struct sipe_core_private *sipe_pr
 					       const gchar *service_uri)
 {
 	const struct webticket_token *wt;
-
-	sipe_webticket_init(sipe_private);
 
 	/* make sure a cached Web Ticket is still valid for 60 seconds */
 	wt = g_hash_table_lookup(sipe_private->webticket->cache,
@@ -636,28 +638,39 @@ static void realminfo(struct sipe_core_private *sipe_private,
 	/* Only try retrieving of RealmInfo once */
 	webticket->retrieved_realminfo = TRUE;
 
-	if (realminfo) {
-		/* detect ADFS setup. See also:
-		 *
-		 *   http://en.wikipedia.org/wiki/Active_Directory_Federation_Services
-		 *
-		 * NOTE: this is based on observed behaviour.
-		 *       It is unkown if this is documented somewhere...
-		 */
-		SIPE_DEBUG_INFO("realminfo: data for user %s retrieved successfully",
-				sipe_private->username);
+	/*
+	 * We must specifically check for abort, because
+	 * realminfo == NULL is a valid response
+	 */
+	if (uri) {
+		if (realminfo) {
+			/* detect ADFS setup. See also:
+			 *
+			 *   http://en.wikipedia.org/wiki/Active_Directory_Federation_Services
+			 *
+			 * NOTE: this is based on observed behaviour.
+			 *       It is unkown if this is documented somewhere...
+			 */
+			SIPE_DEBUG_INFO("realminfo: data for user %s retrieved successfully",
+					sipe_private->username);
 
-		webticket->webticket_adfs_uri = sipe_xml_data(sipe_xml_child(realminfo,
-									     "STSAuthURL"));
+			webticket->webticket_adfs_uri = sipe_xml_data(sipe_xml_child(realminfo,
+										     "STSAuthURL"));
+		}
+
+		if (webticket->webticket_adfs_uri)
+			SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
+					webticket->webticket_adfs_uri);
+		else
+			SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
+
+		if (fedbearer_authentication(sipe_private, wcd)) {
+			/* callback data passed down the line */
+			wcd = NULL;
+		}
 	}
 
-	if (webticket->webticket_adfs_uri)
-		SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
-				webticket->webticket_adfs_uri);
-	else
-		SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
-
-	if (!fedbearer_authentication(sipe_private, wcd)) {
+	if (wcd) {
 		callback_execute(sipe_private,
 				 wcd,
 				 uri,
@@ -862,52 +875,66 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 				sipe_webticket_callback *callback,
 				gpointer callback_data)
 {
-	const struct webticket_token *wt = cache_hit(sipe_private, base_uri);
-	gboolean ret;
+	struct sipe_webticket *webticket;
+	gboolean ret = FALSE;
 
-	/* cache hit for this URI? */
-	if (wt) {
-		SIPE_DEBUG_INFO("sipe_webticket_request: using cached token for URI %s (Auth URI %s)",
-				base_uri, wt->auth_uri);
-		callback(sipe_private,
-			 base_uri,
-			 wt->auth_uri,
-			 wt->token,
-			 NULL,
-			 callback_data);
-		ret = TRUE;
+	sipe_webticket_init(sipe_private);
+	webticket = sipe_private->webticket;
+
+	if (webticket->shutting_down) {
+		SIPE_DEBUG_ERROR("sipe_webticket_request: new Web Ticket request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
+				 "Base URI:  %s\n"
+				 "Port Name: %s\n",
+				 base_uri,
+				 port_name);
+
 	} else {
-		GHashTable *pending = sipe_private->webticket->pending;
-		struct webticket_callback_data *wcd = g_hash_table_lookup(pending,
-									  base_uri);
+		const struct webticket_token *wt = cache_hit(sipe_private, base_uri);
 
-		/* is there already a pending request for this URI? */
-		if (wcd) {
-			SIPE_DEBUG_INFO("sipe_webticket_request: pending request found for URI %s - queueing",
-					base_uri);
-			queue_request(wcd, callback, callback_data);
+		/* cache hit for this URI? */
+		if (wt) {
+			SIPE_DEBUG_INFO("sipe_webticket_request: using cached token for URI %s (Auth URI %s)",
+					base_uri, wt->auth_uri);
+			callback(sipe_private,
+				 base_uri,
+				 wt->auth_uri,
+				 wt->token,
+				 NULL,
+				 callback_data);
 			ret = TRUE;
 		} else {
-			wcd = g_new0(struct webticket_callback_data, 1);
+			GHashTable *pending = webticket->pending;
+			struct webticket_callback_data *wcd = g_hash_table_lookup(pending,
+										  base_uri);
 
-			ret = sipe_svc_metadata(sipe_private,
-						session,
-						base_uri,
-						service_metadata,
-						wcd);
-
-			if (ret) {
-				wcd->service_uri   = g_strdup(base_uri);
-				wcd->service_port  = port_name;
-				wcd->callback      = callback;
-				wcd->callback_data = callback_data;
-				wcd->session       = session;
-				wcd->token_state   = TOKEN_STATE_NONE;
-				g_hash_table_insert(pending,
-						    wcd->service_uri, /* borrowed */
-						    wcd);             /* borrowed */
+			/* is there already a pending request for this URI? */
+			if (wcd) {
+				SIPE_DEBUG_INFO("sipe_webticket_request: pending request found for URI %s - queueing",
+						base_uri);
+				queue_request(wcd, callback, callback_data);
+				ret = TRUE;
 			} else {
-				g_free(wcd);
+				wcd = g_new0(struct webticket_callback_data, 1);
+
+				ret = sipe_svc_metadata(sipe_private,
+							session,
+							base_uri,
+							service_metadata,
+							wcd);
+
+				if (ret) {
+					wcd->service_uri   = g_strdup(base_uri);
+					wcd->service_port  = port_name;
+					wcd->callback      = callback;
+					wcd->callback_data = callback_data;
+					wcd->session       = session;
+					wcd->token_state   = TOKEN_STATE_NONE;
+					g_hash_table_insert(pending,
+							    wcd->service_uri, /* borrowed */
+							    wcd);             /* borrowed */
+				} else {
+					g_free(wcd);
+				}
 			}
 		}
 	}

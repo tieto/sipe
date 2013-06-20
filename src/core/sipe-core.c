@@ -84,6 +84,7 @@
 #include "sipe-crypt.h"
 #include "sipe-group.h"
 #include "sipe-groupchat.h"
+#include "sipe-http.h"
 #include "sipe-media.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
@@ -95,6 +96,12 @@
 #include "sipe-svc.h"
 #include "sipe-utils.h"
 #include "sipe-webticket.h"
+
+#ifdef PACKAGE_GIT_COMMIT
+#define SIPE_CORE_VERSION PACKAGE_VERSION " (git commit " PACKAGE_GIT_COMMIT ")"
+#else
+#define SIPE_CORE_VERSION PACKAGE_VERSION
+#endif
 
 /* locale_dir is unused if ENABLE_NLS is not defined */
 void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
@@ -132,10 +139,12 @@ gchar *sipe_core_about(void)
 		 * into the format string. This requires more translatable
 		 * texts but it makes the translations less error prone.
 		 */
-		"<b><font size=\"+1\">SIPE " PACKAGE_VERSION " </font></b><br/>"
+		"<b><font size=\"+1\">SIPE " SIPE_CORE_VERSION " </font></b><br/>"
 		"<br/>"
 		/* 1 */   "%s:<br/>"
-		"<li> - Microsoft Lync Server 2010</li><br/>"
+		"<li> - Microsoft Office 365</li><br/>"
+		"<li> - Microsoft Business Productivity Online Suite (BPOS)</li><br/>"
+		"<li> - Microsoft Lync Server</li><br/>"
 		"<li> - Microsoft Office Communications Server 2007 R2</li><br/>"
 		"<li> - Microsoft Office Communications Server 2007</li><br/>"
 		"<li> - Microsoft Live Communications Server 2005</li><br/>"
@@ -143,9 +152,9 @@ gchar *sipe_core_about(void)
 		"<li> - Reuters Messaging</li><br/>"
 		"<br/>"
 		/* 2 */   "%s: <a href=\"" PACKAGE_URL "\">" PACKAGE_URL "</a><br/>"
-		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/projects/sipe/forums/forum/688534\">%s</a><br/>"
+		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/p/sipe/discussion/688534/\">%s</a><br/>"
 		/* 5,6 */   "%s: <a href=\"" PACKAGE_BUGREPORT "\">%s</a><br/>"
-		/* 7 */   "%s: <a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.net</a><br/>"
+		/* 7 */   "%s: <a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.com</a><br/>"
 		/* 8 */   "%s: GPLv2+<br/>"
 		"<br/>"
 		/* 9 */  "%s:<br/>"
@@ -164,7 +173,7 @@ gchar *sipe_core_about(void)
 		" - Alcatel-Lucent<br/>"
 		" - BT<br/>"
 		"<br/>"
-		/* 10,11 */ "%s<a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.net</a>%s.<br/>"
+		/* 10,11 */ "%s<a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.com</a>%s.<br/>"
 		"<br/>"
 		/* 12 */  "<b>%s:</b><br/>"
 		" - Anibal Avelar<br/>"
@@ -195,10 +204,10 @@ gchar *sipe_core_about(void)
 		_("License"),
 		/* About note, part 9/13: known users */
 		_("We support users in such organizations as"),
-		/* About note, part 10/13: translation request, text before Transifex.net URL */
+		/* About note, part 10/13: translation request, text before Transifex.com URL */
 		/* append a space if text is not empty */
 		_("Please help us to translate SIPE to your native language here at "),
-		/* About note, part 11/13: translation request, text after Transifex.net URL */
+		/* About note, part 11/13: translation request, text after Transifex.com URL */
 		/* start with a space if text is not empty */
 		_(" using convenient web interface"),
 		/* About note, part 12/13: author list (header) */
@@ -252,7 +261,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	struct sipe_core_private *sipe_private;
 	gchar **user_domain;
 
-	SIPE_DEBUG_INFO("sipe_core_allocate: signin_name '%s'", signin_name);
+	SIPE_DEBUG_INFO("sipe_core_allocate: SIPE version " SIPE_CORE_VERSION " signin_name '%s'", signin_name);
 
 	/* ensure that sign-in name doesn't contain invalid characters */
 	if (strpbrk(signin_name, "\t\v\r\n") != NULL) {
@@ -340,18 +349,13 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 	g_free(sipe_private->epid);
 	sipe_private->epid = NULL;
 
+	sipe_http_free(sipe_private);
 	sip_transport_disconnect(sipe_private);
 
 	sipe_schedule_cancel_all(sipe_private);
 
-	if (sipe_private->allowed_events) {
-		GSList *entry = sipe_private->allowed_events;
-		while (entry) {
-			g_free(entry->data);
-			entry = entry->next;
-		}
-	}
-	g_slist_free(sipe_private->allowed_events);
+	if (sipe_private->allowed_events)
+		sipe_utils_slist_free_full(sipe_private->allowed_events, g_free);
 
 	sipe_ocs2007_free(sipe_private);
 
@@ -435,17 +439,12 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 			sipe_group_free(sipe_private, entry->data);
 	}
 
-	if (sipe_private->our_publication_keys) {
-		GSList *entry = sipe_private->our_publication_keys;
-		while (entry) {
-			g_free(entry->data);
-			entry = entry->next;
-		}
-	}
-	g_slist_free(sipe_private->our_publication_keys);
+	if (sipe_private->our_publication_keys)
+		sipe_utils_slist_free_full(sipe_private->our_publication_keys, g_free);
 
 #ifdef HAVE_VV
 	g_free(sipe_private->test_call_bot_uri);
+	g_free(sipe_private->uc_line_uri);
 	g_free(sipe_private->mras_uri);
 	g_free(sipe_private->media_relay_username);
 	g_free(sipe_private->media_relay_password);

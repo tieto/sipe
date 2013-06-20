@@ -39,11 +39,11 @@ DLL_INSTALL_DIR = $(PURPLE_INSTALL_PLUGINS_DIR)
 # dump higher level defines
 DEFINES  =
 DEFINES += -DENABLE_NLS=1
-DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/tracker/?atid=949931\&group_id=194563\"
+DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/p/sipe/bugs/\"
 DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
 DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
-DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.net/projects/p/pidgin-sipe/r/mob/\"
+DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\"
 #DEFINES += -DENABLE_OCS2005_MESSAGE_HACK=1
 
 ifdef USE_SSPI
@@ -70,8 +70,7 @@ PURPLE_INCLUDE_PATHS += -I$(PURPLE_TOP) \
 ##
 ##  SOURCES, OBJECTS
 ##
-CLEAN_C_SRC = 		http-conn.c \
-			sip-soap.c \
+CLEAN_C_SRC =		sip-soap.c \
 			sip-transport.c \
 			sipe-conf.c \
 			sipe-core.c \
@@ -88,6 +87,9 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipe-ft-tftp.c \
 			sipe-group.c \
 			sipe-groupchat.c \
+			sipe-http.c \
+			sipe-http-request.c \
+			sipe-http-transport.c \
 			sipe-im.c \
 			sipe-incoming.c \
 			sipe-notify.c \
@@ -105,6 +107,7 @@ CLEAN_C_SRC = 		http-conn.c \
 			sipmsg.c \
 			sipe-sign.c \
 			sip-sec.c \
+			sip-sec-digest.c \
 			sip-sec-tls-dsk.c \
 			sip-csta.c \
 			sipe-webticket.c \

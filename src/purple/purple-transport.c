@@ -58,15 +58,18 @@ struct sipe_transport_purple {
 	struct sipe_transport_connection public;
 
 	/* purple private part */
+	struct sipe_backend_private *purple_private;
 	transport_connected_cb *connected;
 	transport_input_cb *input;
 	transport_error_cb *error;
-	PurpleConnection *gc;
 	PurpleSslConnection *gsc;
+	PurpleProxyConnectData *proxy;
 	PurpleCircBuffer *transmit_buffer;
 	guint transmit_handler;
 	guint receive_handler;
 	int socket;
+
+	gboolean is_valid;
 };
 
 #define PURPLE_TRANSPORT ((struct sipe_transport_purple *) conn)
@@ -132,33 +135,25 @@ static void transport_common_input(struct sipe_transport_purple *transport)
 }
 
 static void transport_ssl_input(gpointer data,
-				PurpleSslConnection *gsc,
+				SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
 				SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
 	struct sipe_transport_purple *transport = data;
 
-	/* NOTE: This check *IS* necessary */
-	if (!PURPLE_CONNECTION_IS_VALID(transport->gc)) {
-		purple_ssl_close(gsc);
-		transport->gsc = NULL;
-		return;
-	}
-	transport_common_input(transport);
+	/* Ignore spurious "SSL input" events after disconnect */
+	if (transport->is_valid)
+		transport_common_input(transport);
 }
 
 static void transport_tcp_input(gpointer data,
-				gint source,
+				SIPE_UNUSED_PARAMETER gint source,
 				SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
 	struct sipe_transport_purple *transport = data;
 
-	/* NOTE: This check *IS* necessary */
-	if (!PURPLE_CONNECTION_IS_VALID(transport->gc)) {
-		close(source);
-		transport->socket = -1;
-		return;
-	}
-	transport_common_input(transport);
+	/* Ignore spurious "TCP input" events after disconnect */
+	if (transport->is_valid)
+		transport_common_input(transport);
 }
 
 static void transport_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnection *gsc,
@@ -167,65 +162,59 @@ static void transport_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnect
 {
 	struct sipe_transport_purple *transport = data;
 
-        /* If the connection is already disconnected
-	   then we don't need to do anything else */
-        if (!PURPLE_CONNECTION_IS_VALID(transport->gc))
-		return;
-
-	transport->socket = -1;
-        transport->gsc = NULL;
-	transport->error(SIPE_TRANSPORT_CONNECTION,
-			 purple_ssl_strerror(error));
+        /* Ignore spurious "SSL connect failure" events after disconnect */
+	if (transport->is_valid) {
+		transport->socket = -1;
+		transport->gsc = NULL;
+		transport->error(SIPE_TRANSPORT_CONNECTION,
+				 purple_ssl_strerror(error));
+		sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
+	}
 }
 
 static void transport_common_connected(struct sipe_transport_purple *transport,
-				       PurpleSslConnection *gsc,
 				       int fd)
 {
-	if (!PURPLE_CONNECTION_IS_VALID(transport->gc))
-	{
-		if (gsc) {
-			purple_ssl_close(gsc);
-		} else if (fd >= 0) {
-			close(fd);
+        /* Ignore spurious "connected" events after disconnect */
+	if (transport->is_valid) {
+
+		transport->proxy = NULL;
+
+		if (fd < 0) {
+			transport->error(SIPE_TRANSPORT_CONNECTION,
+					 _("Could not connect"));
+			sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
+			return;
 		}
-		return;
+
+		transport->socket = fd;
+		transport->public.client_port = purple_network_get_port_from_fd(fd);
+
+		if (transport->gsc) {
+			purple_ssl_input_add(transport->gsc, transport_ssl_input, transport);
+		} else {
+			transport->receive_handler = purple_input_add(fd,
+								      PURPLE_INPUT_READ,
+								      transport_tcp_input,
+								      transport);
+		}
+
+		transport->connected(SIPE_TRANSPORT_CONNECTION);
 	}
-
-	if (fd < 0) {
-		transport->error(SIPE_TRANSPORT_CONNECTION,
-				 _("Could not connect"));
-		return;
-	}
-
-	transport->socket = fd;
-	transport->public.client_port = purple_network_get_port_from_fd(fd);
-
-	if (gsc) {
-		transport->gsc = gsc;
-		purple_ssl_input_add(gsc, transport_ssl_input, transport);
-	} else {
-		transport->receive_handler = purple_input_add(fd,
-							      PURPLE_INPUT_READ,
-							      transport_tcp_input,
-							      transport);
-	}
-
-	transport->connected(SIPE_TRANSPORT_CONNECTION);
 }
 
 static void transport_ssl_connected(gpointer data,
 				    PurpleSslConnection *gsc,
 				    SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
-	transport_common_connected(data, gsc, gsc ? gsc->fd : -1);
+	transport_common_connected(data, gsc->fd);
 }
 
 static void transport_tcp_connected(gpointer data,
 				    gint source,
 				    SIPE_UNUSED_PARAMETER const gchar *error_message)
 {
-	transport_common_connected(data, NULL, source);
+	transport_common_connected(data, source);
 }
 
 struct sipe_transport_connection *
@@ -242,22 +231,26 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 
 	transport->public.type      = setup->type;
 	transport->public.user_data = setup->user_data;
+	transport->purple_private   = purple_private;
 	transport->connected        = setup->connected;
 	transport->input            = setup->input;
 	transport->error            = setup->error;
-	transport->gc               = gc;
 	transport->transmit_buffer  = purple_circ_buffer_new(0);
+	transport->is_valid         = TRUE;
+
+	purple_private->transports = g_slist_prepend(purple_private->transports,
+						     transport);
 
 	if (setup->type == SIPE_TRANSPORT_TLS) {
 		/* SSL case */
 		SIPE_DEBUG_INFO_NOFORMAT("using SSL");
 
-		if (purple_ssl_connect(account,
-				       setup->server_name,
-				       setup->server_port,
-				       transport_ssl_connected,
-				       transport_ssl_connect_failure,
-				       transport) == NULL) {
+		if ((transport->gsc = purple_ssl_connect(account,
+							 setup->server_name,
+							 setup->server_port,
+							 transport_ssl_connected,
+							 transport_ssl_connect_failure,
+							 transport)) == NULL) {
 			setup->error(SIPE_TRANSPORT_CONNECTION,
 				     _("Could not create SSL context"));
 			sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
@@ -267,11 +260,11 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 		/* TCP case */
 		SIPE_DEBUG_INFO_NOFORMAT("using TCP");
 
-		if (purple_proxy_connect(gc, account,
-					 setup->server_name,
-					 setup->server_port,
-					 transport_tcp_connected,
-					 transport) == NULL) {
+		if ((transport->proxy = purple_proxy_connect(gc, account,
+							     setup->server_name,
+							     setup->server_port,
+							     transport_tcp_connected,
+							     transport)) == NULL) {
 			setup->error(SIPE_TRANSPORT_CONNECTION,
 				     _("Could not create socket"));
 			sipe_backend_transport_disconnect(SIPE_TRANSPORT_CONNECTION);
@@ -287,17 +280,36 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 	return(SIPE_TRANSPORT_CONNECTION);
 }
 
+static gboolean transport_deferred_destroy(gpointer user_data)
+{
+	/*
+	 * All pending events on transport have been processed.
+	 * Now it is safe to destroy the data structure.
+	 */
+	SIPE_DEBUG_INFO("transport_deferred_destroy: %p", user_data);
+	g_free(user_data);
+	return(FALSE);
+}
+
 void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 {
 	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
+	struct sipe_backend_private *purple_private;
 
-	if (!transport) return;
+	if (!transport || !transport->is_valid) return;
+
+	purple_private = transport->purple_private;
+	purple_private->transports = g_slist_remove(purple_private->transports,
+						    transport);
 
 	if (transport->gsc) {
 		purple_ssl_close(transport->gsc);
 	} else if (transport->socket > 0) {
 		close(transport->socket);
 	}
+
+	if (transport->proxy)
+		purple_proxy_connect_cancel(transport->proxy);
 
 	if (transport->transmit_handler)
 		purple_input_remove(transport->transmit_handler);
@@ -308,7 +320,17 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 		purple_circ_buffer_destroy(transport->transmit_buffer);
 	g_free(transport->public.buffer);
 
-	g_free(transport);
+	/* defer deletion of transport data structure to idle callback */
+	transport->is_valid = FALSE;
+	g_idle_add(transport_deferred_destroy, transport);
+}
+
+void sipe_purple_transport_close_all(struct sipe_backend_private *purple_private)
+{
+	GSList *entry;
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_transport_close_all: entered");
+	while ((entry = purple_private->transports) != NULL)
+		sipe_backend_transport_disconnect(entry->data);
 }
 
 /* returns FALSE on write error */
@@ -352,11 +374,9 @@ static void transport_canwrite_cb(gpointer data,
 				  SIPE_UNUSED_PARAMETER PurpleInputCondition cond)
 {
 	struct sipe_transport_purple *transport = data;
-	PurpleConnection *gc = transport->gc;
 
-	/* Ignore spurious "can write" events during closing */
-	if (PURPLE_CONNECTION_IS_VALID(gc) &&
-	    !gc->account->disconnecting)
+	/* Ignore spurious "can write" events after disconnect */
+	if (transport->is_valid)
 		transport_write(data);
 }
 

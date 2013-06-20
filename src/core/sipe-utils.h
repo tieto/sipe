@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -461,17 +461,6 @@ gboolean sipe_utils_ip_is_private(const char *ip);
 gchar *sipe_utils_presence_key(const gchar *uri);
 
 /**
- * Generate subscription key
- *
- * @param event event name
- * @param uri   presence URI
- *
- * @return key string. Must be g_free()'d after use.
- */
-gchar *sipe_utils_subscription_key(const gchar *event,
-				   const gchar *uri);
-
-/**
  * Decodes a URI into a plain string.
  *
  * @param string the string to translate.
@@ -483,12 +472,23 @@ gchar *sipe_utils_uri_unescape(const gchar *string);
 /**
  * Inserts in item in the list only if the value isn't already in that list
  *
- * @param list a singly linked list
- * @param data the item to insert
- * @param fund function to use to compare the values
+ * @param list    a singly linked list
+ * @param data    the item to insert. Will not be copied.
+ * @param func    function to use to compare the values
+ * @param destroy if @c NULL call to destroy @c data if is already on list
  *
  * @return the new list head
  */
-GSList *
-slist_insert_unique_sorted(GSList *list, gpointer data, GCompareFunc func);
+GSList *sipe_utils_slist_insert_unique_sorted(GSList *list,
+					      gpointer data,
+					      GCompareFunc func,
+					      GDestroyNotify destroy);
 
+/**
+ * Same as @c g_slist_free_full() which is only defined for >= 2.28
+ *
+ * @param list a singly linked list
+ * @param free function to free list data
+ */
+void sipe_utils_slist_free_full(GSList *list,
+				GDestroyNotify free);

@@ -1,30 +1,17 @@
-version 1.15.0 "Authentication & Autodiscovery Update" (2013-03-09)
-	- Feature #3578135: Support Kerberos for HTTP(S) authentication w/o SSPI (Stefan Becker)
-	  * effective for all platforms that support --with-krb5
-	  * this triggered a series of cleanup & simplification changes and
-	    functionality & memory leak fixes in the sip-sec modules
-	  * special thanks to Jarek Polok for the logs and testing
-	- Feature #3594094: Add HTTPS to autodiscover probe (Stefan Becker)
-	- Feature #3607040: Simple button to disable calendar integration (Stefan Becker)
-	- Fixed #3603228: Crash on 1.14.1 when connecting to server (Stefan Becker)
-	- Fixed #3604671: sip uri with apostrophe is not valid (Stefan Becker)
-	- fixed HTTP redirect crash (Stefan Becker)
-	- unified Single Sign-On handling in all places (Stefan Becker)
-	  * if SSO is enabled then "Login" & "Password" settings are ignored
-	  * SSO is now off by default for new accounts
-	  * NOTE: if you do *NOT* use SSO, then be sure to disable it in the
-	          "Advanced" tab of the account settings after updating!
-	- added implementation for HTTP "WWW-Authenticate: Negotiate" scheme (Stefan Becker)
-	  * effective for all platforms that support --with-krb5
-	  * it will try Kerberos first, then fall back to NTLM
-	  * valid Kerberos Single Sign-On setup will be detected automatically
-	  * setup for a mixed Kerberos/NTLM HTTP environment:
-	    - login name:     DOMAIN\account
-	    - password:       domain password
-	    - authentication: Kerberos
-	    - Single Sign-On: OFF(!)          (see above)
-	- enabled TLS-DSK support in Windows SSPI version
-	- TLS-DSK: don't ask for password if SSPI or Kerberos are compiled in
-	- Farstream 0.1.1 compatibility fix (Jakub Adam)
-	- support conf:sip: meeting URIs (Jakub Adam)
-	- updated Adium port (Michael Lamb)
+version 1.16.0 "HTTP Rewrite & Subscription Fixes" (2013-06-14)
+	- Feature #58: Implement Digest authentication scheme for SIP Proxy Authentication (Stefan Becker)
+	- Fixed #196: Useragent value not forwarded to core (Michael Lamb)
+	- Fixed #193: Pidgin Status changes stop working (Stefan Becker)
+	- Fixed #186: Users appear offline when they are not (Stefan Becker)
+	- fix kinit-less use case with krb5 >= 1.11 (Stefan Becker)
+	- rewritten HTTP stack from scratch (Stefan Becker)
+	  * cleaner, layered and hopefully less error-prone implementation
+	  * HTTP stack internals no longer exposed to user code
+	  * reduced network traffic and less SSL handshakes by utilizing HTTP/1.1
+	    connection keep alive for multiple HTTP requests to the same host
+	- switch purple backend to deferred destruction approach (Stefan Becker)
+	  * Pidgin should no longer crash at connection close, even in corner cases
+	- add menu entry to make a call with a phone number (Jakub Adam)
+	- some progress on telepathy backend (Stefan Becker)
+	  * add TLS certificate accept/reject user interaction
+	  * add "Single Sign-On" & "Don't Publish Calendar" account options

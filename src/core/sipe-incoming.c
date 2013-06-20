@@ -262,7 +262,7 @@ static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 	if (!g_str_has_prefix(type, "application/sdp"))
 		return;
 
-	if (cd && !strstr(cd, "ms-proxy-2007fallback")) {
+	if (!cd || !strstr(cd, "ms-proxy-2007fallback")) {
 		struct sipmsg *msg = user_data;
 		const gchar* msg_ct = sipmsg_find_header(msg, "Content-Type");
 

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,11 +23,14 @@
 /* Forward declarations */
 struct _GObject;
 struct _GObjectClass;
+struct _GTlsCertificate;
 struct _SipeConnection;
 struct _SipeContactList;
+struct _SipeTLSManager;
 struct _TpBaseConnection;
 struct _TpBaseConnectionManager;
 struct _TpBaseProtocol;
+struct sipe_tls_info;
 struct sipe_transport_telepathy;
 
 /* constants */
@@ -48,6 +51,9 @@ struct sipe_backend_private {
 	/* status */
 	guint activity;
 	gchar *message;
+
+	/* TLS certificate verification */
+	struct _SipeTLSManager *tls_manager;
 
 	/* transport */
 	struct sipe_transport_telepathy *transport;
@@ -101,6 +107,15 @@ struct _GObject *sipe_telepathy_search_new(struct _TpBaseConnection *connection)
 void sipe_telepathy_status_init(struct _GObjectClass *object_class,
 				gsize struct_offset);
 
+/* TLS certificate verification */
+struct _SipeTLSManager *sipe_telepathy_tls_new(struct _TpBaseConnection *connection);
+struct sipe_tls_info *sipe_telepathy_tls_info_new(const gchar *hostname,
+						  struct _GTlsCertificate *certificate);
+void sipe_telepathy_tls_info_free(struct sipe_tls_info *tls_info);
+void sipe_telepathy_tls_verify_async(struct _GObject *connection,
+				     struct sipe_tls_info *tls_info,
+				     GAsyncReadyCallback callback,
+				     gpointer user_data);
 
 /*
   Local Variables:

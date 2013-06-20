@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,40 +32,25 @@ void sipe_subscriptions_unsubscribe(struct sipe_core_private *sipe_private);
 void sipe_subscriptions_destroy(struct sipe_core_private *sipe_private);
 
 /**
- * Remove subscription
- *
- * @param sipe_private SIPE core private data
- * @param key subscription to be removed
- */
-void sipe_subscriptions_remove(struct sipe_core_private *sipe_private,
-			       const gchar *key);
-
-/**
  * Subscriptions
  */
-void sipe_subscribe(struct sipe_core_private *sipe_private,
-		    const gchar *uri,
-		    const gchar *event,
-		    const gchar *accept,
-		    const gchar *addheaders,
-		    const gchar *body,
-		    struct sip_dialog *dialog);
-void sipe_subscribe_presence_wpending(struct sipe_core_private *sipe_private,
-				      void *unused);
-void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_provisioning(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sipe_private);
-void sipe_subscribe_roaming_self(struct sipe_core_private *sipe_private);
+void sipe_subscribe_conference(struct sipe_core_private *sipe_private,
+			       const gchar *id,
+			       gboolean expires);
 
 void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
-				    gpointer buddy_name);
+				    const gchar *uri,
+				    const gchar *to);
+void sipe_subscribe_presence_single_cb(struct sipe_core_private *sipe_private,
+				       gpointer uri);
 void sipe_subscribe_presence_batched(struct sipe_core_private *sipe_private);
-void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *sipe_private,
-					      const gchar *action_name,
-					      const gchar *who,
-					      GSList *buddies,
-					      int timeout);
 void sipe_subscribe_poolfqdn_resource_uri(const gchar *host,
 					  GSList *server,
 					  struct sipe_core_private *sipe_private);
+
+/**
+ * Subscribe to all events the server supports after first registration
+ *
+ * @param sipe_private SIPE core private data
+ */
+void sipe_subscription_self_events(struct sipe_core_private *sipe_private);

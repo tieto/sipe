@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -211,8 +211,6 @@ void
 sipe_session_remove(struct sipe_core_private *sipe_private,
 		    struct sip_session *session)
 {
-	GSList *entry;
-
 	sipe_private->sessions = g_slist_remove(sipe_private->sessions, session);
 
 	sipe_dialog_remove_all(session);
@@ -220,12 +218,7 @@ sipe_session_remove(struct sipe_core_private *sipe_private,
 
 	while (sipe_session_dequeue_message(session));
 
-	entry = session->pending_invite_queue;
-	while (entry) {
-		g_free(entry->data);
-		entry = entry->next;
-	}
-	g_slist_free(session->pending_invite_queue);
+	sipe_utils_slist_free_full(session->pending_invite_queue, g_free);
 
 	g_hash_table_destroy(session->unconfirmed_messages);
 	if (session->conf_unconfirmed_messages)

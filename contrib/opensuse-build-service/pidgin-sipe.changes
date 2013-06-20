@@ -1,7 +1,49 @@
 -------------------------------------------------------------------
-Sat Mar  9 13:26:00 UTC 2013 - chemobejk@gmail.com
+Sat Jun  8 16:58:00 UTC 2013 - chemobejk@gmail.com
 
-- Update to version 1.15.0
+- Update to version 1.16.0
+
+-------------------------------------------------------------------
+Sat Apr 13 13:48:45 UTC 2013 - dimstar@opensuse.org
+
+- Update to version 1.15.1:
+  + NOTE: SIPE SourceForge project got updated. Because of this all
+    bug and feature request numbers have changed.
+  + sf#190: SIP 407 response rejected with invalid message
+    signature.
+  + sf#189: Adium SIPE plugin vs. libpurple linking issues.
+  + Fixed free-after-use issue that caused crashes for some users.
+  + Fixed broken NTLM fallback in Negotiate.
+  + Fixed subscriptions expiration by subscribing again after
+    re-authentication.
+  + Allow different user name and login for Office 365
+    authentication.
+  + Add SIPE version & git commit ID to debug log.
+  + Added valgrind log analyzer script.
+  + Added NTLM message anaylzer.
+  + Updated Adium port.
+  + Updated translations.
+
+-------------------------------------------------------------------
+Tue Mar 19 22:24:11 UTC 2013 - dimstar@opensuse.org
+
+- Update to version 1.15.0:
+  + Support Kerberos for HTTP(S) authentication w/o SSPI
+    (sf#3578135).
+  + Add HTTPS to autodiscover probe (sf#3594094).
+  + Simple button to disable calendar integration (sf#3607040).
+  + Crash on 1.14.1 when connecting to server (sf#3603228).
+  + sip uri with apostrophe is not valid (sf#3604671).
+  + Fixed HTTP redirect crash.
+  + Unified Single Sign-On handling in all places.
+  + Added implementation for HTTP "WWW-Authenticate: Negotiate"
+    scheme.
+  + Enabled TLS-DSK support in Windows SSPI version.
+  + TLS-DSK: don't ask for password if SSPI or Kerberos are
+    compiled in.
+  + Farstream 0.1.1 compatibility fix.
+  + Support conf:sip: meeting URIs.
+  + Updated Adium port.
 
 -------------------------------------------------------------------
 Tue Feb  5 22:32:56 UTC 2013 - zaitor@opensuse.org
