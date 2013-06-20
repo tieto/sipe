@@ -1,3 +1,28 @@
+pidgin-sipe (1.16.0-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+        - Feature #58: Implement Digest authentication scheme for
+          SIP Proxy Authentication
+        - Fixed #196: Useragent value not forwarded to core
+        - Fixed #193: Pidgin Status changes stop working
+        - Fixed #186: Users appear offline when they are not
+        - fix kinit-less use case with krb5 >= 1.11
+        - rewritten HTTP stack from scratch
+          * cleaner, layered and hopefully less error-prone implementation
+          * HTTP stack internals no longer exposed to user code
+          * reduced network traffic and less SSL handshakes by utilizing
+            HTTP/1.1 connection keep alive for multiple HTTP requests to
+            the same host
+        - switch purple backend to deferred destruction approach
+          * Pidgin should no longer crash at connection close, even in
+            corner cases
+        - add menu entry to make a call with a phone number
+        - some progress on telepathy backend
+          * add TLS certificate accept/reject user interaction
+          * add "Single Sign-On" & "Don't Publish Calendar" account options
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 20 Jun 2013 08:15:23 +0200
+
 pidgin-sipe (1.15.0-1) experimental; urgency=low
 
   [ Jakub Adam ]
