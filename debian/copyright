@@ -7,16 +7,37 @@ Copyright: 2007-2010, Anibal Avelar <debianmx@gmail.com>
            2010-2013, Jakub Adam <jakub.adam@ktknet.cz>
            2008, Novell, Inc.
            2009-2010, pier11 <pier11@operamail.com>
-           2007-2012, SIPE Project
+           2007-2013, SIPE Project
            2011-2013, Stefan Becker <chemobejk@gmail.com>
            2005, Thomas Butter <butter@uni-mannheim.de>
            2010, Tomáš Hrabčík <tomas.hrabcik@tieto.com>
 License: GPL-2+
 
+Files: autogen.sh
+Copyright: 2003-2008 Gary Kramlich <grim@reaperworld.com>
+License: GPL-2+
+
+Files: ltmain.sh
+Copyright: 1996-2011 Free Software Foundation, Inc.
+License: GPL-2+
+
+Files: src/adium/*
+Copyright: 2013 Michael Lamb/Harris Kauffman. All rights reserved
+License: GPL-2
+Comment: License found in Adium tarball see http://download.adium.im/adium-1.5.6.tgz
+
 Files: debian/*
 Copyright: 2007, Anibal Avelar <aavelar@cofradia.org>
            2013, Jakub Adam <jakub.adam@ktknet.cz>
 License: GPL-2+
+
+License: GPL-2
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; version 2 dated June, 1991.
+ .
+ On Debian systems, the complete text of version 2 of the GNU General
+ Public License can be found in '/usr/share/common-licenses/GPL-2'.
 
 License: GPL-2+
  This package is free software; you can redistribute it and/or modify
@@ -35,3 +56,4 @@ License: GPL-2+
  .
  On Debian systems, the complete text of the GNU General Public
  License version 2 can be found in `/usr/share/common-licenses/GPL-2'.
+
