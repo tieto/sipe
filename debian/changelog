@@ -1,6 +1,6 @@
 pidgin-sipe (1.16.0-1) UNRELEASED; urgency=low
 
-  * New upstream release.
+  * New upstream release (Closes: #713009).
         - Feature #58: Implement Digest authentication scheme for
           SIP Proxy Authentication
         - Fixed #196: Useragent value not forwarded to core
