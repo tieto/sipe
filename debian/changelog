@@ -1,5 +1,6 @@
-pidgin-sipe (1.16.0-1) UNRELEASED; urgency=low
+pidgin-sipe (1.16.0-1) unstable; urgency=low
 
+  [ Jakub Adam ]
   * New upstream release.
         - Feature #58: Implement Digest authentication scheme for
           SIP Proxy Authentication
@@ -23,7 +24,10 @@ pidgin-sipe (1.16.0-1) UNRELEASED; urgency=low
   * Depend on libnice-dev (>= 0.1.4) for it has voice call related fixes.
   * Use xz for upstream tarball compression.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 20 Jun 2013 08:15:23 +0200
+  [ Dominique Dumont ]
+  * copyright: added missing license on src/adium autogen.sh ltmain.sh
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 24 Jun 2013 20:14:30 +0200
 
 pidgin-sipe (1.15.0-1) experimental; urgency=low
 
