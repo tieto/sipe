@@ -153,7 +153,8 @@ static void sipe_http_request_enqueue(struct sipe_core_private *sipe_private,
 	req->path       = g_strdup(parsed_uri->path);
 	req->connection = conn_public = sipe_http_transport_new(sipe_private,
 								parsed_uri->host,
-								parsed_uri->port);
+								parsed_uri->port,
+								parsed_uri->tls);
 	if (!sipe_http_request_pending(conn_public))
 		req->flags |= SIPE_HTTP_REQUEST_FLAG_FIRST;
 

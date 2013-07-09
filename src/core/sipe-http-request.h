@@ -42,6 +42,7 @@ struct sipe_http_parsed_uri {
 	gchar *host;
 	gchar *path;
 	guint port;
+        gboolean tls;
 };
 
 /**

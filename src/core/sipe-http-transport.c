@@ -61,6 +61,7 @@ struct sipe_http_connection {
 
 	gchar *host_port;
 	time_t timeout;  /* in seconds from epoch */
+	gboolean use_tls;
 };
 
 struct sipe_http {
@@ -399,7 +400,8 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 			if (next)
 				sipe_http_transport_new(conn->public.sipe_private,
 							conn->public.host,
-							conn->public.port);
+							conn->public.port,
+							conn->use_tls);
 
 		} else if (next) {
 			/* trigger sending of next pending request */
@@ -422,7 +424,8 @@ static void sipe_http_transport_error(struct sipe_transport_connection *connecti
 
 struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_private *sipe_private,
 							    const gchar *host_in,
-							    const guint32 port)
+							    const guint32 port,
+							    gboolean use_tls)
 {
 	struct sipe_http *http;
 	struct sipe_http_connection *conn = NULL;
@@ -459,6 +462,7 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 			conn->public.port         = port;
 
 			conn->host_port           = host_port;
+			conn->use_tls             = use_tls;
 
 			g_hash_table_insert(http->connections,
 					    host_port,
@@ -468,7 +472,7 @@ struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_pri
 
 		if (!conn->connection) {
 			sipe_connect_setup setup = {
-				SIPE_TRANSPORT_TLS, /* TBD: we only support TLS for now */
+				use_tls ? SIPE_TRANSPORT_TLS : SIPE_TRANSPORT_TCP,
 				host,
 				port,
 				conn,
