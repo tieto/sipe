@@ -17,6 +17,8 @@ libsipe_core_la_SOURCES = \
 	sip-csta.c \
 	sip-sec.h \
 	sip-sec.c \
+	sip-sec-basic.h \
+	sip-sec-basic.c \
 	sip-sec-digest.h \
 	sip-sec-digest.c \
 	sip-sec-mech.h \

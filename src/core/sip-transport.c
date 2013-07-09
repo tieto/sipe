@@ -176,6 +176,7 @@ static void sipe_make_signature(struct sipe_core_private *sipe_private,
 
 static const gchar *const auth_type_to_protocol[] = {
 	NULL,       /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+	NULL,       /* SIPE_AUTHENTICATION_TYPE_BASIC     */
 	"NTLM",     /* SIPE_AUTHENTICATION_TYPE_NTLM      */
 	"Kerberos", /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 	NULL,       /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */

@@ -89,10 +89,11 @@ struct sipe_backend_private;
  * SIP transport authentication scheme
  */
 #define SIPE_AUTHENTICATION_TYPE_UNSET     0
-#define SIPE_AUTHENTICATION_TYPE_NTLM      1
-#define SIPE_AUTHENTICATION_TYPE_KERBEROS  2
-#define SIPE_AUTHENTICATION_TYPE_NEGOTIATE 3 /* internal use only */
-#define SIPE_AUTHENTICATION_TYPE_TLS_DSK   4
+#define SIPE_AUTHENTICATION_TYPE_BASIC     1 /* internal use only */
+#define SIPE_AUTHENTICATION_TYPE_NTLM      2
+#define SIPE_AUTHENTICATION_TYPE_KERBEROS  3
+#define SIPE_AUTHENTICATION_TYPE_NEGOTIATE 4 /* internal use only */
+#define SIPE_AUTHENTICATION_TYPE_TLS_DSK   5
 
 /**
  * Flags

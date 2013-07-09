@@ -141,6 +141,7 @@
     <ClCompile Include="src\core\md4.c" />
     <ClCompile Include="src\core\sdpmsg.c" />
     <ClCompile Include="src\core\sip-csta.c" />
+    <ClCompile Include="src\core\sip-sec-basic.c" />
     <ClCompile Include="src\core\sip-sec-digest.c" />
     <ClCompile Include="src\core\sip-sec-krb5.c" />
     <ClCompile Include="src\core\sip-sec-negotiate.c" />
@@ -217,6 +218,7 @@
     <ClInclude Include="src\core\md4.h" />
     <ClInclude Include="src\core\sdpmsg.h" />
     <ClInclude Include="src\core\sip-csta.h" />
+    <ClInclude Include="src\core\sip-sec-basic.h" />
     <ClInclude Include="src\core\sip-sec-digest.h" />
     <ClInclude Include="src\core\sip-sec-krb5.h" />
     <ClInclude Include="src\core\sip-sec-mech.h" />
