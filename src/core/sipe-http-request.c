@@ -208,7 +208,7 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 	gboolean failed = TRUE;
 
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-#define DEBUG_STRING "NTLM and Negotiate authentications are"
+#define DEBUG_STRING ", NTLM and Negotiate"
 	/* Use "Negotiate" unless the user requested "NTLM" */
 	if (sipe_private->authentication_type != SIPE_AUTHENTICATION_TYPE_NTLM)
 		header = sipmsg_find_auth_header(msg, "Negotiate");
@@ -217,13 +217,20 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 		name   = "Negotiate";
 	} else
 #else
-#define DEBUG_STRING "NTLM authentication is"
+#define DEBUG_STRING "and NTLM"
 	(void) sipe_private; /* keep compiler happy */
 #endif
 	{
 		header = sipmsg_find_auth_header(msg, "NTLM");
 		type   = SIPE_AUTHENTICATION_TYPE_NTLM;
 		name   = "NTLM";
+	}
+
+	/* only fall back to "Basic" after everything else fails */
+	if (!header) {
+		header = sipmsg_find_auth_header(msg, "Basic");
+		type   = SIPE_AUTHENTICATION_TYPE_BASIC;
+		name   = "Basic";
 	}
 
 	if (header) {
@@ -275,7 +282,7 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 		} else
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: security context creation failed");
 	} else
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: only " DEBUG_STRING " supported");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: only Basic" DEBUG_STRING " authentications are supported");
 
 	return(failed);
 }
