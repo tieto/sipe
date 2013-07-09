@@ -149,10 +149,11 @@ be great to implement too.
 #define SIPE_EWS_STATE_AUTODISCOVER_SUCCESS	 1
 #define SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE	-1
 #define SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE	-2
-#define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	 3
-#define SIPE_EWS_STATE_AVAILABILITY_FAILURE	-3
-#define SIPE_EWS_STATE_OOF_SUCCESS		 4
-#define SIPE_EWS_STATE_OOF_FAILURE		-4
+#define SIPE_EWS_STATE_AUTODISCOVER_3_FAILURE	-3
+#define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	 4
+#define SIPE_EWS_STATE_AVAILABILITY_FAILURE	-4
+#define SIPE_EWS_STATE_OOF_SUCCESS		 5
+#define SIPE_EWS_STATE_OOF_FAILURE		-5
 
 char *
 sipe_ews_get_oof_note(struct sipe_calendar *cal)
@@ -434,6 +435,8 @@ static void sipe_ews_process_autodiscover(SIPE_UNUSED_PARAMETER struct sipe_core
 				cal->state = SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE; break;
 			case 2:
 				cal->state = SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE; break;
+			case 3:
+				cal->state = SIPE_EWS_STATE_AUTODISCOVER_3_FAILURE; break;
 		}
 		sipe_ews_run_state_machine(cal);
 	}
@@ -549,7 +552,7 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 		case SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE:
 			{
 				char *maildomain = strstr(cal->email, "@") + 1;
-				char *autodisc_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
+				char *autodisc_url = g_strdup_printf("http://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
 
 				cal->retry             = TRUE;
 				cal->auto_disco_method = 2;
@@ -560,6 +563,19 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 				break;
 			}
 		case SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE:
+			{
+				char *maildomain = strstr(cal->email, "@") + 1;
+				char *autodisc_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
+
+				cal->retry             = TRUE;
+				cal->auto_disco_method = 3;
+
+				sipe_ews_do_autodiscover(cal, autodisc_url);
+
+				g_free(autodisc_url);
+				break;
+			}
+		case SIPE_EWS_STATE_AUTODISCOVER_3_FAILURE:
 		case SIPE_EWS_STATE_AVAILABILITY_FAILURE:
 		case SIPE_EWS_STATE_OOF_FAILURE:
 			cal->is_ews_disabled = TRUE;
