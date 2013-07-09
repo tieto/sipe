@@ -217,7 +217,7 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 		name   = "Negotiate";
 	} else
 #else
-#define DEBUG_STRING "and NTLM"
+#define DEBUG_STRING " and NTLM"
 	(void) sipe_private; /* keep compiler happy */
 #endif
 	{
@@ -282,7 +282,7 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 		} else
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: security context creation failed");
 	} else
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: only Basic" DEBUG_STRING " authentications are supported");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: only Basic" DEBUG_STRING " authentication schemes are supported");
 
 	return(failed);
 }
