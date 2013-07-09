@@ -306,9 +306,11 @@ sipe_domino_time_to_str(time_t timestamp)
 
 static void sipe_domino_send_http_request(struct sipe_calendar *cal)
 {
-	sipe_cal_http_authentication(cal);
-	sipe_http_request_session(cal->request, cal->session);
-	sipe_http_request_ready(cal->request);
+	if (cal->request) {
+		sipe_cal_http_authentication(cal);
+		sipe_http_request_session(cal->request, cal->session);
+		sipe_http_request_ready(cal->request);
+	}
 }
 
 static void sipe_domino_do_calendar_request(struct sipe_calendar *cal)
