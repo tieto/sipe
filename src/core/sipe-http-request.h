@@ -56,7 +56,7 @@ struct sipe_http_parsed_uri *sipe_http_parse_uri(const gchar *uri);
 /**
  * Free parsed URI data structure
  *
- * @param pointer to parsed URI.
+ * @param pointer to parsed URI (may be @c NULL)
  */
 void sipe_http_parsed_uri_free(struct sipe_http_parsed_uri *parsed_uri);
 
