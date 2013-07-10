@@ -416,10 +416,6 @@ static void sipe_http_transport_error(struct sipe_transport_connection *connecti
 				      const gchar *msg)
 {
 	struct sipe_http_connection *conn = SIPE_HTTP_CONNECTION;
-	struct sipe_core_private *sipe_private = conn->public.sipe_private;
-
-	sipe_schedule_cancel(sipe_private, SIPE_HTTP_TIMEOUT_ACTION);
-
 	sipe_http_transport_drop(conn->public.sipe_private->http,
 				 conn,
 				 msg);
