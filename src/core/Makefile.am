@@ -47,6 +47,8 @@ libsipe_core_la_SOURCES = \
 	sipe-digest.h \
 	sipe-ews.h \
 	sipe-ews.c \
+	sipe-ews-autodiscover.h \
+	sipe-ews-autodiscover.c \
 	sipe-ft.h \
 	sipe-ft.c \
 	sipe-ft-tftp.c \

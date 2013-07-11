@@ -163,6 +163,7 @@
     <ClCompile Include="src\core\sipe-digest-nss.c" />
     <ClCompile Include="src\core\sipe-domino.c" />
     <ClCompile Include="src\core\sipe-ews.c" />
+    <ClCompile Include="src\core\sipe-ews-autodiscover.c" />
     <ClCompile Include="src\core\sipe-ft-tftp.c" />
     <ClCompile Include="src\core\sipe-ft.c" />
     <ClCompile Include="src\core\sipe-group.c" />
@@ -241,6 +242,7 @@
     <ClInclude Include="src\core\sipe-digest.h" />
     <ClInclude Include="src\core\sipe-domino.h" />
     <ClInclude Include="src\core\sipe-ews.h" />
+    <ClInclude Include="src\core\sipe-ews-autodiscover.h" />
     <ClInclude Include="src\core\sipe-ft.h" />
     <ClInclude Include="src\core\sipe-group.h" />
     <ClInclude Include="src\core\sipe-groupchat.h" />

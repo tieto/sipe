@@ -96,6 +96,7 @@
 		B13FABF8119D585A001CE037 /* sipe-dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBC119D585A001CE037 /* sipe-dialog.c */; };
 		B13FABFB119D585A001CE037 /* sipe-domino.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBF119D585A001CE037 /* sipe-domino.c */; };
 		B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC1119D585A001CE037 /* sipe-ews.c */; };
+		B13FABFE119D585A001CE037 /* sipe-ews-autodiscover.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */; };
 		B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC3119D585A001CE037 /* sipe-ft.c */; };
 		B13FAC04119D585A001CE037 /* sipe-schedule.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC8119D585A001CE037 /* sipe-schedule.c */; };
 		B13FAC06119D585A001CE037 /* sipe-session.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABCA119D585A001CE037 /* sipe-session.c */; };
@@ -295,6 +296,7 @@
 		B13FABBC119D585A001CE037 /* sipe-dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-dialog.c"; sourceTree = "<group>"; };
 		B13FABBF119D585A001CE037 /* sipe-domino.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-domino.c"; sourceTree = "<group>"; };
 		B13FABC1119D585A001CE037 /* sipe-ews.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ews.c"; sourceTree = "<group>"; };
+		B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ews-autodiscover.c"; sourceTree = "<group>"; };
 		B13FABC3119D585A001CE037 /* sipe-ft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ft.c"; sourceTree = "<group>"; };
 		B13FABC8119D585A001CE037 /* sipe-schedule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-schedule.c"; sourceTree = "<group>"; };
 		B13FABCA119D585A001CE037 /* sipe-session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-session.c"; sourceTree = "<group>"; };
@@ -545,6 +547,7 @@
 				B13FABBC119D585A001CE037 /* sipe-dialog.c */,
 				B13FABBF119D585A001CE037 /* sipe-domino.c */,
 				B13FABC1119D585A001CE037 /* sipe-ews.c */,
+				B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */,
 				B13FABC3119D585A001CE037 /* sipe-ft.c */,
 				B13FABC8119D585A001CE037 /* sipe-schedule.c */,
 				B13FABCA119D585A001CE037 /* sipe-session.c */,
@@ -774,6 +777,7 @@
 				B13FABF8119D585A001CE037 /* sipe-dialog.c in Sources */,
 				B13FABFB119D585A001CE037 /* sipe-domino.c in Sources */,
 				B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */,
+				B13FABFE119D585A001CE037 /* sipe-ews-autodiscover.c in Sources */,
 				B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */,
 				B13FAC04119D585A001CE037 /* sipe-schedule.c in Sources */,
 				B13FAC06119D585A001CE037 /* sipe-session.c in Sources */,

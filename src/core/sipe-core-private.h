@@ -27,6 +27,7 @@ struct sip_service_data;
 struct sip_transport;
 struct sipe_calendar;
 struct sipe_certificate;
+struct sipe_ews_autodiscover;
 struct sipe_media_call_private;
 struct sipe_groupchat;
 struct sipe_http;
@@ -94,6 +95,9 @@ struct sipe_core_private {
 
 	/* Calendar and related stuff */
 	struct sipe_calendar *calendar;
+
+	/* EWS autodiscover */
+	struct sipe_ews_autodiscover *ews_autodiscover;
 
 	/*
 	 * 2005 Custom XML piece

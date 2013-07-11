@@ -82,6 +82,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-crypt.h"
+#include "sipe-ews-autodiscover.h"
 #include "sipe-group.h"
 #include "sipe-groupchat.h"
 #include "sipe-http.h"
@@ -339,6 +340,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sipe_private->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 							       g_free, (GDestroyNotify)g_hash_table_destroy);
 	sipe_subscriptions_init(sipe_private);
+	sipe_ews_autodiscover_init(sipe_private);
 	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_UNSET);
 
 	return((struct sipe_core_public *)sipe_private);
@@ -407,6 +409,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	/* pending service requests must be cancelled first */
 	sipe_svc_free(sipe_private);
 	sipe_webticket_free(sipe_private);
+	sipe_ews_autodiscover_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
 		sipe_subscriptions_unsubscribe(sipe_private);
