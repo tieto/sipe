@@ -34,21 +34,69 @@ struct sipe_ews_autodiscover_cb {
 };
 
 struct sipe_ews_autodiscover {
+	struct sipe_ews_autodiscover_data *data;
 	GSList *callbacks;
+	const gchar * const *method;
+	gboolean completed;
 };
+
+static void sipe_ews_autodiscover_complete(struct sipe_core_private *sipe_private,
+					   struct sipe_ews_autodiscover_data *ews_data)
+{
+	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
+	GSList *entry = sea->callbacks;
+
+	while (entry) {
+		struct sipe_ews_autodiscover_cb *sea_cb = entry->data;
+		sea_cb->cb(sipe_private, ews_data, sea_cb->cb_data);
+		g_free(sea_cb);
+		entry = entry->next;
+	}
+	g_slist_free(sea->callbacks);
+	sea->callbacks = NULL;
+	sea->completed = TRUE;
+}
+
+static void sipe_ews_autodiscover_next_method(struct sipe_core_private *sipe_private)
+{
+	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
+	static const gchar * const methods[] = {
+		"https://Autodiscover.%s/Autodiscover/Autodiscover.xml",
+		"http://Autodiscover.%s/Autodiscover/Autodiscover.xml",
+		"https://%s/Autodiscover/Autodiscover.xml",
+		NULL
+	};
+
+	if (sea->method)
+		sea->method++;
+	else
+		sea->method = methods;
+
+	if (*sea->method) {
+		SIPE_DEBUG_INFO("sipe_ews_autodiscover_start: trying '%s'", *sea->method);
+	} else {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_autodiscover_start: no more methods to try!");
+		sipe_ews_autodiscover_complete(sipe_private, NULL);
+	}
+}
 
 void sipe_ews_autodiscover_start(struct sipe_core_private *sipe_private,
 				 sipe_ews_autodiscover_callback *callback,
 				 gpointer callback_data)
 {
 	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
-	struct sipe_ews_autodiscover_cb *sea_cb = g_new(struct sipe_ews_autodiscover_cb, 1);
-	sea_cb->cb      = callback;
-	sea_cb->cb_data = callback_data;
-	sea->callbacks  = g_slist_prepend(sea->callbacks, sea_cb);
 
-	/* @TODO: start state machine */
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_autodiscover_start: triggered...");
+	if (sea->completed) {
+		(*callback)(sipe_private, sea->data, callback_data);
+	} else {
+		struct sipe_ews_autodiscover_cb *sea_cb = g_new(struct sipe_ews_autodiscover_cb, 1);
+		sea_cb->cb      = callback;
+		sea_cb->cb_data = callback_data;
+		sea->callbacks  = g_slist_prepend(sea->callbacks, sea_cb);
+
+		if (!sea->method)
+			sipe_ews_autodiscover_next_method(sipe_private);
+	}
 }
 
 void sipe_ews_autodiscover_init(struct sipe_core_private *sipe_private)
@@ -59,15 +107,8 @@ void sipe_ews_autodiscover_init(struct sipe_core_private *sipe_private)
 void sipe_ews_autodiscover_free(struct sipe_core_private *sipe_private)
 {
 	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
-	GSList *entry = sea->callbacks;
-
-	while (entry) {
-		struct sipe_ews_autodiscover_cb *sea_cb = entry->data;
-		sea_cb->cb(sipe_private, NULL, sea_cb->cb_data);
-		g_free(sea_cb);
-		entry = entry->next;
-	}
-	g_slist_free(sea->callbacks);
+	sipe_ews_autodiscover_complete(sipe_private, NULL);
+	g_free(sea->data);
 	g_free(sea);
 }
 
