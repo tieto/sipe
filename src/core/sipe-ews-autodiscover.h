@@ -26,7 +26,11 @@ struct sipe_core_private;
 
 /* EWS data determined by autodiscover */
 struct sipe_ews_autodiscover_data {
-    const gchar *dummy;
+    const gchar *as_url;
+    const gchar *ews_url;
+    const gchar *legacy_dn;
+    const gchar *oab_url;
+    const gchar *oof_url;
 };
 
 /**

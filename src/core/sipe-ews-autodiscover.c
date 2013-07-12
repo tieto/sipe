@@ -19,6 +19,10 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * Specification references:
+ *
+ *   - [MS-OXDSCLI]: http://msdn.microsoft.com/en-us/library/cc463896.aspx
  */
 
 #include <string.h>
@@ -31,6 +35,7 @@
 #include "sipe-core-private.h"
 #include "sipe-ews-autodiscover.h"
 #include "sipe-http.h"
+#include "sipe-xml.h"
 
 struct sipe_ews_autodiscover_cb {
 	sipe_ews_autodiscover_callback *cb;
@@ -64,6 +69,53 @@ static void sipe_ews_autodiscover_complete(struct sipe_core_private *sipe_privat
 	sea->completed = TRUE;
 }
 
+static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
+					const gchar *body)
+{
+	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
+	struct sipe_ews_autodiscover_data *ews_data = sea->data =
+		g_new0(struct sipe_ews_autodiscover_data, 1);
+	sipe_xml *xml = sipe_xml_parse(body, strlen(body));
+	const sipe_xml *node;
+	gchar *tmp;
+
+	/* Autodiscover/Response/User/LegacyDN (requires trimming) */
+	tmp = sipe_xml_data(sipe_xml_child(xml, "Response/User/LegacyDN"));
+	if (tmp)
+		ews_data->legacy_dn = g_strstrip(tmp);
+
+	/* Autodiscover/Response/Account/Protocol */
+	for (node = sipe_xml_child(xml, "Response/Account/Protocol");
+	     node;
+	     node = sipe_xml_twin(node)) {
+		gchar *type = sipe_xml_data(sipe_xml_child(node, "Type"));
+
+		if (sipe_strequal("EXCH", type)) {
+			g_free(type);
+
+#define _URL(name, field) \
+			{ \
+				ews_data->field = sipe_xml_data(sipe_xml_child(node, #name)); \
+				SIPE_DEBUG_INFO("sipe_ews_autodiscover_parse: " #field " = '%s'", \
+						ews_data->field ? ews_data->field : "<NOT FOUND>"); \
+			}
+
+			_URL(ASUrl,  as_url);
+			_URL(EwsUrl, ews_url);
+			_URL(OABUrl, oab_url);
+			_URL(OOFUrl, oof_url);
+#undef _URL
+
+			break;
+
+		}
+		g_free(type);
+	}
+	sipe_xml_free(xml);
+
+	sipe_ews_autodiscover_complete(sipe_private, ews_data);
+}
+
 static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private,
 					  gboolean next_method);
 static void sipe_ews_autodiscover_response(struct sipe_core_private *sipe_private,
@@ -78,8 +130,10 @@ static void sipe_ews_autodiscover_response(struct sipe_core_private *sipe_privat
 
 	switch (status) {
 	case SIPE_HTTP_STATUS_OK:
-		/* @TODO */
-		SIPE_DEBUG_INFO("sipe_ews_autodiscover_response: XML received: %p", body);
+		if (body)
+			sipe_ews_autodiscover_parse(sipe_private, body);
+		else
+			sipe_ews_autodiscover_request(sipe_private, TRUE);
 		break;
 
 	case SIPE_HTTP_STATUS_CLIENT_FORBIDDEN:
@@ -188,8 +242,16 @@ void sipe_ews_autodiscover_init(struct sipe_core_private *sipe_private)
 void sipe_ews_autodiscover_free(struct sipe_core_private *sipe_private)
 {
 	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
+	struct sipe_ews_autodiscover_data *ews_data = sea->data;
 	sipe_ews_autodiscover_complete(sipe_private, NULL);
-	g_free(sea->data);
+	if (ews_data) {
+		g_free((gchar *)ews_data->as_url);
+		g_free((gchar *)ews_data->ews_url);
+		g_free((gchar *)ews_data->legacy_dn);
+		g_free((gchar *)ews_data->oab_url);
+		g_free((gchar *)ews_data->oof_url);
+		g_free(ews_data);
+	}
 	g_free(sea);
 }
 
