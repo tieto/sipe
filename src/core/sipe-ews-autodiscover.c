@@ -187,7 +187,7 @@ static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private
 					      "</Autodiscover>",
 					      sipe_private->email);
 
-		SIPE_DEBUG_INFO("sipe_ews_autodiscover_next_method: trying '%s'", url);
+		SIPE_DEBUG_INFO("sipe_ews_autodiscover_request: trying '%s'", url);
 
 		sea->request = sipe_http_request_post(sipe_private,
 						      url,
@@ -207,7 +207,7 @@ static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private
 			sipe_ews_autodiscover_request(sipe_private, TRUE);
 
 	} else {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_autodiscover_start: no more methods to try!");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_autodiscover_request: no more methods to try!");
 		sipe_ews_autodiscover_complete(sipe_private, NULL);
 	}
 }
