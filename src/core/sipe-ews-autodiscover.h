@@ -24,6 +24,34 @@
 /* Forward declarations */
 struct sipe_core_private;
 
+/* EWS data determined by autodiscover */
+struct sipe_ews_autodiscover_data {
+    const gchar *dummy;
+};
+
+/**
+ *
+ * EWS autodiscover callback
+ *
+ * @param sipe_private  SIPE core private data
+ * @param ews_data      EWS autodiscover data (NULL when failed/aborted)
+ * @param callback_data callback data
+ */
+typedef void (sipe_ews_autodiscover_callback)(struct sipe_core_private *sipe_private,
+					      const struct sipe_ews_autodiscover_data *ews_data,
+					      gpointer callback_data);
+
+/**
+ * Trigger EWS autodiscover
+ *
+ * @param sipe_private  SIPE core private data
+ * @param callback      callback function
+ * @param callback_data callback data
+ */
+void sipe_ews_autodiscover_start(struct sipe_core_private *sipe_private,
+				 sipe_ews_autodiscover_callback *callback,
+				 gpointer callback_data);
+
 /**
  * Initialize EWS autodiscover data
  *

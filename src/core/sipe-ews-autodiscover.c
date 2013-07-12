@@ -23,13 +23,33 @@
 
 #include <glib.h>
 
+#include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-ews-autodiscover.h"
 
-struct sipe_ews_autodiscover {
-	guint dummy;
+struct sipe_ews_autodiscover_cb {
+	sipe_ews_autodiscover_callback *cb;
+	gpointer cb_data;
 };
+
+struct sipe_ews_autodiscover {
+	GSList *callbacks;
+};
+
+void sipe_ews_autodiscover_start(struct sipe_core_private *sipe_private,
+				 sipe_ews_autodiscover_callback *callback,
+				 gpointer callback_data)
+{
+	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
+	struct sipe_ews_autodiscover_cb *sea_cb = g_new(struct sipe_ews_autodiscover_cb, 1);
+	sea_cb->cb      = callback;
+	sea_cb->cb_data = callback_data;
+	sea->callbacks  = g_slist_prepend(sea->callbacks, sea_cb);
+
+	/* @TODO: start state machine */
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_autodiscover_start: triggered...");
+}
 
 void sipe_ews_autodiscover_init(struct sipe_core_private *sipe_private)
 {
@@ -38,7 +58,17 @@ void sipe_ews_autodiscover_init(struct sipe_core_private *sipe_private)
 
 void sipe_ews_autodiscover_free(struct sipe_core_private *sipe_private)
 {
-	g_free(sipe_private->ews_autodiscover);
+	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
+	GSList *entry = sea->callbacks;
+
+	while (entry) {
+		struct sipe_ews_autodiscover_cb *sea_cb = entry->data;
+		sea_cb->cb(sipe_private, NULL, sea_cb->cb_data);
+		g_free(sea_cb);
+		entry = entry->next;
+	}
+	g_slist_free(sea->callbacks);
+	g_free(sea);
 }
 
 /*

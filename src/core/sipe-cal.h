@@ -64,6 +64,7 @@ struct sipe_calendar {
 	int is_domino_disabled;
 	int is_updated;
 	gboolean retry;
+	gboolean ews_autodiscover_triggered;
 
 	char *as_url;
 	char *oof_url;

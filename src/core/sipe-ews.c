@@ -55,6 +55,7 @@ be great to implement too.
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-ews.h"
+#include "sipe-ews-autodiscover.h"
 #include "sipe-http.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -600,31 +601,49 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 	}
 }
 
-void
-sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
+static void sipe_calendar_ews_autodiscover_cb(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+					      const struct sipe_ews_autodiscover_data *ews_data,
+					      gpointer callback_data)
+{
+	struct sipe_calendar *cal = callback_data;
+
+	if (ews_data) {
+		/* @TODO */
+	} else {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_calendar_ews_autodiscover_cb: EWS disabled");
+		cal->is_ews_disabled = TRUE;
+	}
+}
+
+void sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
 {
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
-	gboolean has_url;
+	struct sipe_calendar *cal;
+	gboolean has_url = FALSE;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: started.");
 
-	if (sipe_cal_calendar_init(sipe_private, &has_url)) {
-		if (has_url) {
-			sipe_private->calendar->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
-		}
+	sipe_cal_calendar_init(sipe_private, &has_url);
+	cal = sipe_private->calendar;
+
+	if (!cal->ews_autodiscover_triggered) {
+		cal->ews_autodiscover_triggered = TRUE;
+		sipe_ews_autodiscover_start(sipe_private,
+					    sipe_calendar_ews_autodiscover_cb,
+					    cal);
+
+		/* @TODO: remove once refactor is complete */
+		if (has_url)
+			cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
 	}
 
-	if (sipe_private->calendar->is_ews_disabled) {
+	if (cal->is_ews_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: disabled, exiting.");
-		return;
+	} else {
+		sipe_ews_run_state_machine(cal);
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: finished.");
 	}
-
-	sipe_ews_run_state_machine(sipe_private->calendar);
-
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: finished.");
 }
-
-
 
 /*
   Local Variables:
