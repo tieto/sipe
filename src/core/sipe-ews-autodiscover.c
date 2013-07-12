@@ -169,11 +169,10 @@ static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private
 		NULL
 	};
 
+	sea->retry = next_method;
 	if (sea->method) {
-		if (next_method) {
+		if (next_method)
 			sea->method++;
-			sea->retry = TRUE;
-		}
 	} else
 		sea->method = methods;
 
