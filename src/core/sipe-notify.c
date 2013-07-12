@@ -1237,41 +1237,56 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		sipe_private->deltanum_contacts = delta;
 	}
 
-	/* Process whole buddy list (only sent once?) */
+	/*
+	 * Process whole buddy list
+	 *
+	 *  - Only sent once
+	 *    * up to Lync 2010
+	 *    * Lync 2013 (and later) with buddy list not migrated
+	 *
+	 *  - Lync 2013 with buddy list migrated to Unified Contact Store (UCS)
+	 *    * Notify piggy-backed on SUBSCRIBE response with empty list
+	 *    * NOTIFY send by server with standard list
+	 */
 	if (sipe_strequal(sipe_xml_name(isc), "contactList")) {
+		group_node = sipe_xml_child(isc, "group");
+		item = sipe_xml_child(isc, "contact");
 
-		/* Start processing contact list */
-		sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
+		if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) || group_node || item) {
 
-		/* Parse groups */
-		for (group_node = sipe_xml_child(isc, "group"); group_node; group_node = sipe_xml_twin(group_node))
-			add_new_group(sipe_private, group_node);
+			/* Start processing contact list */
+			sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
 
-		/* Make sure we have at least one group */
-		if (g_slist_length(sipe_private->groups) == 0) {
-			sipe_group_create(sipe_private, _("Other Contacts"), NULL);
+			/* Parse groups */
+			for (; group_node; group_node = sipe_xml_twin(group_node))
+				add_new_group(sipe_private, group_node);
+
+			/* Make sure we have at least one group */
+			if (g_slist_length(sipe_private->groups) == 0) {
+				sipe_group_create(sipe_private, _("Other Contacts"), NULL);
+			}
+
+			/* Parse contacts */
+			for (; item; item = sipe_xml_twin(item)) {
+				const gchar *name = sipe_xml_attribute(item, "uri");
+				gchar *uri        = sip_uri_from_name(name);
+				add_new_buddy(sipe_private, item, uri, name);
+				g_free(uri);
+			}
+
+			sipe_cleanup_local_blist(sipe_private);
+
+			/* Add self-contact if not there yet. 2005 systems. */
+			/* This will resemble subscription to roaming_self in 2007 systems */
+			if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+				gchar *self_uri = sip_uri_self(sipe_private);
+				sipe_buddy_add(sipe_private, self_uri);
+				g_free(self_uri);
+			}
+
+			/* Finished processing contact list */
+			sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
 		}
-
-		/* Parse contacts */
-		for (item = sipe_xml_child(isc, "contact"); item; item = sipe_xml_twin(item)) {
-			const gchar *name = sipe_xml_attribute(item, "uri");
-			gchar *uri        = sip_uri_from_name(name);
-			add_new_buddy(sipe_private, item, uri, name);
-			g_free(uri);
-		}
-
-		sipe_cleanup_local_blist(sipe_private);
-
-		/* Add self-contact if not there yet. 2005 systems. */
-		/* This will resemble subscription to roaming_self in 2007 systems */
-		if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-			gchar *self_uri = sip_uri_self(sipe_private);
-			sipe_buddy_add(sipe_private, self_uri);
-			g_free(self_uri);
-		}
-
-		/* Finished processing contact list */
-		sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
 
 	/* Process buddy list updates */
 	} else if (sipe_strequal(sipe_xml_name(isc), "contactDelta")) {
@@ -1448,9 +1463,12 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	}
 	sipe_xml_free(isc);
 
-	/* subscribe to buddies */
-	if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES)) {
-		/* do it once, then count Expire field to schedule resubscribe */
+	/*
+	 * Subscribe to buddies (if any), but only do it once.
+	 * We'll resubsribe to them based on the Expire field values.
+	 */
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES) &&
+	    g_hash_table_size(sipe_private->buddies)) {
 		if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
 			sipe_subscribe_presence_batched(sipe_private);
 		} else {
@@ -1460,6 +1478,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		}
 		SIPE_CORE_PRIVATE_FLAG_SET(SUBSCRIBED_BUDDIES);
 	}
+
 	/* for 2005 systems schedule contacts' status update
 	 * based on their calendar information
 	 */
