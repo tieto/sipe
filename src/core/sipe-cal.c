@@ -172,9 +172,6 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 	if (cal) {
 		g_free(cal->email);
 		g_free(cal->legacy_dn);
-		g_free(cal->auth_domain);
-		g_free(cal->auth_user);
-		g_free(cal->password);
 		g_free(cal->as_url);
 		g_free(cal->oof_url);
 		g_free(cal->oab_url);
@@ -212,20 +209,6 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private)
 			cal->as_url  = g_strdup(value);
 			cal->oof_url = g_strdup(value);
 			cal->domino_url  = g_strdup(value);
-		}
-
-		/* user specified email login? */
-		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
-		if (!is_empty(value)) {
-			/* Allowed domain-account separators are / or \ */
-			gchar **domain_user = g_strsplit_set(value, "/\\", 2);
-			gboolean has_domain = domain_user[1] != NULL;
-
-			cal->auth_domain = has_domain ? g_strdup(domain_user[0]) : NULL;
-			cal->auth_user   = g_strdup(domain_user[has_domain ? 1 : 0]);
-			cal->password    = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
-									 SIPE_SETTING_EMAIL_PASSWORD));
-			g_strfreev(domain_user);
 		}
 	}
 	return;
@@ -1125,16 +1108,6 @@ void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private)
 				      UPDATE_CALENDAR_DELAY,
 				      (sipe_schedule_action) sipe_core_update_calendar,
 				      NULL);
-}
-
-void sipe_cal_http_authentication(struct sipe_calendar *cal)
-{
-	if (cal->auth_user) {
-		sipe_http_request_authentication(cal->request,
-						 cal->auth_domain,
-						 cal->auth_user,
-						 cal->password);
-	}
 }
 
 /*

@@ -79,9 +79,6 @@ struct sipe_calendar {
 
 	struct sipe_http_session *session;
 	struct sipe_http_request *request;
-	gchar *auth_domain;
-	gchar *auth_user; /* NULL -> use default authentication */
-	gchar *password;
 
 	time_t fb_start;
 	/* hex form */
@@ -193,8 +190,3 @@ void sipe_cal_presence_publish(struct sipe_core_private *sipe_private,
  * Schedule calendar update
  */
 void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private);
-
-/**
- * Set authentication for HTTP request
- */
-void sipe_cal_http_authentication(struct sipe_calendar *cal);

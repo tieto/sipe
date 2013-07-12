@@ -28,9 +28,10 @@ struct sip_transport;
 struct sipe_calendar;
 struct sipe_certificate;
 struct sipe_ews_autodiscover;
-struct sipe_media_call_private;
 struct sipe_groupchat;
 struct sipe_http;
+struct sipe_http_request;
+struct sipe_media_call_private;
 struct sipe_svc;
 struct sipe_webticket;
 
@@ -59,6 +60,9 @@ struct sipe_core_private {
 	gchar *authuser;   /* NULL when SSO is enabled */
 	gchar *password;   /* NULL when SSO is enabled */
 	gchar *email;
+	gchar *email_authdomain;
+	gchar *email_authuser;   /* NULL -> use default authentication */
+	gchar *email_password;
 
 	/* SIPE protocol information */
 	gchar *contact;
@@ -203,7 +207,11 @@ struct sipe_core_private {
 /**
  * sipe-core internal functions
  */
+void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
+				   guint authentication);
 void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private);
+void sipe_core_email_authentication(struct sipe_core_private *sipe_private,
+				    struct sipe_http_request *request);
 
 /*
   Local Variables:

@@ -346,6 +346,28 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	return((struct sipe_core_public *)sipe_private);
 }
 
+void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
+				   guint authentication)
+{
+	const gchar *value;
+
+	sipe_private->authentication_type = authentication;
+
+	/* user specified email login? */
+	value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
+	if (!is_empty(value)) {
+		/* Allowed domain-account separators are / or \ */
+		gchar **domain_user = g_strsplit_set(value, "/\\", 2);
+		gboolean has_domain = domain_user[1] != NULL;
+
+		sipe_private->email_authdomain = has_domain ? g_strdup(domain_user[0]) : NULL;
+		sipe_private->email_authuser   = g_strdup(domain_user[has_domain ? 1 : 0]);
+		sipe_private->email_password   = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
+									       SIPE_SETTING_EMAIL_PASSWORD));
+		g_strfreev(domain_user);
+	}
+}
+
 void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 {
 	g_free(sipe_private->epid);
@@ -418,6 +440,9 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->public.sip_name);
 	g_free(sipe_private->public.sip_domain);
 	g_free(sipe_private->username);
+	g_free(sipe_private->email_password);
+	g_free(sipe_private->email_authuser);
+	g_free(sipe_private->email_authdomain);
 	g_free(sipe_private->email);
 	g_free(sipe_private->password);
 	g_free(sipe_private->authdomain);
@@ -453,6 +478,17 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->addressbook_uri);
 	g_free(sipe_private->dlx_uri);
 	g_free(sipe_private);
+}
+
+void sipe_core_email_authentication(struct sipe_core_private *sipe_private,
+				    struct sipe_http_request *request)
+{
+	if (sipe_private->email_authuser) {
+		sipe_http_request_authentication(request,
+						 sipe_private->email_authdomain,
+						 sipe_private->email_authuser,
+						 sipe_private->email_password);
+	}
 }
 
 /*

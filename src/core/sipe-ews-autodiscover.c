@@ -199,7 +199,8 @@ static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private
 		g_free(url);
 
 		if (sea->request) {
-			/* @TODO: sipe_cal_http_authentication(cal); */
+			sipe_core_email_authentication(sipe_private,
+						       sea->request);
 			sipe_http_request_allow_redirect(sea->request);
 			sipe_http_request_ready(sea->request);
 		} else

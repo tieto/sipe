@@ -1875,7 +1875,8 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	sipe_private->authentication_type = authentication;
+	/* backend initialization is complete */
+	sipe_core_backend_initialized(sipe_private, authentication);
 
 	/*
 	 * Initializing the certificate sub-system will trigger the generation

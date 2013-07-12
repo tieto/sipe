@@ -368,7 +368,8 @@ static void sipe_ews_process_oof_response(SIPE_UNUSED_PARAMETER struct sipe_core
 static void sipe_ews_send_http_request(struct sipe_calendar *cal)
 {
 	if (cal->request) {
-		sipe_cal_http_authentication(cal);
+		sipe_core_email_authentication(cal->sipe_private,
+					       cal->request);
 		sipe_http_request_allow_redirect(cal->request);
 		sipe_http_request_ready(cal->request);
 	}
