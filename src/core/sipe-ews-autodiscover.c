@@ -21,12 +21,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <string.h>
+
 #include <glib.h>
 
 #include "sipe-backend.h"
+#include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-ews-autodiscover.h"
+#include "sipe-http.h"
 
 struct sipe_ews_autodiscover_cb {
 	sipe_ews_autodiscover_callback *cb;
@@ -35,7 +39,9 @@ struct sipe_ews_autodiscover_cb {
 
 struct sipe_ews_autodiscover {
 	struct sipe_ews_autodiscover_data *data;
+	struct sipe_http_request *request;
 	GSList *callbacks;
+	const gchar *domain;
 	const gchar * const *method;
 	gboolean completed;
 };
@@ -57,6 +63,20 @@ static void sipe_ews_autodiscover_complete(struct sipe_core_private *sipe_privat
 	sea->completed = TRUE;
 }
 
+static void sipe_ews_autodiscover_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+					   guint status,
+					   SIPE_UNUSED_PARAMETER GSList *headers,
+					   SIPE_UNUSED_PARAMETER const gchar *body,
+					   gpointer data)
+{
+	struct sipe_ews_autodiscover *sea = data;
+
+	sea->request = NULL;
+
+	/* @TODO */
+	SIPE_DEBUG_INFO("sipe_ews_autodiscover_response: %d", status);
+}
+
 static void sipe_ews_autodiscover_next_method(struct sipe_core_private *sipe_private)
 {
 	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
@@ -73,7 +93,34 @@ static void sipe_ews_autodiscover_next_method(struct sipe_core_private *sipe_pri
 		sea->method = methods;
 
 	if (*sea->method) {
-		SIPE_DEBUG_INFO("sipe_ews_autodiscover_start: trying '%s'", *sea->method);
+		gchar *url = g_strdup_printf(*sea->method, sea->domain);
+		gchar *body = g_strdup_printf("<Autodiscover xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/outlook/requestschema/2006\">"
+					      " <Request>"
+					      "  <EMailAddress>%s</EMailAddress>"
+					      "  <AcceptableResponseSchema>http://schemas.microsoft.com/exchange/autodiscover/outlook/responseschema/2006a</AcceptableResponseSchema>"
+					      " </Request>"
+					      "</Autodiscover>",
+					      sipe_private->email);
+
+		SIPE_DEBUG_INFO("sipe_ews_autodiscover_next_method: trying '%s'", url);
+
+		sea->request = sipe_http_request_post(sipe_private,
+						      url,
+						      NULL,
+						      body,
+						      "text/xml",
+						      sipe_ews_autodiscover_response,
+						      sea);
+		g_free(body);
+		g_free(url);
+
+		if (sea->request) {
+			/* @TODO: sipe_cal_http_authentication(cal); */
+			sipe_http_request_allow_redirect(sea->request);
+			sipe_http_request_ready(sea->request);
+		} else
+			sipe_ews_autodiscover_next_method(sipe_private);
+
 	} else {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_autodiscover_start: no more methods to try!");
 		sipe_ews_autodiscover_complete(sipe_private, NULL);
@@ -101,7 +148,10 @@ void sipe_ews_autodiscover_start(struct sipe_core_private *sipe_private,
 
 void sipe_ews_autodiscover_init(struct sipe_core_private *sipe_private)
 {
-	sipe_private->ews_autodiscover = g_new0(struct sipe_ews_autodiscover, 1);
+	struct sipe_ews_autodiscover *sea = g_new0(struct sipe_ews_autodiscover, 1);
+
+	sea->domain = strstr(sipe_private->email, "@") + 1;
+	sipe_private->ews_autodiscover = sea;
 }
 
 void sipe_ews_autodiscover_free(struct sipe_core_private *sipe_private)
