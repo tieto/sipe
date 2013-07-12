@@ -194,9 +194,8 @@ sipe_cal_calendar_free(struct sipe_calendar *cal)
 	}
 }
 
-gboolean
-sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
-		       gboolean *has_url)
+void
+sipe_cal_calendar_init(struct sipe_core_private *sipe_private)
 {
 	if (!sipe_private->calendar) {
 		struct sipe_calendar *cal;
@@ -209,7 +208,6 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 
 		/* user specified a service URL? */
 		value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
-		if (has_url) *has_url = !is_empty(value);
 		if (!is_empty(value)) {
 			cal->as_url  = g_strdup(value);
 			cal->oof_url = g_strdup(value);
@@ -229,9 +227,8 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
 									 SIPE_SETTING_EMAIL_PASSWORD));
 			g_strfreev(domain_user);
 		}
-		return TRUE;
 	}
-	return FALSE;
+	return;
 }
 
 

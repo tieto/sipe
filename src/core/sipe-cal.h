@@ -59,7 +59,6 @@ struct sipe_calendar {
 	int state;
 	char *email;
 	char *legacy_dn;
-	int auto_disco_method;
 	int is_ews_disabled;
 	int is_domino_disabled;
 	int is_updated;
@@ -100,9 +99,8 @@ sipe_cal_events_free(GSList *cal_events);
 void
 sipe_cal_calendar_free(struct sipe_calendar *cal);
 
-gboolean
-sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
-		       gboolean *has_url);
+void
+sipe_cal_calendar_init(struct sipe_core_private *sipe_private);
 
 /**
  * Returns hash of Calendar Event for comparison.

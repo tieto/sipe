@@ -549,7 +549,7 @@ sipe_domino_update_calendar(struct sipe_core_private *sipe_private)
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
 
-	sipe_cal_calendar_init(sipe_private, NULL);
+	sipe_cal_calendar_init(sipe_private);
 
 	/* check if URL is valid if provided */
 	cal = sipe_private->calendar;
