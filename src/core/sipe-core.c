@@ -374,11 +374,6 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 		g_free(sipe_private->focus_factory_uri);
 	sipe_private->focus_factory_uri = NULL;
 
-	if (sipe_private->calendar) {
-		sipe_cal_calendar_free(sipe_private->calendar);
-	}
-	sipe_private->calendar = NULL;
-
 	sipe_groupchat_free(sipe_private);
 }
 
@@ -417,6 +412,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 
 	sipe_core_connection_cleanup(sipe_private);
+	sipe_cal_calendar_free(sipe_private->calendar);
 	sipe_certificate_free(sipe_private);
 
 	g_free(sipe_private->public.sip_name);

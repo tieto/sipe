@@ -169,27 +169,29 @@ sipe_cal_events_free(GSList *cal_events)
 void
 sipe_cal_calendar_free(struct sipe_calendar *cal)
 {
-	g_free(cal->email);
-	g_free(cal->legacy_dn);
-	g_free(cal->auth_domain);
-	g_free(cal->auth_user);
-	g_free(cal->password);
-	g_free(cal->as_url);
-	g_free(cal->oof_url);
-	g_free(cal->oab_url);
-	g_free(cal->domino_url);
-	g_free(cal->oof_state);
-	g_free(cal->oof_note);
-	g_free(cal->free_busy);
-	g_free(cal->working_hours_xml_str);
+	if (cal) {
+		g_free(cal->email);
+		g_free(cal->legacy_dn);
+		g_free(cal->auth_domain);
+		g_free(cal->auth_user);
+		g_free(cal->password);
+		g_free(cal->as_url);
+		g_free(cal->oof_url);
+		g_free(cal->oab_url);
+		g_free(cal->domino_url);
+		g_free(cal->oof_state);
+		g_free(cal->oof_note);
+		g_free(cal->free_busy);
+		g_free(cal->working_hours_xml_str);
 
-	sipe_cal_events_free(cal->cal_events);
+		sipe_cal_events_free(cal->cal_events);
 
-	if (cal->request)
-		sipe_http_request_cancel(cal->request);
-	sipe_http_session_close(cal->session);
+		if (cal->request)
+			sipe_http_request_cancel(cal->request);
+		sipe_http_session_close(cal->session);
 
-	g_free(cal);
+		g_free(cal);
+	}
 }
 
 gboolean
