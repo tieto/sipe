@@ -43,6 +43,7 @@ struct sipe_ews_autodiscover {
 	GSList *callbacks;
 	const gchar *domain;
 	const gchar * const *method;
+	gboolean retry;
 	gboolean completed;
 };
 
@@ -63,21 +64,48 @@ static void sipe_ews_autodiscover_complete(struct sipe_core_private *sipe_privat
 	sea->completed = TRUE;
 }
 
-static void sipe_ews_autodiscover_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private,
+					  gboolean next_method);
+static void sipe_ews_autodiscover_response(struct sipe_core_private *sipe_private,
 					   guint status,
 					   SIPE_UNUSED_PARAMETER GSList *headers,
-					   SIPE_UNUSED_PARAMETER const gchar *body,
+					   const gchar *body,
 					   gpointer data)
 {
 	struct sipe_ews_autodiscover *sea = data;
 
 	sea->request = NULL;
 
-	/* @TODO */
-	SIPE_DEBUG_INFO("sipe_ews_autodiscover_response: %d", status);
+	switch (status) {
+	case SIPE_HTTP_STATUS_OK:
+		/* @TODO */
+		SIPE_DEBUG_INFO("sipe_ews_autodiscover_response: XML received: %p", body);
+		break;
+
+	case SIPE_HTTP_STATUS_CLIENT_FORBIDDEN:
+		/*
+		 * Authentication succeeded but we still weren't allowed to
+		 * view the page. At least at our work place this error is
+		 * temporary, i.e. the next access with the exact same
+		 * authentication succeeds.
+		 *
+		 * Let's try again, but only once...
+		 */
+		sipe_ews_autodiscover_request(sipe_private, !sea->retry);
+		break;
+
+	case SIPE_HTTP_STATUS_ABORTED:
+		/* we are not allowed to generate new requests */
+		break;
+
+	default:
+		sipe_ews_autodiscover_request(sipe_private, TRUE);
+		break;
+	}
 }
 
-static void sipe_ews_autodiscover_next_method(struct sipe_core_private *sipe_private)
+static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private,
+					  gboolean next_method)
 {
 	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
 	static const gchar * const methods[] = {
@@ -87,9 +115,12 @@ static void sipe_ews_autodiscover_next_method(struct sipe_core_private *sipe_pri
 		NULL
 	};
 
-	if (sea->method)
-		sea->method++;
-	else
+	if (sea->method) {
+		if (next_method) {
+			sea->method++;
+			sea->retry = TRUE;
+		}
+	} else
 		sea->method = methods;
 
 	if (*sea->method) {
@@ -119,7 +150,7 @@ static void sipe_ews_autodiscover_next_method(struct sipe_core_private *sipe_pri
 			sipe_http_request_allow_redirect(sea->request);
 			sipe_http_request_ready(sea->request);
 		} else
-			sipe_ews_autodiscover_next_method(sipe_private);
+			sipe_ews_autodiscover_request(sipe_private, TRUE);
 
 	} else {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_autodiscover_start: no more methods to try!");
@@ -142,7 +173,7 @@ void sipe_ews_autodiscover_start(struct sipe_core_private *sipe_private,
 		sea->callbacks  = g_slist_prepend(sea->callbacks, sea_cb);
 
 		if (!sea->method)
-			sipe_ews_autodiscover_next_method(sipe_private);
+			sipe_ews_autodiscover_request(sipe_private, TRUE);
 	}
 }
 
