@@ -404,7 +404,6 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	/* pending service requests must be cancelled first */
 	sipe_svc_free(sipe_private);
 	sipe_webticket_free(sipe_private);
-	sipe_ews_autodiscover_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
 		sipe_subscriptions_unsubscribe(sipe_private);
@@ -412,6 +411,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 
 	sipe_core_connection_cleanup(sipe_private);
+	sipe_ews_autodiscover_free(sipe_private);
 	sipe_cal_calendar_free(sipe_private->calendar);
 	sipe_certificate_free(sipe_private);
 
