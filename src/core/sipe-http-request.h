@@ -89,8 +89,10 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
  * HTTP connection shutdown
  *
  * @param conn_public HTTP connection public data
+ * @param abort       @c TRUE if HTTP stack is shutting down
  */
-void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public);
+void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public,
+				gboolean abort);
 
 /**
  * Create new HTTP request (internal raw version)

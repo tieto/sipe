@@ -94,7 +94,8 @@ static void sipe_http_transport_free(gpointer data)
 
 	sipe_http_transport_update_timeout_queue(conn, TRUE);
 
-	sipe_http_request_shutdown(SIPE_HTTP_CONNECTION_PUBLIC);
+	sipe_http_request_shutdown(SIPE_HTTP_CONNECTION_PUBLIC,
+				   conn->public.sipe_private->http->shutting_down);
 
 	g_free(conn->public.host);
 
@@ -110,7 +111,7 @@ static void sipe_http_transport_drop(struct sipe_http *http,
 			conn->host_port,
 			message ? message : "REASON UNKNOWN");
 
-	/* this triggers sipe_http_transport_new */
+	/* this triggers sipe_http_transport_free */
 	g_hash_table_remove(http->connections,
 			    conn->host_port);
 }

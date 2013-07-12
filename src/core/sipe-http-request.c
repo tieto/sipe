@@ -81,11 +81,16 @@ struct sipe_http_request {
 #define SIPE_HTTP_REQUEST_FLAG_AUTHDATA 0x00000004
 
 static void sipe_http_request_free(struct sipe_core_private *sipe_private,
-				   struct sipe_http_request *req)
+				   struct sipe_http_request *req,
+				   guint status)
 {
 	if (req->cb)
-		/* Callback: aborted */
-		(*req->cb)(sipe_private, 0, NULL, NULL, req->cb_data);
+		/* Callback: aborted/failed/cancelled */
+		(*req->cb)(sipe_private,
+			   status,
+			   NULL,
+			   NULL,
+			   req->cb_data);
 	g_free(req->path);
 	g_free(req->headers);
 	g_free(req->body);
@@ -374,20 +379,28 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 
 	if (failed) {
 		/* Callback: request failed */
-		(*req->cb)(sipe_private, 0, NULL, NULL, req->cb_data);
+		(*req->cb)(sipe_private,
+			   SIPE_HTTP_STATUS_FAILED,
+			   NULL,
+			   NULL,
+			   req->cb_data);
 
 		/* remove failed request */
 		sipe_http_request_cancel(req);
 	}
 }
 
-void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
+void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public,
+				gboolean abort)
 {
 	if (conn_public->pending_requests) {
 		GSList *entry = conn_public->pending_requests;
 		while (entry) {
 			sipe_http_request_free(conn_public->sipe_private,
-					       entry->data);
+					       entry->data,
+					       abort ?
+					       SIPE_HTTP_STATUS_ABORTED :
+					       SIPE_HTTP_STATUS_FAILED);
 			entry = entry->next;
 		}
 		g_slist_free(conn_public->pending_requests);
@@ -481,7 +494,9 @@ void sipe_http_request_cancel(struct sipe_http_request *request)
 	/* cancelled by requester, don't use callback */
 	request->cb = NULL;
 
-	sipe_http_request_free(conn_public->sipe_private, request);
+	sipe_http_request_free(conn_public->sipe_private,
+			       request,
+			       SIPE_HTTP_STATUS_CANCELLED);
 }
 
 void sipe_http_request_session(struct sipe_http_request *request,
