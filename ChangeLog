@@ -1,3 +1,11 @@
+version 1.16.1 "Bug Fixes I" (2013-07-13)
+	- Feature #66: Windows DLL version information (Stefan Becker)
+	- fix call failure when host has multiple IP addresses (Jakub Adam)
+	- fix buddy list handling after moving to Lync 2013 (Stefan Becker)
+	  * Lync 2013 migrates buddy list to Unified Contact Store (UCS)
+	  * NOTE: modifying the buddy list is *NOT* supported yet!
+	- crash fixes for new HTTP stack (Stefan Becker)
+
 version 1.16.0 "HTTP Rewrite & Subscription Fixes" (2013-06-14)
 	- Feature #58: Implement Digest authentication scheme for SIP Proxy Authentication (Stefan Becker)
 	- Fixed #196: Useragent value not forwarded to core (Michael Lamb)
