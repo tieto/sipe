@@ -149,9 +149,12 @@ endif
 
 C_SRC =			$(CLEAN_C_SRC) $(PURPLE_C_SRC)
 
+RC_SRC =		libsiperc.rc
+
 CLEAN_OBJECTS =		$(CLEAN_C_SRC:%.c=%.o)
 PURPLE_OBJECTS = 	$(PURPLE_C_SRC:%.c=%.o)
-OBJECTS = 		$(CLEAN_OBJECTS) $(PURPLE_OBJECTS)
+RC_OBJECTS =		$(RC_SRC:%.rc=%.o)
+OBJECTS = 		$(CLEAN_OBJECTS) $(PURPLE_OBJECTS) $(RC_OBJECTS)
 
 # Only these modules need the purple headers
 $(PURPLE_OBJECTS):	INCLUDE_PATHS += $(PURPLE_INCLUDE_PATHS)
@@ -192,6 +195,14 @@ include $(PIDGIN_COMMON_RULES)
 
 all: $(TARGET).dll
 
+_comma = ,
+
+libsiperc.rc: libsiperc.rc.in
+	sed \
+		-e 's/@SIPE_VERSION@/$(VERSION)/' \
+		-e 's/#SIPE_VERSION#/$(subst .,$(_comma),$(VERSION))/' \
+		<$< >$@
+
 $(OBJECTS): $(PURPLE_CONFIG_H)
 
 $(TARGET).dll: $(PURPLE_DLL).a $(OBJECTS)
@@ -201,6 +212,7 @@ $(TARGET).dll: $(PURPLE_DLL).a $(OBJECTS)
 ## CLEAN RULES
 ##
 clean: tests-clean
+	rm -f $(RC_SRC)
 	rm -f $(OBJECTS)
 	rm -f $(TARGET).dll
 

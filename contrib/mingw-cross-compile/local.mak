@@ -1,14 +1,19 @@
-ifneq ($(wildcard /bin/i686-w64-mingw32-*),)
+#
+# Fedora 19+: upgrade to mingw32-gcc 4.8.x breaks backward compatibility.
+#             Fetch F18 packages of mingw32-gcc and set PIDGIN_MINGW_ROOT
+# 	      and LD_LIBRARY_PATH to the local install root.
+#
+ifneq ($(wildcard $(PIDGIN_MINGW_ROOT)/bin/i686-w64-mingw32-*),)
 # Fedora 17+
-CC       := /bin/i686-w64-mingw32-gcc
-STRIP    := /bin/i686-w64-mingw32-strip
-WINDRES  := /bin/i686-w64-mingw32-windres
+CC       := $(PIDGIN_MINGW_ROOT)/bin/i686-w64-mingw32-gcc
+STRIP    := $(PIDGIN_MINGW_ROOT)/bin/i686-w64-mingw32-strip
+WINDRES  := $(PIDGIN_MINGW_ROOT)/bin/i686-w64-mingw32-windres
 EXTUTILS := /usr/share/perl5/ExtUtils
-else ifneq ($(wildcard /usr/bin/i686-pc-mingw32-*),)
+else ifneq ($(wildcard $(PIDGIN_MINGW_ROOT)/usr/bin/i686-pc-mingw32-*),)
 # Fedora
-CC       := /usr/bin/i686-pc-mingw32-gcc
-STRIP    := /usr/bin/i686-pc-mingw32-strip
-WINDRES  := /usr/bin/i686-pc-mingw32-windres
+CC       := $(PIDGIN_MINGW_ROOT)/usr/bin/i686-pc-mingw32-gcc
+STRIP    := $(PIDGIN_MINGW_ROOT)/usr/bin/i686-pc-mingw32-strip
+WINDRES  := $(PIDGIN_MINGW_ROOT)/usr/bin/i686-pc-mingw32-windres
 EXTUTILS := /usr/share/perl5/ExtUtils
 else
 # Ubuntu

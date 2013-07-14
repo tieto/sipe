@@ -1,7 +1,33 @@
 -------------------------------------------------------------------
-Sat Jun  8 16:58:00 UTC 2013 - chemobejk@gmail.com
+Sat Jul 13 13:22:00 UTC 2013 - chemobejk@gmail.com
 
-- Update to version 1.16.0
+ - Update to version 1.16.1
+
+-------------------------------------------------------------------
+Sat Jun 22 10:41:37 UTC 2013 - zaitor@opensuse.org
+
+- Update to version 1.16.0:
+  + sf#58: Implement Digest authentication scheme for SIP Proxy
+    Authentication.
+  + sf#196: Useragent value not forwarded to core.
+  + sf#193: Pidgin Status changes stop working.
+  + sf#186: Users appear offline when they are not.
+  + Fix kinit-less use case with krb5 >= 1.11.
+  + Rewritten HTTP stack from scratch:
+    - cleaner, layered and hopefully less error-prone
+      implementation.
+    - HTTP stack internals no longer exposed to user code.
+    - Reduced network traffic and less SSL handshakes by utilizing
+      HTTP/1.1 connection keep alive for multiple HTTP requests to
+      the same host.
+  + Switch purple backend to deferred destruction approach:
+    - Pidgin should no longer crash at connection close, even in
+      corner cases.
+  + Add menu entry to make a call with a phone number.
+  + Some progress on telepathy backend.
+    - Add TLS certificate accept/reject user interaction.
+    - Add "Single Sign-On" & "Don't Publish Calendar" account
+      options.
 
 -------------------------------------------------------------------
 Sat Apr 13 13:48:45 UTC 2013 - dimstar@opensuse.org

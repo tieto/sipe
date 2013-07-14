@@ -53,7 +53,7 @@
  * Diagnostic #pragma was added in GCC 4.2.0
  */
 #if defined(__GNUC__) && (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2)
-#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__)
+#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__) || (defined(__powerpc__) && defined(__NO_FPRS__))
 #pragma GCC diagnostic ignored "-Wcast-align"
 #endif
 #endif
