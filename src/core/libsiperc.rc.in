@@ -1,0 +1,30 @@
+#include <winver.h>
+
+VS_VERSION_INFO VERSIONINFO
+  FILEVERSION #SIPE_VERSION#,0
+  PRODUCTVERSION #SIPE_VERSION#,0
+  FILEFLAGSMASK 0
+  FILEFLAGS 0
+  FILEOS VOS__WINDOWS32
+  FILETYPE VFT_DLL
+  FILESUBTYPE VFT2_UNKNOWN
+  BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+      BLOCK "040904B0"
+      BEGIN
+        VALUE "CompanyName", "SIPE Project <http://sipe.sourceforge.net/>"
+        VALUE "FileDescription", "LibSipe third-party plugin for LibPurple"
+        VALUE "FileVersion", "@SIPE_VERSION@"
+        VALUE "InternalName", "libsipe"
+        VALUE "LegalCopyright", "Copyright (C) 2010-2013 SIPE Project (See the COPYRIGHT file in the source distribution)."
+        VALUE "OriginalFilename", "libsipe.dll"
+        VALUE "ProductName", "LibSipe"
+        VALUE "ProductVersion", "@SIPE_VERSION@"
+      END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+      VALUE "Translation", 0x409, 1200
+    END
+  END

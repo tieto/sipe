@@ -441,9 +441,11 @@ static void sipe_ews_process_autodiscover(SIPE_UNUSED_PARAMETER struct sipe_core
 
 static void sipe_ews_send_http_request(struct sipe_calendar *cal)
 {
-	sipe_cal_http_authentication(cal);
-	sipe_http_request_allow_redirect(cal->request);
-	sipe_http_request_ready(cal->request);
+	if (cal->request) {
+		sipe_cal_http_authentication(cal);
+		sipe_http_request_allow_redirect(cal->request);
+		sipe_http_request_ready(cal->request);
+	}
 }
 
 static void sipe_ews_do_autodiscover(struct sipe_calendar *cal,

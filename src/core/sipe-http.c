@@ -38,9 +38,11 @@
 
 void sipe_http_parsed_uri_free(struct sipe_http_parsed_uri *parsed_uri)
 {
-	g_free(parsed_uri->host);
-	g_free(parsed_uri->path);
-	g_free(parsed_uri);
+	if (parsed_uri) {
+		g_free(parsed_uri->host);
+		g_free(parsed_uri->path);
+		g_free(parsed_uri);
+	}
 }
 
 struct sipe_http_parsed_uri *sipe_http_parse_uri(const gchar *uri)

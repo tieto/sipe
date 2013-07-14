@@ -78,10 +78,11 @@ static gint timeout_compare(gconstpointer a,
 	       ((struct sipe_http_connection *) b)->timeout);
 }
 
+static void sipe_http_transport_update_timeout_queue(struct sipe_http_connection *conn,
+						     gboolean remove);
 static void sipe_http_transport_free(gpointer data)
 {
 	struct sipe_http_connection *conn = data;
-	struct sipe_http *http = conn->public.sipe_private->http;
 
 	SIPE_DEBUG_INFO("sipe_http_transport_free: destroying connection '%s'",
 			conn->host_port);
@@ -90,7 +91,7 @@ static void sipe_http_transport_free(gpointer data)
 		sipe_backend_transport_disconnect(conn->connection);
 	conn->connection = NULL;
 
-	g_queue_remove(http->timeouts, conn);
+	sipe_http_transport_update_timeout_queue(conn, TRUE);
 
 	sipe_http_request_shutdown(SIPE_HTTP_CONNECTION_PUBLIC);
 

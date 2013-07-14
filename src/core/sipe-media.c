@@ -133,6 +133,7 @@ get_stream_ip_and_ports(GSList *candidates,
 			gchar **ip, guint *rtp_port, guint *rtcp_port,
 			SipeCandidateType type)
 {
+	*ip = 0;
 	*rtp_port = 0;
 	*rtcp_port = 0;
 
@@ -140,9 +141,14 @@ get_stream_ip_and_ports(GSList *candidates,
 		struct sdpcandidate *candidate = candidates->data;
 
 		if (type == SIPE_CANDIDATE_TYPE_ANY || candidate->type == type) {
+			if (!*ip) {
+				*ip = g_strdup(candidate->ip);
+			} else if (!sipe_strequal(*ip, candidate->ip)) {
+				continue;
+			}
+
 			if (candidate->component == SIPE_COMPONENT_RTP) {
 				*rtp_port = candidate->port;
-				*ip = g_strdup(candidate->ip);
 			} else if (candidate->component == SIPE_COMPONENT_RTCP)
 				*rtcp_port = candidate->port;
 		}
