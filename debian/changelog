@@ -6,6 +6,7 @@ pidgin-sipe (1.16.1-1) UNRELEASED; urgency=low
           * Lync 2013 migrates buddy list to Unified Contact Store (UCS)
           * NOTE: modifying the buddy list is *NOT* supported yet!
         - crash fixes for new HTTP stack
+  * Bumped debhelper compat to level 9, reworked d/rules to use dh.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 14 Jul 2013 11:41:17 +0200
 

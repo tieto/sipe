@@ -1,77 +1,24 @@
 #!/usr/bin/make -f
 
-DEB_HOST_GNU_TYPE   ?= $(shell dpkg-architecture -qDEB_HOST_GNU_TYPE)
-DEB_BUILD_GNU_TYPE  ?= $(shell dpkg-architecture -qDEB_BUILD_GNU_TYPE)
-
-DPKG_EXPORT_BUILDFLAGS = 1
-include /usr/share/dpkg/buildflags.mk
-
 DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple --disable-telepathy
- 
-# don't run unnecessary ldconfig on postinst and postrm.
-DEB_DH_MAKESHLIBS_ARGS_pidgin-sipe=-n
 
-config.status:
-	dh_testdir
+%:
+	dh $@
+
+override_dh_auto_configure:
 	./autogen.sh
-	./configure --host=$(DEB_HOST_GNU_TYPE) \
-	--build=$(DEB_BUILD_GNU_TYPE) --prefix=/usr $(DEB_CONFIGURE_EXTRA_FLAGS)
+	dh_auto_configure -- $(DEB_CONFIGURE_EXTRA_FLAGS)
 
-build: build-arch build-indep
+override_dh_auto_install:
+	dh_auto_install
 
-build-arch: build-stamp
-
-build-indep: build-stamp
-
-build-stamp: config.status
-	dh_testdir
-
-	$(MAKE)
-	touch build-stamp
-
-clean:
-	dh_testdir
-	dh_testroot
-	rm -f build-stamp configure-stamp
-	[ ! -f Makefile ] || $(MAKE) distclean
-	-rm -f config.sub config.guess config.log configure aclocal.m4 libtool \
-	  INSTALL compile config.h.in depcomp install-sh intltool-extract.in \
-	  intltool-merge.in intltool-update.in ltmain.sh missing mkinstalldirs
-	find \( -name Makefile.in -o -name Makefile.in.in \) -delete
-	dh_clean
-
-install: build
-	dh_testdir
-	dh_testroot
-	dh_clean -k 
-	dh_installdirs
-# Add here commands to install the package into debian/gsetroot.
 	dh_install debian/extra/pidgin usr/bin
 	dh_install debian/extra/pidgin-sipe etc/default
 
-	$(MAKE) install DESTDIR=$(CURDIR)/debian/pidgin-sipe
-	-rm -rf $(CURDIR)/debian/pidgin-sipe/usr/share/doc/pidgin-sipe/README
-	-rm -rf $(CURDIR)/debian/pidgin-sipe/usr/lib/purple-2/libsipe.la
-
-binary-indep: build install
-
-binary-arch: build install
-	dh_testdir
-	dh_testroot
-	dh_installdocs --link-doc=pidgin-sipe
-	dh_installchangelogs ChangeLog
-	dh_installmenu
-	dh_lintian
-	dh_link
+override_dh_strip:
 	dh_strip --dbg-package=pidgin-sipe-dbg
-	dh_compress
-	dh_fixperms
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol
-	dh_md5sums
-	dh_builddeb
 
-binary: binary-indep binary-arch
+override_dh_installdocs:
+	dh_installdocs --link-doc=pidgin-sipe
 
-.PHONY: build build-arch build-indep clean binary-indep binary-arch binary install
+.PHONY: override_dh_auto_configure override_dh_auto_install override_dh_strip override_dh_installdocs
