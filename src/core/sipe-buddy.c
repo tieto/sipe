@@ -1376,8 +1376,11 @@ static void get_photo_ab_entry_failed(SIPE_UNUSED_PARAMETER struct sipe_core_pri
 static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 			      const gchar *uri)
 {
-	if (sipe_backend_uses_photo() &&
-	    sipe_private->dlx_uri && sipe_private->addressbook_uri) {
+	/* On Lync2013+ [MS-DLX] no longer returns buddy photo information */
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) &&
+	    sipe_backend_uses_photo()            &&
+	    sipe_private->dlx_uri                &&
+	    sipe_private->addressbook_uri) {
 		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
 		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup("msRTCSIP-PrimaryUserAddress"));
