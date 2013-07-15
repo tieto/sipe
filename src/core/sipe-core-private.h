@@ -186,6 +186,8 @@ struct sipe_core_private {
 #define SIPE_CORE_PRIVATE_FLAG_SUBSCRIBED_BUDDIES 0x01000000
 /* user enabled Single-Sign On */
 #define SIPE_CORE_PRIVATE_FLAG_SSO                0x00800000
+/* server is Lync 2013+ */
+#define SIPE_CORE_PRIVATE_FLAG_LYNC2013           0x00400000
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)

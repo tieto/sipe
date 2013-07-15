@@ -1249,6 +1249,14 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	 *    * NOTIFY send by server with standard list
 	 */
 	if (sipe_strequal(sipe_xml_name(isc), "contactList")) {
+		const gchar *ucsmode = sipe_xml_attribute(isc, "ucsmode");
+
+		SIPE_CORE_PRIVATE_FLAG_UNSET(LYNC2013);
+		if (ucsmode) {
+			SIPE_CORE_PRIVATE_FLAG_SET(LYNC2013);
+			SIPE_DEBUG_INFO_NOFORMAT("contact list contains 'ucsmode' attribute (indicates Lync 2013+)");
+		}
+
 		group_node = sipe_xml_child(isc, "group");
 		item = sipe_xml_child(isc, "contact");
 
