@@ -21,4 +21,15 @@ override_dh_strip:
 override_dh_installdocs:
 	dh_installdocs --link-doc=pidgin-sipe
 
-.PHONY: override_dh_auto_configure override_dh_auto_install override_dh_strip override_dh_installdocs
+override_dh_auto_clean:
+	# Preserve pot file from being deleted as it's a part of orig tarball.
+	mv po/pidgin-sipe.pot po/pidgin-sipe.pot.keep
+	dh_auto_clean
+	mv po/pidgin-sipe.pot.keep po/pidgin-sipe.pot
+
+	rm -f GITVERSION INSTALL aclocal.m4 compile config.guess config.h.in config.sub configure \
+		depcomp install-sh intltool-extract.in intltool-merge.in intltool-update.in ltmain.sh \
+		missing test-driver
+	find -type f -name Makefile.in\* -delete
+
+.PHONY: override_dh_auto_configure override_dh_auto_install override_dh_strip override_dh_installdocs override_dh_auto_clean
