@@ -31,8 +31,8 @@
  *   <http://technet.microsoft.com/en-us/library/ee323524%28office.13%29.aspx>
  *  Microsoft Office Communications Server 2007 R2 Technical Reference Guide
  *   <http://go.microsoft.com/fwlink/?LinkID=159649>
- *  XML XCCOS message specification
- *   <???> (searches on the internet currently reveal nothing)
+ *  Microsoft DevNet: [MS-XCCOSIP] Extensible Chat Control Over SIP
+ *   <http://msdn.microsoft.com/en-us/library/hh624112.aspx>
  *
  *
  * @TODO:
