@@ -545,7 +545,7 @@ static void chatserver_response_uri(struct sipe_core_private *sipe_private,
 			session->is_groupchat = TRUE;
 			sipe_im_invite(sipe_private, session, uri, NULL, NULL, NULL, FALSE);
 		} else {
-			SIPE_DEBUG_WARNING_NOFORMAT("process_incoming_info_groupchat: no server URI found!");
+			SIPE_DEBUG_WARNING_NOFORMAT("chatserver_response_uri: no server URI found!");
 			groupchat_init_retry(sipe_private);
 		}
 }
@@ -979,19 +979,39 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 {
 	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
 	const sipe_xml *node;
+	const gchar *callid;
+	struct sip_dialog *dialog;
 
 	/* @TODO: is this always correct?*/
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 
 	if (!xml) return;
 
-	if        (((node = sipe_xml_child(xml, "rpl")) != NULL) ||
-		   ((node = sipe_xml_child(xml, "ntc")) != NULL)) {
-		chatserver_response(sipe_private, node, session);
-	} else if ((node = sipe_xml_child(xml, "grpchat")) != NULL) {
-		chatserver_grpchat_message(sipe_private, node);
+	callid = sipmsg_find_header(msg, "Call-ID");
+	dialog = sipe_dialog_find(session, session->with);
+	if (sipe_strequal(callid, dialog->callid)) {
+
+		if        (((node = sipe_xml_child(xml, "rpl")) != NULL) ||
+			   ((node = sipe_xml_child(xml, "ntc")) != NULL)) {
+			chatserver_response(sipe_private, node, session);
+		} else if ((node = sipe_xml_child(xml, "grpchat")) != NULL) {
+			chatserver_grpchat_message(sipe_private, node);
+		} else {
+			SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
+		}
+
 	} else {
-		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
+		/*
+		 * Our last session got disconnected without proper shutdown,
+		 * e.g. by Pidgin crashing or network connection loss. When
+		 * we reconnect to the group chat the server will send INFO
+		 * messages to the current *AND* the obsolete Call-ID, until
+		 * the obsolete session expires.
+		 *
+		 * Ignore these INFO messages to avoid, e.g. duplicate texts
+		 */
+		SIPE_DEBUG_INFO("process_incoming_info_groupchat: ignoring unsolicited INFO message to obsolete Call-ID: %s",
+				callid);
 	}
 
 	sipe_xml_free(xml);
