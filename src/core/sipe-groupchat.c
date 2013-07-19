@@ -33,6 +33,8 @@
  *   <http://go.microsoft.com/fwlink/?LinkID=159649>
  *  Microsoft DevNet: [MS-XCCOSIP] Extensible Chat Control Over SIP
  *   <http://msdn.microsoft.com/en-us/library/hh624112.aspx>
+ *  RFC 4028: Session Timers in the Session Initiation Protocol (SIP)
+ *   <http://www.rfc-editor.org/rfc/rfc4028.txt>
  *
  *
  * @TODO:
@@ -163,6 +165,7 @@ struct sipe_groupchat {
 	GHashTable *uri_to_chat_session;
 	GHashTable *msgs;
 	guint envid;
+	guint expires;
 	gboolean connected;
 };
 
@@ -303,7 +306,7 @@ static void groupchat_init_retry(struct sipe_core_private *sipe_private)
 	groupchat->connected = FALSE;
 
 	sipe_schedule_seconds(sipe_private,
-			      "<+grouchat-retry>",
+			      "<+groupchat-retry>",
 			      NULL,
 			      GROUPCHAT_RETRY_TIMEOUT,
 			      groupchat_init_retry_cb,
@@ -368,11 +371,29 @@ static gchar *generate_chanid_node(const gchar *uri, guint key)
 	return chanid;
 }
 
+/* sipe_schedule_action */
+static void groupchat_update_cb(struct sipe_core_private *sipe_private,
+				SIPE_UNUSED_PARAMETER gpointer data)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+	struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
+						     groupchat->session->with);
+
+	sip_transport_update(sipe_private, dialog);
+	sipe_schedule_seconds(sipe_private,
+			      "<+groupchat-expires>",
+			      NULL,
+			      groupchat->expires,
+			      groupchat_update_cb,
+			      NULL);
+}
+
 static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *sipe_private,
 						     const gchar *cmd);
 
 void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
-				    struct sip_dialog *dialog)
+				    struct sip_dialog *dialog,
+				    struct sipmsg *response)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 
@@ -382,12 +403,33 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 		/* response to initial invite */
 		struct sipe_groupchat_msg *msg = generate_xccos_message(groupchat,
 									"<cmd id=\"cmd:requri\" seqid=\"1\"><data/></cmd>");
+		const gchar *session_expires = sipmsg_find_header(response,
+								  "Session-Expires");
+
 		sip_transport_info(sipe_private,
 				   "Content-Type: text/plain\r\n",
 				   msg->xccos,
 				   dialog,
 				   NULL);
 		sipe_groupchat_msg_remove(msg);
+
+		if (session_expires) {
+			groupchat->expires = strtoul(session_expires, NULL, 10);
+
+			if (groupchat->expires) {
+				SIPE_DEBUG_INFO("sipe_groupchat_invite_response: session expires in %d seconds",
+						groupchat->expires);
+
+				if (groupchat->expires > 10)
+					groupchat->expires -= 10;
+				sipe_schedule_seconds(sipe_private,
+						      "<+groupchat-expires>",
+						      NULL,
+						      groupchat->expires,
+						      groupchat_update_cb,
+						      NULL);
+			}
+		}
 
 	} else {
 		/* response to group chat server invite */
