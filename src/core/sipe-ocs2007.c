@@ -45,7 +45,6 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-ews.h"
-#include "sipe-groupchat.h"
 #include "sipe-media.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2007.h"
@@ -2430,7 +2429,6 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 	 */
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH)) {
 		send_publish_category_initial(sipe_private);
-		sipe_groupchat_init(sipe_private);
 		SIPE_CORE_PRIVATE_FLAG_SET(INITIAL_PUBLISH);
 		/* dalayed run */
 		sipe_cal_delayed_calendar_update(sipe_private);

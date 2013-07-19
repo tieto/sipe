@@ -340,8 +340,10 @@ static void sipe_subscribe_roaming_provisioning_v2(struct sipe_core_private *sip
 			    "Expires: 0\r\n"
 			    "Content-Type: application/vnd-microsoft-roaming-provisioning-v2+xml\r\n",
 			    "<provisioningGroupList xmlns=\"http://schemas.microsoft.com/2006/09/sip/provisioninggrouplist\">"
-			    "<provisioningGroup name=\"ServerConfiguration\"/><provisioningGroup name=\"meetingPolicy\"/>"
-			    "<provisioningGroup name=\"ucPolicy\"/>"
+			    " <provisioningGroup name=\"ServerConfiguration\"/>"
+			    " <provisioningGroup name=\"meetingPolicy\"/>"
+			    " <provisioningGroup name=\"persistentChatConfiguration\"/>"
+			    " <provisioningGroup name=\"ucPolicy\"/>"
 			    "</provisioningGroupList>");
 }
 

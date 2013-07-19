@@ -137,6 +137,7 @@ struct sipe_core_private {
 
 	/* Group chat */
 	struct sipe_groupchat *groupchat;
+	gchar *persistentChatPool_uri;
 
 	/* buddy menu memory allocation */
 	GSList *blist_menu_containers;

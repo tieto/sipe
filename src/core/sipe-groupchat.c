@@ -246,9 +246,12 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 {
 	const gchar *setting = sipe_backend_setting(SIPE_CORE_PUBLIC,
 						    SIPE_SETTING_GROUPCHAT_USER);
-	gboolean user_set = !is_empty(setting);
-	gchar **parts = g_strsplit(user_set ? setting : sipe_private->username,
-				   "@", 2);
+	const gchar *persistent = sipe_private->persistentChatPool_uri;
+	gboolean user_set    = !is_empty(setting);
+	gboolean provisioned = !is_empty(persistent);
+	gchar **parts = g_strsplit(user_set ? setting :
+				   provisioned ? persistent :
+				   sipe_private->username, "@", 2);
 	gboolean domain_found = !is_empty(parts[1]);
 	const gchar *user = "ocschat";
 	const gchar *domain = parts[domain_found ? 1 : 0];
@@ -256,13 +259,14 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 	struct sip_session *session;
 	struct sipe_groupchat *groupchat;
 
-	/* User specified valid 'user@company.com' */
-	if (user_set && domain_found && !is_empty(parts[0]))
+	/* User specified or provisioned URI is valid 'user@company.com' */
+	if ((user_set || provisioned) && domain_found && !is_empty(parts[0]))
 		user = parts[0];
 
-	SIPE_DEBUG_INFO("sipe_groupchat_init: username '%s' setting '%s' split '%s'/'%s' GC user %s@%s",
-			sipe_private->username, setting ? setting : "(null)", parts[0],
-			parts[1] ? parts[1] : "(null)", user, domain);
+	SIPE_DEBUG_INFO("sipe_groupchat_init: username '%s' setting '%s' persistent '%s' split '%s'/'%s' GC user %s@%s",
+			sipe_private->username, setting ? setting : "(null)",
+			persistent ? persistent : "(null)",
+			parts[0], parts[1] ? parts[1] : "(null)", user, domain);
 
 	if (!sipe_private->groupchat)
 		sipe_groupchat_allocate(sipe_private);

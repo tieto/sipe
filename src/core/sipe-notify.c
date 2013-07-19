@@ -45,6 +45,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-group.h"
+#include "sipe-groupchat.h"
 #include "sipe-media.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
@@ -87,8 +88,13 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 	xn_provision_group_list = sipe_xml_parse(msg->body, msg->bodylen);
 
 	/* provisionGroup */
-	for (node = sipe_xml_child(xn_provision_group_list, "provisionGroup"); node; node = sipe_xml_twin(node)) {
-		if (sipe_strequal("ServerConfiguration", sipe_xml_attribute(node, "name"))) {
+	for (node = sipe_xml_child(xn_provision_group_list, "provisionGroup");
+	     node;
+	     node = sipe_xml_twin(node)) {
+		const gchar *node_name = sipe_xml_attribute(node, "name");
+
+		/* ServerConfiguration */
+		if (sipe_strequal("ServerConfiguration", node_name)) {
 			const gchar *dlx_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
 					"dlxExternalUrl" : "dlxInternalUrl";
 			const gchar *addressbook_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
@@ -123,8 +129,39 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 			if (sipe_private->mras_uri)
 					sipe_media_get_av_edge_credentials(sipe_private);
 #endif
-			break;
+
+		/* persistentChatConfiguration */
+		} else if (sipe_strequal("persistentChatConfiguration", node_name)) {
+			const sipe_xml *property;
+			gboolean enabled = FALSE;
+			gchar *uri = NULL;
+
+			for (property = sipe_xml_child(node, "propertyEntryList/property");
+			     property;
+			     property = sipe_xml_twin(property)) {
+				const gchar *name = sipe_xml_attribute(property, "name");
+				gchar *value = sipe_xml_data(property);
+
+				if (sipe_strequal(name, "EnablePersistentChat")) {
+					enabled = sipe_strequal(value, "true");
+
+				} else if (sipe_strequal(name, "DefaultPersistentChatPoolUri")) {
+					g_free(uri);
+					uri = value;
+					value = NULL;
+				}
+				g_free(value);
+			}
+
+			if (enabled) {
+				g_free(sipe_private->persistentChatPool_uri);
+				sipe_private->persistentChatPool_uri = g_strdup(sipe_get_no_sip_uri(uri));
+				SIPE_DEBUG_INFO("sipe_process_provisioning_v2: sipe_private->persistentChatPool_uri=%s",
+						sipe_private->persistentChatPool_uri ? sipe_private->persistentChatPool_uri : "");
+			}
+			g_free(uri);
 		}
+
 	}
 	sipe_xml_free(xn_provision_group_list);
 
@@ -134,6 +171,10 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 		 * trigger an update of their photos. */
 		sipe_buddy_refresh_photos(sipe_private);
 	}
+
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
+		/* persistentChatPool_uri has been set at this point */
+		sipe_groupchat_init(sipe_private);
 }
 
 static void process_incoming_notify_rlmi_resub(struct sipe_core_private *sipe_private,
