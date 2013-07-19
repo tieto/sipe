@@ -1426,6 +1426,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					/* Are we registered? */
 					if (transport->reregister_set) {
 						SIPE_DEBUG_INFO_NOFORMAT("process_input_message: 401 response to non-REGISTER message. Retrying with new authentication.");
+						sipmsg_remove_header_now(trans->msg, "Authorization");
 						sign_outgoing_message(sipe_private,
 								      trans->msg);
 					} else {
