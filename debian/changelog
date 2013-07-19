@@ -1,4 +1,4 @@
-pidgin-sipe (1.16.1-1) UNRELEASED; urgency=low
+pidgin-sipe (1.16.1-1) unstable; urgency=low
 
   * New upstream release (Closes: #714354).
         - fix call failure when host has multiple IP addresses
@@ -10,7 +10,7 @@ pidgin-sipe (1.16.1-1) UNRELEASED; urgency=low
   * Fixed clean target to remove all generated files.
   * Removed autotools-dev from Build-Depends.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 14 Jul 2013 11:41:17 +0200
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 19 Jul 2013 19:37:24 +0200
 
 pidgin-sipe (1.16.0-1) unstable; urgency=low
 
