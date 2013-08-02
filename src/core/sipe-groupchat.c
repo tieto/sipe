@@ -75,9 +75,6 @@
  *
  *     use this to sync chats in buddy list on multiple clients?
  *
- *   - cmd:bccontext
- *     send after cmd:join to trigger rpl:bccontext
- *
  *   - rpl:bccontext
  *     according to available documentation delivers channel history, etc.
  *     [no log file examples]
@@ -694,7 +691,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 											     uri);
 				gboolean new = (chat_session == NULL);
 				const gchar *attr = sipe_xml_attribute(node, "name");
-				char *self = sip_uri_self(sipe_private);
+				gchar *self = sip_uri_self(sipe_private);
 				const sipe_xml *aib;
 
 				if (new) {
@@ -755,6 +752,16 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 						g_strfreev(ids);
 					}
 				}
+
+				/* Request last 25 entries from channel history */
+				self = g_strdup_printf("<cmd id=\"cmd:bccontext\" seqid=\"1\">"
+						       "<data>"
+						       "<chanib uri=\"%s\"/>"
+						       "<bcq><last cnt=\"25\"/></bcq>"
+						       "</data>"
+						       "</cmd>", chat_session->id);
+				chatserver_command(sipe_private, self);
+				g_free(self);
 			}
 		}
 
