@@ -75,12 +75,6 @@
  *
  *     use this to sync chats in buddy list on multiple clients?
  *
- *   - rpl:bccontext
- *     according to available documentation delivers channel history, etc.
- *     [no log file examples]
- *     can we add the history to the window when we open the window, or would
- *     that confuse users that use history based on client log?
- *
  *   - cmd:getinv
  *       <inv inviteId="1" domain="<DOMAIN>" />
  *     rpl:getinv
@@ -769,6 +763,16 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void chatserver_response_history(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+					SIPE_UNUSED_PARAMETER struct sip_session *session,
+					SIPE_UNUSED_PARAMETER guint result,
+					SIPE_UNUSED_PARAMETER const gchar *message,
+					SIPE_UNUSED_PARAMETER const sipe_xml *xml)
+{
+	/* @TODO */
+	SIPE_DEBUG_INFO_NOFORMAT("chatserver_response_history: history received");
+}
+
 static void chatserver_response_part(struct sipe_core_private *sipe_private,
 				     SIPE_UNUSED_PARAMETER struct sip_session *session,
 				     guint result,
@@ -890,14 +894,15 @@ static const struct response {
 			       guint result, const gchar *,
 			       const sipe_xml *xml);
 } response_table[] = {
-	{ "rpl:requri",   chatserver_response_uri },
-	{ "rpl:chansrch", chatserver_response_channel_search },
-	{ "rpl:join",     chatserver_response_join },
-	{ "rpl:bjoin",    chatserver_response_join },
-	{ "rpl:part",     chatserver_response_part },
-	{ "ntc:join",     chatserver_notice_join },
-	{ "ntc:bjoin",    chatserver_notice_join },
-	{ "ntc:part",     chatserver_notice_part },
+	{ "rpl:requri",    chatserver_response_uri },
+	{ "rpl:chansrch",  chatserver_response_channel_search },
+	{ "rpl:join",      chatserver_response_join },
+	{ "rpl:bjoin",     chatserver_response_join },
+	{ "rpl:bccontext", chatserver_response_history },
+	{ "rpl:part",      chatserver_response_part },
+	{ "ntc:join",      chatserver_notice_join },
+	{ "ntc:bjoin",     chatserver_notice_join },
+	{ "ntc:part",      chatserver_notice_part },
 	{ NULL, NULL }
 };
 
