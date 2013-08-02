@@ -763,14 +763,21 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
+				       const sipe_xml *chatgrp);
+
 static void chatserver_response_history(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
 					SIPE_UNUSED_PARAMETER struct sip_session *session,
 					SIPE_UNUSED_PARAMETER guint result,
 					SIPE_UNUSED_PARAMETER const gchar *message,
-					SIPE_UNUSED_PARAMETER const sipe_xml *xml)
+					const sipe_xml *xml)
 {
-	/* @TODO */
-	SIPE_DEBUG_INFO_NOFORMAT("chatserver_response_history: history received");
+	const sipe_xml *grpchat;
+
+	for (grpchat = sipe_xml_child(xml, "grpchat");
+	     grpchat;
+	     grpchat = sipe_xml_twin(grpchat))
+		chatserver_grpchat_message(sipe_private, grpchat);
 }
 
 static void chatserver_response_part(struct sipe_core_private *sipe_private,
