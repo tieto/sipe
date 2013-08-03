@@ -85,7 +85,7 @@
  *     should we automatically join those channels or ask user to join/add?
  *
  *   - chatserver_command_message()
- *     needs to support multiple <chatgrp> nodes?
+ *     needs to support multiple <grpchat> nodes?
  *     [no log file examples]
  *
  *   - create/delete chat rooms
@@ -764,7 +764,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 }
 
 static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
-				       const sipe_xml *chatgrp);
+				       const sipe_xml *grpchat);
 
 static void chatserver_response_history(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
 					SIPE_UNUSED_PARAMETER struct sip_session *session,
@@ -774,10 +774,12 @@ static void chatserver_response_history(SIPE_UNUSED_PARAMETER struct sipe_core_p
 {
 	const sipe_xml *grpchat;
 
-	for (grpchat = sipe_xml_child(xml, "grpchat");
+	for (grpchat = sipe_xml_child(xml, "chanib/msg");
 	     grpchat;
 	     grpchat = sipe_xml_twin(grpchat))
-		chatserver_grpchat_message(sipe_private, grpchat);
+		if (sipe_strequal(sipe_xml_attribute(grpchat, "id"),
+				  "grpchat"))
+			chatserver_grpchat_message(sipe_private, grpchat);
 }
 
 static void chatserver_response_part(struct sipe_core_private *sipe_private,
@@ -959,12 +961,12 @@ static void chatserver_response(struct sipe_core_private *sipe_private,
 }
 
 static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
-				       const sipe_xml *chatgrp)
+				       const sipe_xml *grpchat)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	const gchar *uri = sipe_xml_attribute(chatgrp, "chanUri");
-	const gchar *from = sipe_xml_attribute(chatgrp, "author");
-	gchar *text = sipe_xml_data(sipe_xml_child(chatgrp, "chat"));
+	const gchar *uri = sipe_xml_attribute(grpchat, "chanUri");
+	const gchar *from = sipe_xml_attribute(grpchat, "author");
+	gchar *text = sipe_xml_data(sipe_xml_child(grpchat, "chat"));
 	struct sipe_chat_session *chat_session;
 	gchar *escaped;
 
