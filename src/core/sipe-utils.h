@@ -317,7 +317,9 @@ gint sipe_strcompare(gconstpointer a, gconstpointer b);
  * Parses a timestamp in ISO8601 format and returns a time_t.
  * Assumes UTC if no timezone specified
  *
- * @param timestamp The timestamp
+ * @param timestamp The timestamp (may be @c NULL)
+ *
+ * @return time_t or 0 if timestamp parsing failed
  */
 time_t
 sipe_utils_str_to_time(const gchar *timestamp);
