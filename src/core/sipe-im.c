@@ -639,6 +639,7 @@ void sipe_im_process_queue(struct sipe_core_private *sipe_private,
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
 						  session->chat_session->backend,
 						  who,
+						  0,
 						  msg->body);
 			g_free(who);
 		}

@@ -990,7 +990,7 @@ static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
 	escaped = g_markup_escape_text(text, -1);
 	g_free(text);
 	sipe_backend_chat_message(SIPE_CORE_PUBLIC, chat_session->backend,
-				  from, escaped);
+				  from, 0, escaped);
 	g_free(escaped);
 }
 
