@@ -966,6 +966,7 @@ static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	const gchar *uri = sipe_xml_attribute(grpchat, "chanUri");
 	const gchar *from = sipe_xml_attribute(grpchat, "author");
+	time_t when = sipe_utils_str_to_time(sipe_xml_attribute(grpchat, "ts"));
 	gchar *text = sipe_xml_data(sipe_xml_child(grpchat, "chat"));
 	struct sipe_chat_session *chat_session;
 	gchar *escaped;
@@ -990,7 +991,7 @@ static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
 	escaped = g_markup_escape_text(text, -1);
 	g_free(text);
 	sipe_backend_chat_message(SIPE_CORE_PUBLIC, chat_session->backend,
-				  from, 0, escaped);
+				  from, when, escaped);
 	g_free(escaped);
 }
 
