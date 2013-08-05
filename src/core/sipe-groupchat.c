@@ -1045,6 +1045,7 @@ void sipe_groupchat_send(struct sipe_core_private *sipe_private,
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	gchar *cmd, *self, *timestamp, *tmp;
+	gchar **lines, **strvp;
 	struct sipe_groupchat_msg *msg;
 
 	if (!groupchat || !chat_session)
@@ -1066,10 +1067,22 @@ void sipe_groupchat_send(struct sipe_core_private *sipe_private,
 	 *
 	 * No need to escape them here.
 	 *
-	 * Only exception are line breaks which are encoded as <br>.
-	 * Replace them with the correct XML tag <br/>.
+	 * Group Chat only accepts plain text, not full HTML. So we have to
+	 * strip all HTML tags from the text.
+	 *
+	 * Line breaks are encoded as <br> and therefore need to be replaced
+	 * before stripping. In order to prevent HTML stripping to strip line
+	 * endings, we need split the text into lines on <br>.
 	 */
-        tmp = replace(what, "<br>", "<br/>");
+	lines = g_strsplit(what, "<br>", 0);
+	for (strvp = lines; *strvp; strvp++) {
+		/* replace array entry with HTML stripped version */
+		gchar *stripped = sipe_backend_markup_strip_html(*strvp);
+		g_free(*strvp);
+		*strvp = stripped;
+	}
+	tmp = g_strjoinv("\r\n", lines);
+	g_strfreev(lines);
 	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\" ts=\"%s\">"
 			      "<chat>%s</chat>"
 			      "</grpchat>",

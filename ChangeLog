@@ -1,5 +1,6 @@
 version 1.17.0 "???" (2013-XX-XX)
 	- Feature #59: Support for Lync 2013 Persistent Chats (Stefan Becker)
+	- Fixed #209: group chat doesn't like HTML (Stefan Becker)
 	- Fixed #200: OCS archiving system blocks audio/video connection (Jakub Adam)
 	- Fixed #187: Duplicate messages in group chat (Stefan Becker)
 	- fix EWS autodiscover for Office 365 (Stefan Becker)
