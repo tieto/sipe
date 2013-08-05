@@ -1065,21 +1065,21 @@ void sipe_groupchat_send(struct sipe_core_private *sipe_private,
 	 *    < -> &lt;
 	 *    & -> &amp;
 	 *
-	 * No need to escape them here.
-	 *
 	 * Group Chat only accepts plain text, not full HTML. So we have to
-	 * strip all HTML tags from the text.
+	 * strip all HTML tags and XML escape the text.
 	 *
 	 * Line breaks are encoded as <br> and therefore need to be replaced
 	 * before stripping. In order to prevent HTML stripping to strip line
-	 * endings, we need split the text into lines on <br>.
+	 * endings, we need to split the text into lines on <br>.
 	 */
 	lines = g_strsplit(what, "<br>", 0);
 	for (strvp = lines; *strvp; strvp++) {
-		/* replace array entry with HTML stripped version */
+		/* replace array entry with HTML stripped & XML escaped version */
 		gchar *stripped = sipe_backend_markup_strip_html(*strvp);
+		gchar *escaped  = g_markup_escape_text(stripped, -1);
+		g_free(stripped);
 		g_free(*strvp);
-		*strvp = stripped;
+		*strvp = escaped;
 	}
 	tmp = g_strjoinv("\r\n", lines);
 	g_strfreev(lines);
