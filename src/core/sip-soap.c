@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@
 
 #include "sip-soap.h"
 #include "sip-transport.h"
+#include "sipe-backend.h" /* TEMPORARY */
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-utils.h"
@@ -44,20 +45,36 @@ void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
 			     SoapTransCallback callback,
 			     struct transaction_payload *payload)
 {
-	gchar *contact = get_contact(sipe_private);
-	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
-	                             "Content-Type: application/SOAP+xml\r\n",
-				     contact);
+	/*
+	 * TEMPORARY
+	 *
+	 * contact list has been migrated to UCS -> SOAP requests will fail
+	 */
+	if (SIPE_CORE_PRIVATE_FLAG_IS(UCS)) {
+		if (callback) {
+			struct transaction trans;
+			trans.payload = payload;
+			(*callback)(sipe_private, NULL, &trans);
+		}
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  "Contact list migrated",
+					  "Operation NOT supported (yet)!");
+	} else {
+		gchar *contact = get_contact(sipe_private);
+		gchar *hdr = g_strdup_printf("Contact: %s\r\n"
+					     "Content-Type: application/SOAP+xml\r\n",
+					     contact);
 
-	struct transaction *trans = sip_transport_service(sipe_private,
-							  from,
-							  hdr,
-							  soap,
-							  callback);
-	trans->payload = payload;
+		struct transaction *trans = sip_transport_service(sipe_private,
+								  from,
+								  hdr,
+								  soap,
+								  callback);
+		trans->payload = payload;
 
-	g_free(contact);
-	g_free(hdr);
+		g_free(contact);
+		g_free(hdr);
+	}
 }
 
 /**
