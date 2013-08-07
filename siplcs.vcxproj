@@ -185,6 +185,7 @@
     <ClCompile Include="src\core\sipe-subscriptions.c" />
     <ClCompile Include="src\core\sipe-svc.c" />
     <ClCompile Include="src\core\sipe-tls.c" />
+    <ClCompile Include="src\core\sipe-ucs.c" />
     <ClCompile Include="src\core\sipe-user.c" />
     <ClCompile Include="src\core\sipe-utils.c" />
     <ClCompile Include="src\core\sipe-webticket.c" />
@@ -262,6 +263,7 @@
     <ClInclude Include="src\core\sipe-subscriptions.h" />
     <ClInclude Include="src\core\sipe-svc.h" />
     <ClInclude Include="src\core\sipe-tls.h" />
+    <ClInclude Include="src\core\sipe-ucs.h" />
     <ClInclude Include="src\core\sipe-utils.h" />
     <ClInclude Include="src\core\sipe-webticket.h" />
     <ClInclude Include="src\core\sipe-win32dep.h" />

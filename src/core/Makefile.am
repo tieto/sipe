@@ -86,10 +86,12 @@ libsipe_core_la_SOURCES = \
 	sipe-svc.c \
 	sipe-tls.h \
 	sipe-tls.c \
+	sipe-ucs.h \
+	sipe-ucs.c \
+	sipe-user.h \
+	sipe-user.c \
 	sipe-utils.h \
 	sipe-utils.c \
-	sipe-user.c \
-	sipe-user.h \
 	sipe-webticket.h \
 	sipe-webticket.c \
 	sipe-xml.h \
