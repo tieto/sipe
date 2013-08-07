@@ -27,6 +27,33 @@
 
 #include <glib.h>
 
+#include "sipe-core.h"
+#include "sipe-core-private.h"
+#include "sipe-ucs.h"
+
+struct sipe_ucs {
+	guint dummy;
+};
+
+void sipe_ucs_init(struct sipe_core_private *sipe_private)
+{
+	if (sipe_private->ucs)
+		return;
+
+	sipe_private->ucs = g_new0(struct sipe_ucs, 1);
+}
+
+void sipe_ucs_free(struct sipe_core_private *sipe_private)
+{
+	struct sipe_ucs *ucs = sipe_private->ucs;
+
+	if (!ucs)
+		return;
+
+	g_free(ucs);
+	sipe_private->ucs = NULL;
+}
+
 /*
   Local Variables:
   mode: c

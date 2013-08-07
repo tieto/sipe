@@ -55,6 +55,7 @@
 #include "sipe-schedule.h"
 #include "sipe-status.h"
 #include "sipe-subscriptions.h"
+#include "sipe-ucs.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -1301,6 +1302,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 			if (sipe_strcase_equal(ucsmode, "migrated")) {
 				SIPE_CORE_PRIVATE_FLAG_SET(UCS);
 				SIPE_DEBUG_INFO_NOFORMAT("contact list has been migrated to Unified Contact Store (UCS)");
+				sipe_ucs_init(sipe_private);
 			}
 		}
 

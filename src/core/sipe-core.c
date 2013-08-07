@@ -95,6 +95,7 @@
 #include "sipe-status.h"
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
+#include "sipe-ucs.h"
 #include "sipe-utils.h"
 #include "sipe-webticket.h"
 
@@ -434,6 +435,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 
 	sipe_core_connection_cleanup(sipe_private);
 	sipe_ews_autodiscover_free(sipe_private);
+	sipe_ucs_free(sipe_private);
 	sipe_cal_calendar_free(sipe_private->calendar);
 	sipe_certificate_free(sipe_private);
 

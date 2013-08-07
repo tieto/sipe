@@ -33,6 +33,7 @@ struct sipe_http;
 struct sipe_http_request;
 struct sipe_media_call_private;
 struct sipe_svc;
+struct sipe_ucs;
 struct sipe_webticket;
 
 /**
@@ -154,6 +155,9 @@ struct sipe_core_private {
 	struct sipe_certificate *certificate;
 	struct sipe_webticket *webticket;
 	struct sipe_svc *svc;
+
+	/* Unified Contact Store */
+	struct sipe_ucs *ucs;
 
 	/* [MS-DLX] server URI */
 	gchar *dlx_uri;
