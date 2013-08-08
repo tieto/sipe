@@ -33,6 +33,7 @@
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-digest.h"
 #include "sipe-ews-autodiscover.h"
 #include "sipe-http.h"
 #include "sipe-ucs.h"
@@ -188,28 +189,55 @@ static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_priv
 					     const sipe_xml *xml,
 					     gpointer callback_data)
 {
-	g_free(callback_data);
+	gchar *uri = callback_data;
+	const sipe_xml *node = sipe_xml_child(xml,
+					      "Body/GetUserPhotoResponse/PictureData");
 
-	/* temporary */
-	(void)sipe_private;
-	(void)xml;
+	if (node) {
+		gchar *base64;
+		gsize photo_size;
+		guchar *photo;
+		guchar digest[SIPE_DIGEST_SHA1_LENGTH];
+		gchar *digest_string;
+
+		/* decode photo data */
+		base64 = sipe_xml_data(node);
+		photo = g_base64_decode(base64, &photo_size);
+		g_free(base64);
+
+		/* EWS doesn't provide a hash -> calculate SHA-1 digest */
+		sipe_digest_sha1(photo, photo_size, digest);
+		digest_string = buff_to_hex_str(digest,
+						SIPE_DIGEST_SHA1_LENGTH);
+
+		/* backend frees "photo" */
+		sipe_backend_buddy_set_photo(SIPE_CORE_PUBLIC,
+					     uri,
+					     photo,
+					     photo_size,
+					     digest_string);
+		g_free(digest_string);
+	}
+
+	g_free(uri);
 }
 
 void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 			const gchar *uri)
 {
-	gchar *email = g_strdup(sipe_get_no_sip_uri(uri));
+	gchar *payload = g_strdup(uri);
 	gchar *body = g_strdup_printf("<m:GetUserPhoto>"
 				      " <m:Email>%s</m:Email>"
 				      " <m:SizeRequested>HR48x48</m:SizeRequested>"
 				      "</m:GetUserPhoto>",
-				      email);
+				      sipe_get_no_sip_uri(uri));
 
 	if (!sipe_ucs_http_request(sipe_private,
 				   body,
 				   sipe_ucs_get_user_photo_response,
-				   email))
-		g_free(email);
+				   payload))
+		g_free(payload);
+
 	g_free(body);
 }
 
