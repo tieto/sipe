@@ -68,7 +68,7 @@ static void sipe_ucs_deferred_free(struct sipe_core_private *sipe_private,
 {
 	if (data->cb)
 		/* Callback: aborted */
-		(*data->cb)(sipe_private, NULL, data->cb);
+		(*data->cb)(sipe_private, NULL, data->cb_data);
 	g_free(data->body);
 	g_free(data);
 }
@@ -80,7 +80,7 @@ static void sipe_ucs_request_free(struct sipe_core_private *sipe_private,
 		sipe_http_request_cancel(data->request);
 	if (data->cb)
 		/* Callback: aborted */
-		(*data->cb)(sipe_private, NULL, data->cb);
+		(*data->cb)(sipe_private, NULL, data->cb_data);
 	g_free(data);
 }
 
