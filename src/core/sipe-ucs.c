@@ -40,15 +40,18 @@
 #include "sipe-xml.h"
 
 typedef void (ucs_callback)(struct sipe_core_private *sipe_private,
-			    const sipe_xml *xml);
+			    const sipe_xml *xml,
+			    gpointer callback_data);
 
 struct ucs_deferred {
 	ucs_callback *cb;
+	gpointer cb_data;
 	gchar *body;
 };
 
 struct ucs_request {
 	ucs_callback *cb;
+	gpointer cb_data;
 	struct sipe_http_request *request;
 };
 
@@ -59,8 +62,12 @@ struct sipe_ucs {
 	gboolean shutting_down;
 };
 
-static void sipe_ucs_deferred_free(struct ucs_deferred *data)
+static void sipe_ucs_deferred_free(struct sipe_core_private *sipe_private,
+				   struct ucs_deferred *data)
 {
+	if (data->cb)
+		/* Callback: aborted */
+		(*data->cb)(sipe_private, NULL, data->cb);
 	g_free(data->body);
 	g_free(data);
 }
@@ -72,7 +79,7 @@ static void sipe_ucs_request_free(struct sipe_core_private *sipe_private,
 		sipe_http_request_cancel(data->request);
 	if (data->cb)
 		/* Callback: aborted */
-		(*data->cb)(sipe_private, NULL);
+		(*data->cb)(sipe_private, NULL, data->cb);
 	g_free(data);
 }
 
@@ -91,11 +98,11 @@ static void sipe_ucs_http_response(struct sipe_core_private *sipe_private,
 	if ((status == SIPE_HTTP_STATUS_OK) && body) {
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 		/* Callback: success */
-		(*data->cb)(sipe_private, xml);
+		(*data->cb)(sipe_private, xml, data->cb_data);
 		sipe_xml_free(xml);
 	} else {
 		/* Callback: failed */
-		(*data->cb)(sipe_private, NULL);
+		(*data->cb)(sipe_private, NULL, data->cb_data);
 	}
 
 	/* already been called */
@@ -106,11 +113,13 @@ static void sipe_ucs_http_response(struct sipe_core_private *sipe_private,
 	sipe_ucs_request_free(sipe_private, data);
 }
 
-static void sipe_ucs_http_request(struct sipe_core_private *sipe_private,
-				  const gchar *body,
-				  ucs_callback *callback)
+static gboolean sipe_ucs_http_request(struct sipe_core_private *sipe_private,
+				      const gchar *body,
+				      ucs_callback *callback,
+				      gpointer callback_data)
 {
 	struct sipe_ucs *ucs = sipe_private->ucs;
+	gboolean success = FALSE;
 
 	if (ucs->shutting_down) {
 		SIPE_DEBUG_ERROR("sipe_ucs_http_request: new UCS request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
@@ -144,6 +153,7 @@ static void sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 
 		if (request) {
 			data->cb      = callback;
+			data->cb_data = callback_data;
 			data->request = request;
 
 			ucs->pending_requests = g_slist_prepend(ucs->pending_requests,
@@ -153,6 +163,8 @@ static void sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 						       request);
 			sipe_http_request_allow_redirect(request);
 			sipe_http_request_ready(request);
+
+			success = TRUE;
 		} else {
 			SIPE_DEBUG_ERROR_NOFORMAT("sipe_ucs_http_request: failed to create HTTP connection");
 			g_free(data);
@@ -160,17 +172,24 @@ static void sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 
 	} else {
 		struct ucs_deferred *data = g_new0(struct ucs_deferred, 1);
-		data->body = g_strdup(body);
-		data->cb   = callback;
+		data->cb      = callback;
+		data->cb_data = callback_data;
+		data->body    = g_strdup(body);
 
 		ucs->deferred_requests = g_slist_prepend(ucs->deferred_requests,
 							 data);
+		success = TRUE;
 	}
+
+	return(success);
 }
 
 static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
-					     const sipe_xml *xml)
+					     const sipe_xml *xml,
+					     gpointer callback_data)
 {
+	g_free(callback_data);
+
 	/* temporary */
 	(void)sipe_private;
 	(void)xml;
@@ -179,24 +198,29 @@ static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_priv
 void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 			const gchar *uri)
 {
+	gchar *email = g_strdup(sipe_get_no_sip_uri(uri));
 	gchar *body = g_strdup_printf("<m:GetUserPhoto>"
 				      " <m:Email>%s</m:Email>"
 				      " <m:SizeRequested>HR48x48</m:SizeRequested>"
 				      "</m:GetUserPhoto>",
-				      sipe_get_no_sip_uri(uri));
+				      email);
 
-	sipe_ucs_http_request(sipe_private,
-			      body,
-			      sipe_ucs_get_user_photo_response);
+	if (!sipe_ucs_http_request(sipe_private,
+				   body,
+				   sipe_ucs_get_user_photo_response,
+				   email))
+		g_free(email);
 	g_free(body);
 }
 
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
-					       const sipe_xml *xml)
+					       const sipe_xml *xml,
+					     gpointer callback_data)
 {
 	/* temporary */
 	(void)sipe_private;
 	(void)xml;
+	(void)callback_data;
 }
 
 static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
@@ -219,17 +243,24 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 
 	sipe_ucs_http_request(sipe_private,
 			      "<m:GetImItemList/>",
-			      sipe_ucs_get_im_item_list_response);
+			      sipe_ucs_get_im_item_list_response,
+			      NULL);
 
 	/* EWS URL is valid, send all deferred requests now */
 	if (ucs->deferred_requests) {
 		GSList *entry = ucs->deferred_requests;
 		while (entry) {
 			struct ucs_deferred *data = entry->data;
+
 			sipe_ucs_http_request(sipe_private,
 					      data->body,
-					      data->cb);
-			sipe_ucs_deferred_free(data);
+					      data->cb,
+					      data->cb_data);
+
+			/* callback & data has been forwarded */
+			data->cb = NULL;
+			sipe_ucs_deferred_free(sipe_private, data);
+
 			entry = entry->next;
 		}
 		g_slist_free(ucs->deferred_requests);
@@ -262,7 +293,7 @@ void sipe_ucs_free(struct sipe_core_private *sipe_private)
 	if (ucs->deferred_requests) {
 		GSList *entry = ucs->deferred_requests;
 		while (entry) {
-			sipe_ucs_deferred_free(entry->data);
+			sipe_ucs_deferred_free(sipe_private, entry->data);
 			entry = entry->next;
 		}
 		g_slist_free(ucs->deferred_requests);
