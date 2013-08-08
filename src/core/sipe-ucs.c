@@ -42,6 +42,11 @@
 typedef void (ucs_callback)(struct sipe_core_private *sipe_private,
 			    const sipe_xml *xml);
 
+struct ucs_deferred {
+	ucs_callback *cb;
+	gchar *body;
+};
+
 struct ucs_request {
 	ucs_callback *cb;
 	struct sipe_http_request *request;
@@ -49,9 +54,16 @@ struct ucs_request {
 
 struct sipe_ucs {
 	gchar *ews_url;
+	GSList *deferred_requests;
 	GSList *pending_requests;
 	gboolean shutting_down;
 };
+
+static void sipe_ucs_deferred_free(struct ucs_deferred *data)
+{
+	g_free(data->body);
+	g_free(data);
+}
 
 static void sipe_ucs_request_free(struct sipe_core_private *sipe_private,
 				  struct ucs_request *data)
@@ -62,14 +74,6 @@ static void sipe_ucs_request_free(struct sipe_core_private *sipe_private,
 		/* Callback: aborted */
 		(*data->cb)(sipe_private, NULL);
 	g_free(data);
-}
-
-static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
-					       const sipe_xml *xml)
-{
-	/* temporary */
-	(void)sipe_private;
-	(void)xml;
 }
 
 static void sipe_ucs_http_response(struct sipe_core_private *sipe_private,
@@ -112,7 +116,8 @@ static void sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_ERROR("sipe_ucs_http_request: new UCS request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
 				 "Body:   %s\n",
 				 body ? body : "<EMPTY>");
-	} else {
+
+	} else if (ucs->ews_url) {
 		struct ucs_request *data = g_new0(struct ucs_request, 1);
 		gchar *soap = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
 					      "<soap:Envelope"
@@ -152,7 +157,23 @@ static void sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 			SIPE_DEBUG_ERROR_NOFORMAT("sipe_ucs_http_request: failed to create HTTP connection");
 			g_free(data);
 		}
+
+	} else {
+		struct ucs_deferred *data = g_new0(struct ucs_deferred, 1);
+		data->body = g_strdup(body);
+		data->cb   = callback;
+
+		ucs->deferred_requests = g_slist_prepend(ucs->deferred_requests,
+							 data);
 	}
+}
+
+static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
+					       const sipe_xml *xml)
+{
+	/* temporary */
+	(void)sipe_private;
+	(void)xml;
 }
 
 static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
@@ -176,6 +197,21 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 	sipe_ucs_http_request(sipe_private,
 			      "<m:GetImItemList/>",
 			      sipe_ucs_get_im_item_list_response);
+
+	/* EWS URL is valid, send all deferred requests now */
+	if (ucs->deferred_requests) {
+		GSList *entry = ucs->deferred_requests;
+		while (entry) {
+			struct ucs_deferred *data = entry->data;
+			sipe_ucs_http_request(sipe_private,
+					      data->body,
+					      data->cb);
+			sipe_ucs_deferred_free(data);
+			entry = entry->next;
+		}
+		g_slist_free(ucs->deferred_requests);
+		ucs->deferred_requests = NULL;
+	}
 }
 
 void sipe_ucs_init(struct sipe_core_private *sipe_private)
@@ -199,6 +235,15 @@ void sipe_ucs_free(struct sipe_core_private *sipe_private)
 
 	/* UCS stack is shutting down: reject all new requests */
 	ucs->shutting_down = TRUE;
+
+	if (ucs->deferred_requests) {
+		GSList *entry = ucs->deferred_requests;
+		while (entry) {
+			sipe_ucs_deferred_free(entry->data);
+			entry = entry->next;
+		}
+		g_slist_free(ucs->deferred_requests);
+	}
 
 	if (ucs->pending_requests) {
 		GSList *entry = ucs->pending_requests;
