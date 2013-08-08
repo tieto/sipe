@@ -168,6 +168,29 @@ static void sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
+					     const sipe_xml *xml)
+{
+	/* temporary */
+	(void)sipe_private;
+	(void)xml;
+}
+
+void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
+			const gchar *uri)
+{
+	gchar *body = g_strdup_printf("<m:GetUserPhoto>"
+				      " <m:Email>%s</m:Email>"
+				      " <m:SizeRequested>HR48x48</m:SizeRequested>"
+				      "</m:GetUserPhoto>",
+				      sipe_get_no_sip_uri(uri));
+
+	sipe_ucs_http_request(sipe_private,
+			      body,
+			      sipe_ucs_get_user_photo_response);
+	g_free(body);
+}
+
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
 					       const sipe_xml *xml)
 {

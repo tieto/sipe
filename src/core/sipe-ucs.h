@@ -22,6 +22,17 @@
  */
 
 /**
+ * Get buddy photo
+ *
+ * This is not directly related to UCS, but we can reuse the code.
+ *
+ * @param sipe_private SIPE core private data
+ * @param uri          SIP URI of the user
+ */
+void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
+			const gchar *uri);
+
+/**
  * Initialize UCS
  *
  * @param sipe_private SIPE core private data

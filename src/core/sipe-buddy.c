@@ -53,6 +53,7 @@
 #include "sipe-status.h"
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
+#include "sipe-ucs.h"
 #include "sipe-utils.h"
 #include "sipe-webticket.h"
 #include "sipe-xml.h"
@@ -1377,10 +1378,15 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 			      const gchar *uri)
 {
 	/* On Lync2013+ [MS-DLX] no longer returns buddy photo information */
-	if (!SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) &&
-	    sipe_backend_uses_photo()            &&
-	    sipe_private->dlx_uri                &&
-	    sipe_private->addressbook_uri) {
+	if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013)) {
+
+		/* Use UCS instead, if available */
+		if (sipe_private->ucs)
+			sipe_ucs_get_photo(sipe_private, uri);
+
+	} else if (sipe_backend_uses_photo()     &&
+		   sipe_private->dlx_uri         &&
+		   sipe_private->addressbook_uri) {
 		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
 		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup("msRTCSIP-PrimaryUserAddress"));
