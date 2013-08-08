@@ -1294,13 +1294,11 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		const gchar *ucsmode = sipe_xml_attribute(isc, "ucsmode");
 
 		SIPE_CORE_PRIVATE_FLAG_UNSET(LYNC2013);
-		SIPE_CORE_PRIVATE_FLAG_UNSET(UCS);
 		if (ucsmode) {
 			SIPE_CORE_PRIVATE_FLAG_SET(LYNC2013);
 			SIPE_DEBUG_INFO_NOFORMAT("contact list contains 'ucsmode' attribute (indicates Lync 2013+)");
 
 			if (sipe_strcase_equal(ucsmode, "migrated")) {
-				SIPE_CORE_PRIVATE_FLAG_SET(UCS);
 				SIPE_DEBUG_INFO_NOFORMAT("contact list has been migrated to Unified Contact Store (UCS)");
 				sipe_ucs_init(sipe_private);
 			}

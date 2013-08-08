@@ -50,7 +50,7 @@ void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
 	 *
 	 * contact list has been migrated to UCS -> SOAP requests will fail
 	 */
-	if (SIPE_CORE_PRIVATE_FLAG_IS(UCS)) {
+	if (sipe_private->ucs) {
 		if (callback) {
 			struct transaction trans;
 			trans.payload = payload;
