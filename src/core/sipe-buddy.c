@@ -1377,28 +1377,29 @@ static void get_photo_ab_entry_failed(SIPE_UNUSED_PARAMETER struct sipe_core_pri
 static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 			      const gchar *uri)
 {
-	/* On Lync2013+ [MS-DLX] no longer returns buddy photo information */
-	if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013)) {
+        if (sipe_backend_uses_photo()) {
 
-		/* Use UCS instead, if available */
-		if (sipe_private->ucs)
+		/* Lync 2013 or newer: use UCS */
+		if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013)) {
+
 			sipe_ucs_get_photo(sipe_private, uri);
 
-	} else if (sipe_backend_uses_photo()     &&
-		   sipe_private->dlx_uri         &&
-		   sipe_private->addressbook_uri) {
-		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+		/* Lync 2010: use [MS-DLX] */
+		} else if (sipe_private->dlx_uri         &&
+			   sipe_private->addressbook_uri) {
+			struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
-		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup("msRTCSIP-PrimaryUserAddress"));
-		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup(uri));
+			mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup("msRTCSIP-PrimaryUserAddress"));
+			mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup(uri));
 
-		mdd->other           = g_strdup(uri);
-		mdd->max_returns     = 1;
-		mdd->callback        = get_photo_ab_entry_response;
-		mdd->failed_callback = get_photo_ab_entry_failed;
-		mdd->session         = sipe_svc_session_start();
+			mdd->other           = g_strdup(uri);
+			mdd->max_returns     = 1;
+			mdd->callback        = get_photo_ab_entry_response;
+			mdd->failed_callback = get_photo_ab_entry_failed;
+			mdd->session         = sipe_svc_session_start();
 
-		ms_dlx_webticket_request(sipe_private, mdd);
+			ms_dlx_webticket_request(sipe_private, mdd);
+		}
 	}
 }
 

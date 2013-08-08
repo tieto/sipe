@@ -36,8 +36,10 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
  * Initialize UCS
  *
  * @param sipe_private SIPE core private data
+ * @param migrated     @c TRUE if contact list has been migrated
  */
-void sipe_ucs_init(struct sipe_core_private *sipe_private);
+void sipe_ucs_init(struct sipe_core_private *sipe_private,
+		   gboolean migrated);
 
 /**
  * Free UCS data

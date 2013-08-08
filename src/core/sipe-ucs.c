@@ -60,6 +60,7 @@ struct sipe_ucs {
 	gchar *ews_url;
 	GSList *deferred_requests;
 	GSList *pending_requests;
+	gboolean migrated;
 	gboolean shutting_down;
 };
 
@@ -269,10 +270,12 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("ucs_ews_autodiscover_cb: EWS URL '%s'", ews_url);
 	ucs->ews_url = g_strdup(ews_url);
 
-	sipe_ucs_http_request(sipe_private,
-			      "<m:GetImItemList/>",
-			      sipe_ucs_get_im_item_list_response,
-			      NULL);
+	/* Request migrated contact list */
+	if (ucs->migrated)
+		sipe_ucs_http_request(sipe_private,
+				      "<m:GetImItemList/>",
+				      sipe_ucs_get_im_item_list_response,
+				      NULL);
 
 	/* EWS URL is valid, send all deferred requests now */
 	if (ucs->deferred_requests) {
@@ -296,12 +299,16 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 	}
 }
 
-void sipe_ucs_init(struct sipe_core_private *sipe_private)
+void sipe_ucs_init(struct sipe_core_private *sipe_private,
+		   gboolean migrated)
 {
+	struct sipe_ucs *ucs;
+
 	if (sipe_private->ucs)
 		return;
 
-	sipe_private->ucs = g_new0(struct sipe_ucs, 1);
+	sipe_private->ucs = ucs = g_new0(struct sipe_ucs, 1);
+	ucs->migrated = migrated;
 
 	sipe_ews_autodiscover_start(sipe_private,
 				    ucs_ews_autodiscover_cb,

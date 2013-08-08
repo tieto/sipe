@@ -5,6 +5,7 @@ version 1.17.0 "???" (2013-XX-XX)
 	- Fixed #187: Duplicate messages in group chat (Stefan Becker)
 	- fix EWS autodiscover for Office 365 (Stefan Becker)
 	- add support for group chat history (Stefan Becker)
+	- add support for buddy photos on Lync 2013 (Stefan Becker)
 
 version 1.16.1 "Bug Fixes I" (2013-07-13)
 	- Feature #66: Windows DLL version information (Stefan Becker)
