@@ -37,6 +37,7 @@
 #include "sipe-backend.h" /* TEMPORARY */
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-ucs.h" /* TEMPORARY */
 #include "sipe-utils.h"
 
 void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
@@ -50,7 +51,7 @@ void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
 	 *
 	 * contact list has been migrated to UCS -> SOAP requests will fail
 	 */
-	if (sipe_private->ucs) {
+	if (sipe_ucs_migrated(sipe_private)) {
 		if (callback) {
 			struct transaction trans;
 			trans.payload = payload;

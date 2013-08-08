@@ -299,6 +299,12 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 	}
 }
 
+/* TEMPORARY HACK: DO NOT USE! */
+gboolean sipe_ucs_migrated(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->ucs ? sipe_private->ucs->migrated : FALSE);
+}
+
 void sipe_ucs_init(struct sipe_core_private *sipe_private,
 		   gboolean migrated)
 {

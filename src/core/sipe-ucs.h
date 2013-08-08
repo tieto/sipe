@@ -21,6 +21,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+
 /**
  * Get buddy photo
  *
@@ -40,6 +41,9 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
  */
 void sipe_ucs_init(struct sipe_core_private *sipe_private,
 		   gboolean migrated);
+
+/* TEMPORARY HACK: DO NOT USE! */
+gboolean sipe_ucs_migrated(struct sipe_core_private *sipe_private);
 
 /**
  * Free UCS data
