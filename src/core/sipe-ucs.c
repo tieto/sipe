@@ -39,78 +39,119 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
-struct sipe_ucs {
-	gchar *ews_url;
+typedef void (ucs_callback)(struct sipe_core_private *sipe_private,
+			    const sipe_xml *xml);
+
+struct ucs_request {
+	ucs_callback *cb;
 	struct sipe_http_request *request;
 };
 
-typedef void (sipe_ucs_callback)(struct sipe_core_private *sipe_private,
-				 const sipe_xml *xml);
+struct sipe_ucs {
+	gchar *ews_url;
+	GSList *pending_requests;
+	gboolean shutting_down;
+};
 
-static void ucs_process_get_im_item_list_response(struct sipe_core_private *sipe_private,
-						  const sipe_xml *xml)
+static void sipe_ucs_request_free(struct sipe_core_private *sipe_private,
+				  struct ucs_request *data)
+{
+	if (data->request)
+		sipe_http_request_cancel(data->request);
+	if (data->cb)
+		/* Callback: aborted */
+		(*data->cb)(sipe_private, NULL);
+	g_free(data);
+}
+
+static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
+					       const sipe_xml *xml)
 {
 	/* temporary */
 	(void)sipe_private;
 	(void)xml;
 }
 
-static void ucs_response(struct sipe_core_private *sipe_private,
-			 guint status,
-			 SIPE_UNUSED_PARAMETER GSList *headers,
-			 const gchar *body,
-			 gpointer data)
+static void sipe_ucs_http_response(struct sipe_core_private *sipe_private,
+				   guint status,
+				   SIPE_UNUSED_PARAMETER GSList *headers,
+				   const gchar *body,
+				   gpointer callback_data)
 {
+	struct ucs_request *data = callback_data;
 	struct sipe_ucs *ucs = sipe_private->ucs;
 
-	if (!ucs)
-		return;
-
-	ucs->request = NULL;
+	SIPE_DEBUG_INFO("sipe_ucs_http_response: code %d", status);
+	data->request = NULL;
 
 	if ((status == SIPE_HTTP_STATUS_OK) && body) {
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
-		sipe_ucs_callback *callback = data;
-
-		SIPE_DEBUG_INFO_NOFORMAT("ucs_response: received valid SOAP response");
-		(*callback)(sipe_private, xml);
-
+		/* Callback: success */
+		(*data->cb)(sipe_private, xml);
 		sipe_xml_free(xml);
+	} else {
+		/* Callback: failed */
+		(*data->cb)(sipe_private, NULL);
 	}
+
+	/* already been called */
+	data->cb = NULL;
+
+	ucs->pending_requests = g_slist_remove(ucs->pending_requests,
+					       data);
+	sipe_ucs_request_free(sipe_private, data);
 }
 
-static void ucs_request(struct sipe_core_private *sipe_private,
-			const gchar *body,
-			sipe_ucs_callback *callback)
+static void sipe_ucs_http_request(struct sipe_core_private *sipe_private,
+				  const gchar *body,
+				  ucs_callback *callback)
 {
 	struct sipe_ucs *ucs = sipe_private->ucs;
-	const gchar *soap = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
-					    "<soap:Envelope"
-					    " xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\""
-					    " xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\""
-					    " xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\""
-					    " >"
-					    " <soap:Header>"
-					    "  <t:RequestServerVersion Version=\"Exchange2013\" />"
-					    " </soap:Header>"
-					    " <soap:Body>"
-					    "  %s"
-					    " </soap:Body>"
-					    "</soap:Envelope>",
-					    body);
 
-	ucs->request = sipe_http_request_post(sipe_private,
-					      ucs->ews_url,
-					      NULL,
-					      soap,
-					      "text/xml; charset=UTF-8",
-					      ucs_response,
-					      callback);
-	if (ucs->request) {
-		sipe_core_email_authentication(sipe_private,
-					       ucs->request);
-		sipe_http_request_allow_redirect(ucs->request);
-		sipe_http_request_ready(ucs->request);
+	if (ucs->shutting_down) {
+		SIPE_DEBUG_ERROR("sipe_ucs_http_request: new UCS request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
+				 "Body:   %s\n",
+				 body ? body : "<EMPTY>");
+	} else {
+		struct ucs_request *data = g_new0(struct ucs_request, 1);
+		gchar *soap = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
+					      "<soap:Envelope"
+					      " xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\""
+					      " xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\""
+					      " xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\""
+					      " >"
+					      " <soap:Header>"
+					      "  <t:RequestServerVersion Version=\"Exchange2013\" />"
+					      " </soap:Header>"
+					      " <soap:Body>"
+					      "  %s"
+					      " </soap:Body>"
+					      "</soap:Envelope>",
+					      body);
+		struct sipe_http_request *request = sipe_http_request_post(sipe_private,
+									   ucs->ews_url,
+									   NULL,
+									   soap,
+									   "text/xml; charset=UTF-8",
+									   sipe_ucs_http_response,
+									   data);
+		g_free(soap);
+
+		if (request) {
+			data->cb      = callback;
+			data->request = request;
+
+			ucs->pending_requests = g_slist_prepend(ucs->pending_requests,
+								data);
+
+			sipe_core_email_authentication(sipe_private,
+						       request);
+			sipe_http_request_allow_redirect(request);
+			sipe_http_request_ready(request);
+		} else {
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_ucs_http_request: failed to create HTTP connection");
+			g_free(data);
+		}
 	}
 }
 
@@ -132,9 +173,9 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("ucs_ews_autodiscover_cb: EWS URL '%s'", ews_url);
 	ucs->ews_url = g_strdup(ews_url);
 
-	ucs_request(sipe_private,
-		    "<m:GetImItemList/>",
-		    ucs_process_get_im_item_list_response);
+	sipe_ucs_http_request(sipe_private,
+			      "<m:GetImItemList/>",
+			      sipe_ucs_get_im_item_list_response);
 }
 
 void sipe_ucs_init(struct sipe_core_private *sipe_private)
@@ -156,8 +197,18 @@ void sipe_ucs_free(struct sipe_core_private *sipe_private)
 	if (!ucs)
 		return;
 
-	if (ucs->request)
-		sipe_http_request_cancel(ucs->request);
+	/* UCS stack is shutting down: reject all new requests */
+	ucs->shutting_down = TRUE;
+
+	if (ucs->pending_requests) {
+		GSList *entry = ucs->pending_requests;
+		while (entry) {
+			sipe_ucs_request_free(sipe_private, entry->data);
+			entry = entry->next;
+		}
+		g_slist_free(ucs->pending_requests);
+	}
+
 	g_free(ucs->ews_url);
 	g_free(ucs);
 	sipe_private->ucs = NULL;
