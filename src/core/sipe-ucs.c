@@ -36,6 +36,7 @@
 #include "sipe-digest.h"
 #include "sipe-ews-autodiscover.h"
 #include "sipe-http.h"
+#include "sipe-subscriptions.h"
 #include "sipe-ucs.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -244,12 +245,11 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
 					       const sipe_xml *xml,
-					     gpointer callback_data)
+					       SIPE_UNUSED_PARAMETER gpointer callback_data)
 {
-	/* temporary */
-	(void)sipe_private;
-	(void)xml;
-	(void)callback_data;
+	if (xml) {
+		sipe_subscribe_presence_initial(sipe_private);
+	}
 }
 
 static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
