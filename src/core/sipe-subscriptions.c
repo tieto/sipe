@@ -580,7 +580,7 @@ void sipe_subscribe_presence_single_cb(struct sipe_core_private *sipe_private,
  */
 static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_private,
 					       gchar *resources_uri,
-					       gchar *to)
+					       const gchar *to)
 {
 	gchar *contact = get_contact(sipe_private);
 	gchar *request;
@@ -638,7 +638,6 @@ static void sipe_subscribe_presence_batched_to(struct sipe_core_private *sipe_pr
 	sipe_subscribe_presence_buddy(sipe_private, to, request, content);
 
 	g_free(content);
-	g_free(to);
 	g_free(request);
 }
 
@@ -666,8 +665,9 @@ static void sipe_subscribe_presence_batched_routed(struct sipe_core_private *sip
 		g_free(tmp);
 		buddies = buddies->next;
 	}
-	sipe_subscribe_presence_batched_to(sipe_private, resources_uri,
-					   g_strdup(data->host));
+	sipe_subscribe_presence_batched_to(sipe_private,
+					   resources_uri,
+					   data->host);
 }
 
 static void sipe_subscribe_presence_batched_schedule(struct sipe_core_private *sipe_private,
@@ -732,20 +732,64 @@ static void sipe_subscribe_resource_uri(const char *name,
 	g_free(tmp);
 }
 
-void sipe_subscribe_presence_batched(struct sipe_core_private *sipe_private)
+/**
+  * A callback for g_hash_table_foreach
+  */
+static void schedule_buddy_resubscription_cb(char *buddy_name,
+					     SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
+					     struct sipe_core_private *sipe_private)
 {
-	gchar *to = sip_uri_self(sipe_private);
-	gchar *resources_uri = g_strdup("");
-	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		g_hash_table_foreach(sipe_private->buddies,
-				     (GHFunc) sipe_subscribe_resource_uri_with_context,
-				     &resources_uri);
-	} else {
-                g_hash_table_foreach(sipe_private->buddies,
-				     (GHFunc) sipe_subscribe_resource_uri,
-				     &resources_uri);
+	guint time_range = (g_hash_table_size(sipe_private->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
+
+	/*
+	 * g_hash_table_size() can never return 0, otherwise this function
+	 * wouldn't be called :-) But to keep Coverity happy...
+	 */
+	if (time_range) {
+		gchar *action_name = sipe_utils_presence_key(buddy_name);
+		guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
+
+		sipe_schedule_mseconds(sipe_private,
+				       action_name,
+				       g_strdup(buddy_name),
+				       timeout,
+				       sipe_subscribe_presence_single_cb,
+				       g_free);
+		g_free(action_name);
 	}
-	sipe_subscribe_presence_batched_to(sipe_private, resources_uri, to);
+}
+
+void sipe_subscribe_presence_initial(struct sipe_core_private *sipe_private)
+{
+	/*
+	 * Subscribe to buddies, but only do it once.
+	 * We'll resubsribe to them based on the Expire field values.
+	 */
+	if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES)) {
+
+		if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
+			gchar *to = sip_uri_self(sipe_private);
+			gchar *resources_uri = g_strdup("");
+			if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+				g_hash_table_foreach(sipe_private->buddies,
+						     (GHFunc) sipe_subscribe_resource_uri_with_context,
+						     &resources_uri);
+			} else {
+				g_hash_table_foreach(sipe_private->buddies,
+						     (GHFunc) sipe_subscribe_resource_uri,
+						     &resources_uri);
+			}
+			sipe_subscribe_presence_batched_to(sipe_private, resources_uri, to);
+			g_free(to);
+
+		} else {
+			g_hash_table_foreach(sipe_private->buddies,
+					     (GHFunc) schedule_buddy_resubscription_cb,
+					     sipe_private);
+		}
+
+		SIPE_CORE_PRIVATE_FLAG_SET(SUBSCRIBED_BUDDIES);
+	}
 }
 
 void sipe_subscribe_poolfqdn_resource_uri(const char *host,

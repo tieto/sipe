@@ -52,7 +52,6 @@
 #include "sipe-notify.h"
 #include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
-#include "sipe-schedule.h"
 #include "sipe-status.h"
 #include "sipe-subscriptions.h"
 #include "sipe-ucs.h"
@@ -1123,33 +1122,6 @@ static void sipe_cleanup_local_blist(struct sipe_core_private *sipe_private)
 	g_slist_free(buddies);
 }
 
-/**
-  * A callback for g_hash_table_foreach
-  */
-static void sipe_buddy_subscribe_cb(char *buddy_name,
-				    SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
-				    struct sipe_core_private *sipe_private)
-{
-	guint time_range = (g_hash_table_size(sipe_private->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
-
-	/*
-	 * g_hash_table_size() can never return 0, otherwise this function
-	 * wouldn't be called :-) But to keep Coverity happy...
-	 */
-	if (time_range) {
-		gchar *action_name = sipe_utils_presence_key(buddy_name);
-		guint timeout = ((guint) rand()) / (RAND_MAX / time_range) + 1; /* random period within the range but never 0! */
-
-		sipe_schedule_mseconds(sipe_private,
-				       action_name,
-				       g_strdup(buddy_name),
-				       timeout,
-				       sipe_subscribe_presence_single_cb,
-				       g_free);
-		g_free(action_name);
-	}
-}
-
 /* Replace "~" with localized version of "Other Contacts" */
 static const gchar *get_group_name(const sipe_xml *node)
 {
@@ -1515,22 +1487,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	}
 	sipe_xml_free(isc);
 
-	/*
-	 * Subscribe to buddies (if not migrated to UCS), but only do it once.
-	 * We'll resubsribe to them based on the Expire field values.
-	 */
-	if (!(SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES) ||
-	      sipe_ucs_is_migrated(sipe_private))) {
-		/* do it once, then count Expire field to schedule resubscribe */
-		if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
-			sipe_subscribe_presence_batched(sipe_private);
-		} else {
-			g_hash_table_foreach(sipe_private->buddies,
-					     (GHFunc)sipe_buddy_subscribe_cb,
-					     sipe_private);
-		}
-		SIPE_CORE_PRIVATE_FLAG_SET(SUBSCRIBED_BUDDIES);
-	}
+	/* Subscribe to buddies, if contact list not migrated to UCS */
+	if (!sipe_ucs_is_migrated(sipe_private))
+		sipe_subscribe_presence_initial(sipe_private);
 
 	/* for 2005 systems schedule contacts' status update
 	 * based on their calendar information
