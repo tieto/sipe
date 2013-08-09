@@ -165,9 +165,6 @@ struct sipe_core_private {
 
 	/* Addressbook server URI */
 	gchar *addressbook_uri;
-
-	/* Pending photo download HTTP requests */
-	GSList *pending_photo_requests;
 };
 
 /**

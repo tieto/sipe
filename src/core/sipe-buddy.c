@@ -60,6 +60,9 @@
 
 struct sipe_buddies {
 	GHashTable *uri;
+
+	/* Pending photo download HTTP requests */
+	GSList *pending_photo_requests;
 };
 
 struct photo_response_data {
@@ -164,11 +167,11 @@ void sipe_buddy_free(struct sipe_core_private *sipe_private)
 				   NULL);
 
 	/* core is being deallocated, remove all its pending photo requests */
-	while (sipe_private->pending_photo_requests) {
+	while (buddies->pending_photo_requests) {
 		struct photo_response_data *data =
-			sipe_private->pending_photo_requests->data;
-		sipe_private->pending_photo_requests =
-			g_slist_remove(sipe_private->pending_photo_requests, data);
+			buddies->pending_photo_requests->data;
+		buddies->pending_photo_requests =
+			g_slist_remove(buddies->pending_photo_requests, data);
 		photo_response_data_free(data);
 	}
 
@@ -1298,8 +1301,8 @@ static void process_buddy_photo_response(struct sipe_core_private *sipe_private,
 		}
 	}
 
-	sipe_private->pending_photo_requests =
-		g_slist_remove(sipe_private->pending_photo_requests, rdata);
+	sipe_private->buddies->pending_photo_requests =
+		g_slist_remove(sipe_private->buddies->pending_photo_requests, rdata);
 
 	photo_response_data_free(rdata);
 }
@@ -1384,8 +1387,8 @@ static void get_photo_ab_entry_response(struct sipe_core_private *sipe_private,
 						      data);
 
 		if (data->request) {
-			sipe_private->pending_photo_requests =
-				g_slist_append(sipe_private->pending_photo_requests, data);
+			sipe_private->buddies->pending_photo_requests =
+				g_slist_append(sipe_private->buddies->pending_photo_requests, data);
 			sipe_http_request_ready(data->request);
 		} else {
 			photo_response_data_free(data);
