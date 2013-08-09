@@ -257,6 +257,9 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		const sipe_xml *persona_node;
 		const sipe_xml *group_node;
 
+		/* Start processing contact list */
+		sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
+
 		for (persona_node = sipe_xml_child(node, "Personas/Persona");
 		     persona_node;
 		     persona_node = sipe_xml_twin(persona_node)) {
@@ -300,6 +303,8 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 			g_free(name);
 		}
 
+		/* Finished processing contact list */
+		sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
 		sipe_subscribe_presence_initial(sipe_private);
 	}
 }
