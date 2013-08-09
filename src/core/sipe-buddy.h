@@ -86,6 +86,17 @@ struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private
 					  const gchar *uri);
 
 /**
+ * Find buddy by Exchange Key
+ *
+ * @param sipe_private SIPE core data
+ * @param uri          Exchange Key of a buddy
+ *
+ * @return @c sipe_buddy structure
+ */
+struct sipe_buddy *sipe_buddy_find_by_exchange_key(struct sipe_core_private *sipe_private,
+						   const gchar *exchange_key);
+
+/**
  * Iterate buddy list
  *
  * @param sipe_private SIPE core data

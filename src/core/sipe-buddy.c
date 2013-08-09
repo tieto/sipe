@@ -60,6 +60,7 @@
 
 struct sipe_buddies {
 	GHashTable *uri;
+	GHashTable *exchange_key;
 
 	/* Pending photo download HTTP requests */
 	GSList *pending_photo_requests;
@@ -81,12 +82,21 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 {
 	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private, uri);
 	if (!buddy) {
+		struct sipe_buddies *buddies = sipe_private->buddies;
+
 		buddy = g_new0(struct sipe_buddy, 1);
 		buddy->name         = g_strdup(uri);
-		buddy->exchange_key = g_strdup(exchange_key);
-		g_hash_table_insert(sipe_private->buddies->uri,
+		g_hash_table_insert(buddies->uri,
 				    buddy->name,
 				    buddy);
+
+		if (exchange_key) {
+			buddy->exchange_key = g_strdup(exchange_key);
+			g_hash_table_insert(buddies->exchange_key,
+					    buddy->exchange_key,
+					    buddy);
+		}
+
 
 		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", uri);
 
@@ -102,6 +112,13 @@ struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private
 					  const gchar *uri)
 {
 	return(g_hash_table_lookup(sipe_private->buddies->uri, uri));
+}
+
+struct sipe_buddy *sipe_buddy_find_by_exchange_key(struct sipe_core_private *sipe_private,
+						   const gchar *exchange_key)
+{
+	return(g_hash_table_lookup(sipe_private->buddies->exchange_key,
+				   exchange_key));
 }
 
 void sipe_buddy_foreach(struct sipe_core_private *sipe_private,
@@ -176,6 +193,7 @@ void sipe_buddy_free(struct sipe_core_private *sipe_private)
 	}
 
 	g_hash_table_destroy(buddies->uri);
+	g_hash_table_destroy(buddies->exchange_key);
 	g_free(buddies);
 	sipe_private->buddies = NULL;
 }
@@ -283,11 +301,15 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 void sipe_buddy_remove(struct sipe_core_private *sipe_private,
 		       struct sipe_buddy *buddy)
 {
+	struct sipe_buddies *buddies = sipe_private->buddies;
 	gchar *action_name = sipe_utils_presence_key(buddy->name);
 	sipe_schedule_cancel(sipe_private, action_name);
 	g_free(action_name);
 
-	g_hash_table_remove(sipe_private->buddies->uri, buddy->name);
+	g_hash_table_remove(buddies->uri, buddy->name);
+	if (buddy->exchange_key)
+		g_hash_table_remove(buddies->exchange_key,
+				    buddy->exchange_key);
 
 	buddy_free(buddy);
 }
@@ -1726,8 +1748,10 @@ static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
 void sipe_buddy_init(struct sipe_core_private *sipe_private)
 {
 	struct sipe_buddies *buddies = g_new0(struct sipe_buddies, 1);
-	buddies->uri = g_hash_table_new((GHashFunc)  sipe_ht_hash_nick,
-					(GEqualFunc) sipe_ht_equals_nick);
+	buddies->uri          = g_hash_table_new((GHashFunc)  sipe_ht_hash_nick,
+						 (GEqualFunc) sipe_ht_equals_nick);
+	buddies->exchange_key = g_hash_table_new(g_str_hash,
+						 g_str_equal);
 	sipe_private->buddies = buddies;
 }
 
