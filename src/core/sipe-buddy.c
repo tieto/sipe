@@ -95,6 +95,13 @@ struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private
 	return(g_hash_table_lookup(sipe_private->buddies, uri));
 }
 
+void sipe_buddy_foreach(struct sipe_core_private *sipe_private,
+			GHFunc callback,
+			gpointer callback_data)
+{
+	g_hash_table_foreach(sipe_private->buddies, callback, callback_data);
+}
+
 static void buddy_free(struct sipe_buddy *buddy)
 {
 #ifndef _WIN32

@@ -2011,9 +2011,9 @@ static void sipe_refresh_blocked_status_cb(char *buddy_name,
 
 static void sipe_refresh_blocked_status(struct sipe_core_private *sipe_private)
 {
-	g_hash_table_foreach(sipe_private->buddies,
-			     (GHFunc) sipe_refresh_blocked_status_cb,
-			     sipe_private);
+	sipe_buddy_foreach(sipe_private,
+			   (GHFunc) sipe_refresh_blocked_status_cb,
+			   sipe_private);
 }
 
 /**

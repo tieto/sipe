@@ -86,6 +86,17 @@ struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private
 					  const gchar *uri);
 
 /**
+ * Iterate buddy list
+ *
+ * @param sipe_private SIPE core data
+ * @param callback          function to call on each buddy
+ * @param callback_data     user data for the callback
+ */
+void sipe_buddy_foreach(struct sipe_core_private *sipe_private,
+			GHFunc callback,
+			gpointer callback_data);
+
+/**
  * Cancels buddy subscriptions and then deletes the buddy
  *
  * @param sipe_private SIPE core data

@@ -772,21 +772,21 @@ void sipe_subscribe_presence_initial(struct sipe_core_private *sipe_private)
 			gchar *to = sip_uri_self(sipe_private);
 			gchar *resources_uri = g_strdup("");
 			if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-				g_hash_table_foreach(sipe_private->buddies,
-						     (GHFunc) sipe_subscribe_resource_uri_with_context,
-						     &resources_uri);
+				sipe_buddy_foreach(sipe_private,
+						   (GHFunc) sipe_subscribe_resource_uri_with_context,
+						   &resources_uri);
 			} else {
-				g_hash_table_foreach(sipe_private->buddies,
-						     (GHFunc) sipe_subscribe_resource_uri,
-						     &resources_uri);
+				sipe_buddy_foreach(sipe_private,
+						   (GHFunc) sipe_subscribe_resource_uri,
+						   &resources_uri);
 			}
 			sipe_subscribe_presence_batched_to(sipe_private, resources_uri, to);
 			g_free(to);
 
 		} else {
-			g_hash_table_foreach(sipe_private->buddies,
-					     (GHFunc) schedule_buddy_resubscription_cb,
-					     sipe_private);
+			sipe_buddy_foreach(sipe_private,
+					   (GHFunc) schedule_buddy_resubscription_cb,
+					   sipe_private);
 		}
 
 		SIPE_CORE_PRIVATE_FLAG_SET(SUBSCRIBED_BUDDIES);
