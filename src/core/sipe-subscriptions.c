@@ -512,7 +512,8 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 	gchar *content = NULL;
 	const gchar *additional = "";
 	const gchar *content_type = "";
-	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	struct sipe_buddy *sbuddy = sipe_buddy_find_by_uri(sipe_private,
+							   uri);
 
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 		content_type = "Content-Type: application/msrtc-adrl-categorylist+xml\r\n";

@@ -72,7 +72,7 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 				  const gchar *uri,
 				  const gchar *exchange_key)
 {
-	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private, uri);
 	if (!buddy) {
 		buddy = g_new0(struct sipe_buddy, 1);
 		buddy->name         = g_strdup(uri);
@@ -87,6 +87,12 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 	}
 
 	return buddy;
+}
+
+struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private,
+					  const gchar *uri)
+{
+	return(g_hash_table_lookup(sipe_private->buddies, uri));
 }
 
 static void buddy_free(struct sipe_buddy *buddy)
@@ -235,7 +241,7 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	if (!g_hash_table_lookup(sipe_private->buddies, uri)) {
+	if (!sipe_buddy_find_by_uri(sipe_private, uri)) {
 		struct sipe_buddy *b = sipe_buddy_add(sipe_private, uri, NULL);
 		b->just_added = TRUE;
 
@@ -274,8 +280,8 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 			    const gchar *group_name)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *b = g_hash_table_lookup(sipe_private->buddies,
-						   uri);
+	struct sipe_buddy *b = sipe_buddy_find_by_uri(sipe_private,
+						      uri);
 
 	if (!b) return;
 
@@ -309,8 +315,8 @@ void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 				guint activity)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies,
-							uri);
+	struct sipe_buddy *sbuddy = sipe_buddy_find_by_uri(sipe_private,
+							   uri);
 
 	if (!sbuddy) return;
 
@@ -351,7 +357,8 @@ void sipe_core_buddy_tooltip_info(struct sipe_core_public *sipe_public,
 	sipe_backend_buddy_tooltip_add(sipe_public, tooltip, (l), (t))
 
 	if (sipe_public) { /* happens on pidgin exit */
-		struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+		struct sipe_buddy *sbuddy = sipe_buddy_find_by_uri(sipe_private,
+								   uri);
 		if (sbuddy) {
 			note = sbuddy->note;
 			is_oof_note = sbuddy->is_oof_note;
@@ -938,7 +945,7 @@ static void get_info_finalize(struct sipe_core_private *sipe_private,
 		g_free(value);
 	}
 
-	sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	sbuddy = sipe_buddy_find_by_uri(sipe_private, uri);
 	if (sbuddy && sbuddy->device_name) {
 		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 					    info,

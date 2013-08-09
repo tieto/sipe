@@ -466,7 +466,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 		activity_since = 0;
 	}
 
-	sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	sbuddy = sipe_buddy_find_by_uri(sipe_private, uri);
 	if (sbuddy)
 	{
 		g_free(sbuddy->activity);
@@ -557,7 +557,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 	xn_categories = sipe_xml_parse(data, len);
 	uri = sipe_xml_attribute(xn_categories, "uri"); /* with 'sip:' prefix */
 	if (uri) {
-		sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+		sbuddy = sipe_buddy_find_by_uri(sipe_private, uri);
 	}
 
 	if (!sbuddy) {
@@ -1095,7 +1095,7 @@ static void sipe_cleanup_local_blist(struct sipe_core_private *sipe_private)
 		b = entry->data;
 		gname = sipe_backend_buddy_get_group_name(SIPE_CORE_PUBLIC, b);
 		bname = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC, b);
-		buddy = g_hash_table_lookup(sipe_private->buddies, bname);
+		buddy = sipe_buddy_find_by_uri(sipe_private, bname);
 		if(buddy) {
 			gboolean in_sipe_groups = FALSE;
 			GSList *entry2 = buddy->groups;
@@ -1347,8 +1347,8 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		/* Process modified buddies */
 		for (item = sipe_xml_child(isc, "modifiedContact"); item; item = sipe_xml_twin(item)) {
 			const gchar *uri = sipe_xml_attribute(item, "uri");
-			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
-								       uri);
+			struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+									  uri);
 
 			if (buddy) {
 				gchar **item_groups = g_strsplit(sipe_xml_attribute(item,
@@ -1444,8 +1444,8 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 		/* Process deleted buddies */
 		for (item = sipe_xml_child(isc, "deletedContact"); item; item = sipe_xml_twin(item)) {
 			const gchar *uri = sipe_xml_attribute(item, "uri");
-			struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
-								       uri);
+			struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+									  uri);
 
 			if (buddy) {
 				GSList *entry = buddy->groups;
@@ -1588,7 +1588,7 @@ static void sipe_process_presence_wpending (struct sipe_core_private *sipe_priva
 	for (watcher = sipe_xml_child(watchers, "watcher"); watcher; watcher = sipe_xml_twin(watcher)) {
 		gchar * remote_user = g_strdup(sipe_xml_attribute(watcher, "uri"));
 		gchar * alias = g_strdup(sipe_xml_attribute(watcher, "displayName"));
-		gboolean on_list = g_hash_table_lookup(sipe_private->buddies, remote_user) != NULL;
+		gboolean on_list = sipe_buddy_find_by_uri(sipe_private, remote_user) != NULL;
 
 		// TODO pull out optional displayName to pass as alias
 		if (remote_user) {

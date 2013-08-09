@@ -90,7 +90,8 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 		sipe_group_add(sipe_private, group);
 
 		if (ctx->user_name) {
-			buddy = g_hash_table_lookup(sipe_private->buddies, ctx->user_name);
+			buddy = sipe_buddy_find_by_uri(sipe_private,
+						       ctx->user_name);
 			if (buddy) {
 				buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
 										      group,
@@ -356,8 +357,8 @@ void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
 			       const gchar *alias)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
-						       who);
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+							  who);
 
 	if (buddy)
 		send_buddy_update(sipe_private, buddy, alias);
