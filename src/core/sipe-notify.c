@@ -1090,7 +1090,7 @@ static void sipe_cleanup_local_blist(struct sipe_core_private *sipe_private)
 	gchar *gname;
 
 	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: overall %d backend buddies (including clones)", g_slist_length(buddies));
-	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: %d sipe buddies (unique)", g_hash_table_size(sipe_private->buddies));
+	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: %d sipe buddies (unique)", sipe_buddy_count(sipe_private));
 	while (entry) {
 		b = entry->data;
 		gname = sipe_backend_buddy_get_group_name(SIPE_CORE_PUBLIC, b);

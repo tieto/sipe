@@ -739,7 +739,7 @@ static void schedule_buddy_resubscription_cb(char *buddy_name,
 					     SIPE_UNUSED_PARAMETER struct sipe_buddy *buddy,
 					     struct sipe_core_private *sipe_private)
 {
-	guint time_range = (g_hash_table_size(sipe_private->buddies) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
+	guint time_range = (sipe_buddy_count(sipe_private) * 1000) / 25; /* time interval for 25 requests per sec. In msec. */
 
 	/*
 	 * g_hash_table_size() can never return 0, otherwise this function

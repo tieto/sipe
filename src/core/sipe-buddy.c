@@ -1660,6 +1660,11 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 	return(menu);
 }
 
+guint sipe_buddy_count(struct sipe_core_private *sipe_private)
+{
+	return(g_hash_table_size(sipe_private->buddies));
+}
+
 static guint sipe_ht_hash_nick(const char *nick)
 {
 	char *lc = g_utf8_strdown(nick, -1);

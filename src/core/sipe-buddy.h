@@ -117,6 +117,13 @@ void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
 void sipe_buddy_refresh_photos(struct sipe_core_private *sipe_private);
 
 /**
+ * Number of buddies
+ *
+ * @param sipe_private SIPE core data
+ */
+guint sipe_buddy_count(struct sipe_core_private *sipe_private);
+
+/**
  * Initialize buddy data
  *
  * @param sipe_private SIPE core data
