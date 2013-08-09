@@ -1288,7 +1288,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	 *
 	 *  - Lync 2013 with buddy list migrated to Unified Contact Store (UCS)
 	 *    * Notify piggy-backed on SUBSCRIBE response with empty list
-	 *    * NOTIFY send by server with standard list
+	 *    * NOTIFY send by server with standard list (ignored by us)
 	 */
 	if (sipe_strequal(sipe_xml_name(isc), "contactList")) {
 		const gchar *ucsmode = sipe_xml_attribute(isc, "ucsmode");
@@ -1305,16 +1305,12 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 			sipe_ucs_init(sipe_private, migrated);
 		}
 
-		group_node = sipe_xml_child(isc, "group");
-		item = sipe_xml_child(isc, "contact");
-
-		if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) || group_node || item) {
-
+		if (!sipe_ucs_is_migrated(sipe_private)) {
 			/* Start processing contact list */
 			sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
 
 			/* Parse groups */
-			for (; group_node; group_node = sipe_xml_twin(group_node))
+			for (group_node = sipe_xml_child(isc, "group"); group_node; group_node = sipe_xml_twin(group_node))
 				add_new_group(sipe_private, group_node);
 
 			/* Make sure we have at least one group */
@@ -1323,7 +1319,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 			}
 
 			/* Parse contacts */
-			for (; item; item = sipe_xml_twin(item)) {
+			for (item = sipe_xml_child(isc, "contact"); item; item = sipe_xml_twin(item)) {
 				const gchar *name = sipe_xml_attribute(item, "uri");
 				gchar *uri        = sip_uri_from_name(name);
 				add_new_buddy(sipe_private, item, uri, name);
@@ -1520,11 +1516,12 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 	sipe_xml_free(isc);
 
 	/*
-	 * Subscribe to buddies (if any), but only do it once.
+	 * Subscribe to buddies (if not migrated to UCS), but only do it once.
 	 * We'll resubsribe to them based on the Expire field values.
 	 */
-	if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES) &&
-	    g_hash_table_size(sipe_private->buddies)) {
+	if (!(SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES) ||
+	      sipe_ucs_is_migrated(sipe_private))) {
+		/* do it once, then count Expire field to schedule resubscribe */
 		if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
 			sipe_subscribe_presence_batched(sipe_private);
 		} else {
