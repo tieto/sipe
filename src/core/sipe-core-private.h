@@ -25,6 +25,7 @@ struct sip_address_data;
 struct sip_csta;
 struct sip_service_data;
 struct sip_transport;
+struct sipe_buddies;
 struct sipe_calendar;
 struct sipe_certificate;
 struct sipe_ews_autodiscover;
@@ -96,7 +97,7 @@ struct sipe_core_private {
 
 	/* Buddies */
 	GSList *groups;
-	GHashTable *buddies;
+	struct sipe_buddies *buddies;
 
 	/* Calendar and related stuff */
 	struct sipe_calendar *calendar;

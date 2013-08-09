@@ -58,6 +58,10 @@
 #include "sipe-webticket.h"
 #include "sipe-xml.h"
 
+struct sipe_buddies {
+	GHashTable *uri;
+};
+
 struct photo_response_data {
 	gchar *who;
 	gchar *photo_hash;
@@ -77,7 +81,9 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 		buddy = g_new0(struct sipe_buddy, 1);
 		buddy->name         = g_strdup(uri);
 		buddy->exchange_key = g_strdup(exchange_key);
-		g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
+		g_hash_table_insert(sipe_private->buddies->uri,
+				    buddy->name,
+				    buddy);
 
 		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", uri);
 
@@ -92,14 +98,16 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private,
 					  const gchar *uri)
 {
-	return(g_hash_table_lookup(sipe_private->buddies, uri));
+	return(g_hash_table_lookup(sipe_private->buddies->uri, uri));
 }
 
 void sipe_buddy_foreach(struct sipe_core_private *sipe_private,
 			GHFunc callback,
 			gpointer callback_data)
 {
-	g_hash_table_foreach(sipe_private->buddies, callback, callback_data);
+	g_hash_table_foreach(sipe_private->buddies->uri,
+			     callback,
+			     callback_data);
 }
 
 static void buddy_free(struct sipe_buddy *buddy)
@@ -149,7 +157,9 @@ static gboolean buddy_free_cb(SIPE_UNUSED_PARAMETER gpointer key,
 
 void sipe_buddy_free(struct sipe_core_private *sipe_private)
 {
-	g_hash_table_foreach_steal(sipe_private->buddies,
+	struct sipe_buddies *buddies = sipe_private->buddies;
+
+	g_hash_table_foreach_steal(buddies->uri,
 				   buddy_free_cb,
 				   NULL);
 
@@ -162,7 +172,8 @@ void sipe_buddy_free(struct sipe_core_private *sipe_private)
 		photo_response_data_free(data);
 	}
 
-	g_hash_table_destroy(sipe_private->buddies);
+	g_hash_table_destroy(buddies->uri);
+	g_free(buddies);
 	sipe_private->buddies = NULL;
 }
 
@@ -176,7 +187,7 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 
 	if (!sipe_public) return NULL; /* happens on pidgin exit */
 
-	sbuddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, uri);
+	sbuddy = sipe_buddy_find_by_uri(SIPE_CORE_PRIVATE, uri);
 	if (!sbuddy) return NULL;
 
 	activity_str = sbuddy->activity ? sbuddy->activity :
@@ -210,7 +221,8 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			   const gchar *old_group_name,
 			   const gchar *new_group_name)
 {
-	struct sipe_buddy * buddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, who);
+	struct sipe_buddy * buddy = sipe_buddy_find_by_uri(SIPE_CORE_PRIVATE,
+							   who);
 	struct sipe_group * old_group = NULL;
 	struct sipe_group * new_group;
 
@@ -272,7 +284,7 @@ void sipe_buddy_remove(struct sipe_core_private *sipe_private,
 	sipe_schedule_cancel(sipe_private, action_name);
 	g_free(action_name);
 
-	g_hash_table_remove(sipe_private->buddies, buddy->name);
+	g_hash_table_remove(sipe_private->buddies->uri, buddy->name);
 
 	buddy_free(buddy);
 }
@@ -1432,7 +1444,7 @@ static void buddy_refresh_photos_cb(gpointer uri,
 
 void sipe_buddy_refresh_photos(struct sipe_core_private *sipe_private)
 {
-	g_hash_table_foreach(sipe_private->buddies,
+	g_hash_table_foreach(sipe_private->buddies->uri,
 			     buddy_refresh_photos_cb,
 			     sipe_private);
 }
@@ -1676,7 +1688,7 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 
 guint sipe_buddy_count(struct sipe_core_private *sipe_private)
 {
-	return(g_hash_table_size(sipe_private->buddies));
+	return(g_hash_table_size(sipe_private->buddies->uri));
 }
 
 static guint sipe_ht_hash_nick(const char *nick)
@@ -1710,11 +1722,11 @@ static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
 
 void sipe_buddy_init(struct sipe_core_private *sipe_private)
 {
-	sipe_private->buddies = g_hash_table_new((GHashFunc)  sipe_ht_hash_nick,
-						 (GEqualFunc) sipe_ht_equals_nick);
-
+	struct sipe_buddies *buddies = g_new0(struct sipe_buddies, 1);
+	buddies->uri = g_hash_table_new((GHashFunc)  sipe_ht_hash_nick,
+					(GEqualFunc) sipe_ht_equals_nick);
+	sipe_private->buddies = buddies;
 }
-
 
 /*
   Local Variables:
