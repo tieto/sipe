@@ -265,8 +265,6 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		     persona_node = sipe_xml_twin(persona_node)) {
 			gchar *address = sipe_xml_data(sipe_xml_child(persona_node,
 								      "ImAddress"));
-			gchar *name    = sipe_xml_data(sipe_xml_child(persona_node,
-								      "DisplayName"));
 			const gchar *key = NULL;
 			const sipe_xml *attr_node;
 
@@ -288,7 +286,7 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 				g_free(type);
 			}
 
-			if (!(is_empty(address) || is_empty(name) || is_empty(key))) {
+			if (!(is_empty(address) || is_empty(key))) {
 				/*
 				 * Buddy name must be lower case as we use
 				 * purple_normalize_nocase() to compare
@@ -302,7 +300,6 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 					       key);
 				g_free(normalized_uri);
 			}
-			g_free(name);
 			g_free(address);
 		}
 
@@ -314,11 +311,44 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 
 			if (!is_empty(name)) {
 				struct sipe_group *group = g_new0(struct sipe_group, 1);
+				const sipe_xml *member_node;
 
 				group->name = name;
 				name = NULL; /* group takes ownership */
 
 				sipe_group_add(sipe_private, group);
+
+				for (member_node = sipe_xml_child(group_node,
+								  "MemberCorrelationKey/ItemId");
+				     member_node;
+				     member_node = sipe_xml_twin(member_node)) {
+					struct sipe_buddy *buddy = sipe_buddy_find_by_exchange_key(sipe_private,
+												   sipe_xml_attribute(member_node,
+														      "Id"));
+					if (buddy) {
+						sipe_backend_buddy b = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+											       buddy->name,
+											       group->name);
+
+						if (!b) {
+							b = sipe_backend_buddy_add(SIPE_CORE_PUBLIC,
+										   buddy->name,
+										   /* alias will be set via buddy presence update */
+										   NULL,
+										   group->name);
+							SIPE_DEBUG_INFO("Created new buddy %s", buddy->name);
+						}
+
+					}
+
+					buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+											      group,
+											      (GCompareFunc) sipe_group_compare,
+											      NULL);
+
+					SIPE_DEBUG_INFO("Added buddy %s to group %s",
+							buddy->name, group->name);
+				}
 			}
 
 			g_free(name);
