@@ -134,7 +134,7 @@ static gboolean buddy_free_cb(SIPE_UNUSED_PARAMETER gpointer key,
 	return(TRUE);
 }
 
-void sipe_buddy_free_all(struct sipe_core_private *sipe_private)
+void sipe_buddy_free(struct sipe_core_private *sipe_private)
 {
 	g_hash_table_foreach_steal(sipe_private->buddies,
 				   buddy_free_cb,
@@ -148,6 +148,9 @@ void sipe_buddy_free_all(struct sipe_core_private *sipe_private)
 			g_slist_remove(sipe_private->pending_photo_requests, data);
 		photo_response_data_free(data);
 	}
+
+	g_hash_table_destroy(sipe_private->buddies);
+	sipe_private->buddies = NULL;
 }
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
@@ -1656,6 +1659,43 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 
 	return(menu);
 }
+
+static guint sipe_ht_hash_nick(const char *nick)
+{
+	char *lc = g_utf8_strdown(nick, -1);
+	guint bucket = g_str_hash(lc);
+	g_free(lc);
+
+	return bucket;
+}
+
+static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
+{
+	char *nick1_norm = NULL;
+	char *nick2_norm = NULL;
+	gboolean equal;
+
+	if (nick1 == NULL && nick2 == NULL) return TRUE;
+	if (nick1 == NULL || nick2 == NULL    ||
+	    !g_utf8_validate(nick1, -1, NULL) ||
+	    !g_utf8_validate(nick2, -1, NULL)) return FALSE;
+
+	nick1_norm = g_utf8_casefold(nick1, -1);
+	nick2_norm = g_utf8_casefold(nick2, -1);
+	equal = g_utf8_collate(nick1_norm, nick2_norm) == 0;
+	g_free(nick2_norm);
+	g_free(nick1_norm);
+
+	return equal;
+}
+
+void sipe_buddy_init(struct sipe_core_private *sipe_private)
+{
+	sipe_private->buddies = g_hash_table_new((GHashFunc)  sipe_ht_hash_nick,
+						 (GEqualFunc) sipe_ht_equals_nick);
+
+}
+
 
 /*
   Local Variables:

@@ -222,35 +222,6 @@ gchar *sipe_core_about(void)
 		);
 }
 
-static guint sipe_ht_hash_nick(const char *nick)
-{
-	char *lc = g_utf8_strdown(nick, -1);
-	guint bucket = g_str_hash(lc);
-	g_free(lc);
-
-	return bucket;
-}
-
-static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
-{
-	char *nick1_norm = NULL;
-	char *nick2_norm = NULL;
-	gboolean equal;
-
-	if (nick1 == NULL && nick2 == NULL) return TRUE;
-	if (nick1 == NULL || nick2 == NULL    ||
-	    !g_utf8_validate(nick1, -1, NULL) ||
-	    !g_utf8_validate(nick2, -1, NULL)) return FALSE;
-
-	nick1_norm = g_utf8_casefold(nick1, -1);
-	nick2_norm = g_utf8_casefold(nick2, -1);
-	equal = g_utf8_collate(nick1_norm, nick2_norm) == 0;
-	g_free(nick2_norm);
-	g_free(nick1_norm);
-
-	return equal;
-}
-
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    gboolean sso,
 					    const gchar *login_domain,
@@ -337,7 +308,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sipe_private->public.sip_domain = g_strdup(user_domain[1]);
 	g_strfreev(user_domain);
 
-	sipe_private->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
+	sipe_buddy_init(sipe_private);
 	sipe_private->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 							       g_free, (GDestroyNotify)g_hash_table_destroy);
 	sipe_subscriptions_init(sipe_private);
@@ -453,8 +424,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->note);
 	g_free(sipe_private->ocs2005_user_states);
 
-	sipe_buddy_free_all(sipe_private);
-	g_hash_table_destroy(sipe_private->buddies);
+	sipe_buddy_free(sipe_private);
 	g_hash_table_destroy(sipe_private->our_publications);
 	g_hash_table_destroy(sipe_private->user_state_publications);
 	sipe_subscriptions_destroy(sipe_private);
