@@ -69,12 +69,14 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 static void photo_response_data_free(struct photo_response_data *data);
 
 struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
-				  const gchar *uri)
+				  const gchar *uri,
+				  const gchar *exchange_key)
 {
 	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, uri);
 	if (!buddy) {
 		buddy = g_new0(struct sipe_buddy, 1);
-		buddy->name = g_strdup(uri);
+		buddy->name         = g_strdup(uri);
+		buddy->exchange_key = g_strdup(exchange_key);
 		g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
 
 		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", uri);
@@ -105,6 +107,7 @@ static void buddy_free(struct sipe_buddy *buddy)
 	  */
 	g_free(buddy->name);
 #endif
+	g_free(buddy->exchange_key);
 	g_free(buddy->activity);
 	g_free(buddy->meeting_subject);
 	g_free(buddy->meeting_location);
@@ -230,7 +233,7 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
 	if (!g_hash_table_lookup(sipe_private->buddies, uri)) {
-		struct sipe_buddy *b = sipe_buddy_add(sipe_private, uri);
+		struct sipe_buddy *b = sipe_buddy_add(sipe_private, uri, NULL);
 		b->just_added = TRUE;
 
 		sipe_subscribe_presence_single_cb(sipe_private, b->name);

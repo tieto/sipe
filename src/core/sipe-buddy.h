@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@ struct sipe_cal_working_hours;
 
 struct sipe_buddy {
 	gchar *name;
+	gchar *exchange_key;
 	gchar *activity;
 	gchar *meeting_subject;
 	gchar *meeting_location;
@@ -65,11 +66,13 @@ struct sipe_buddy {
  *
  * @param sipe_private SIPE core data
  * @param uri          SIP URI of a buddy
+ * @param exchange_key Exchange key (may be @c NULL)
  *
  * @return @c sipe_buddy structure
  */
 struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
-				  const gchar *uri);
+				  const gchar *uri,
+				  const gchar *exchange_key);
 
 /**
  * Cancels buddy subscriptions and then deletes the buddy

@@ -267,8 +267,26 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 								      "ImAddress"));
 			gchar *name    = sipe_xml_data(sipe_xml_child(persona_node,
 								      "DisplayName"));
+			const gchar *key = NULL;
+			const sipe_xml *attr_node;
 
-			if (!(is_empty(address) || is_empty(name))) {
+			/* extract Exchange key - not sure if this is correct */
+			for (attr_node = sipe_xml_child(persona_node,
+							"Attributions/Attribution");
+			     attr_node;
+			     attr_node = sipe_xml_twin(attr_node)) {
+				const sipe_xml *id_node = sipe_xml_child(attr_node,
+									 "SourceId");
+				gchar *type = sipe_xml_data(sipe_xml_child(attr_node,
+									   "DisplayName"));
+				if (id_node &&
+				    sipe_strequal(type, "Lync Contacts")) {
+					key = sipe_xml_attribute(id_node, "Id");
+					break;
+				}
+			}
+
+			if (!(is_empty(address) || is_empty(name) || is_empty(key))) {
 				/*
 				 * Buddy name must be lower case as we use
 				 * purple_normalize_nocase() to compare
@@ -278,7 +296,8 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 				g_free(uri);
 
 				sipe_buddy_add(sipe_private,
-					       normalized_uri);
+					       normalized_uri,
+					       key);
 				g_free(normalized_uri);
 			}
 			g_free(name);
