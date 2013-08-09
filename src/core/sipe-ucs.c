@@ -35,6 +35,7 @@
 #include "sipe-core-private.h"
 #include "sipe-digest.h"
 #include "sipe-ews-autodiscover.h"
+#include "sipe-group.h"
 #include "sipe-http.h"
 #include "sipe-subscriptions.h"
 #include "sipe-ucs.h"
@@ -42,7 +43,7 @@
 #include "sipe-xml.h"
 
 typedef void (ucs_callback)(struct sipe_core_private *sipe_private,
-			    const sipe_xml *xml,
+			    const sipe_xml *body,
 			    gpointer callback_data);
 
 struct ucs_deferred {
@@ -100,8 +101,9 @@ static void sipe_ucs_http_response(struct sipe_core_private *sipe_private,
 
 	if ((status == SIPE_HTTP_STATUS_OK) && body) {
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
+		const sipe_xml *soap_body = sipe_xml_child(xml, "Body");
 		/* Callback: success */
-		(*data->cb)(sipe_private, xml, data->cb_data);
+		(*data->cb)(sipe_private, soap_body, data->cb_data);
 		sipe_xml_free(xml);
 	} else {
 		/* Callback: failed */
@@ -188,12 +190,12 @@ static gboolean sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 }
 
 static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
-					     const sipe_xml *xml,
+					     const sipe_xml *body,
 					     gpointer callback_data)
 {
 	gchar *uri = callback_data;
-	const sipe_xml *node = sipe_xml_child(xml,
-					      "Body/GetUserPhotoResponse/PictureData");
+	const sipe_xml *node = sipe_xml_child(body,
+					      "GetUserPhotoResponse/PictureData");
 
 	if (node) {
 		gchar *base64;
@@ -244,10 +246,33 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 }
 
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
-					       const sipe_xml *xml,
+					       const sipe_xml *body,
 					       SIPE_UNUSED_PARAMETER gpointer callback_data)
 {
-	if (xml) {
+	const sipe_xml *node = sipe_xml_child(body,
+					      "GetImItemListResponse/ImItemList");
+
+	if (node) {
+		const sipe_xml *group_node;
+
+		for (group_node = sipe_xml_child(node, "Groups/ImGroup");
+		     group_node;
+		     group_node = sipe_xml_twin(group_node)) {
+			gchar *name = sipe_xml_data(sipe_xml_child(group_node,
+								   "DisplayName"));
+
+			if (!is_empty(name)) {
+				struct sipe_group *group = g_new0(struct sipe_group, 1);
+
+				group->name = name;
+				name = NULL; /* group takes ownership */
+
+				sipe_group_add(sipe_private, group);
+			}
+
+			g_free(name);
+		}
+
 		sipe_subscribe_presence_initial(sipe_private);
 	}
 }
