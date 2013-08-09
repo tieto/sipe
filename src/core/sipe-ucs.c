@@ -30,6 +30,7 @@
 #include <glib.h>
 
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -253,7 +254,33 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 					      "GetImItemListResponse/ImItemList");
 
 	if (node) {
+		const sipe_xml *persona_node;
 		const sipe_xml *group_node;
+
+		for (persona_node = sipe_xml_child(node, "Personas/Persona");
+		     persona_node;
+		     persona_node = sipe_xml_twin(persona_node)) {
+			gchar *address = sipe_xml_data(sipe_xml_child(persona_node,
+								      "ImAddress"));
+			gchar *name    = sipe_xml_data(sipe_xml_child(persona_node,
+								      "DisplayName"));
+
+			if (!(is_empty(address) || is_empty(name))) {
+				/*
+				 * Buddy name must be lower case as we use
+				 * purple_normalize_nocase() to compare
+				 */
+				gchar *uri            = sip_uri_from_name(address);
+				gchar *normalized_uri = g_ascii_strdown(uri, -1);
+				g_free(uri);
+
+				sipe_buddy_add(sipe_private,
+					       normalized_uri);
+				g_free(normalized_uri);
+			}
+			g_free(name);
+			g_free(address);
+		}
 
 		for (group_node = sipe_xml_child(node, "Groups/ImGroup");
 		     group_node;
