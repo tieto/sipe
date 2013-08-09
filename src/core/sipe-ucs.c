@@ -282,8 +282,10 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 				if (id_node &&
 				    sipe_strequal(type, "Lync Contacts")) {
 					key = sipe_xml_attribute(id_node, "Id");
+					g_free(type);
 					break;
 				}
+				g_free(type);
 			}
 
 			if (!(is_empty(address) || is_empty(name) || is_empty(key))) {
