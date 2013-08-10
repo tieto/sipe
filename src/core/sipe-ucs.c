@@ -325,29 +325,12 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 					struct sipe_buddy *buddy = sipe_buddy_find_by_exchange_key(sipe_private,
 												   sipe_xml_attribute(member_node,
 														      "Id"));
-					if (buddy) {
-						sipe_backend_buddy b = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
-											       buddy->name,
-											       group->name);
-
-						if (!b) {
-							b = sipe_backend_buddy_add(SIPE_CORE_PUBLIC,
-										   buddy->name,
-										   /* alias will be set via buddy presence update */
-										   NULL,
-										   group->name);
-							SIPE_DEBUG_INFO("Created new buddy %s", buddy->name);
-						}
-
-					}
-
-					buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-											      group,
-											      (GCompareFunc) sipe_group_compare,
-											      NULL);
-
-					SIPE_DEBUG_INFO("Added buddy %s to group %s",
-							buddy->name, group->name);
+					if (buddy)
+						sipe_buddy_add_to_group(sipe_private,
+									buddy,
+									group,
+									/* alias will be set via buddy presence update */
+									NULL);
 				}
 			}
 

@@ -21,8 +21,9 @@
  */
 
 /* Forward declarations */
-struct sipe_core_private;
 struct sipe_cal_working_hours;
+struct sipe_core_private;
+struct sipe_group;
 
 struct sipe_buddy {
 	gchar *name;
@@ -73,6 +74,19 @@ struct sipe_buddy {
 struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 				  const gchar *uri,
 				  const gchar *exchange_key);
+
+/**
+ * Add buddy to a group.
+ *
+ * @param sipe_private SIPE core data
+ * @param buddy        sipe_buddy data structure
+ * @param group        sipe_group data structure
+ * @param alias        alias for the buddy in that group (may be @c NULL)
+ */
+void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
+			     struct sipe_buddy *buddy,
+			     struct sipe_group *group,
+			     const gchar *alias);
 
 /**
  * Remove entries from local buddy list that do not have corresponding entries

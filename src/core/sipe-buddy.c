@@ -108,6 +108,50 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 	return buddy;
 }
 
+void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
+			     struct sipe_buddy *buddy,
+			     struct sipe_group *group,
+			     const gchar *alias)
+{
+	const gchar *uri = buddy->name;
+	const gchar *group_name = group->name;
+	sipe_backend_buddy bb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+							uri,
+							group_name);
+
+	if (!bb) {
+		bb = sipe_backend_buddy_add(SIPE_CORE_PUBLIC,
+					    uri,
+					    alias,
+					    group_name);
+		SIPE_DEBUG_INFO("sipe_buddy_add_to_group: created backend buddy '%s' with alias '%s'",
+				uri, alias ? alias : "<NONE>");
+	}
+
+
+	if (!is_empty(alias)) {
+		gchar *old_alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,
+								bb);
+
+		if (sipe_strcase_equal(sipe_get_no_sip_uri(uri),
+				       old_alias)) {
+			sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC,
+						     bb,
+						     alias);
+			SIPE_DEBUG_INFO("sipe_buddy_add_to_group: replaced alias for buddy '%s': old '%s' new '%s'",
+					uri, old_alias, alias);
+		}
+		g_free(old_alias);
+	}
+
+	buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+							      group,
+							      (GCompareFunc) sipe_group_compare,
+							      NULL);
+	SIPE_DEBUG_INFO("sipe_buddy_add_to_group: added buddy %s to group %s",
+			uri, group_name);
+}
+
 void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
 {
 	GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC,

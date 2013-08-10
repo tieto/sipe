@@ -1095,8 +1095,7 @@ static void add_new_group(struct sipe_core_private *sipe_private,
 
 static void add_new_buddy(struct sipe_core_private *sipe_private,
 			  const sipe_xml *node,
-			  const gchar *uri,
-			  const gchar *alias)
+			  const gchar *uri)
 {
 	const gchar *name = sipe_xml_attribute(node, "name");
 	/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
@@ -1129,43 +1128,15 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 			group = sipe_private->groups->data;
 
 		if (group) {
-			sipe_backend_buddy b = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
-								       normalized_uri,
-								       group->name);
-			gchar *b_alias;
-
-			if (!b) {
-				b = sipe_backend_buddy_add(SIPE_CORE_PUBLIC,
-							   normalized_uri,
-							   alias,
-							   group->name);
-				SIPE_DEBUG_INFO("Created new buddy %s with alias %s",
-						normalized_uri, alias);
-			}
-
-			b_alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC, b);
-			if (sipe_strcase_equal(alias, b_alias) &&
-			    !is_empty(name)) {
-				sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC,
-							     b,
-							     name);
-				SIPE_DEBUG_INFO("Replaced for buddy %s in group '%s' old alias '%s' with '%s'",
-						normalized_uri, group->name, b_alias, name);
-			}
-			g_free(b_alias);
-
 			if (!buddy)
 				buddy = sipe_buddy_add(sipe_private,
 						       normalized_uri,
 						       NULL);
 
-			buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-									      group,
-									      (GCompareFunc)sipe_group_compare,
-									      NULL);
-
-			SIPE_DEBUG_INFO("Added buddy %s to group %s",
-					buddy->name, group->name);
+			sipe_buddy_add_to_group(sipe_private,
+						buddy,
+						group,
+						name);
 		} else {
 			SIPE_DEBUG_INFO("No group found for contact %s!  Unable to add to buddy list",
 					name);
@@ -1248,7 +1219,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 			for (item = sipe_xml_child(isc, "contact"); item; item = sipe_xml_twin(item)) {
 				const gchar *name = sipe_xml_attribute(item, "uri");
 				gchar *uri        = sip_uri_from_name(name);
-				add_new_buddy(sipe_private, item, uri, name);
+				add_new_buddy(sipe_private, item, uri);
 				g_free(uri);
 			}
 
@@ -1292,9 +1263,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 
 		/* Process new buddies */
 		for (item = sipe_xml_child(isc, "addedContact"); item; item = sipe_xml_twin(item)) {
-			const gchar *uri  = sipe_xml_attribute(item, "uri");
-			const gchar *name = sipe_get_no_sip_uri(uri);
-			add_new_buddy(sipe_private, item, uri, name);
+			add_new_buddy(sipe_private,
+				      item,
+				      sipe_xml_attribute(item, "uri"));
 		}
 
 		/* Process modified buddies */
