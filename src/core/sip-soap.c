@@ -32,6 +32,7 @@
 
 #include <glib.h>
 
+#include "sipmsg.h" /* TEMPORARY */
 #include "sip-soap.h"
 #include "sip-transport.h"
 #include "sipe-backend.h" /* TEMPORARY */
@@ -53,9 +54,11 @@ void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
 	 */
 	if (sipe_ucs_is_migrated(sipe_private)) {
 		if (callback) {
+			struct sipmsg msg;
 			struct transaction trans;
+			msg.response = 500;
 			trans.payload = payload;
-			(*callback)(sipe_private, NULL, &trans);
+			(*callback)(sipe_private, &msg, &trans);
 		}
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  "Contact list migrated",
