@@ -108,6 +108,55 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 	return buddy;
 }
 
+void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
+{
+	GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC,
+						      NULL,
+						      NULL);
+	GSList *entry = buddies;
+
+	SIPE_DEBUG_INFO("sipe_buddy_cleanup_local_list: overall %d backend buddies (including clones)",
+			g_slist_length(buddies));
+	SIPE_DEBUG_INFO("sipe_buddy_cleanup_local_list: %d sipe buddies (unique)",
+			sipe_buddy_count(sipe_private));
+	while (entry) {
+		sipe_backend_buddy bb = entry->data;
+		gchar *bname = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC,
+							   bb);
+		gchar *gname = sipe_backend_buddy_get_group_name(SIPE_CORE_PUBLIC,
+								 bb);
+		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+								  bname);
+		gboolean in_sipe_groups = FALSE;
+
+		if (buddy) {
+			GSList *entry2 = buddy->groups;
+
+			while (entry2) {
+				struct sipe_group *group = entry2->data;
+				if (sipe_strequal(group->name, gname)) {
+					in_sipe_groups = TRUE;
+					break;
+				}
+				entry2 = entry2->next;
+			}
+		}
+
+		if (!in_sipe_groups) {
+			SIPE_DEBUG_INFO("sipe_buddy_cleanup_local_list: REMOVING '%s' from local group '%s', as buddy is not in that group on remote contact list",
+					bname, gname);
+			sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, bb);
+		}
+
+		g_free(gname);
+		g_free(bname);
+
+		entry = entry->next;
+	}
+
+	g_slist_free(buddies);
+}
+
 struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private,
 					  const gchar *uri)
 {

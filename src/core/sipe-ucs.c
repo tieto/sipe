@@ -355,6 +355,7 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		}
 
 		/* Finished processing contact list */
+		sipe_buddy_cleanup_local_list(sipe_private);
 		sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
 		sipe_subscribe_presence_initial(sipe_private);
 	}

@@ -1075,53 +1075,6 @@ static void sipe_process_registration_notify(struct sipe_core_private *sipe_priv
 
 }
 
-/**
-  * Removes entries from local buddy list
-  * that does not correspond ones in the roaming contact list.
-  */
-static void sipe_cleanup_local_blist(struct sipe_core_private *sipe_private)
-{
-	GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC,
-						      NULL, NULL);
-	GSList *entry = buddies;
-	struct sipe_buddy *buddy;
-	sipe_backend_buddy b;
-	gchar *bname;
-	gchar *gname;
-
-	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: overall %d backend buddies (including clones)", g_slist_length(buddies));
-	SIPE_DEBUG_INFO("sipe_cleanup_local_blist: %d sipe buddies (unique)", sipe_buddy_count(sipe_private));
-	while (entry) {
-		b = entry->data;
-		gname = sipe_backend_buddy_get_group_name(SIPE_CORE_PUBLIC, b);
-		bname = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC, b);
-		buddy = sipe_buddy_find_by_uri(sipe_private, bname);
-		if(buddy) {
-			gboolean in_sipe_groups = FALSE;
-			GSList *entry2 = buddy->groups;
-			while (entry2) {
-				struct sipe_group *group = entry2->data;
-				if (sipe_strequal(group->name, gname)) {
-					in_sipe_groups = TRUE;
-					break;
-				}
-				entry2 = entry2->next;
-			}
-			if(!in_sipe_groups) {
-				SIPE_DEBUG_INFO("*** REMOVING %s from blist group: %s as not having this group in roaming list", bname, gname);
-				sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, b);
-			}
-		} else {
-				SIPE_DEBUG_INFO("*** REMOVING %s from blist group: %s as this buddy not in roaming list", bname, gname);
-				sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, b);
-		}
-		g_free(bname);
-		g_free(gname);
-		entry = entry->next;
-	}
-	g_slist_free(buddies);
-}
-
 /* Replace "~" with localized version of "Other Contacts" */
 static const gchar *get_group_name(const sipe_xml *node)
 {
@@ -1299,7 +1252,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 				g_free(uri);
 			}
 
-			sipe_cleanup_local_blist(sipe_private);
+			sipe_buddy_cleanup_local_list(sipe_private);
 
 			/* Add self-contact if not there yet. 2005 systems. */
 			/* This will resemble subscription to roaming_self in 2007 systems */

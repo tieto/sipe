@@ -75,6 +75,14 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 				  const gchar *exchange_key);
 
 /**
+ * Remove entries from local buddy list that do not have corresponding entries
+ * in the ones in the contact list sent by the server
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private);
+
+/**
  * Find buddy by URI
  *
  * @param sipe_private SIPE core data
