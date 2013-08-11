@@ -30,6 +30,7 @@ struct sipe_calendar;
 struct sipe_certificate;
 struct sipe_ews_autodiscover;
 struct sipe_groupchat;
+struct sipe_groups;
 struct sipe_http;
 struct sipe_http_request;
 struct sipe_media_call_private;
@@ -96,7 +97,7 @@ struct sipe_core_private {
 	GHashTable *user_state_publications;
 
 	/* Buddies */
-	GSList *groups;
+	struct sipe_groups *groups;
 	struct sipe_buddies *buddies;
 
 	/* Calendar and related stuff */

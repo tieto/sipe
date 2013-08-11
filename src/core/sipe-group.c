@@ -38,6 +38,10 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
+struct sipe_groups {
+	GSList *list;
+};
+
 struct group_user_context {
 	gchar *group_name;
 	gchar *user_name;
@@ -122,7 +126,7 @@ sipe_group_find_by_id(struct sipe_core_private *sipe_private,
 	if (!sipe_private)
 		return NULL;
 
-	entry = sipe_private->groups;
+	entry = sipe_private->groups->list;
 	while (entry) {
 		group = entry->data;
 		if (group->id == id) {
@@ -143,7 +147,7 @@ sipe_group_find_by_name(struct sipe_core_private *sipe_private,
 	if (!sipe_private || !name)
 		return NULL;
 
-	entry = sipe_private->groups;
+	entry = sipe_private->groups->list;
 	while (entry) {
 		group = entry->data;
 		if (sipe_strequal(group->name, name)) {
@@ -201,8 +205,8 @@ sipe_group_add(struct sipe_core_private *sipe_private,
 	if (sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC,group->name))
 	{
 		SIPE_DEBUG_INFO("added group %s (id %d)", group->name, group->id);
-		sipe_private->groups = g_slist_append(sipe_private->groups,
-						      group);
+		sipe_private->groups->list = g_slist_append(sipe_private->groups->list,
+							    group);
 	}
 	else
 	{
@@ -213,8 +217,8 @@ sipe_group_add(struct sipe_core_private *sipe_private,
 static void group_free(struct sipe_core_private *sipe_private,
 		       struct sipe_group *group)
 {
-	sipe_private->groups = g_slist_remove(sipe_private->groups,
-					      group);
+	sipe_private->groups->list = g_slist_remove(sipe_private->groups->list,
+						    group);
 	g_free(group->name);
 	g_free(group);
 }
@@ -366,24 +370,28 @@ void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
 
 struct sipe_group *sipe_group_first(struct sipe_core_private *sipe_private)
 {
-	return(sipe_private->groups ? sipe_private->groups->data : NULL);
+	return(sipe_private->groups->list ? sipe_private->groups->list->data : NULL);
 }
 
 guint sipe_group_count(struct sipe_core_private *sipe_private)
 {
-	return(g_slist_length(sipe_private->groups));
+	return(g_slist_length(sipe_private->groups->list));
 }
 
 void sipe_group_init(struct sipe_core_private *sipe_private)
 {
-	sipe_private->groups = NULL;
+	sipe_private->groups = g_new0(struct sipe_groups, 1);
 }
 
 void sipe_group_free(struct sipe_core_private *sipe_private)
 {
 	GSList *entry;
-	while ((entry = sipe_private->groups) != NULL)
+
+	while ((entry = sipe_private->groups->list) != NULL)
 		group_free(sipe_private, entry->data);
+
+	g_free(sipe_private->groups);
+	sipe_private->groups = NULL;
 }
 
 /*
