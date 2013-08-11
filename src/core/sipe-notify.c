@@ -1124,7 +1124,7 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 		/* If couldn't find the right group for this contact, */
 		/* then just put it in the first group we have	      */
 		if ((group == NULL) &&
-		    (g_slist_length(sipe_private->groups) > 0))
+		    (sipe_group_count(sipe_private) > 0))
 			group = sipe_private->groups->data;
 
 		if (group) {
@@ -1211,7 +1211,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 				add_new_group(sipe_private, group_node);
 
 			/* Make sure we have at least one group */
-			if (g_slist_length(sipe_private->groups) == 0) {
+			if (sipe_group_count(sipe_private) == 0) {
 				sipe_group_create(sipe_private, _("Other Contacts"), NULL);
 			}
 

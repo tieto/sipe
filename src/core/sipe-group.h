@@ -56,6 +56,13 @@ void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
 			     struct sipe_buddy *buddy);
 
 /**
+ * Number of groups
+ *
+ * @param sipe_private SIPE core data
+ */
+guint sipe_group_count(struct sipe_core_private *sipe_private);
+
+/**
  * Initialize group data
  *
  * @param sipe_private SIPE core data
