@@ -298,6 +298,9 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 				sipe_buddy_add(sipe_private,
 					       normalized_uri,
 					       key);
+
+				SIPE_DEBUG_INFO("sipe_ucs_get_im_item_list_response: persona URI '%s' key '%s'",
+						normalized_uri, key);
 				g_free(normalized_uri);
 			}
 			g_free(address);
@@ -306,29 +309,39 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		for (group_node = sipe_xml_child(node, "Groups/ImGroup");
 		     group_node;
 		     group_node = sipe_xml_twin(group_node)) {
-			gchar *name = sipe_xml_data(sipe_xml_child(group_node,
-								   "DisplayName"));
-			struct sipe_group *group = sipe_group_add(sipe_private,
-								  name,
-								  0);
-			const sipe_xml *member_node;
+			const gchar *key = sipe_xml_attribute(sipe_xml_child(group_node,
+									     "ExchangeStoreId"),
+							      "Id");
 
-			g_free(name);
+			if (!is_empty(key)) {
+				gchar *name = sipe_xml_data(sipe_xml_child(group_node,
+									   "DisplayName"));
+				struct sipe_group *group = sipe_group_add(sipe_private,
+									  name,
+									  key,
+									  0);
+				const sipe_xml *member_node;
 
-			if (group) {
-				for (member_node = sipe_xml_child(group_node,
-								  "MemberCorrelationKey/ItemId");
-				     member_node;
-				     member_node = sipe_xml_twin(member_node)) {
-					struct sipe_buddy *buddy = sipe_buddy_find_by_exchange_key(sipe_private,
-												   sipe_xml_attribute(member_node,
-														      "Id"));
-					if (buddy)
-						sipe_buddy_add_to_group(sipe_private,
-									buddy,
-									group,
-									/* alias will be set via buddy presence update */
-									NULL);
+				g_free(name);
+
+				if (group) {
+					SIPE_DEBUG_INFO("sipe_ucs_get_im_item_list_response: group '%s' key '%s'",
+							group->name, key);
+
+					for (member_node = sipe_xml_child(group_node,
+									  "MemberCorrelationKey/ItemId");
+					     member_node;
+					     member_node = sipe_xml_twin(member_node)) {
+						struct sipe_buddy *buddy = sipe_buddy_find_by_exchange_key(sipe_private,
+													   sipe_xml_attribute(member_node,
+															      "Id"));
+						if (buddy)
+							sipe_buddy_add_to_group(sipe_private,
+										buddy,
+										group,
+										/* alias will be set via buddy presence update */
+										NULL);
+					}
 				}
 			}
 		}

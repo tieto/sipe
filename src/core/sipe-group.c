@@ -87,6 +87,7 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 
 		group = sipe_group_add(sipe_private,
 				       ctx->group_name,
+				       NULL,
 				       g_ascii_strtoull(group_id, NULL, 10));
 		g_free(group_id);
 
@@ -197,6 +198,7 @@ gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
 
 struct sipe_group *sipe_group_add(struct sipe_core_private *sipe_private,
 				  const gchar *name,
+				  const gchar *exchange_key,
 				  guint id)
 {
 	struct sipe_group *group = NULL;
@@ -207,6 +209,9 @@ struct sipe_group *sipe_group_add(struct sipe_core_private *sipe_private,
 		group       = g_new0(struct sipe_group, 1);
 		group->name = g_strdup(name);
 		group->id   = id;
+
+		if (exchange_key)
+			group->exchange_key = g_strdup(exchange_key);
 
 		sipe_private->groups->list = g_slist_append(sipe_private->groups->list,
 							    group);
@@ -226,6 +231,7 @@ static void group_free(struct sipe_core_private *sipe_private,
 	sipe_private->groups->list = g_slist_remove(sipe_private->groups->list,
 						    group);
 	g_free(group->name);
+	g_free(group->exchange_key);
 	g_free(group);
 }
 

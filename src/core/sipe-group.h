@@ -26,6 +26,7 @@ struct sipe_core_private;
 
 struct sipe_group {
 	gchar *name;
+	gchar *exchange_key;
 	guint id;
 };
 
@@ -52,12 +53,14 @@ gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
  *
  * @param sipe_private SIPE core data
  * @param name         name of group (may be @c NULL)
+ * @param exchange_key Exchange key (may be @c NULL)
  * @param id           numeric ID of group
  *
  * @return @c sipe_group structure or @c NULL if group creation failed
  */
 struct sipe_group *sipe_group_add(struct sipe_core_private *sipe_private,
 				  const gchar *name,
+				  const gchar *exchange_key,
 				  guint id);
 
 /* remove group from core & backend */
