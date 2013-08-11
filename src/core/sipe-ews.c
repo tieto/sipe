@@ -61,21 +61,6 @@ be great to implement too.
 #include "sipe-xml.h"
 
 /**
- * Autodiscover request for Exchange Web Services
- * @param email (%s) Ex.: alice@cosmo.local
- */
-#define SIPE_EWS_AUTODISCOVER_REQUEST \
-"<?xml version=\"1.0\"?>"\
-"<Autodiscover xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/outlook/requestschema/2006\">"\
-  "<Request>"\
-    "<EMailAddress>%s</EMailAddress>"\
-    "<AcceptableResponseSchema>"\
-      "http://schemas.microsoft.com/exchange/autodiscover/outlook/responseschema/2006a"\
-    "</AcceptableResponseSchema>"\
-  "</Request>"\
-"</Autodiscover>"
-
-/**
  * GetUserOofSettingsRequest SOAP request to Exchange Web Services
  * to obtain our Out-of-office (OOF) information.
  * @param email (%s) Ex.: alice@cosmo.local
