@@ -1123,9 +1123,8 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 
 		/* If couldn't find the right group for this contact, */
 		/* then just put it in the first group we have	      */
-		if ((group == NULL) &&
-		    (sipe_group_count(sipe_private) > 0))
-			group = sipe_private->groups->data;
+		if (!group)
+			group = sipe_group_first(sipe_private);
 
 		if (group) {
 			if (!buddy)

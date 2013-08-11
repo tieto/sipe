@@ -56,6 +56,15 @@ void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
 			     struct sipe_buddy *buddy);
 
 /**
+ * Return first group
+ *
+ * @param sipe_private SIPE core data
+ *
+ * @return sipe_group structure or @c NULL if there are no groups
+ */
+struct sipe_group *sipe_group_first(struct sipe_core_private *sipe_private);
+
+/**
  * Number of groups
  *
  * @param sipe_private SIPE core data

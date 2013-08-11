@@ -364,6 +364,11 @@ void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
 		send_buddy_update(sipe_private, buddy, alias);
 }
 
+struct sipe_group *sipe_group_first(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->groups ? sipe_private->groups->data : NULL);
+}
+
 guint sipe_group_count(struct sipe_core_private *sipe_private)
 {
 	return(g_slist_length(sipe_private->groups));
