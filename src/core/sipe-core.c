@@ -308,6 +308,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sipe_private->public.sip_domain = g_strdup(user_domain[1]);
 	g_strfreev(user_domain);
 
+	sipe_group_init(sipe_private);
 	sipe_buddy_init(sipe_private);
 	sipe_private->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 							       g_free, (GDestroyNotify)g_hash_table_destroy);
@@ -428,12 +429,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_hash_table_destroy(sipe_private->our_publications);
 	g_hash_table_destroy(sipe_private->user_state_publications);
 	sipe_subscriptions_destroy(sipe_private);
-
-	if (sipe_private->groups) {
-		GSList *entry;
-		while ((entry = sipe_private->groups) != NULL)
-			sipe_group_free(sipe_private, entry->data);
-	}
+	sipe_group_free(sipe_private);
 
 	if (sipe_private->our_publication_keys)
 		sipe_utils_slist_free_full(sipe_private->our_publication_keys, g_free);

@@ -210,8 +210,8 @@ sipe_group_add(struct sipe_core_private *sipe_private,
 	}
 }
 
-void sipe_group_free(struct sipe_core_private *sipe_private,
-		     struct sipe_group *group)
+static void group_free(struct sipe_core_private *sipe_private,
+		       struct sipe_group *group)
 {
 	sipe_private->groups = g_slist_remove(sipe_private->groups,
 					      group);
@@ -225,7 +225,7 @@ void sipe_group_remove(struct sipe_core_private *sipe_private,
 	if (group) {
 		SIPE_DEBUG_INFO("removing group %s (id %d)", group->name, group->id);
 		sipe_backend_buddy_group_remove(SIPE_CORE_PUBLIC, group->name);
-		sipe_group_free(sipe_private, group);
+		group_free(sipe_private, group);
 	}
 }
 
@@ -274,7 +274,7 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 				 request);
 		g_free(request);
 
-		sipe_group_free(sipe_private, s_group);
+		group_free(sipe_private, s_group);
 	} else {
 		SIPE_DEBUG_INFO("Cannot find group %s to delete", name);
 	}
@@ -362,6 +362,18 @@ void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
 
 	if (buddy)
 		send_buddy_update(sipe_private, buddy, alias);
+}
+
+void sipe_group_init(struct sipe_core_private *sipe_private)
+{
+	sipe_private->groups = NULL;
+}
+
+void sipe_group_free(struct sipe_core_private *sipe_private)
+{
+	GSList *entry;
+	while ((entry = sipe_private->groups) != NULL)
+		group_free(sipe_private, entry->data);
 }
 
 /*

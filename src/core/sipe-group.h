@@ -47,10 +47,6 @@ gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
 void sipe_group_add(struct sipe_core_private *sipe_private,
 		    struct sipe_group * group);
 
-/* remove group from core and free the data structure */
-void sipe_group_free(struct sipe_core_private *sipe_private,
-		     struct sipe_group *group);
-
 /* remove group from core & backend */
 void sipe_group_remove(struct sipe_core_private *sipe_private,
 		       struct sipe_group *group);
@@ -58,3 +54,17 @@ void sipe_group_remove(struct sipe_core_private *sipe_private,
 /* update alias/group list for a buddy on the server */
 void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
 			     struct sipe_buddy *buddy);
+
+/**
+ * Initialize group data
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_group_init(struct sipe_core_private *sipe_private);
+
+/**
+ * Free group data
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_group_free(struct sipe_core_private *sipe_private);
