@@ -349,11 +349,12 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 				    SIPE_UNUSED_PARAMETER gpointer callback_data)
 {
 	struct sipe_ucs *ucs = sipe_private->ucs;
-	const gchar *ews_url = ews_data->ews_url;
+	const gchar *ews_url;
 
-	if (!ucs)
+	if (!ucs || !ews_data)
 		return;
 
+	ews_url = ews_data->ews_url;
 	if (is_empty(ews_url)) {
 		SIPE_DEBUG_ERROR_NOFORMAT("ucs_ews_autodiscover_cb: can't detect EWS URL, contact list operations will not work!");
 		return;
