@@ -287,21 +287,14 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 			}
 
 			if (!(is_empty(address) || is_empty(key))) {
-				/*
-				 * Buddy name must be lower case as we use
-				 * purple_normalize_nocase() to compare
-				 */
-				gchar *uri            = sip_uri_from_name(address);
-				gchar *normalized_uri = g_ascii_strdown(uri, -1);
+				gchar *uri = sip_uri_from_name(address);
+				struct sipe_buddy *buddy = sipe_buddy_add(sipe_private,
+									  uri,
+									  key);
 				g_free(uri);
 
-				sipe_buddy_add(sipe_private,
-					       normalized_uri,
-					       key);
-
 				SIPE_DEBUG_INFO("sipe_ucs_get_im_item_list_response: persona URI '%s' key '%s'",
-						normalized_uri, key);
-				g_free(normalized_uri);
+						buddy->name, key);
 			}
 			g_free(address);
 		}

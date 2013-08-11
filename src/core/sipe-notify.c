@@ -1096,8 +1096,6 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 			  const gchar *uri)
 {
 	const gchar *name = sipe_xml_attribute(node, "name");
-	/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
-	gchar *normalized_uri = g_ascii_strdown(uri, -1);
 	struct sipe_buddy *buddy = NULL;
 	gchar *tmp;
 	gchar **item_groups;
@@ -1127,7 +1125,7 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 		if (group) {
 			if (!buddy)
 				buddy = sipe_buddy_add(sipe_private,
-						       normalized_uri,
+						       uri,
 						       NULL);
 
 			sipe_buddy_add_to_group(sipe_private,
@@ -1143,7 +1141,6 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 	}
 
 	g_strfreev(item_groups);
-	g_free(normalized_uri);
 }
 
 static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_private,

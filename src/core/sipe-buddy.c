@@ -80,12 +80,16 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 				  const gchar *uri,
 				  const gchar *exchange_key)
 {
-	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private, uri);
+	/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
+	gchar *normalized_uri = g_ascii_strdown(uri, -1);
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+							  normalized_uri);
+
 	if (!buddy) {
 		struct sipe_buddies *buddies = sipe_private->buddies;
 
 		buddy = g_new0(struct sipe_buddy, 1);
-		buddy->name         = g_strdup(uri);
+		buddy->name = normalized_uri;
 		g_hash_table_insert(buddies->uri,
 				    buddy->name,
 				    buddy);
@@ -98,14 +102,17 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 		}
 
 
-		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", uri);
+		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", normalized_uri);
 
-		buddy_fetch_photo(sipe_private, uri);
+		buddy_fetch_photo(sipe_private, normalized_uri);
+
+		normalized_uri = NULL; /* buddy takes ownership */
 	} else {
-		SIPE_DEBUG_INFO("sipe_buddy_add: Buddy %s already exists", uri);
+		SIPE_DEBUG_INFO("sipe_buddy_add: Buddy %s already exists", normalized_uri);
 	}
+	g_free(normalized_uri);
 
-	return buddy;
+	return(buddy);
 }
 
 void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
