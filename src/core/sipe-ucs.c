@@ -308,16 +308,14 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		     group_node = sipe_xml_twin(group_node)) {
 			gchar *name = sipe_xml_data(sipe_xml_child(group_node,
 								   "DisplayName"));
+			struct sipe_group *group = sipe_group_add(sipe_private,
+								  name,
+								  0);
+			const sipe_xml *member_node;
 
-			if (!is_empty(name)) {
-				struct sipe_group *group = g_new0(struct sipe_group, 1);
-				const sipe_xml *member_node;
+			g_free(name);
 
-				group->name = name;
-				name = NULL; /* group takes ownership */
-
-				sipe_group_add(sipe_private, group);
-
+			if (group) {
 				for (member_node = sipe_xml_child(group_node,
 								  "MemberCorrelationKey/ItemId");
 				     member_node;
@@ -333,8 +331,6 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 									NULL);
 				}
 			}
-
-			g_free(name);
 		}
 
 		/* Finished processing contact list */

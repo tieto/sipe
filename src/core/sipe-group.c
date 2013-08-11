@@ -67,7 +67,6 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 		sipe_xml *xml;
 		const sipe_xml *node;
 		char *group_id;
-		struct sipe_buddy *buddy;
 
 		xml = sipe_xml_parse(msg->body, msg->bodylen);
 		if (!xml) {
@@ -86,16 +85,14 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 			return FALSE;
 		}
 
-		group = g_new0(struct sipe_group, 1);
-		group->id = (int)g_ascii_strtod(group_id, NULL);
+		group = sipe_group_add(sipe_private,
+				       ctx->group_name,
+				       g_ascii_strtoull(group_id, NULL, 10));
 		g_free(group_id);
-		group->name = g_strdup(ctx->group_name);
 
-		sipe_group_add(sipe_private, group);
-
-		if (ctx->user_name) {
-			buddy = sipe_buddy_find_by_uri(sipe_private,
-						       ctx->user_name);
+		if (group && ctx->user_name) {
+			struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+									  ctx->user_name);
 			if (buddy) {
 				buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
 										      group,
@@ -118,7 +115,7 @@ sipe_group_compare(struct sipe_group *group1, struct sipe_group *group2) {
 
 struct sipe_group*
 sipe_group_find_by_id(struct sipe_core_private *sipe_private,
-		      int id)
+		      guint id)
 {
 	struct sipe_group *group;
 	GSList *entry;
@@ -198,20 +195,29 @@ gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
 	return(renamed);
 }
 
-void
-sipe_group_add(struct sipe_core_private *sipe_private,
-	       struct sipe_group * group)
+struct sipe_group *sipe_group_add(struct sipe_core_private *sipe_private,
+				  const gchar *name,
+				  guint id)
 {
-	if (sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC,group->name))
-	{
-		SIPE_DEBUG_INFO("added group %s (id %d)", group->name, group->id);
+	struct sipe_group *group = NULL;
+
+	if (!is_empty(name) &&
+	    sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC, name)) {
+
+		group       = g_new0(struct sipe_group, 1);
+		group->name = g_strdup(name);
+		group->id   = id;
+
 		sipe_private->groups->list = g_slist_append(sipe_private->groups->list,
 							    group);
-	}
-	else
-	{
-		SIPE_DEBUG_INFO("did not add group %s", group->name ? group->name : "");
-	}
+
+		SIPE_DEBUG_INFO("sipe_group_add: created backend group '%s' with id %d",
+				group->name, group->id);
+	} else
+		SIPE_DEBUG_INFO("sipe_group_add: backend group '%s' already exists",
+				name ? name : "");
+
+	return(group);
 }
 
 static void group_free(struct sipe_core_private *sipe_private,

@@ -1085,12 +1085,9 @@ static const gchar *get_group_name(const sipe_xml *node)
 static void add_new_group(struct sipe_core_private *sipe_private,
 			  const sipe_xml *node)
 {
-	struct sipe_group *group = g_new0(struct sipe_group, 1);
-
-	group->name = g_strdup(get_group_name(node));
-	group->id = (int)g_ascii_strtod(sipe_xml_attribute(node, "id"), NULL);
-
-	sipe_group_add(sipe_private, group);
+	sipe_group_add(sipe_private,
+		       get_group_name(node),
+		       sipe_xml_int_attribute(node, "id", 0));
 }
 
 static void add_new_buddy(struct sipe_core_private *sipe_private,

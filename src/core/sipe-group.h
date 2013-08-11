@@ -26,26 +26,39 @@ struct sipe_core_private;
 
 struct sipe_group {
 	gchar *name;
-	int id;
+	guint id;
 };
 
 int sipe_group_compare(struct sipe_group *group1, struct sipe_group *group2);
 
-struct sipe_group *sipe_group_find_by_id(struct sipe_core_private *sipe_private, int id);
+struct sipe_group *sipe_group_find_by_id(struct sipe_core_private *sipe_private,
+					 guint id);
 
 struct sipe_group *sipe_group_find_by_name(struct sipe_core_private *sipe_private,
 					   const gchar * name);
 
 void sipe_group_create(struct sipe_core_private *sipe_private,
 		       const gchar *name,
-		       const gchar * who);
+		       const gchar *who);
 
 gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
 			   struct sipe_group *group,
 			   const gchar *name);
 
-void sipe_group_add(struct sipe_core_private *sipe_private,
-		    struct sipe_group * group);
+/**
+ * Creates @c sipe_group structure for a new group and adds it into the group
+ * list of given account. If buddy is already in the list, its existing
+ * structure is returned.
+ *
+ * @param sipe_private SIPE core data
+ * @param name         name of group (may be @c NULL)
+ * @param id           numeric ID of group
+ *
+ * @return @c sipe_group structure or @c NULL if group creation failed
+ */
+struct sipe_group *sipe_group_add(struct sipe_core_private *sipe_private,
+				  const gchar *name,
+				  guint id);
 
 /* remove group from core & backend */
 void sipe_group_remove(struct sipe_core_private *sipe_private,
