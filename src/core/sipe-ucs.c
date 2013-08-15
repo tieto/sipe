@@ -305,24 +305,26 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		for (group_node = sipe_xml_child(node, "Groups/ImGroup");
 		     group_node;
 		     group_node = sipe_xml_twin(group_node)) {
-			const gchar *key = sipe_xml_attribute(sipe_xml_child(group_node,
-									     "ExchangeStoreId"),
-							      "Id");
+			const sipe_xml *id_node = sipe_xml_child(group_node,
+								 "ExchangeStoreId");
+			const gchar *key = sipe_xml_attribute(id_node, "Id");
+			const gchar *change = sipe_xml_attribute(id_node, "ChangeKey");
 
-			if (!is_empty(key)) {
+			if (!(is_empty(key) || is_empty(change))) {
 				gchar *name = sipe_xml_data(sipe_xml_child(group_node,
 									   "DisplayName"));
 				struct sipe_group *group = sipe_group_add(sipe_private,
 									  name,
 									  key,
+									  change,
 									  0);
 				const sipe_xml *member_node;
 
 				g_free(name);
 
 				if (group) {
-					SIPE_DEBUG_INFO("sipe_ucs_get_im_item_list_response: group '%s' key '%s'",
-							group->name, key);
+					SIPE_DEBUG_INFO("sipe_ucs_get_im_item_list_response: group '%s' key '%s' change '%s'",
+							group->name, key, change);
 
 					for (member_node = sipe_xml_child(group_node,
 									  "MemberCorrelationKey/ItemId");

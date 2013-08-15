@@ -1088,6 +1088,7 @@ static void add_new_group(struct sipe_core_private *sipe_private,
 	sipe_group_add(sipe_private,
 		       get_group_name(node),
 		       NULL,
+		       NULL,
 		       sipe_xml_int_attribute(node, "id", 0));
 }
 
