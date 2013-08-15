@@ -273,6 +273,22 @@ void sipe_ucs_group_rename(struct sipe_core_private *sipe_private,
 	g_free(body);
 }
 
+void sipe_ucs_group_remove(struct sipe_core_private *sipe_private,
+			   struct sipe_group *group)
+{
+	gchar *body = g_strdup_printf("<m:RemoveImGroup>"
+				      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
+				      "</m:RemoveImGroup>",
+				      group->exchange_key,
+				      group->change_key);
+
+	sipe_ucs_http_request(sipe_private,
+			      body,
+			      sipe_ucs_ignore_response,
+			      NULL);
+	g_free(body);
+}
+
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
 					       const sipe_xml *body,
 					       SIPE_UNUSED_PARAMETER gpointer callback_data)

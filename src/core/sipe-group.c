@@ -294,18 +294,23 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 	struct sipe_group *s_group = sipe_group_find_by_name(sipe_private, name);
 
 	if (s_group) {
-		gchar *request;
-		SIPE_DEBUG_INFO("Deleting group %s", name);
-		request = g_strdup_printf("<m:groupID>%d</m:groupID>",
-					  s_group->id);
-		sip_soap_request(sipe_private,
-				 "deleteGroup",
-				 request);
-		g_free(request);
+		SIPE_DEBUG_INFO("sipe_core_group_remove: delete '%s'", name);
+
+		if (sipe_ucs_is_migrated(sipe_private)) {
+			sipe_ucs_group_remove(sipe_private,
+					      s_group);
+		} else {
+			gchar *request = g_strdup_printf("<m:groupID>%d</m:groupID>",
+							 s_group->id);
+			sip_soap_request(sipe_private,
+					 "deleteGroup",
+					 request);
+			g_free(request);
+		}
 
 		group_free(sipe_private, s_group);
 	} else {
-		SIPE_DEBUG_INFO("Cannot find group %s to delete", name);
+		SIPE_DEBUG_INFO("sipe_core_group_remove: cannot find group '%s'", name);
 	}
 }
 

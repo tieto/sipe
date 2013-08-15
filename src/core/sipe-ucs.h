@@ -57,6 +57,15 @@ void sipe_ucs_group_rename(struct sipe_core_private *sipe_private,
 			   const gchar *new_name);
 
 /**
+ * Remove group
+ *
+ * @param sipe_private SIPE core private data
+ * @param group        sipe_group structure
+ */
+void sipe_ucs_group_remove(struct sipe_core_private *sipe_private,
+			   struct sipe_group *group);
+
+/**
  * Initialize UCS
  *
  * @param sipe_private SIPE core private data
