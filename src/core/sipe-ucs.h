@@ -21,6 +21,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/* Forward declarations */
+struct sipe_core_private;
+struct sipe_group;
 
 /**
  * Get buddy photo
@@ -41,6 +44,17 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
  * @return @c TRUE if contact list has been migrated
  */
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private);
+
+/**
+ * Rename group
+ *
+ * @param sipe_private SIPE core private data
+ * @param group        sipe_group structure
+ * @param new_name     new name for group
+ */
+void sipe_ucs_group_rename(struct sipe_core_private *sipe_private,
+			   struct sipe_group *group,
+			   const gchar *new_name);
 
 /**
  * Initialize UCS

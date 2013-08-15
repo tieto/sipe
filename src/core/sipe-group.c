@@ -35,6 +35,7 @@
 #include "sipe-core-private.h"
 #include "sipe-group.h"
 #include "sipe-nls.h"
+#include "sipe-ucs.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -259,22 +260,29 @@ sipe_core_group_rename(struct sipe_core_public *sipe_public,
 	struct sipe_group *s_group = sipe_group_find_by_name(sipe_private, old_name);
 
 	if (s_group) {
-		gchar *request;
-		SIPE_DEBUG_INFO("Renaming group %s to %s", old_name, new_name);
-		/* new_name can contain restricted characters */
-		request = g_markup_printf_escaped("<m:groupID>%d</m:groupID>"
-						  "<m:name>%s</m:name>"
-						  "<m:externalURI />",
-						  s_group->id, new_name);
-		sip_soap_request(sipe_private,
-				 "modifyGroup",
-				 request);
-		g_free(request);
+		SIPE_DEBUG_INFO("sipe_core_group_rename: from '%s' to '%s'", old_name, new_name);
+
+		if (sipe_ucs_is_migrated(sipe_private)) {
+			sipe_ucs_group_rename(sipe_private,
+					      s_group,
+					      new_name);
+		} else {
+			/* new_name can contain restricted characters */
+			gchar *request = g_markup_printf_escaped("<m:groupID>%d</m:groupID>"
+								 "<m:name>%s</m:name>"
+								 "<m:externalURI />",
+								 s_group->id,
+								 new_name);
+			sip_soap_request(sipe_private,
+					 "modifyGroup",
+					 request);
+			g_free(request);
+		}
 
 		g_free(s_group->name);
 		s_group->name = g_strdup(new_name);
 	} else {
-		SIPE_DEBUG_INFO("Cannot find group %s to rename", old_name);
+		SIPE_DEBUG_INFO("sipe_core_group_rename: cannot find group '%s'", old_name);
 	}
 }
 

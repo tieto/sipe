@@ -246,6 +246,33 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 	g_free(body);
 }
 
+static void sipe_ucs_ignore_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+				     SIPE_UNUSED_PARAMETER const sipe_xml *body,
+				     SIPE_UNUSED_PARAMETER gpointer callback_data)
+{
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_ucs_ignore_response: done");
+}
+
+void sipe_ucs_group_rename(struct sipe_core_private *sipe_private,
+			   struct sipe_group *group,
+			   const gchar *new_name)
+{
+	/* new_name can contain restricted characters */
+	gchar *body = g_markup_printf_escaped("<m:SetImGroup>"
+					      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
+					      " <m:NewDisplayName>%s</m:NewDisplayName>"
+					      "</m:SetImGroup>",
+					      group->exchange_key,
+					      group->change_key,
+					      new_name);
+
+	sipe_ucs_http_request(sipe_private,
+			      body,
+			      sipe_ucs_ignore_response,
+			      NULL);
+	g_free(body);
+}
+
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
 					       const sipe_xml *body,
 					       SIPE_UNUSED_PARAMETER gpointer callback_data)
