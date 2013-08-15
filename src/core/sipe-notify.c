@@ -1126,6 +1126,7 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 			if (!buddy)
 				buddy = sipe_buddy_add(sipe_private,
 						       uri,
+						       NULL,
 						       NULL);
 
 			sipe_buddy_add_to_group(sipe_private,
@@ -1223,7 +1224,10 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 			/* This will resemble subscription to roaming_self in 2007 systems */
 			if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
 				gchar *self_uri = sip_uri_self(sipe_private);
-				sipe_buddy_add(sipe_private, self_uri, NULL);
+				sipe_buddy_add(sipe_private,
+					       self_uri,
+					       NULL,
+					       NULL);
 				g_free(self_uri);
 			}
 

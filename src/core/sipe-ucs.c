@@ -266,6 +266,7 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 			gchar *address = sipe_xml_data(sipe_xml_child(persona_node,
 								      "ImAddress"));
 			const gchar *key = NULL;
+			const gchar *change = NULL;
 			const sipe_xml *attr_node;
 
 			/* extract Exchange key - not sure if this is correct */
@@ -280,21 +281,23 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 				if (id_node &&
 				    sipe_strequal(type, "Lync Contacts")) {
 					key = sipe_xml_attribute(id_node, "Id");
+					change = sipe_xml_attribute(id_node, "ChangeKey");
 					g_free(type);
 					break;
 				}
 				g_free(type);
 			}
 
-			if (!(is_empty(address) || is_empty(key))) {
+			if (!(is_empty(address) || is_empty(key) || is_empty(change))) {
 				gchar *uri = sip_uri_from_name(address);
 				struct sipe_buddy *buddy = sipe_buddy_add(sipe_private,
 									  uri,
-									  key);
+									  key,
+									  change);
 				g_free(uri);
 
-				SIPE_DEBUG_INFO("sipe_ucs_get_im_item_list_response: persona URI '%s' key '%s'",
-						buddy->name, key);
+				SIPE_DEBUG_INFO("sipe_ucs_get_im_item_list_response: persona URI '%s' key '%s' change '%s'",
+						buddy->name, key, change);
 			}
 			g_free(address);
 		}

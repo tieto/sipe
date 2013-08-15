@@ -28,6 +28,7 @@ struct sipe_group;
 struct sipe_buddy {
 	gchar *name;
 	gchar *exchange_key;
+	gchar *change_key;
 	gchar *activity;
 	gchar *meeting_subject;
 	gchar *meeting_location;
@@ -68,12 +69,14 @@ struct sipe_buddy {
  * @param sipe_private SIPE core data
  * @param uri          SIP URI of a buddy
  * @param exchange_key Exchange key (may be @c NULL)
+ * @param change_key   Change key (may be @c NULL)
  *
  * @return @c sipe_buddy structure
  */
 struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 				  const gchar *uri,
-				  const gchar *exchange_key);
+				  const gchar *exchange_key,
+				  const gchar *change_key);
 
 /**
  * Add buddy to a group.
