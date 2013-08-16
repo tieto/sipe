@@ -63,6 +63,7 @@ struct sipe_ucs {
 	gchar *ews_url;
 	GSList *deferred_requests;
 	GSList *pending_requests;
+	guint group_id;
 	gboolean migrated;
 	gboolean shutting_down;
 };
@@ -360,7 +361,8 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 									  name,
 									  key,
 									  change,
-									  0);
+									  /* sipe_group must have unique ID */
+									  ++sipe_private->ucs->group_id);
 				const sipe_xml *member_node;
 
 				g_free(name);
