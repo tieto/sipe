@@ -254,6 +254,61 @@ static void sipe_ucs_ignore_response(SIPE_UNUSED_PARAMETER struct sipe_core_priv
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ucs_ignore_response: done");
 }
 
+static struct sipe_group *ucs_create_group(struct sipe_core_private *sipe_private,
+					   const sipe_xml *group_node)
+{
+	const sipe_xml *id_node = sipe_xml_child(group_node,
+						 "ExchangeStoreId");
+	const gchar *key = sipe_xml_attribute(id_node, "Id");
+	const gchar *change = sipe_xml_attribute(id_node, "ChangeKey");
+	struct sipe_group *group = NULL;
+
+	if (!(is_empty(key) || is_empty(change))) {
+		gchar *name = sipe_xml_data(sipe_xml_child(group_node,
+							   "DisplayName"));
+		group = sipe_group_add(sipe_private,
+				       name,
+				       key,
+				       change,
+				       /* sipe_group must have unique ID */
+				       ++sipe_private->ucs->group_id);
+		g_free(name);
+	}
+
+	return(group);
+}
+
+static void sipe_ucs_add_im_group_response(struct sipe_core_private *sipe_private,
+					   const sipe_xml *body,
+					   gpointer callback_data)
+{
+	gchar *who = callback_data;
+	const sipe_xml *group_node = sipe_xml_child(body,
+						    "AddImGroupResponse/ImGroup");
+	struct sipe_group *group = ucs_create_group(sipe_private, group_node);
+
+	if (group)
+		sipe_group_add_buddy(sipe_private, group, who);
+
+	g_free(who);
+}
+
+void sipe_ucs_group_create(struct sipe_core_private *sipe_private,
+			   const gchar *name,
+			   const gchar *who)
+{
+	/* new_name can contain restricted characters */
+	gchar *body = g_markup_printf_escaped("<m:AddImGroup>"
+					      " <m:DisplayName>%s</m:DisplayName>"
+					      "</m:AddImGroup>",
+					      name);
+	sipe_ucs_http_request(sipe_private,
+			      body,
+			      sipe_ucs_add_im_group_response,
+			      g_strdup(who));
+	g_free(body);
+}
+
 void sipe_ucs_group_rename(struct sipe_core_private *sipe_private,
 			   struct sipe_group *group,
 			   const gchar *new_name)
@@ -349,42 +404,25 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		for (group_node = sipe_xml_child(node, "Groups/ImGroup");
 		     group_node;
 		     group_node = sipe_xml_twin(group_node)) {
-			const sipe_xml *id_node = sipe_xml_child(group_node,
-								 "ExchangeStoreId");
-			const gchar *key = sipe_xml_attribute(id_node, "Id");
-			const gchar *change = sipe_xml_attribute(id_node, "ChangeKey");
+			struct sipe_group *group = ucs_create_group(sipe_private,
+								    group_node);
 
-			if (!(is_empty(key) || is_empty(change))) {
-				gchar *name = sipe_xml_data(sipe_xml_child(group_node,
-									   "DisplayName"));
-				struct sipe_group *group = sipe_group_add(sipe_private,
-									  name,
-									  key,
-									  change,
-									  /* sipe_group must have unique ID */
-									  ++sipe_private->ucs->group_id);
+			if (group) {
 				const sipe_xml *member_node;
 
-				g_free(name);
-
-				if (group) {
-					SIPE_DEBUG_INFO("sipe_ucs_get_im_item_list_response: group '%s' key '%s' change '%s'",
-							group->name, key, change);
-
-					for (member_node = sipe_xml_child(group_node,
-									  "MemberCorrelationKey/ItemId");
-					     member_node;
-					     member_node = sipe_xml_twin(member_node)) {
-						struct sipe_buddy *buddy = sipe_buddy_find_by_exchange_key(sipe_private,
-													   sipe_xml_attribute(member_node,
-															      "Id"));
-						if (buddy)
-							sipe_buddy_add_to_group(sipe_private,
-										buddy,
-										group,
-										/* alias will be set via buddy presence update */
-										NULL);
-					}
+				for (member_node = sipe_xml_child(group_node,
+								  "MemberCorrelationKey/ItemId");
+				     member_node;
+				     member_node = sipe_xml_twin(member_node)) {
+					struct sipe_buddy *buddy = sipe_buddy_find_by_exchange_key(sipe_private,
+												   sipe_xml_attribute(member_node,
+														      "Id"));
+					if (buddy)
+						sipe_buddy_add_to_group(sipe_private,
+									buddy,
+									group,
+									/* alias will be set via buddy presence update */
+									NULL);
 				}
 			}
 		}

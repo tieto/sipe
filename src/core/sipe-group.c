@@ -57,6 +57,23 @@ sipe_group_context_destroy(gpointer data)
 	g_free(ctx);
 }
 
+void sipe_group_add_buddy(struct sipe_core_private *sipe_private,
+			  struct sipe_group *group,
+			  const gchar *who)
+{
+	if (group && who) {
+		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+								  who);
+		if (buddy) {
+			buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+									      group,
+									      (GCompareFunc)sipe_group_compare,
+									      NULL);
+			sipe_group_update_buddy(sipe_private, buddy);
+		}
+	}
+}
+
 static gboolean
 process_add_group_response(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg,
@@ -93,17 +110,9 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 				       g_ascii_strtoull(group_id, NULL, 10));
 		g_free(group_id);
 
-		if (group && ctx->user_name) {
-			struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
-									  ctx->user_name);
-			if (buddy) {
-				buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-										      group,
-										      (GCompareFunc)sipe_group_compare,
-										      NULL);
-				sipe_group_update_buddy(sipe_private, buddy);
-			}
-		}
+		sipe_group_add_buddy(sipe_private,
+				     group,
+				     ctx->user_name);
 
 		sipe_xml_free(xml);
 		return TRUE;
@@ -163,25 +172,31 @@ sipe_group_create(struct sipe_core_private *sipe_private,
 		  const gchar *name,
 		  const gchar *who)
 {
-	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
-	struct group_user_context *ctx = g_new0(struct group_user_context, 1);
-	const gchar *soap_name = sipe_strequal(name, _("Other Contacts")) ? "~" : name;
-	gchar *request;
-	ctx->group_name = g_strdup(name);
-	ctx->user_name = g_strdup(who);
-	payload->destroy = sipe_group_context_destroy;
-	payload->data = ctx;
+	if (sipe_ucs_is_migrated(sipe_private)) {
+		sipe_ucs_group_create(sipe_private,
+				      name,
+				      who);
+	} else {
+		struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+		struct group_user_context *ctx = g_new0(struct group_user_context, 1);
+		const gchar *soap_name = sipe_strequal(name, _("Other Contacts")) ? "~" : name;
+		gchar *request;
+		ctx->group_name = g_strdup(name);
+		ctx->user_name = g_strdup(who);
+		payload->destroy = sipe_group_context_destroy;
+		payload->data = ctx;
 
-	/* soap_name can contain restricted characters */
-	request = g_markup_printf_escaped("<m:name>%s</m:name>"
-					  "<m:externalURI />",
-					  soap_name);
-	sip_soap_request_cb(sipe_private,
-			    "addGroup",
-			    request,
-			    process_add_group_response,
-			    payload);
-	g_free(request);
+		/* soap_name can contain restricted characters */
+		request = g_markup_printf_escaped("<m:name>%s</m:name>"
+						  "<m:externalURI />",
+						  soap_name);
+		sip_soap_request_cb(sipe_private,
+				    "addGroup",
+				    request,
+				    process_add_group_response,
+				    payload);
+		g_free(request);
+	}
 }
 
 gboolean sipe_group_rename(struct sipe_core_private *sipe_private,

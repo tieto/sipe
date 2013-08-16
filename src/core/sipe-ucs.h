@@ -46,6 +46,17 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private);
 
 /**
+ * Create group
+ *
+ * @param sipe_private SIPE core private data
+ * @param name         name for group
+ * @param who          SIP URI of the buddy to add to the new group
+ */
+void sipe_ucs_group_create(struct sipe_core_private *sipe_private,
+			   const gchar *name,
+			   const gchar *who);
+
+/**
  * Rename group
  *
  * @param sipe_private SIPE core private data
