@@ -118,6 +118,7 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 		normalized_uri = NULL; /* buddy takes ownership */
 	} else {
 		SIPE_DEBUG_INFO("sipe_buddy_add: Buddy %s already exists", normalized_uri);
+		buddy->is_obsolete = FALSE;
 	}
 	g_free(normalized_uri);
 
@@ -315,6 +316,59 @@ void sipe_buddy_free(struct sipe_core_private *sipe_private)
 	g_hash_table_destroy(buddies->exchange_key);
 	g_free(buddies);
 	sipe_private->buddies = NULL;
+}
+
+static void buddy_set_obsolete_flag(SIPE_UNUSED_PARAMETER gpointer key,
+				    gpointer value,
+				    SIPE_UNUSED_PARAMETER gpointer user_data)
+{
+	((struct sipe_buddy *) value)->is_obsolete = TRUE;
+}
+
+void sipe_buddy_update_start(struct sipe_core_private *sipe_private)
+{
+	g_hash_table_foreach(sipe_private->buddies->uri,
+			     buddy_set_obsolete_flag,
+			     NULL);
+}
+
+static gboolean buddy_check_obsolete_flag(SIPE_UNUSED_PARAMETER gpointer key,
+					  gpointer value,
+					  gpointer user_data)
+{
+	struct sipe_core_private *sipe_private = user_data;
+	struct sipe_buddy *buddy = value;
+
+	if (buddy->is_obsolete) {
+		/* all backend buddies in different groups */
+		GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC,
+							      buddy->name,
+							      NULL);
+		GSList *entry = buddies;
+
+		SIPE_DEBUG_INFO("buddy_check_obsolete_flag: REMOVING %d backend buddies for '%s'",
+				g_slist_length(buddies),
+				buddy->name);
+
+		while (entry) {
+			sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+						  entry->data);
+			entry = entry->next;
+		}
+		g_slist_free(buddies);
+
+		buddy_free(buddy);
+		/* return TRUE as the key/value have already been deleted */
+		return(TRUE);
+	} else
+		return(FALSE);
+}
+
+void sipe_buddy_update_finish(struct sipe_core_private *sipe_private)
+{
+	g_hash_table_foreach_remove(sipe_private->buddies->uri,
+				    buddy_check_obsolete_flag,
+				    sipe_private);
 }
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,

@@ -59,6 +59,7 @@ struct sipe_buddy {
 	GSList *groups;
 	 /** flag to control sending 'context' element in 2007 subscriptions */
 	gboolean just_added;
+	gboolean is_obsolete;
 };
 
 /**
@@ -98,6 +99,20 @@ void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
  * @param sipe_private SIPE core data
  */
 void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private);
+
+/**
+ * Prepare buddy list for an update
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_buddy_update_start(struct sipe_core_private *sipe_private);
+
+/**
+ * Finish buddy list update. This will remove obsolete buddies.
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_buddy_update_finish(struct sipe_core_private *sipe_private);
 
 /**
  * Find buddy by URI

@@ -386,7 +386,9 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		const sipe_xml *group_node;
 
 		/* Start processing contact list */
-		if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES))
+		if (SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES))
+			sipe_buddy_update_start(sipe_private);
+		else
 			sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
 
 		for (persona_node = sipe_xml_child(node, "Personas/Persona");
@@ -458,10 +460,13 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		}
 
 		/* Finished processing contact list */
-		sipe_buddy_cleanup_local_list(sipe_private);
-		if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES))
+		if (SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES))
+			sipe_buddy_update_finish(sipe_private);
+		else {
+			sipe_buddy_cleanup_local_list(sipe_private);
 			sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
-		sipe_subscribe_presence_initial(sipe_private);
+			sipe_subscribe_presence_initial(sipe_private);
+		}
 	}
 }
 
