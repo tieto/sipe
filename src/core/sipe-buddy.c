@@ -433,12 +433,12 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_buddy *b = sipe_buddy_find_by_uri(sipe_private,
 						      uri);
+	struct sipe_group *g = NULL;
 
 	if (!b) return;
 
 	if (group_name) {
-		struct sipe_group *g = sipe_group_find_by_name(sipe_private,
-							       group_name);
+		g = sipe_group_find_by_name(sipe_private, group_name);
 		if (g) {
 			b->groups = g_slist_remove(b->groups, g);
 			SIPE_DEBUG_INFO("sipe_core_buddy_remove: buddy %s removed from group %s",
@@ -455,10 +455,15 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 		g_free(request);
 		sipe_buddy_remove(sipe_private, b);
 	} else {
-		/* updates groups on server */
-		sipe_group_update_buddy(sipe_private, b);
+		if (sipe_ucs_is_migrated(sipe_private)) {
+			if (g)
+				sipe_ucs_group_remove_buddy(sipe_private,
+							    g,
+							    b);
+		} else
+			/* updates groups on server */
+			sipe_group_update_buddy(sipe_private, b);
 	}
-
 }
 
 void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,

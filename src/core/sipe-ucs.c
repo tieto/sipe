@@ -254,6 +254,26 @@ static void sipe_ucs_ignore_response(SIPE_UNUSED_PARAMETER struct sipe_core_priv
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ucs_ignore_response: done");
 }
 
+void sipe_ucs_group_remove_buddy(struct sipe_core_private *sipe_private,
+				 struct sipe_group *group,
+				 struct sipe_buddy *buddy)
+{
+	gchar *body = g_strdup_printf("<m:RemoveImContactFromGroup>"
+				      " <m:ContactId Id=\"%s\" ChangeKey=\"%s\"/>"
+				      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
+				      "</m:RemoveImContactFromGroup>",
+				      buddy->exchange_key,
+				      buddy->change_key,
+				      group->exchange_key,
+				      group->change_key);
+
+	sipe_ucs_http_request(sipe_private,
+			      body,
+			      sipe_ucs_ignore_response,
+			      NULL);
+	g_free(body);
+}
+
 static struct sipe_group *ucs_create_group(struct sipe_core_private *sipe_private,
 					   const sipe_xml *group_node)
 {
@@ -302,6 +322,7 @@ void sipe_ucs_group_create(struct sipe_core_private *sipe_private,
 					      " <m:DisplayName>%s</m:DisplayName>"
 					      "</m:AddImGroup>",
 					      name);
+
 	sipe_ucs_http_request(sipe_private,
 			      body,
 			      sipe_ucs_add_im_group_response,
