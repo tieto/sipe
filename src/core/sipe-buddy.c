@@ -447,19 +447,26 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 	}
 
 	if (g_slist_length(b->groups) < 1) {
-		gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
-						 b->name);
-		sip_soap_request(sipe_private,
-				 "deleteContact",
-				 request);
-		g_free(request);
+
+		if (sipe_ucs_is_migrated(sipe_private)) {
+			sipe_ucs_group_remove_buddy(sipe_private,
+						    g,
+						    b);
+		} else {
+			gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
+							 b->name);
+			sip_soap_request(sipe_private,
+					 "deleteContact",
+					 request);
+			g_free(request);
+		}
+
 		sipe_buddy_remove(sipe_private, b);
 	} else {
 		if (sipe_ucs_is_migrated(sipe_private)) {
-			if (g)
-				sipe_ucs_group_remove_buddy(sipe_private,
-							    g,
-							    b);
+			sipe_ucs_group_remove_buddy(sipe_private,
+						    g,
+						    b);
 		} else
 			/* updates groups on server */
 			sipe_group_update_buddy(sipe_private, b);

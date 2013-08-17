@@ -50,7 +50,7 @@ gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private);
  * Remove buddy from group
  *
  * @param sipe_private SIPE core private data
- * @param group        sipe_group structure
+ * @param group        sipe_group structure (may be @c NULL)
  * @param buddy        sipe_buddy structure
  */
 void sipe_ucs_group_remove_buddy(struct sipe_core_private *sipe_private,

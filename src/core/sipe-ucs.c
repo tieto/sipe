@@ -258,20 +258,28 @@ void sipe_ucs_group_remove_buddy(struct sipe_core_private *sipe_private,
 				 struct sipe_group *group,
 				 struct sipe_buddy *buddy)
 {
-	gchar *body = g_strdup_printf("<m:RemoveImContactFromGroup>"
-				      " <m:ContactId Id=\"%s\" ChangeKey=\"%s\"/>"
-				      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
-				      "</m:RemoveImContactFromGroup>",
-				      buddy->exchange_key,
-				      buddy->change_key,
-				      group->exchange_key,
-				      group->change_key);
+	if (group) {
+		/*
+		 * If a contact is removed from last group, it will also be
+		 * removed from contact list completely. The documentation has
+		 * a RemoveContactFromImList operation, but that doesn't seem
+		 * to work at all, i.e. it is always rejected by the server.
+		 */
+		gchar *body = g_strdup_printf("<m:RemoveImContactFromGroup>"
+					      " <m:ContactId Id=\"%s\" ChangeKey=\"%s\"/>"
+					      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
+					      "</m:RemoveImContactFromGroup>",
+					      buddy->exchange_key,
+					      buddy->change_key,
+					      group->exchange_key,
+					      group->change_key);
 
-	sipe_ucs_http_request(sipe_private,
-			      body,
-			      sipe_ucs_ignore_response,
-			      NULL);
-	g_free(body);
+		sipe_ucs_http_request(sipe_private,
+				      body,
+				      sipe_ucs_ignore_response,
+				      NULL);
+		g_free(body);
+	}
 }
 
 static struct sipe_group *ucs_create_group(struct sipe_core_private *sipe_private,
