@@ -221,26 +221,30 @@ struct sipe_group *sipe_group_add(struct sipe_core_private *sipe_private,
 {
 	struct sipe_group *group = NULL;
 
-	if (!is_empty(name) &&
-	    sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC, name)) {
+	if (!is_empty(name)) {
+		group = sipe_group_find_by_name(sipe_private, name);
 
-		group       = g_new0(struct sipe_group, 1);
-		group->name = g_strdup(name);
-		group->id   = id;
+		if (!group &&
+		    sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC, name)) {
 
-		if (exchange_key)
-			group->exchange_key = g_strdup(exchange_key);
-		if (change_key)
-			group->change_key = g_strdup(change_key);
+			group       = g_new0(struct sipe_group, 1);
+			group->name = g_strdup(name);
+			group->id   = id;
 
-		sipe_private->groups->list = g_slist_append(sipe_private->groups->list,
-							    group);
+			if (exchange_key)
+				group->exchange_key = g_strdup(exchange_key);
+			if (change_key)
+				group->change_key = g_strdup(change_key);
 
-		SIPE_DEBUG_INFO("sipe_group_add: created backend group '%s' with id %d",
-				group->name, group->id);
-	} else
-		SIPE_DEBUG_INFO("sipe_group_add: backend group '%s' already exists",
-				name ? name : "");
+			sipe_private->groups->list = g_slist_append(sipe_private->groups->list,
+								    group);
+
+			SIPE_DEBUG_INFO("sipe_group_add: created backend group '%s' with id %d",
+					group->name, group->id);
+		} else
+			SIPE_DEBUG_INFO("sipe_group_add: backend group '%s' already exists",
+					name ? name : "");
+	}
 
 	return(group);
 }

@@ -386,7 +386,8 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 		const sipe_xml *group_node;
 
 		/* Start processing contact list */
-		sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
+		if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES))
+			sipe_backend_buddy_list_processing_start(SIPE_CORE_PUBLIC);
 
 		for (persona_node = sipe_xml_child(node, "Personas/Persona");
 		     persona_node;
@@ -458,9 +459,19 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 
 		/* Finished processing contact list */
 		sipe_buddy_cleanup_local_list(sipe_private);
-		sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
+		if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES))
+			sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
 		sipe_subscribe_presence_initial(sipe_private);
 	}
+}
+
+static void ucs_get_im_item_list(struct sipe_core_private *sipe_private)
+{
+	if (sipe_private->ucs->migrated)
+		sipe_ucs_http_request(sipe_private,
+				      "<m:GetImItemList/>",
+				      sipe_ucs_get_im_item_list_response,
+				      NULL);
 }
 
 static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
@@ -482,12 +493,7 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("ucs_ews_autodiscover_cb: EWS URL '%s'", ews_url);
 	ucs->ews_url = g_strdup(ews_url);
 
-	/* Request migrated contact list */
-	if (ucs->migrated)
-		sipe_ucs_http_request(sipe_private,
-				      "<m:GetImItemList/>",
-				      sipe_ucs_get_im_item_list_response,
-				      NULL);
+	ucs_get_im_item_list(sipe_private);
 
 	/* EWS URL is valid, send all deferred requests now */
 	if (ucs->deferred_requests) {
@@ -521,8 +527,13 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 {
 	struct sipe_ucs *ucs;
 
-	if (sipe_private->ucs)
+	if (sipe_private->ucs) {
+		/* contact list update trigger -> request list again */
+		if (SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES))
+			ucs_get_im_item_list(sipe_private);
+
 		return;
+	}
 
 	sipe_private->ucs = ucs = g_new0(struct sipe_ucs, 1);
 	ucs->migrated = migrated;

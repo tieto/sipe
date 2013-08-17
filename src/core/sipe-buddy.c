@@ -107,6 +107,12 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 
 		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", normalized_uri);
 
+		if (SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES)) {
+			buddy->just_added = TRUE;
+			sipe_subscribe_presence_single_cb(sipe_private,
+							  buddy->name);
+		}
+
 		buddy_fetch_photo(sipe_private, normalized_uri);
 
 		normalized_uri = NULL; /* buddy takes ownership */
@@ -116,6 +122,27 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 	g_free(normalized_uri);
 
 	return(buddy);
+}
+
+static gboolean is_buddy_in_group(struct sipe_buddy *buddy,
+				  const gchar *name)
+{
+	gboolean in_group = FALSE;
+
+	if (buddy) {
+		GSList *entry2 = buddy->groups;
+
+		while (entry2) {
+			struct sipe_group *group = entry2->data;
+			if (sipe_strequal(group->name, name)) {
+				in_group = TRUE;
+				break;
+			}
+			entry2 = entry2->next;
+		}
+	}
+
+	return(in_group);
 }
 
 void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
@@ -154,12 +181,14 @@ void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
 		g_free(old_alias);
 	}
 
-	buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-							      group,
-							      (GCompareFunc) sipe_group_compare,
-							      NULL);
-	SIPE_DEBUG_INFO("sipe_buddy_add_to_group: added buddy %s to group %s",
-			uri, group_name);
+	if (!is_buddy_in_group(buddy, group_name)) {
+		buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+								      group,
+								      (GCompareFunc) sipe_group_compare,
+								      NULL);
+		SIPE_DEBUG_INFO("sipe_buddy_add_to_group: added buddy %s to group %s",
+				uri, group_name);
+	}
 }
 
 void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
@@ -181,22 +210,8 @@ void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
 								 bb);
 		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
 								  bname);
-		gboolean in_sipe_groups = FALSE;
 
-		if (buddy) {
-			GSList *entry2 = buddy->groups;
-
-			while (entry2) {
-				struct sipe_group *group = entry2->data;
-				if (sipe_strequal(group->name, gname)) {
-					in_sipe_groups = TRUE;
-					break;
-				}
-				entry2 = entry2->next;
-			}
-		}
-
-		if (!in_sipe_groups) {
+		if (!is_buddy_in_group(buddy, gname)) {
 			SIPE_DEBUG_INFO("sipe_buddy_cleanup_local_list: REMOVING '%s' from local group '%s', as buddy is not in that group on remote contact list",
 					bname, gname);
 			sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, bb);
@@ -385,19 +400,14 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	if (!sipe_buddy_find_by_uri(sipe_private, uri)) {
-		struct sipe_buddy *b = sipe_buddy_add(sipe_private,
-						      uri,
-						      NULL,
-						      NULL);
-		b->just_added = TRUE;
-
-		sipe_subscribe_presence_single_cb(sipe_private, b->name);
-
-	} else {
+	if (!sipe_buddy_find_by_uri(sipe_private, uri))
+		sipe_buddy_add(sipe_private,
+			       uri,
+			       NULL,
+			       NULL);
+	else
 		SIPE_DEBUG_INFO("sipe_core_buddy_add: buddy %s already in internal list",
 				uri);
-	}
 
 	sipe_core_buddy_group(sipe_public,
 			      uri,
