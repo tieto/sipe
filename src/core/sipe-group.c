@@ -233,9 +233,12 @@ struct sipe_group *sipe_group_add(struct sipe_core_private *sipe_private,
 
 			SIPE_DEBUG_INFO("sipe_group_add: created backend group '%s' with id %d",
 					group->name, group->id);
-		} else
+		} else {
 			SIPE_DEBUG_INFO("sipe_group_add: backend group '%s' already exists",
 					name ? name : "");
+			if (group)
+				group->is_obsolete = FALSE;
+		}
 	}
 
 	return(group);
@@ -256,7 +259,7 @@ void sipe_group_remove(struct sipe_core_private *sipe_private,
 		       struct sipe_group *group)
 {
 	if (group) {
-		SIPE_DEBUG_INFO("removing group %s (id %d)", group->name, group->id);
+		SIPE_DEBUG_INFO("sipe_group_remove: %s (id %d)", group->name, group->id);
 		sipe_backend_buddy_group_remove(SIPE_CORE_PUBLIC, group->name);
 		group_free(sipe_private, group);
 	}
@@ -305,21 +308,25 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 	struct sipe_group *s_group = sipe_group_find_by_name(sipe_private, name);
 
 	if (s_group) {
-		SIPE_DEBUG_INFO("sipe_core_group_remove: delete '%s'", name);
 
-		if (sipe_ucs_is_migrated(sipe_private)) {
-			sipe_ucs_group_remove(sipe_private,
-					      s_group);
-		} else {
-			gchar *request = g_strdup_printf("<m:groupID>%d</m:groupID>",
-							 s_group->id);
-			sip_soap_request(sipe_private,
-					 "deleteGroup",
-					 request);
-			g_free(request);
+		/* ignore backend events while deleting obsoleted groups */
+		if (!s_group->is_obsolete) {
+			SIPE_DEBUG_INFO("sipe_core_group_remove: delete '%s'", name);
+
+			if (sipe_ucs_is_migrated(sipe_private)) {
+				sipe_ucs_group_remove(sipe_private,
+						      s_group);
+			} else {
+				gchar *request = g_strdup_printf("<m:groupID>%d</m:groupID>",
+								 s_group->id);
+				sip_soap_request(sipe_private,
+						 "deleteGroup",
+						 request);
+				g_free(request);
+			}
+
+			group_free(sipe_private, s_group);
 		}
-
-		group_free(sipe_private, s_group);
 	} else {
 		SIPE_DEBUG_INFO("sipe_core_group_remove: cannot find group '%s'", name);
 	}
@@ -382,6 +389,31 @@ void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
 
 	if (buddy)
 		send_buddy_update(sipe_private, buddy, alias);
+}
+
+void sipe_group_update_start(struct sipe_core_private *sipe_private)
+{
+	GSList *entry = sipe_private->groups->list;
+
+	while (entry) {
+		((struct sipe_group *) entry->data)->is_obsolete = TRUE;
+		entry = entry->next;
+	}
+}
+
+void sipe_group_update_finish(struct sipe_core_private *sipe_private)
+{
+	GSList *entry = sipe_private->groups->list;
+
+	while (entry) {
+		struct sipe_group *group = entry->data;
+
+		/* next group entry */
+		entry = entry->next;
+
+		if (group->is_obsolete)
+			sipe_group_remove(sipe_private, group);
+	}
 }
 
 struct sipe_group *sipe_group_first(struct sipe_core_private *sipe_private)

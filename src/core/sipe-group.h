@@ -29,6 +29,7 @@ struct sipe_group {
 	gchar *exchange_key;
 	gchar *change_key;
 	guint id;
+	gboolean is_obsolete;
 };
 
 struct sipe_group *sipe_group_find_by_id(struct sipe_core_private *sipe_private,
@@ -84,6 +85,23 @@ void sipe_group_remove(struct sipe_core_private *sipe_private,
 /* update alias/group list for a buddy on the server */
 void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
 			     struct sipe_buddy *buddy);
+
+/**
+ * Prepare group list for an update
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_group_update_start(struct sipe_core_private *sipe_private);
+
+/**
+ * Finish group list update. This will remove obsolete groups.
+ *
+ * NOTE: this must be call after sipe_buddy_update_finish(), i.e. it
+ *       assumes that the group is no longer associated with any buddy.
+ *
+ * @param sipe_private SIPE core data
+ */
+void sipe_group_update_finish(struct sipe_core_private *sipe_private);
 
 /**
  * Return first group
