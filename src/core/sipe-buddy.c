@@ -68,6 +68,7 @@ struct sipe_buddies {
 
 struct buddy_group_data {
 	const struct sipe_group *group;
+	gboolean is_obsolete;
 };
 
 struct photo_response_data {
@@ -137,8 +138,10 @@ static gboolean is_buddy_in_group(struct sipe_buddy *buddy,
 
 		while (entry) {
 			struct buddy_group_data *bgd = entry->data;
-			if (sipe_strequal(bgd->group->name, name))
+			if (sipe_strequal(bgd->group->name, name)) {
+				bgd->is_obsolete = FALSE;
 				return(TRUE);
+			}
 			entry = entry->next;
 		}
 	}
@@ -213,6 +216,13 @@ static void buddy_group_free(gpointer data)
 	g_free(data);
 }
 
+static void buddy_group_remove(struct sipe_buddy *buddy,
+			       struct buddy_group_data *bgd)
+{
+	buddy->groups = g_slist_remove(buddy->groups, bgd);
+	buddy_group_free(bgd);
+}
+
 static void sipe_buddy_remove_group(struct sipe_buddy *buddy,
 				    const struct sipe_group *group)
 {
@@ -226,8 +236,7 @@ static void sipe_buddy_remove_group(struct sipe_buddy *buddy,
 		entry = entry->next;
 	}
 
-	buddy->groups = g_slist_remove(buddy->groups, bgd);
-	buddy_group_free(bgd);
+	buddy_group_remove(buddy, bgd);
 }
 
 void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
@@ -238,7 +247,8 @@ void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
 	GSList *entry = buddy->groups;
 
 	while (entry) {
-		const struct sipe_group *group = ((struct buddy_group_data *) entry->data)->group;
+		struct buddy_group_data *bgd = entry->data;
+		const struct sipe_group *group = bgd->group;
 
 		/* next buddy group */
 		entry = entry->next;
@@ -254,7 +264,7 @@ void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
 			if (oldb)
 				sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
 							  oldb);
-			sipe_buddy_remove_group(buddy, group);
+			buddy_group_remove(buddy, bgd);
 		}
 	}
 }
@@ -414,7 +424,14 @@ static void buddy_set_obsolete_flag(SIPE_UNUSED_PARAMETER gpointer key,
 				    gpointer value,
 				    SIPE_UNUSED_PARAMETER gpointer user_data)
 {
-	((struct sipe_buddy *) value)->is_obsolete = TRUE;
+	struct sipe_buddy *buddy = value;
+	GSList *entry = buddy->groups;
+
+	buddy->is_obsolete = TRUE;
+	while (entry) {
+		((struct buddy_group_data *) entry->data)->is_obsolete = TRUE;
+		entry = entry->next;
+	}
 }
 
 void sipe_buddy_update_start(struct sipe_core_private *sipe_private)
@@ -430,17 +447,18 @@ static gboolean buddy_check_obsolete_flag(SIPE_UNUSED_PARAMETER gpointer key,
 {
 	struct sipe_core_private *sipe_private = user_data;
 	struct sipe_buddy *buddy = value;
+	const gchar *uri = buddy->name;
 
 	if (buddy->is_obsolete) {
 		/* all backend buddies in different groups */
 		GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC,
-							      buddy->name,
+							      uri,
 							      NULL);
 		GSList *entry = buddies;
 
 		SIPE_DEBUG_INFO("buddy_check_obsolete_flag: REMOVING %d backend buddies for '%s'",
 				g_slist_length(buddies),
-				buddy->name);
+				uri);
 
 		while (entry) {
 			sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
@@ -452,8 +470,32 @@ static gboolean buddy_check_obsolete_flag(SIPE_UNUSED_PARAMETER gpointer key,
 		buddy_free(buddy);
 		/* return TRUE as the key/value have already been deleted */
 		return(TRUE);
-	} else
+
+	} else {
+		GSList *entry = buddy->groups;
+
+		while (entry) {
+			struct buddy_group_data *bgd = entry->data;
+
+			/* next buddy group */
+			entry = entry->next;
+
+			if (bgd->is_obsolete) {
+				const struct sipe_group *group = bgd->group;
+				sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+										  uri,
+										  group->name);
+				SIPE_DEBUG_INFO("buddy_check_obsolete_flag: removing buddy '%s' from group '%s'",
+						uri, group->name);
+				/* this should never be NULL */
+				if (oldb)
+					sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+								  oldb);
+				buddy_group_remove(buddy, bgd);
+			}
+		}
 		return(FALSE);
+	}
 }
 
 void sipe_buddy_update_finish(struct sipe_core_private *sipe_private)
