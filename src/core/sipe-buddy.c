@@ -66,6 +66,10 @@ struct sipe_buddies {
 	GSList *pending_photo_requests;
 };
 
+struct buddy_group_data {
+	const struct sipe_group *group;
+};
+
 struct photo_response_data {
 	gchar *who;
 	gchar *photo_hash;
@@ -128,22 +132,18 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 static gboolean is_buddy_in_group(struct sipe_buddy *buddy,
 				  const gchar *name)
 {
-	gboolean in_group = FALSE;
-
 	if (buddy) {
-		GSList *entry2 = buddy->groups;
+		GSList *entry = buddy->groups;
 
-		while (entry2) {
-			struct sipe_group *group = entry2->data;
-			if (sipe_strequal(group->name, name)) {
-				in_group = TRUE;
-				break;
-			}
-			entry2 = entry2->next;
+		while (entry) {
+			struct buddy_group_data *bgd = entry->data;
+			if (sipe_strequal(bgd->group->name, name))
+				return(TRUE);
+			entry = entry->next;
 		}
 	}
 
-	return(in_group);
+	return(FALSE);
 }
 
 void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
@@ -191,23 +191,43 @@ void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
 
 static gint buddy_group_compare(gconstpointer a, gconstpointer b)
 {
-	return(((const struct sipe_group *)a)->id -
-	       ((const struct sipe_group *)b)->id);
+	return(((const struct buddy_group_data *)a)->group->id -
+	       ((const struct buddy_group_data *)b)->group->id);
 }
 
 void sipe_buddy_insert_group(struct sipe_buddy *buddy,
 			     struct sipe_group *group)
 {
+	struct buddy_group_data *bgd = g_new0(struct buddy_group_data, 1);
+
+	bgd->group = group;
+
 	buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-							      group,
+							      bgd,
 							      buddy_group_compare,
 							      NULL);
 }
 
-static void sipe_buddy_remove_group(struct sipe_buddy *buddy,
-			     struct sipe_group *group)
+static void buddy_group_free(gpointer data)
 {
-	buddy->groups = g_slist_remove(buddy->groups, group);
+	g_free(data);
+}
+
+static void sipe_buddy_remove_group(struct sipe_buddy *buddy,
+				    const struct sipe_group *group)
+{
+	GSList *entry = buddy->groups;
+	struct buddy_group_data *bgd = NULL;
+
+	while (entry) {
+		bgd = entry->data;
+		if (bgd->group == group)
+			break;
+		entry = entry->next;
+	}
+
+	buddy->groups = g_slist_remove(buddy->groups, bgd);
+	buddy_group_free(bgd);
 }
 
 void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
@@ -218,7 +238,7 @@ void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
 	GSList *entry = buddy->groups;
 
 	while (entry) {
-		struct sipe_group *group = entry->data;
+		const struct sipe_group *group = ((struct buddy_group_data *) entry->data)->group;
 
 		/* next buddy group */
 		entry = entry->next;
@@ -251,7 +271,7 @@ gchar *sipe_buddy_groups_string(struct sipe_buddy *buddy)
 		return(NULL);
 
 	while (entry) {
-		struct sipe_group *group = entry->data;
+		const struct sipe_group *group = ((struct buddy_group_data *) entry->data)->group;
 		ids_arr[i] = g_strdup_printf("%u", group->id);
 		entry = entry->next;
 		i++;
@@ -354,7 +374,7 @@ static void buddy_free(struct sipe_buddy *buddy)
 	sipe_cal_free_working_hours(buddy->cal_working_hours);
 
 	g_free(buddy->device_name);
-	g_slist_free(buddy->groups);
+	g_slist_free_full(buddy->groups, buddy_group_free);
 	g_free(buddy);
 }
 
@@ -487,17 +507,17 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			   const gchar *old_group_name,
 			   const gchar *new_group_name)
 {
-	struct sipe_buddy * buddy = sipe_buddy_find_by_uri(SIPE_CORE_PRIVATE,
-							   who);
-	struct sipe_group * old_group = NULL;
-	struct sipe_group * new_group;
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(SIPE_CORE_PRIVATE,
+							  who);
+	struct sipe_group *old_group = NULL;
+	struct sipe_group *new_group;
 
 	SIPE_DEBUG_INFO("sipe_core_buddy_group: who:%s old_group_name:%s new_group_name:%s",
 			who ? who : "", old_group_name ? old_group_name : "", new_group_name ? new_group_name : "");
 
-	if(!buddy) { // buddy not in roaming list
+	if (!buddy)
+		/* buddy not in roaming list */
 		return;
-	}
 
 	if (old_group_name) {
 		old_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, old_group_name);
@@ -551,7 +571,7 @@ void sipe_buddy_remove(struct sipe_core_private *sipe_private,
 
 	/* If the buddy still has groups, we need to delete backend buddies */
 	while (entry) {
-		struct sipe_group *group = entry->data;
+		const struct sipe_group *group = ((struct buddy_group_data *) entry->data)->group;
 		sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
 								  uri,
 								  group->name);
