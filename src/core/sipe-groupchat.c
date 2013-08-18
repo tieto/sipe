@@ -1004,14 +1004,11 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 	const gchar *callid;
 	struct sip_dialog *dialog;
 
-	/* @TODO: is this always correct?*/
-	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
-
-	if (!xml) return;
-
 	callid = sipmsg_find_header(msg, "Call-ID");
 	dialog = sipe_dialog_find(session, session->with);
 	if (sipe_strequal(callid, dialog->callid)) {
+
+		sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 
 		if        (((node = sipe_xml_child(xml, "rpl")) != NULL) ||
 			   ((node = sipe_xml_child(xml, "ntc")) != NULL)) {
@@ -1030,10 +1027,14 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 		 * messages to the current *AND* the obsolete Call-ID, until
 		 * the obsolete session expires.
 		 *
-		 * Ignore these INFO messages to avoid, e.g. duplicate texts
+		 * Ignore these INFO messages to avoid, e.g. duplicate texts,
+		 * and respond with an error so that the server knows that we
+		 * consider this dialog to be terminated.
 		 */
 		SIPE_DEBUG_INFO("process_incoming_info_groupchat: ignoring unsolicited INFO message to obsolete Call-ID: %s",
 				callid);
+
+		sip_transport_response(sipe_private, msg, 487, "Request Terminated", NULL);
 	}
 
 	sipe_xml_free(xml);
