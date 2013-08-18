@@ -113,6 +113,15 @@ void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
 			      GSList *new_groups);
 
 /**
+ * Returns string of group IDs the buddy belongs to, e.g. "2 4 7 8"
+ *
+ * @param buddy sipe_buddy data structure
+ *
+ * @result group string. Must be @c g_free()'d after use.
+ */
+gchar *sipe_buddy_groups_string(struct sipe_buddy *buddy);
+
+/**
  * Remove entries from local buddy list that do not have corresponding entries
  * in the ones in the contact list sent by the server
  *

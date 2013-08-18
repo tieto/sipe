@@ -239,6 +239,31 @@ void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
 	}
 }
 
+gchar *sipe_buddy_groups_string(struct sipe_buddy *buddy)
+{
+	guint i = 0;
+	gchar *string;
+	/* creating array from GList, converting guint to gchar * */
+	gchar **ids_arr = g_new(gchar *, g_slist_length(buddy->groups) + 1);
+	GSList *entry = buddy->groups;
+
+	if (!ids_arr)
+		return(NULL);
+
+	while (entry) {
+		struct sipe_group *group = entry->data;
+		ids_arr[i] = g_strdup_printf("%u", group->id);
+		entry = entry->next;
+		i++;
+	}
+	ids_arr[i] = NULL;
+
+	string = g_strjoinv(" ", ids_arr);
+	g_strfreev(ids_arr);
+
+	return(string);
+}
+
 void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
 {
 	GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC,

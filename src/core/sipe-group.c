@@ -326,38 +326,13 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 }
 
 /**
- * Returns string like "2 4 7 8" - group ids buddy belong to.
- */
-static gchar *sipe_get_buddy_groups_string(struct sipe_buddy *buddy)
-{
-	int i = 0;
-	gchar *res;
-	//creating array from GList, converting int to gchar*
-	gchar **ids_arr = g_new(gchar *, g_slist_length(buddy->groups) + 1);
-	GSList *entry = buddy->groups;
-
-	if (!ids_arr) return NULL;
-
-	while (entry) {
-		struct sipe_group * group = entry->data;
-		ids_arr[i] = g_strdup_printf("%d", group->id);
-		entry = entry->next;
-		i++;
-	}
-	ids_arr[i] = NULL;
-	res = g_strjoinv(" ", ids_arr);
-	g_strfreev(ids_arr);
-	return res;
-}
-
-/**
  * Sends buddy update to server
  */
 static void send_buddy_update(struct sipe_core_private *sipe_private,
 			      struct sipe_buddy *buddy,
 			      const gchar *alias)
 {
-	gchar *groups = sipe_get_buddy_groups_string(buddy);
+	gchar *groups = sipe_buddy_groups_string(buddy);
 
 	if (groups) {
 		gchar *request;
