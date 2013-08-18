@@ -204,6 +204,41 @@ void sipe_buddy_insert_group(struct sipe_buddy *buddy,
 							      NULL);
 }
 
+static void sipe_buddy_remove_group(struct sipe_buddy *buddy,
+			     struct sipe_group *group)
+{
+	buddy->groups = g_slist_remove(buddy->groups, group);
+}
+
+void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
+			      struct sipe_buddy *buddy,
+			      GSList *new_groups)
+{
+	const gchar *uri = buddy->name;
+	GSList *entry = buddy->groups;
+
+	while (entry) {
+		struct sipe_group *group = entry->data;
+
+		/* next buddy group */
+		entry = entry->next;
+
+		/* old group NOT found in new list? */
+		if (g_slist_find(new_groups, group) == NULL) {
+			sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+									  uri,
+									  group->name);
+			SIPE_DEBUG_INFO("sipe_buddy_update_groups: removing buddy %s from group '%s'",
+					uri, group->name);
+			/* this should never be NULL */
+			if (oldb)
+				sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+							  oldb);
+			sipe_buddy_remove_group(buddy, group);
+		}
+	}
+}
+
 void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
 {
 	GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC,
@@ -445,7 +480,7 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 	new_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, new_group_name);
 
 	if (old_group) {
-		buddy->groups = g_slist_remove(buddy->groups, old_group);
+		sipe_buddy_remove_group(buddy, old_group);
 		SIPE_DEBUG_INFO("sipe_core_buddy_group: buddy %s removed from old group %s", who, old_group_name);
 	}
 
@@ -504,45 +539,45 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 			    const gchar *group_name)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *b = sipe_buddy_find_by_uri(sipe_private,
-						      uri);
-	struct sipe_group *g = NULL;
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+							  uri);
+	struct sipe_group *group = NULL;
 
-	if (!b) return;
+	if (!buddy) return;
 
 	if (group_name) {
-		g = sipe_group_find_by_name(sipe_private, group_name);
-		if (g) {
-			b->groups = g_slist_remove(b->groups, g);
+		group = sipe_group_find_by_name(sipe_private, group_name);
+		if (group) {
+			sipe_buddy_remove_group(buddy, group);
 			SIPE_DEBUG_INFO("sipe_core_buddy_remove: buddy %s removed from group %s",
-					uri, g->name);
+					uri, group->name);
 		}
 	}
 
-	if (g_slist_length(b->groups) < 1) {
+	if (g_slist_length(buddy->groups) < 1) {
 
 		if (sipe_ucs_is_migrated(sipe_private)) {
 			sipe_ucs_group_remove_buddy(sipe_private,
-						    g,
-						    b);
+						    group,
+						    buddy);
 		} else {
 			gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
-							 b->name);
+							 buddy->name);
 			sip_soap_request(sipe_private,
 					 "deleteContact",
 					 request);
 			g_free(request);
 		}
 
-		sipe_buddy_remove(sipe_private, b);
+		sipe_buddy_remove(sipe_private, buddy);
 	} else {
 		if (sipe_ucs_is_migrated(sipe_private)) {
 			sipe_ucs_group_remove_buddy(sipe_private,
-						    g,
-						    b);
+						    group,
+						    buddy);
 		} else
 			/* updates groups on server */
-			sipe_group_update_buddy(sipe_private, b);
+			sipe_group_update_buddy(sipe_private, buddy);
 	}
 }
 

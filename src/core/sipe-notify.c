@@ -1283,7 +1283,6 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 					const gchar *name = sipe_xml_attribute(item, "name");
 					gboolean empty_name = is_empty(name);
 					GSList *found = NULL;
-					GSList *entry;
 					int i = 0;
 
 					while (item_groups[i]) {
@@ -1333,29 +1332,9 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 					g_strfreev(item_groups);
 
  					/* removed from groups? */
-					entry = buddy->groups;
-					while (entry) {
-						GSList *remove_link = entry;
-						struct sipe_group *group = remove_link->data;
-
-						/* next buddy group */
-						entry = entry->next;
-
-						/* old group NOT found in new list? */
-						if (g_slist_find(found, group) == NULL) {
-							sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
-													  uri,
-													  group->name);
-							SIPE_DEBUG_INFO("Removing buddy %s from group '%s'",
-									uri, group->name);
-							/* this should never be NULL */
-							if (oldb)
-								sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
-											  oldb);
-							buddy->groups = g_slist_remove_link(buddy->groups,
-											    remove_link);
-						}
-					}
+					sipe_buddy_update_groups(sipe_private,
+								 buddy,
+								 found);
 					g_slist_free(found);
 				}
 			}

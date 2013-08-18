@@ -102,6 +102,17 @@ void sipe_buddy_insert_group(struct sipe_buddy *buddy,
 			     struct sipe_group *group);
 
 /**
+ * Update group list for a buddy
+ *
+ * @param sipe_private SIPE core data
+ * @param buddy        sipe_buddy data structure
+ * @param group        list with new sipe_group data structures
+ */
+void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
+			      struct sipe_buddy *buddy,
+			      GSList *new_groups);
+
+/**
  * Remove entries from local buddy list that do not have corresponding entries
  * in the ones in the contact list sent by the server
  *
