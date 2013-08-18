@@ -1347,22 +1347,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 									  uri);
 
 			if (buddy) {
-				GSList *entry = buddy->groups;
-
 				SIPE_DEBUG_INFO("Removing buddy %s", uri);
-				while (entry) {
-					struct sipe_group *group = entry->data;
-					sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
-											  uri,
-											  group->name);
-					/* this should never be NULL */
-					if (oldb)
-						sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
-									  oldb);
-
-					/* next buddy group */
-					entry = entry->next;
-				}
 				sipe_buddy_remove(sipe_private, buddy);
 			}
 		}

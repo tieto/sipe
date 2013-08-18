@@ -517,11 +517,27 @@ void sipe_buddy_remove(struct sipe_core_private *sipe_private,
 		       struct sipe_buddy *buddy)
 {
 	struct sipe_buddies *buddies = sipe_private->buddies;
-	gchar *action_name = sipe_utils_presence_key(buddy->name);
+	const gchar *uri = buddy->name;
+	GSList *entry = buddy->groups;
+	gchar *action_name = sipe_utils_presence_key(uri);
+
 	sipe_schedule_cancel(sipe_private, action_name);
 	g_free(action_name);
 
-	g_hash_table_remove(buddies->uri, buddy->name);
+	/* If the buddy still has groups, we need to delete backend buddies */
+	while (entry) {
+		struct sipe_group *group = entry->data;
+		sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+								  uri,
+								  group->name);
+		/* this should never be NULL */
+		if (oldb)
+			sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, oldb);
+
+		entry = entry->next;
+	}
+
+	g_hash_table_remove(buddies->uri, uri);
 	if (buddy->exchange_key)
 		g_hash_table_remove(buddies->exchange_key,
 				    buddy->exchange_key);
