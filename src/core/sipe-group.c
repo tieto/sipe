@@ -65,10 +65,7 @@ void sipe_group_add_buddy(struct sipe_core_private *sipe_private,
 		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
 								  who);
 		if (buddy) {
-			buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-									      group,
-									      (GCompareFunc)sipe_group_compare,
-									      NULL);
+			sipe_buddy_insert_group(buddy, group);
 			sipe_group_update_buddy(sipe_private, buddy);
 		}
 	}
@@ -118,11 +115,6 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 		return TRUE;
 	}
 	return FALSE;
-}
-
-int
-sipe_group_compare(struct sipe_group *group1, struct sipe_group *group2) {
-	return group1->id - group2->id;
 }
 
 struct sipe_group*

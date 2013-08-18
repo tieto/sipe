@@ -93,6 +93,15 @@ void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
 			     const gchar *alias);
 
 /**
+ * Insert a group to buddy group list
+ *
+ * @param buddy        sipe_buddy data structure
+ * @param group        sipe_group data structure
+ */
+void sipe_buddy_insert_group(struct sipe_buddy *buddy,
+			     struct sipe_group *group);
+
+/**
  * Remove entries from local buddy list that do not have corresponding entries
  * in the ones in the contact list sent by the server
  *

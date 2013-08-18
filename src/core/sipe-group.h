@@ -31,8 +31,6 @@ struct sipe_group {
 	guint id;
 };
 
-int sipe_group_compare(struct sipe_group *group1, struct sipe_group *group2);
-
 struct sipe_group *sipe_group_find_by_id(struct sipe_core_private *sipe_private,
 					 guint id);
 

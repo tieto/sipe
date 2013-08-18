@@ -183,13 +183,25 @@ void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
 	}
 
 	if (!is_buddy_in_group(buddy, group_name)) {
-		buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-								      group,
-								      (GCompareFunc) sipe_group_compare,
-								      NULL);
+		sipe_buddy_insert_group(buddy, group);
 		SIPE_DEBUG_INFO("sipe_buddy_add_to_group: added buddy %s to group %s",
 				uri, group_name);
 	}
+}
+
+static gint buddy_group_compare(gconstpointer a, gconstpointer b)
+{
+	return(((const struct sipe_group *)a)->id -
+	       ((const struct sipe_group *)b)->id);
+}
+
+void sipe_buddy_insert_group(struct sipe_buddy *buddy,
+			     struct sipe_group *group)
+{
+	buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+							      group,
+							      buddy_group_compare,
+							      NULL);
 }
 
 void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
@@ -440,10 +452,7 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 	if (!new_group) {
 		sipe_group_create(SIPE_CORE_PRIVATE, new_group_name, who);
 	} else {
-		buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-								      new_group,
-								      (GCompareFunc)sipe_group_compare,
-								      NULL);
+		sipe_buddy_insert_group(buddy, new_group);
 		sipe_group_update_buddy(SIPE_CORE_PRIVATE, buddy);
 	}
 }

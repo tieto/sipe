@@ -1321,10 +1321,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 										       uri,
 										       alias,
 										       group->name);
-								buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-														      group,
-														      (GCompareFunc) sipe_group_compare,
-														      NULL);
+								sipe_buddy_insert_group(buddy, group);
 								SIPE_DEBUG_INFO("Added buddy %s (alias '%s' to group '%s'",
 										uri, alias, group->name);
 							}
