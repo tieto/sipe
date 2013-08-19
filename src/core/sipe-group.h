@@ -47,19 +47,6 @@ gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
 			   const gchar *name);
 
 /**
- * Adds a buddy to a group
- *
- * @param sipe_private SIPE core data
- * @param group        @c sipe_group structure
- * @param who          SIP URI of the buddy to add to the new group
- *
- * @return @c sipe_group structure or @c NULL if group creation failed
- */
-void sipe_group_add_buddy(struct sipe_core_private *sipe_private,
-			  struct sipe_group *group,
-			  const gchar *who);
-
-/**
  * Creates @c sipe_group structure for a new group and adds it into the group
  * list of given account. If buddy is already in the list, its existing
  * structure is returned.

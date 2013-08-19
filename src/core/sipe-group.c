@@ -57,20 +57,6 @@ sipe_group_context_destroy(gpointer data)
 	g_free(ctx);
 }
 
-void sipe_group_add_buddy(struct sipe_core_private *sipe_private,
-			  struct sipe_group *group,
-			  const gchar *who)
-{
-	if (group && who) {
-		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
-								  who);
-		if (buddy) {
-			sipe_buddy_insert_group(buddy, group);
-			sipe_group_update_buddy(sipe_private, buddy);
-		}
-	}
-}
-
 static gboolean
 process_add_group_response(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg,
@@ -107,9 +93,14 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 				       g_ascii_strtoull(group_id, NULL, 10));
 		g_free(group_id);
 
-		sipe_group_add_buddy(sipe_private,
-				     group,
-				     ctx->user_name);
+		if (group) {
+			struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+									  ctx->user_name);
+			if (buddy) {
+				sipe_buddy_insert_group(buddy, group);
+				sipe_group_update_buddy(sipe_private, buddy);
+			}
+		}
 
 		sipe_xml_free(xml);
 		return TRUE;

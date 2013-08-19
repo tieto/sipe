@@ -315,8 +315,15 @@ static void sipe_ucs_add_im_group_response(struct sipe_core_private *sipe_privat
 						    "AddImGroupResponse/ImGroup");
 	struct sipe_group *group = ucs_create_group(sipe_private, group_node);
 
-	if (group)
-		sipe_group_add_buddy(sipe_private, group, who);
+	if (group) {
+		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+								  who);
+
+		if (buddy) {
+			sipe_buddy_insert_group(buddy, group);
+			/* @TODO: send operation to add buddy to group */
+		}
+	}
 
 	g_free(who);
 }
