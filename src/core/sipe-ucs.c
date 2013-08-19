@@ -254,6 +254,65 @@ static void sipe_ucs_ignore_response(SIPE_UNUSED_PARAMETER struct sipe_core_priv
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ucs_ignore_response: done");
 }
 
+static void ucs_extract_keys(const sipe_xml *persona_node,
+			     const gchar **key,
+			     const gchar **change)
+{
+	const sipe_xml *attr_node;
+
+	/* extract Exchange key - not sure if this is correct */
+	for (attr_node = sipe_xml_child(persona_node,
+					"Attributions/Attribution");
+	     attr_node;
+	     attr_node = sipe_xml_twin(attr_node)) {
+		const sipe_xml *id_node = sipe_xml_child(attr_node,
+							 "SourceId");
+		gchar *type = sipe_xml_data(sipe_xml_child(attr_node,
+							   "DisplayName"));
+		if (id_node &&
+		    sipe_strequal(type, "Lync Contacts")) {
+			*key = sipe_xml_attribute(id_node, "Id");
+			*change = sipe_xml_attribute(id_node, "ChangeKey");
+			g_free(type);
+			break;
+		}
+		g_free(type);
+	}
+}
+
+static void sipe_ucs_add_new_im_contact_to_group_response(struct sipe_core_private *sipe_private,
+							  const sipe_xml *body,
+							  gpointer callback_data)
+{
+	gchar *who = callback_data;
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private, who);
+	const sipe_xml *persona_node = sipe_xml_child(body,
+						      "AddNewImContactToGroupResponse/Persona");
+
+	if (persona_node                  &&
+	    buddy                         &&
+	    is_empty(buddy->exchange_key) &&
+	    is_empty(buddy->change_key)) {
+		const gchar *key = NULL;
+		const gchar *change = NULL;
+
+		ucs_extract_keys(persona_node, &key, &change);
+
+		if (!is_empty(key) && !is_empty(change)) {
+
+			sipe_buddy_add_keys(sipe_private,
+					    buddy,
+					    key,
+					    change);
+
+			SIPE_DEBUG_INFO("sipe_ucs_add_new_im_contact_to_group_response: persona URI '%s' key '%s' change '%s'",
+					buddy->name, key, change);
+		}
+	}
+
+	g_free(who);
+}
+
 void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
 			      struct sipe_group *group,
 			      struct sipe_buddy *buddy)
@@ -275,6 +334,19 @@ void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
 				      NULL);
 		g_free(body);
 	} else {
+		gchar *body = g_strdup_printf("<m:AddNewImContactToGroup>"
+					      " <m:ImAddress>%s</m:ImAddress>"
+					      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
+					      "</m:AddNewImContactToGroup>",
+					      sipe_get_no_sip_uri(buddy->name),
+					      group->exchange_key,
+					      group->change_key);
+
+		sipe_ucs_http_request(sipe_private,
+				      body,
+				      sipe_ucs_add_new_im_contact_to_group_response,
+				      g_strdup(buddy->name));
+		g_free(body);
 	}
 }
 
@@ -432,26 +504,8 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 								      "ImAddress"));
 			const gchar *key = NULL;
 			const gchar *change = NULL;
-			const sipe_xml *attr_node;
 
-			/* extract Exchange key - not sure if this is correct */
-			for (attr_node = sipe_xml_child(persona_node,
-							"Attributions/Attribution");
-			     attr_node;
-			     attr_node = sipe_xml_twin(attr_node)) {
-				const sipe_xml *id_node = sipe_xml_child(attr_node,
-									 "SourceId");
-				gchar *type = sipe_xml_data(sipe_xml_child(attr_node,
-									   "DisplayName"));
-				if (id_node &&
-				    sipe_strequal(type, "Lync Contacts")) {
-					key = sipe_xml_attribute(id_node, "Id");
-					change = sipe_xml_attribute(id_node, "ChangeKey");
-					g_free(type);
-					break;
-				}
-				g_free(type);
-			}
+			ucs_extract_keys(persona_node, &key, &change);
 
 			if (!(is_empty(address) || is_empty(key) || is_empty(change))) {
 				gchar *uri = sip_uri_from_name(address);

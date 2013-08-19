@@ -63,6 +63,19 @@ struct sipe_buddy {
 };
 
 /**
+ * Adds UCS Exchange/Change keys to a @c sipe_buddy structure
+ *
+ * @param sipe_private SIPE core data
+ * @param buddy        sipe_buddy data structure
+ * @param exchange_key Exchange key (may be @c NULL)
+ * @param change_key   Change key (may be @c NULL)
+ */
+void sipe_buddy_add_keys(struct sipe_core_private *sipe_private,
+			 struct sipe_buddy *buddy,
+			 const gchar *exchange_key,
+			 const gchar *change_key);
+
+/**
  * Creates @c sipe_buddy structure for a new buddy and adds it into the buddy
  * list of given account. If buddy is already in the list, its existing
  * structure is returned.

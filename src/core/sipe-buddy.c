@@ -81,6 +81,21 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 			      const gchar *uri);
 static void photo_response_data_free(struct photo_response_data *data);
 
+void sipe_buddy_add_keys(struct sipe_core_private *sipe_private,
+			 struct sipe_buddy *buddy,
+			 const gchar *exchange_key,
+			 const gchar *change_key)
+{
+	if (exchange_key) {
+		buddy->exchange_key = g_strdup(exchange_key);
+		g_hash_table_insert(sipe_private->buddies->exchange_key,
+				    buddy->exchange_key,
+				    buddy);
+	}
+	if (change_key)
+		buddy->change_key = g_strdup(change_key);
+}
+
 struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 				  const gchar *uri,
 				  const gchar *exchange_key,
@@ -92,23 +107,16 @@ struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
 							  normalized_uri);
 
 	if (!buddy) {
-		struct sipe_buddies *buddies = sipe_private->buddies;
-
 		buddy = g_new0(struct sipe_buddy, 1);
 		buddy->name = normalized_uri;
-		g_hash_table_insert(buddies->uri,
+		g_hash_table_insert(sipe_private->buddies->uri,
 				    buddy->name,
 				    buddy);
 
-		if (exchange_key) {
-			buddy->exchange_key = g_strdup(exchange_key);
-			g_hash_table_insert(buddies->exchange_key,
-					    buddy->exchange_key,
-					    buddy);
-		}
-		if (change_key)
-			buddy->change_key = g_strdup(change_key);
-
+		sipe_buddy_add_keys(sipe_private,
+				    buddy,
+				    exchange_key,
+				    change_key);
 
 		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", normalized_uri);
 
