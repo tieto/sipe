@@ -575,7 +575,12 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 		sipe_group_create(SIPE_CORE_PRIVATE, new_group_name, who);
 	} else {
 		sipe_buddy_insert_group(buddy, new_group);
-		sipe_group_update_buddy(SIPE_CORE_PRIVATE, buddy);
+		if (sipe_ucs_is_migrated(SIPE_CORE_PRIVATE))
+			sipe_ucs_group_add_buddy(SIPE_CORE_PRIVATE,
+						 new_group,
+						 buddy);
+		else
+			sipe_group_update_buddy(SIPE_CORE_PRIVATE, buddy);
 	}
 }
 

@@ -254,6 +254,30 @@ static void sipe_ucs_ignore_response(SIPE_UNUSED_PARAMETER struct sipe_core_priv
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ucs_ignore_response: done");
 }
 
+void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
+			      struct sipe_group *group,
+			      struct sipe_buddy *buddy)
+{
+	/* existing or new byddy? */
+	if (buddy->exchange_key) {
+		gchar *body = g_strdup_printf("<m:AddImContactToGroup>"
+					      " <m:ContactId Id=\"%s\" ChangeKey=\"%s\"/>"
+					      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
+					      "</m:AddImContactToGroup>",
+					      buddy->exchange_key,
+					      buddy->change_key,
+					      group->exchange_key,
+					      group->change_key);
+
+		sipe_ucs_http_request(sipe_private,
+				      body,
+				      sipe_ucs_ignore_response,
+				      NULL);
+		g_free(body);
+	} else {
+	}
+}
+
 void sipe_ucs_group_remove_buddy(struct sipe_core_private *sipe_private,
 				 struct sipe_group *group,
 				 struct sipe_buddy *buddy)
@@ -321,7 +345,9 @@ static void sipe_ucs_add_im_group_response(struct sipe_core_private *sipe_privat
 
 		if (buddy) {
 			sipe_buddy_insert_group(buddy, group);
-			/* @TODO: send operation to add buddy to group */
+			sipe_ucs_group_add_buddy(sipe_private,
+						 group,
+						 buddy);
 		}
 	}
 

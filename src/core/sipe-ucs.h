@@ -47,6 +47,17 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private);
 
 /**
+ * Add buddy to group
+ *
+ * @param sipe_private SIPE core private data
+ * @param group        sipe_group structure
+ * @param buddy        sipe_buddy structure
+ */
+void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
+			      struct sipe_group *group,
+			      struct sipe_buddy *buddy);
+
+/**
  * Remove buddy from group
  *
  * @param sipe_private SIPE core private data
