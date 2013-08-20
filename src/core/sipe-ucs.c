@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include <glib.h>
+#include <time.h>
 
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
@@ -63,6 +64,7 @@ struct sipe_ucs {
 	gchar *ews_url;
 	GSList *deferred_requests;
 	GSList *pending_requests;
+	time_t last_response;
 	guint group_id;
 	gboolean migrated;
 	gboolean shutting_down;
@@ -247,11 +249,12 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 	g_free(body);
 }
 
-static void sipe_ucs_ignore_response(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+static void sipe_ucs_ignore_response(struct sipe_core_private *sipe_private,
 				     SIPE_UNUSED_PARAMETER const sipe_xml *body,
 				     SIPE_UNUSED_PARAMETER gpointer callback_data)
 {
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ucs_ignore_response: done");
+	sipe_private->ucs->last_response = time(NULL);
 }
 
 static void ucs_extract_keys(const sipe_xml *persona_node,
@@ -288,6 +291,8 @@ static void sipe_ucs_add_new_im_contact_to_group_response(struct sipe_core_priva
 	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private, who);
 	const sipe_xml *persona_node = sipe_xml_child(body,
 						      "AddNewImContactToGroupResponse/Persona");
+
+	sipe_private->ucs->last_response = time(NULL);
 
 	if (persona_node                  &&
 	    buddy                         &&
@@ -411,6 +416,8 @@ static void sipe_ucs_add_im_group_response(struct sipe_core_private *sipe_privat
 	const sipe_xml *group_node = sipe_xml_child(body,
 						    "AddImGroupResponse/ImGroup");
 	struct sipe_group *group = ucs_create_group(sipe_private, group_node);
+
+	sipe_private->ucs->last_response = time(NULL);
 
 	if (group) {
 		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
@@ -624,10 +631,23 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 	struct sipe_ucs *ucs;
 
 	if (sipe_private->ucs) {
-		/* contact list update trigger -> request list again */
-		if (SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES))
-			ucs_get_im_item_list(sipe_private);
+		struct sipe_ucs *ucs = sipe_private->ucs;
 
+		/*
+		 * contact list update trigger -> request list again
+		 *
+		 * If the trigger arrives less than 10 seconds after our
+		 * last UCS response, then ignore it, because it is caused
+		 * by our own changes to the contact list.
+		 */
+		if (SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES)) {
+			if ((time(NULL) - ucs->last_response) >= 10)
+				ucs_get_im_item_list(sipe_private);
+			else
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_ucs_init: ignoring this contact list update - triggered by our last change");
+		}
+
+		ucs->last_response = 0;
 		return;
 	}
 
