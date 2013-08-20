@@ -315,10 +315,11 @@ static void sipe_ucs_add_new_im_contact_to_group_response(struct sipe_core_priva
 
 void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
 			      struct sipe_group *group,
-			      struct sipe_buddy *buddy)
+			      struct sipe_buddy *buddy,
+			      const gchar *who)
 {
 	/* existing or new byddy? */
-	if (buddy->exchange_key) {
+	if (buddy && buddy->exchange_key) {
 		gchar *body = g_strdup_printf("<m:AddImContactToGroup>"
 					      " <m:ContactId Id=\"%s\" ChangeKey=\"%s\"/>"
 					      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
@@ -338,14 +339,14 @@ void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
 					      " <m:ImAddress>%s</m:ImAddress>"
 					      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
 					      "</m:AddNewImContactToGroup>",
-					      sipe_get_no_sip_uri(buddy->name),
+					      sipe_get_no_sip_uri(who),
 					      group->exchange_key,
 					      group->change_key);
 
 		sipe_ucs_http_request(sipe_private,
 				      body,
 				      sipe_ucs_add_new_im_contact_to_group_response,
-				      g_strdup(buddy->name));
+				      g_strdup(who));
 		g_free(body);
 	}
 }
@@ -415,12 +416,13 @@ static void sipe_ucs_add_im_group_response(struct sipe_core_private *sipe_privat
 		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
 								  who);
 
-		if (buddy) {
+		if (buddy)
 			sipe_buddy_insert_group(buddy, group);
-			sipe_ucs_group_add_buddy(sipe_private,
-						 group,
-						 buddy);
-		}
+
+		sipe_ucs_group_add_buddy(sipe_private,
+					 group,
+					 buddy,
+					 who);
 	}
 
 	g_free(who);
