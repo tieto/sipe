@@ -325,6 +325,8 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 
 /**
  * Sends buddy update to server
+ *
+ * NOTE: must not be called when contact list has been migrated to UCS
  */
 static void send_buddy_update(struct sipe_core_private *sipe_private,
 			      struct sipe_buddy *buddy,
@@ -343,7 +345,9 @@ static void send_buddy_update(struct sipe_core_private *sipe_private,
 						  "<m:subscribed>true</m:subscribed>"
 						  "<m:URI>%s</m:URI>"
 						  "<m:externalURI />",
-						  alias, groups, buddy->name);
+						  alias ? alias : "",
+						  groups,
+						  buddy->name);
 		g_free(groups);
 
 		sip_soap_request(sipe_private,
@@ -353,7 +357,11 @@ static void send_buddy_update(struct sipe_core_private *sipe_private,
 	}
 }
 
-/* indicates that buddy information on the server needs updating */
+/**
+ * indicates that buddy information on the server needs updating
+ *
+ * NOTE: must not be called when contact list has been migrated to UCS
+ */
 void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
 			     struct sipe_buddy *buddy)
 {
@@ -370,16 +378,26 @@ void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
 	}
 }
 
+/**
+ * @param alias new alias (may be @c NULL)
+ */
 void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
 			       const gchar *who,
 			       const gchar *alias)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
-							  who);
 
-	if (buddy)
-		send_buddy_update(sipe_private, buddy, alias);
+	/* UCS does not support setting of display name/alias */
+	if (sipe_ucs_is_migrated(sipe_private))
+		SIPE_DEBUG_INFO("sipe_core_group_set_alias: not supported for UCS (uri '%s' alias '%s')",
+				who, alias ? alias : "<UNDEFINED>");
+	else {
+		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+								  who);
+
+		if (buddy)
+			send_buddy_update(sipe_private, buddy, alias);
+	}
 }
 
 void sipe_group_update_start(struct sipe_core_private *sipe_private)
