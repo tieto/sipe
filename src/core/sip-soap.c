@@ -32,13 +32,10 @@
 
 #include <glib.h>
 
-#include "sipmsg.h" /* TEMPORARY */
 #include "sip-soap.h"
 #include "sip-transport.h"
-#include "sipe-backend.h" /* TEMPORARY */
 #include "sipe-core.h"
 #include "sipe-core-private.h"
-#include "sipe-ucs.h" /* TEMPORARY */
 #include "sipe-utils.h"
 
 void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
@@ -47,38 +44,20 @@ void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
 			     SoapTransCallback callback,
 			     struct transaction_payload *payload)
 {
-	/*
-	 * TEMPORARY
-	 *
-	 * contact list has been migrated to UCS -> SOAP requests will fail
-	 */
-	if (sipe_ucs_is_migrated(sipe_private)) {
-		if (callback) {
-			struct sipmsg msg;
-			struct transaction trans;
-			msg.response = 500;
-			trans.payload = payload;
-			(*callback)(sipe_private, &msg, &trans);
-		}
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  "Contact list migrated",
-					  "Operation NOT supported (yet)!");
-	} else {
-		gchar *contact = get_contact(sipe_private);
-		gchar *hdr = g_strdup_printf("Contact: %s\r\n"
-					     "Content-Type: application/SOAP+xml\r\n",
-					     contact);
+	gchar *contact = get_contact(sipe_private);
+	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
+				     "Content-Type: application/SOAP+xml\r\n",
+				     contact);
 
-		struct transaction *trans = sip_transport_service(sipe_private,
-								  from,
-								  hdr,
-								  soap,
-								  callback);
-		trans->payload = payload;
+	struct transaction *trans = sip_transport_service(sipe_private,
+							  from,
+							  hdr,
+							  soap,
+							  callback);
+	trans->payload = payload;
 
-		g_free(contact);
-		g_free(hdr);
-	}
+	g_free(contact);
+	g_free(hdr);
 }
 
 /**
