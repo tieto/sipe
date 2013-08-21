@@ -323,7 +323,7 @@ void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
 			      struct sipe_buddy *buddy,
 			      const gchar *who)
 {
-	/* existing or new byddy? */
+	/* existing or new buddy? */
 	if (buddy && buddy->exchange_key) {
 		gchar *body = g_strdup_printf("<m:AddImContactToGroup>"
 					      " <m:ContactId Id=\"%s\" ChangeKey=\"%s\"/>"
@@ -498,6 +498,10 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 	if (node) {
 		const sipe_xml *persona_node;
 		const sipe_xml *group_node;
+		GHashTable *uri_to_alias = g_hash_table_new_full(g_str_hash,
+								 g_str_equal,
+								 NULL,
+								 g_free);
 
 		/* Start processing contact list */
 		if (SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES)) {
@@ -517,12 +521,19 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 			ucs_extract_keys(persona_node, &key, &change);
 
 			if (!(is_empty(address) || is_empty(key) || is_empty(change))) {
+				gchar *alias = sipe_xml_data(sipe_xml_child(persona_node,
+									    "DisplayName"));
 				gchar *uri = sip_uri_from_name(address);
 				struct sipe_buddy *buddy = sipe_buddy_add(sipe_private,
 									  uri,
 									  key,
 									  change);
 				g_free(uri);
+
+				/* hash table takes ownership of alias */
+				g_hash_table_insert(uri_to_alias,
+						    buddy->name,
+						    alias);
 
 				SIPE_DEBUG_INFO("sipe_ucs_get_im_item_list_response: persona URI '%s' key '%s' change '%s'",
 						buddy->name, key, change);
@@ -550,11 +561,13 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 						sipe_buddy_add_to_group(sipe_private,
 									buddy,
 									group,
-									/* alias will be set via buddy presence update */
-									NULL);
+									g_hash_table_lookup(uri_to_alias,
+											    buddy->name));
 				}
 			}
 		}
+
+		g_hash_table_destroy(uri_to_alias);
 
 		/* Finished processing contact list */
 		if (SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES)) {
