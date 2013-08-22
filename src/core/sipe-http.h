@@ -57,6 +57,8 @@ typedef void (sipe_http_response_callback)(struct sipe_core_private *sipe_privat
 #define SIPE_HTTP_STATUS_CLIENT_ERROR        400 /* - 499 */
 #define SIPE_HTTP_STATUS_CLIENT_UNAUTHORIZED 401
 #define SIPE_HTTP_STATUS_CLIENT_FORBIDDEN    403
+#define SIPE_HTTP_STATUS_CLIENT_PROXY_AUTH   407
+#define SIPE_HTTP_STATUS_SERVER_ERROR        500 /* - 599 */
 #define SIPE_HTTP_STATUS_CANCELLED            -2 /* internal use */
 #define SIPE_HTTP_STATUS_ABORTED              -1 /* internal use */
 

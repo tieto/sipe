@@ -41,6 +41,7 @@ struct sipe_http_connection_public {
 
 	GSList *pending_requests;        /* handled by sipe-http-request.c */
 	struct sip_sec_context *context; /* handled by sipe-http-request.c */
+	gchar *cached_authorization;     /* handled by sipe-http-request.c */
 
 	gchar *host;
 	guint32 port;

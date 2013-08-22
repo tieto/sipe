@@ -122,6 +122,7 @@ static void sipe_http_request_send(struct sipe_http_connection_public *conn_publ
 				 content ? "POST" : "GET",
 				 req->path,
 				 conn_public->host,
+				 conn_public->cached_authorization ? conn_public->cached_authorization :
 				 req->authorization ? req->authorization : "",
 				 req->headers ? req->headers : "",
 				 cookie ? cookie : "",
@@ -273,6 +274,15 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 				g_free(token);
 
 				/*
+				 * authorization never changes for Basic
+				 * authentication scheme, so we can keep it.
+				 */
+				if (type == SIPE_AUTHENTICATION_TYPE_BASIC) {
+					g_free(conn_public->cached_authorization);
+					conn_public->cached_authorization = g_strdup(req->authorization);
+				}
+
+				/*
 				 * Keep the request in the queue. As it is at
 				 * the head it will be pulled automatically
 				 * by the transport layer after returning.
@@ -361,11 +371,15 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 								 msg);
 
 	} else {
-		/* On error throw away the security context */
-		if ((msg->response >= SIPE_HTTP_STATUS_CLIENT_ERROR) &&
+		/* On some errors throw away the security context */
+		if (((msg->response == SIPE_HTTP_STATUS_CLIENT_FORBIDDEN)  ||
+		     (msg->response == SIPE_HTTP_STATUS_CLIENT_PROXY_AUTH) ||
+		     (msg->response >= SIPE_HTTP_STATUS_SERVER_ERROR))     &&
 		    conn_public->context) {
 			SIPE_DEBUG_INFO("sipe_http_request_response: response was %d, throwing away security context",
 					msg->response);
+			g_free(conn_public->cached_authorization);
+			conn_public->cached_authorization = NULL;
 			sip_sec_destroy_context(conn_public->context);
 			conn_public->context = NULL;
 		}
@@ -408,6 +422,8 @@ void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public,
 	}
 
 	if (conn_public->context) {
+		g_free(conn_public->cached_authorization);
+		conn_public->cached_authorization = NULL;
 		sip_sec_destroy_context(conn_public->context);
 		conn_public->context = NULL;
 	}
