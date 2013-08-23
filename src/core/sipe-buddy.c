@@ -392,7 +392,7 @@ static void buddy_free(struct sipe_buddy *buddy)
 	sipe_cal_free_working_hours(buddy->cal_working_hours);
 
 	g_free(buddy->device_name);
-	g_slist_free_full(buddy->groups, buddy_group_free);
+	sipe_utils_slist_free_full(buddy->groups, buddy_group_free);
 	g_free(buddy);
 }
 

@@ -101,6 +101,7 @@ CLEAN_C_SRC =		sip-soap.c \
 			sipe-subscriptions.c \
 			sipe-svc.c \
 			sipe-tls.c \
+			sipe-ucs.c \
 			sipe-user.c \
 			sipe-utils.c \
 			sipe-ews.c \
