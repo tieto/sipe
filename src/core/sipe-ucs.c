@@ -44,35 +44,43 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
+struct ucs_transaction {
+	GSList *pending_requests;
+};
+
 typedef void (ucs_callback)(struct sipe_core_private *sipe_private,
 			    const sipe_xml *body,
 			    gpointer callback_data);
 
-struct ucs_deferred {
-	ucs_callback *cb;
-	gpointer cb_data;
-	gchar *body;
-};
-
 struct ucs_request {
+	gchar *body;
 	ucs_callback *cb;
 	gpointer cb_data;
+	struct ucs_transaction *transaction;
 	struct sipe_http_request *request;
 };
 
 struct sipe_ucs {
+	struct ucs_transaction default_transaction;
+	struct ucs_request *active_request;
 	gchar *ews_url;
-	GSList *deferred_requests;
-	GSList *pending_requests;
 	time_t last_response;
 	guint group_id;
 	gboolean migrated;
 	gboolean shutting_down;
 };
 
-static void sipe_ucs_deferred_free(struct sipe_core_private *sipe_private,
-				   struct ucs_deferred *data)
+static void sipe_ucs_request_free(struct sipe_core_private *sipe_private,
+				  struct ucs_request *data)
 {
+	struct ucs_transaction *trans = data->transaction;
+
+	trans->pending_requests = g_slist_remove(trans->pending_requests,
+						 data);
+	sipe_private->ucs->active_request = NULL;
+
+	if (data->request)
+		sipe_http_request_cancel(data->request);
 	if (data->cb)
 		/* Callback: aborted */
 		(*data->cb)(sipe_private, NULL, data->cb_data);
@@ -80,17 +88,7 @@ static void sipe_ucs_deferred_free(struct sipe_core_private *sipe_private,
 	g_free(data);
 }
 
-static void sipe_ucs_request_free(struct sipe_core_private *sipe_private,
-				  struct ucs_request *data)
-{
-	if (data->request)
-		sipe_http_request_cancel(data->request);
-	if (data->cb)
-		/* Callback: aborted */
-		(*data->cb)(sipe_private, NULL, data->cb_data);
-	g_free(data);
-}
-
+static void sipe_ucs_next_request(struct sipe_core_private *sipe_private);
 static void sipe_ucs_http_response(struct sipe_core_private *sipe_private,
 				   guint status,
 				   SIPE_UNUSED_PARAMETER GSList *headers,
@@ -98,7 +96,6 @@ static void sipe_ucs_http_response(struct sipe_core_private *sipe_private,
 				   gpointer callback_data)
 {
 	struct ucs_request *data = callback_data;
-	struct sipe_ucs *ucs = sipe_private->ucs;
 
 	SIPE_DEBUG_INFO("sipe_ucs_http_response: code %d", status);
 	data->request = NULL;
@@ -117,26 +114,22 @@ static void sipe_ucs_http_response(struct sipe_core_private *sipe_private,
 	/* already been called */
 	data->cb = NULL;
 
-	ucs->pending_requests = g_slist_remove(ucs->pending_requests,
-					       data);
 	sipe_ucs_request_free(sipe_private, data);
+	sipe_ucs_next_request(sipe_private);
 }
 
-static gboolean sipe_ucs_http_request(struct sipe_core_private *sipe_private,
-				      const gchar *body,
-				      ucs_callback *callback,
-				      gpointer callback_data)
+static void sipe_ucs_next_request(struct sipe_core_private *sipe_private)
 {
 	struct sipe_ucs *ucs = sipe_private->ucs;
-	gboolean success = FALSE;
+	struct ucs_transaction *trans;
 
-	if (ucs->shutting_down) {
-		SIPE_DEBUG_ERROR("sipe_ucs_http_request: new UCS request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
-				 "Body:   %s\n",
-				 body ? body : "<EMPTY>");
+	if (ucs->active_request || ucs->shutting_down || !ucs->ews_url)
+		return;
 
-	} else if (ucs->ews_url) {
-		struct ucs_request *data = g_new0(struct ucs_request, 1);
+	/* @TODO */
+	trans = &ucs->default_transaction;
+	while (trans->pending_requests) {
+		struct ucs_request *data = trans->pending_requests->data;
 		gchar *soap = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
 					      "<soap:Envelope"
 					      " xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\""
@@ -150,7 +143,7 @@ static gboolean sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 					      "  %s"
 					      " </soap:Body>"
 					      "</soap:Envelope>",
-					      body);
+					      data->body);
 		struct sipe_http_request *request = sipe_http_request_post(sipe_private,
 									   ucs->ews_url,
 									   NULL,
@@ -161,36 +154,56 @@ static gboolean sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 		g_free(soap);
 
 		if (request) {
-			data->cb      = callback;
-			data->cb_data = callback_data;
+			g_free(data->body);
+			data->body    = NULL;
 			data->request = request;
 
-			ucs->pending_requests = g_slist_prepend(ucs->pending_requests,
-								data);
+			ucs->active_request = data;
 
 			sipe_core_email_authentication(sipe_private,
 						       request);
 			sipe_http_request_allow_redirect(request);
 			sipe_http_request_ready(request);
 
-			success = TRUE;
+			break;
 		} else {
-			SIPE_DEBUG_ERROR_NOFORMAT("sipe_ucs_http_request: failed to create HTTP connection");
-			g_free(data);
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_ucs_next_request: failed to create HTTP connection");
+			sipe_ucs_request_free(sipe_private, data);
 		}
+	}
+}
+
+static gboolean sipe_ucs_http_request(struct sipe_core_private *sipe_private,
+				      gchar *body,  /* takes ownership */
+				      ucs_callback *callback,
+				      gpointer callback_data)
+{
+	struct sipe_ucs *ucs = sipe_private->ucs;
+
+	if (!ucs || ucs->shutting_down) {
+		SIPE_DEBUG_ERROR("sipe_ucs_http_request: new UCS request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
+				 "Body:   %s\n",
+				 body ? body : "<EMPTY>");
+		g_free(body);
+		return(FALSE);
 
 	} else {
-		struct ucs_deferred *data = g_new0(struct ucs_deferred, 1);
+		struct ucs_transaction *trans;
+		struct ucs_request *data = g_new0(struct ucs_request, 1);
+
 		data->cb      = callback;
 		data->cb_data = callback_data;
-		data->body    = g_strdup(body);
+		data->body    = body;
 
-		ucs->deferred_requests = g_slist_prepend(ucs->deferred_requests,
+		/* @TODO */
+		trans = &ucs->default_transaction;
+		data->transaction = trans;
+		trans->pending_requests = g_slist_append(trans->pending_requests,
 							 data);
-		success = TRUE;
-	}
 
-	return(success);
+		sipe_ucs_next_request(sipe_private);
+		return(TRUE);
+	}
 }
 
 static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
@@ -245,8 +258,6 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 				   sipe_ucs_get_user_photo_response,
 				   payload))
 		g_free(payload);
-
-	g_free(body);
 }
 
 static void sipe_ucs_ignore_response(struct sipe_core_private *sipe_private,
@@ -338,8 +349,8 @@ void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
 				      body,
 				      sipe_ucs_ignore_response,
 				      NULL);
-		g_free(body);
 	} else {
+		gchar *payload = g_strdup(who);
 		gchar *body = g_strdup_printf("<m:AddNewImContactToGroup>"
 					      " <m:ImAddress>%s</m:ImAddress>"
 					      " <m:GroupId Id=\"%s\" ChangeKey=\"%s\"/>"
@@ -348,11 +359,11 @@ void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
 					      group->exchange_key,
 					      group->change_key);
 
-		sipe_ucs_http_request(sipe_private,
-				      body,
-				      sipe_ucs_add_new_im_contact_to_group_response,
-				      g_strdup(who));
-		g_free(body);
+		if (!sipe_ucs_http_request(sipe_private,
+					   body,
+					   sipe_ucs_add_new_im_contact_to_group_response,
+					   payload))
+			g_free(payload);
 	}
 }
 
@@ -380,7 +391,6 @@ void sipe_ucs_group_remove_buddy(struct sipe_core_private *sipe_private,
 				      body,
 				      sipe_ucs_ignore_response,
 				      NULL);
-		g_free(body);
 	}
 }
 
@@ -439,17 +449,18 @@ void sipe_ucs_group_create(struct sipe_core_private *sipe_private,
 			   const gchar *name,
 			   const gchar *who)
 {
+	gchar *payload = g_strdup(who);
 	/* new_name can contain restricted characters */
 	gchar *body = g_markup_printf_escaped("<m:AddImGroup>"
 					      " <m:DisplayName>%s</m:DisplayName>"
 					      "</m:AddImGroup>",
 					      name);
 
-	sipe_ucs_http_request(sipe_private,
-			      body,
-			      sipe_ucs_add_im_group_response,
-			      g_strdup(who));
-	g_free(body);
+	if (!sipe_ucs_http_request(sipe_private,
+				   body,
+				   sipe_ucs_add_im_group_response,
+				   payload))
+		g_free(payload);
 }
 
 void sipe_ucs_group_rename(struct sipe_core_private *sipe_private,
@@ -469,7 +480,6 @@ void sipe_ucs_group_rename(struct sipe_core_private *sipe_private,
 			      body,
 			      sipe_ucs_ignore_response,
 			      NULL);
-	g_free(body);
 }
 
 void sipe_ucs_group_remove(struct sipe_core_private *sipe_private,
@@ -485,7 +495,6 @@ void sipe_ucs_group_remove(struct sipe_core_private *sipe_private,
 			      body,
 			      sipe_ucs_ignore_response,
 			      NULL);
-	g_free(body);
 }
 
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
@@ -585,7 +594,7 @@ static void ucs_get_im_item_list(struct sipe_core_private *sipe_private)
 {
 	if (sipe_private->ucs->migrated)
 		sipe_ucs_http_request(sipe_private,
-				      "<m:GetImItemList/>",
+				      g_strdup("<m:GetImItemList/>"),
 				      sipe_ucs_get_im_item_list_response,
 				      NULL);
 }
@@ -609,28 +618,8 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("ucs_ews_autodiscover_cb: EWS URL '%s'", ews_url);
 	ucs->ews_url = g_strdup(ews_url);
 
+	/* this will trigger sending of the first deferred request */
 	ucs_get_im_item_list(sipe_private);
-
-	/* EWS URL is valid, send all deferred requests now */
-	if (ucs->deferred_requests) {
-		GSList *entry = ucs->deferred_requests;
-		while (entry) {
-			struct ucs_deferred *data = entry->data;
-
-			sipe_ucs_http_request(sipe_private,
-					      data->body,
-					      data->cb,
-					      data->cb_data);
-
-			/* callback & data has been forwarded */
-			data->cb = NULL;
-			sipe_ucs_deferred_free(sipe_private, data);
-
-			entry = entry->next;
-		}
-		g_slist_free(ucs->deferred_requests);
-		ucs->deferred_requests = NULL;
-	}
 }
 
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private)
@@ -675,6 +664,7 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 void sipe_ucs_free(struct sipe_core_private *sipe_private)
 {
 	struct sipe_ucs *ucs = sipe_private->ucs;
+	struct ucs_transaction *trans;
 
 	if (!ucs)
 		return;
@@ -682,23 +672,11 @@ void sipe_ucs_free(struct sipe_core_private *sipe_private)
 	/* UCS stack is shutting down: reject all new requests */
 	ucs->shutting_down = TRUE;
 
-	if (ucs->deferred_requests) {
-		GSList *entry = ucs->deferred_requests;
-		while (entry) {
-			sipe_ucs_deferred_free(sipe_private, entry->data);
-			entry = entry->next;
-		}
-		g_slist_free(ucs->deferred_requests);
-	}
-
-	if (ucs->pending_requests) {
-		GSList *entry = ucs->pending_requests;
-		while (entry) {
-			sipe_ucs_request_free(sipe_private, entry->data);
-			entry = entry->next;
-		}
-		g_slist_free(ucs->pending_requests);
-	}
+	/* @TODO */
+	trans = &ucs->default_transaction;
+	while (trans->pending_requests)
+		sipe_ucs_request_free(sipe_private,
+				      trans->pending_requests->data);
 
 	g_free(ucs->ews_url);
 	g_free(ucs);
