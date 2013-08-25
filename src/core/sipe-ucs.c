@@ -62,8 +62,9 @@ struct ucs_request {
 };
 
 struct sipe_ucs {
-	struct sipe_ucs_transaction default_transaction;
 	struct ucs_request *active_request;
+	GSList *transactions;
+	GSList *default_transaction;
 	gchar *ews_url;
 	time_t last_response;
 	guint group_id;
@@ -131,7 +132,7 @@ static void sipe_ucs_next_request(struct sipe_core_private *sipe_private)
 		return;
 
 	/* @TODO */
-	trans = &ucs->default_transaction;
+	trans = ucs->default_transaction->data;
 	while (trans->pending_requests) {
 		struct ucs_request *data = trans->pending_requests->data;
 		gchar *soap = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
@@ -200,7 +201,7 @@ static gboolean sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 		data->body    = body;
 
 		if (!trans)
-			trans = &ucs->default_transaction;
+			trans = ucs->default_transaction->data;
 		data->transaction = trans;
 		trans->pending_requests = g_slist_append(trans->pending_requests,
 							 data);
@@ -208,6 +209,23 @@ static gboolean sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 		sipe_ucs_next_request(sipe_private);
 		return(TRUE);
 	}
+}
+
+struct sipe_ucs_transaction *sipe_ucs_transaction(struct sipe_core_private *sipe_private)
+{
+	struct sipe_ucs *ucs = sipe_private->ucs;
+	struct sipe_ucs_transaction *trans;
+
+	if (!ucs)
+		return(NULL);
+
+	/* always insert new transactions before default transaction */
+	trans = g_new0(struct sipe_ucs_transaction, 1);
+	ucs->transactions = g_slist_insert_before(ucs->transactions,
+						  ucs->default_transaction,
+						  trans);
+
+	return(trans);
 }
 
 static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
@@ -675,7 +693,11 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 	}
 
 	sipe_private->ucs = ucs = g_new0(struct sipe_ucs, 1);
-	ucs->migrated = migrated;
+	ucs->migrated            = migrated;
+
+	/* create default transaction */
+	sipe_ucs_transaction(sipe_private);
+	ucs->default_transaction = ucs->transactions;
 
 	sipe_ews_autodiscover_start(sipe_private,
 				    ucs_ews_autodiscover_cb,
@@ -685,7 +707,7 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 void sipe_ucs_free(struct sipe_core_private *sipe_private)
 {
 	struct sipe_ucs *ucs = sipe_private->ucs;
-	struct sipe_ucs_transaction *trans;
+	GSList *entry;
 
 	if (!ucs)
 		return;
@@ -694,10 +716,16 @@ void sipe_ucs_free(struct sipe_core_private *sipe_private)
 	ucs->shutting_down = TRUE;
 
 	/* @TODO */
-	trans = &ucs->default_transaction;
-	while (trans->pending_requests)
-		sipe_ucs_request_free(sipe_private,
-				      trans->pending_requests->data);
+	entry = ucs->transactions;
+	while (entry) {
+		struct sipe_ucs_transaction *trans = entry->data;
+
+		while (trans->pending_requests)
+			sipe_ucs_request_free(sipe_private,
+					      trans->pending_requests->data);
+		entry = entry->next;
+	}
+	sipe_utils_slist_free_full(ucs->transactions, g_free);
 
 	g_free(ucs->ews_url);
 	g_free(ucs);

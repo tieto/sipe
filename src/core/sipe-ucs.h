@@ -48,6 +48,15 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private);
 
 /**
+ * Create new UCS transactions
+ *
+ * @param sipe_private SIPE core private data
+ *
+ * @return UCS transaction
+ */
+struct sipe_ucs_transaction *sipe_ucs_transaction(struct sipe_core_private *sipe_private);
+
+/**
  * Add existing/new buddy to group
  *
  * @param sipe_private SIPE core private data
