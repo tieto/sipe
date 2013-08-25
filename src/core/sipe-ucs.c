@@ -75,11 +75,21 @@ struct sipe_ucs {
 static void sipe_ucs_request_free(struct sipe_core_private *sipe_private,
 				  struct ucs_request *data)
 {
+	struct sipe_ucs *ucs = sipe_private->ucs;
 	struct sipe_ucs_transaction *trans = data->transaction;
 
+	/* remove request from transaction */
 	trans->pending_requests = g_slist_remove(trans->pending_requests,
 						 data);
 	sipe_private->ucs->active_request = NULL;
+
+	/* remove completed transactions (except default transaction) */
+	if (!trans->pending_requests &&
+	    (trans != ucs->default_transaction->data)) {
+		ucs->transactions = g_slist_remove(ucs->transactions,
+						   trans);
+		g_free(trans);
+	}
 
 	if (data->request)
 		sipe_http_request_cancel(data->request);
@@ -131,8 +141,7 @@ static void sipe_ucs_next_request(struct sipe_core_private *sipe_private)
 	if (ucs->active_request || ucs->shutting_down || !ucs->ews_url)
 		return;
 
-	/* @TODO */
-	trans = ucs->default_transaction->data;
+	trans = ucs->transactions->data;
 	while (trans->pending_requests) {
 		struct ucs_request *data = trans->pending_requests->data;
 		gchar *soap = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
@@ -715,16 +724,25 @@ void sipe_ucs_free(struct sipe_core_private *sipe_private)
 	/* UCS stack is shutting down: reject all new requests */
 	ucs->shutting_down = TRUE;
 
-	/* @TODO */
 	entry = ucs->transactions;
 	while (entry) {
 		struct sipe_ucs_transaction *trans = entry->data;
+		GSList *entry2 = trans->pending_requests;
 
-		while (trans->pending_requests)
-			sipe_ucs_request_free(sipe_private,
-					      trans->pending_requests->data);
+		/* transactions get deleted by sipe_ucs_request_free() */
 		entry = entry->next;
+
+		while (entry2) {
+			struct ucs_request *request = entry2->data;
+
+			/* transactions get deleted by sipe_ucs_request_free() */
+			entry2 = entry2->next;
+
+			sipe_ucs_request_free(sipe_private, request);
+		}
+
 	}
+	/* only default transaction is left... */
 	sipe_utils_slist_free_full(ucs->transactions, g_free);
 
 	g_free(ucs->ews_url);
