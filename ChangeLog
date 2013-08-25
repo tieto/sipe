@@ -1,4 +1,5 @@
 version 1.17.0 "???" (2013-XX-XX)
+	- Feature #62: Support for Lync 2013 Unified Contact Store (Stefan Becker)
 	- Feature #59: Support for Lync 2013 Persistent Chats (Stefan Becker)
 	- Fixed #209: group chat doesn't like HTML (Stefan Becker)
 	- Fixed #200: OCS archiving system blocks audio/video connection (Jakub Adam)

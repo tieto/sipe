@@ -557,10 +557,12 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			   const gchar *old_group_name,
 			   const gchar *new_group_name)
 {
-	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(SIPE_CORE_PRIVATE,
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
 							  who);
 	struct sipe_group *old_group = NULL;
 	struct sipe_group *new_group;
+	struct sipe_ucs_transaction *ucs_trans = NULL;
 
 	SIPE_DEBUG_INFO("sipe_core_buddy_group: buddy '%s' old group '%s' new group '%s'",
 			who ? who : "",
@@ -571,36 +573,38 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 		/* buddy not in roaming list */
 		return;
 
-	old_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, old_group_name);
+	old_group = sipe_group_find_by_name(sipe_private, old_group_name);
 	if (old_group) {
 		sipe_buddy_remove_group(buddy, old_group);
 		SIPE_DEBUG_INFO("sipe_core_buddy_group: buddy '%s' removed from old group '%s'",
 				who, old_group_name);
 	}
 
-	new_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, new_group_name);
+	new_group = sipe_group_find_by_name(sipe_private, new_group_name);
 	if (new_group) {
 		sipe_buddy_insert_group(buddy, new_group);
 		SIPE_DEBUG_INFO("sipe_core_buddy_group: buddy '%s' added to new group '%s'",
 				who, new_group_name);
 	}
 
-	if (sipe_ucs_is_migrated(SIPE_CORE_PRIVATE)) {
+	if (sipe_ucs_is_migrated(sipe_private)) {
 
 		/* UCS handling */
+		ucs_trans = sipe_ucs_transaction(sipe_private);
+
 		if (new_group) {
 			/*
 			 * 1. new buddy added to existing group
 			 * 2. existing buddy moved from old to existing group
 			 */
-			sipe_ucs_group_add_buddy(SIPE_CORE_PRIVATE,
-						 NULL,
+			sipe_ucs_group_add_buddy(sipe_private,
+						 ucs_trans,
 						 new_group,
 						 buddy,
 						 buddy->name);
 			if (old_group)
-				sipe_ucs_group_remove_buddy(SIPE_CORE_PRIVATE,
-							    NULL,
+				sipe_ucs_group_remove_buddy(sipe_private,
+							    ucs_trans,
 							    old_group,
 							    buddy);
 
@@ -609,24 +613,24 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			 * 3. existing buddy removed from one of its groups
 			 * 4. existing buddy removed from last group
 			 */
-			sipe_ucs_group_remove_buddy(SIPE_CORE_PRIVATE,
-						    NULL,
+			sipe_ucs_group_remove_buddy(sipe_private,
+						    ucs_trans,
 						    old_group,
 						    buddy);
 			if (g_slist_length(buddy->groups) < 1)
-				sipe_buddy_remove(SIPE_CORE_PRIVATE,
+				sipe_buddy_remove(sipe_private,
 						  buddy);
 				/* buddy no longer valid */
 		}
 
 	/* non-UCS handling */
 	} else if (new_group)
-		sipe_group_update_buddy(SIPE_CORE_PRIVATE, buddy);
+		sipe_group_update_buddy(sipe_private, buddy);
 
 	/* 5. buddy added to new group */
 	if (!new_group)
-		sipe_group_create(SIPE_CORE_PRIVATE,
-				  NULL,
+		sipe_group_create(sipe_private,
+				  ucs_trans,
 				  new_group_name,
 				  who);
 }

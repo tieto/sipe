@@ -641,7 +641,8 @@ static void ucs_get_im_item_list(struct sipe_core_private *sipe_private)
 {
 	if (sipe_private->ucs->migrated)
 		sipe_ucs_http_request(sipe_private,
-				      NULL,
+				      /* prioritize over pending default requests */
+				      sipe_ucs_transaction(sipe_private),
 				      g_strdup("<m:GetImItemList/>"),
 				      sipe_ucs_get_im_item_list_response,
 				      NULL);

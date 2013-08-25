@@ -156,7 +156,8 @@ sipe_group_create(struct sipe_core_private *sipe_private,
 		  const gchar *name,
 		  const gchar *who)
 {
-	if (sipe_ucs_is_migrated(sipe_private)) {
+	/* "trans" is always set for UCS code paths, otherwise NULL */
+	if (trans) {
 		sipe_ucs_group_create(sipe_private,
 				      trans,
 				      name,
