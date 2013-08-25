@@ -49,6 +49,7 @@ struct ucs_transaction {
 };
 
 typedef void (ucs_callback)(struct sipe_core_private *sipe_private,
+			    struct ucs_transaction *trans,
 			    const sipe_xml *body,
 			    gpointer callback_data);
 
@@ -83,7 +84,7 @@ static void sipe_ucs_request_free(struct sipe_core_private *sipe_private,
 		sipe_http_request_cancel(data->request);
 	if (data->cb)
 		/* Callback: aborted */
-		(*data->cb)(sipe_private, NULL, data->cb_data);
+		(*data->cb)(sipe_private, NULL, NULL, data->cb_data);
 	g_free(data->body);
 	g_free(data);
 }
@@ -104,11 +105,14 @@ static void sipe_ucs_http_response(struct sipe_core_private *sipe_private,
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 		const sipe_xml *soap_body = sipe_xml_child(xml, "Body");
 		/* Callback: success */
-		(*data->cb)(sipe_private, soap_body, data->cb_data);
+		(*data->cb)(sipe_private,
+			    data->transaction,
+			    soap_body,
+			    data->cb_data);
 		sipe_xml_free(xml);
 	} else {
 		/* Callback: failed */
-		(*data->cb)(sipe_private, NULL, data->cb_data);
+		(*data->cb)(sipe_private, NULL, NULL, data->cb_data);
 	}
 
 	/* already been called */
@@ -207,6 +211,7 @@ static gboolean sipe_ucs_http_request(struct sipe_core_private *sipe_private,
 }
 
 static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
+					     SIPE_UNUSED_PARAMETER struct ucs_transaction *trans,
 					     const sipe_xml *body,
 					     gpointer callback_data)
 {
@@ -261,6 +266,7 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 }
 
 static void sipe_ucs_ignore_response(struct sipe_core_private *sipe_private,
+				     SIPE_UNUSED_PARAMETER struct ucs_transaction *trans,
 				     SIPE_UNUSED_PARAMETER const sipe_xml *body,
 				     SIPE_UNUSED_PARAMETER gpointer callback_data)
 {
@@ -295,6 +301,7 @@ static void ucs_extract_keys(const sipe_xml *persona_node,
 }
 
 static void sipe_ucs_add_new_im_contact_to_group_response(struct sipe_core_private *sipe_private,
+							  SIPE_UNUSED_PARAMETER struct ucs_transaction *trans,
 							  const sipe_xml *body,
 							  gpointer callback_data)
 {
@@ -419,6 +426,7 @@ static struct sipe_group *ucs_create_group(struct sipe_core_private *sipe_privat
 }
 
 static void sipe_ucs_add_im_group_response(struct sipe_core_private *sipe_private,
+					   SIPE_UNUSED_PARAMETER struct ucs_transaction *trans,
 					   const sipe_xml *body,
 					   gpointer callback_data)
 {
@@ -498,6 +506,7 @@ void sipe_ucs_group_remove(struct sipe_core_private *sipe_private,
 }
 
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
+					       SIPE_UNUSED_PARAMETER struct ucs_transaction *trans,
 					       const sipe_xml *body,
 					       SIPE_UNUSED_PARAMETER gpointer callback_data)
 {
