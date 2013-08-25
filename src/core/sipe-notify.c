@@ -34,7 +34,6 @@
 
 #include <glib.h>
 
-#include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-soap.h"
