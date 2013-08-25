@@ -23,6 +23,7 @@
 /* Forward declarations */
 struct sipe_buddy;
 struct sipe_core_private;
+struct sipe_ucs_transaction;
 
 struct sipe_group {
 	gchar *name;
@@ -39,6 +40,7 @@ struct sipe_group *sipe_group_find_by_name(struct sipe_core_private *sipe_privat
 					   const gchar * name);
 
 void sipe_group_create(struct sipe_core_private *sipe_private,
+		       struct sipe_ucs_transaction *trans,
 		       const gchar *name,
 		       const gchar *who);
 

@@ -594,11 +594,13 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			 * 2. existing buddy moved from old to existing group
 			 */
 			sipe_ucs_group_add_buddy(SIPE_CORE_PRIVATE,
+						 NULL,
 						 new_group,
 						 buddy,
 						 buddy->name);
 			if (old_group)
 				sipe_ucs_group_remove_buddy(SIPE_CORE_PRIVATE,
+							    NULL,
 							    old_group,
 							    buddy);
 
@@ -608,6 +610,7 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			 * 4. existing buddy removed from last group
 			 */
 			sipe_ucs_group_remove_buddy(SIPE_CORE_PRIVATE,
+						    NULL,
 						    old_group,
 						    buddy);
 			if (g_slist_length(buddy->groups) < 1)
@@ -622,7 +625,10 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 
 	/* 5. buddy added to new group */
 	if (!new_group)
-		sipe_group_create(SIPE_CORE_PRIVATE, new_group_name, who);
+		sipe_group_create(SIPE_CORE_PRIVATE,
+				  NULL,
+				  new_group_name,
+				  who);
 }
 
 void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
@@ -707,6 +713,7 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 
 		if (sipe_ucs_is_migrated(sipe_private)) {
 			sipe_ucs_group_remove_buddy(sipe_private,
+						    NULL,
 						    group,
 						    buddy);
 		} else {
@@ -722,6 +729,7 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 	} else {
 		if (sipe_ucs_is_migrated(sipe_private)) {
 			sipe_ucs_group_remove_buddy(sipe_private,
+						    NULL,
 						    group,
 						    buddy);
 		} else

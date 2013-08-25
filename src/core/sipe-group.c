@@ -152,11 +152,13 @@ sipe_group_find_by_name(struct sipe_core_private *sipe_private,
 
 void
 sipe_group_create(struct sipe_core_private *sipe_private,
+		  struct sipe_ucs_transaction *trans,
 		  const gchar *name,
 		  const gchar *who)
 {
 	if (sipe_ucs_is_migrated(sipe_private)) {
 		sipe_ucs_group_create(sipe_private,
+				      trans,
 				      name,
 				      who);
 	} else {

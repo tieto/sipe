@@ -25,6 +25,7 @@
 struct sipe_buddy;
 struct sipe_core_private;
 struct sipe_group;
+struct sipe_ucs_transaction;
 
 /**
  * Get buddy photo
@@ -50,11 +51,13 @@ gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private);
  * Add existing/new buddy to group
  *
  * @param sipe_private SIPE core private data
+ * @param trans        UCS transaction (may be @c NULL)
  * @param group        sipe_group structure
  * @param buddy        sipe_buddy structure (may be @c NULL)
  * @param who          SIP URI of the new buddy
  */
 void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
+			      struct sipe_ucs_transaction *trans,
 			      struct sipe_group *group,
 			      struct sipe_buddy *buddy,
 			      const gchar *who);
@@ -63,10 +66,12 @@ void sipe_ucs_group_add_buddy(struct sipe_core_private *sipe_private,
  * Remove buddy from group
  *
  * @param sipe_private SIPE core private data
+ * @param trans        UCS transaction (may be @c NULL)
  * @param group        sipe_group structure (may be @c NULL)
  * @param buddy        sipe_buddy structure
  */
 void sipe_ucs_group_remove_buddy(struct sipe_core_private *sipe_private,
+				 struct sipe_ucs_transaction *trans,
 				 struct sipe_group *group,
 				 struct sipe_buddy *buddy);
 
@@ -74,10 +79,12 @@ void sipe_ucs_group_remove_buddy(struct sipe_core_private *sipe_private,
  * Create group
  *
  * @param sipe_private SIPE core private data
+ * @param trans        UCS transaction (may be @c NULL)
  * @param name         name for group
  * @param who          SIP URI of the buddy to add to the new group
  */
 void sipe_ucs_group_create(struct sipe_core_private *sipe_private,
+			   struct sipe_ucs_transaction *trans,
 			   const gchar *name,
 			   const gchar *who);
 

@@ -1208,7 +1208,10 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 
 			/* Make sure we have at least one group */
 			if (sipe_group_count(sipe_private) == 0) {
-				sipe_group_create(sipe_private, _("Other Contacts"), NULL);
+				sipe_group_create(sipe_private,
+						  NULL,
+						  _("Other Contacts"),
+						  NULL);
 			}
 
 			/* Parse contacts */
