@@ -325,7 +325,7 @@ extern void AILog(NSString *fmt, ...);
                  //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_URGENT_ONLY);
                  statusID = sipe_activity_map[SIPE_ACTIVITY_URGENT_ONLY].status_id;
              }
-
+             break;
          case AIInvisibleStatusType:
              //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_INVISIBLE);
              statusID = sipe_activity_map[SIPE_ACTIVITY_INVISIBLE].status_id;
