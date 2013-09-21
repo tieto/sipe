@@ -1,8 +1,9 @@
 pidgin-sipe (1.17.0-1) unstable; urgency=low
 
-  * New upstream version 1.17.0 "Lync 2013" (2013-XX-XX)
+  * New upstream version 1.17.0 "Lync 2013" (2013-09-21)
 	- Feature #62: Support for Lync 2013 Unified Contact Store (Stefan Becker)
 	- Feature #59: Support for Lync 2013 Persistent Chats (Stefan Becker)
+	- Fixed #211: Status "away" or "busy" incorrectly mapped to "Invisible" (Michael Lamb)
 	- Fixed #209: group chat doesn't like HTML (Stefan Becker)
 	- Fixed #200: OCS archiving system blocks audio/video connection (Jakub Adam)
 	- Fixed #187: Duplicate messages in group chat (Stefan Becker)
@@ -11,7 +12,7 @@ pidgin-sipe (1.17.0-1) unstable; urgency=low
 	- add support for group chat history (Stefan Becker)
 	- add support for buddy photos on Lync 2013 (Stefan Becker)
 
- -- Stefan Becker <chemobejk@gmail.com>  Sat, 31 Aug 2013 17:33:00 +0300
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 21 Sep 2013 16:34:00 +0300
 
 pidgin-sipe (1.16.1-1) unstable; urgency=low
 
