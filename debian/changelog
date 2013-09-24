@@ -1,3 +1,19 @@
+pidgin-sipe (1.17.0-1) UNRELEASED; urgency=low
+
+  * New upstream release.
+        - Feature #62: Support for Lync 2013 Unified Contact Store
+        - Feature #59: Support for Lync 2013 Persistent Chats
+        - Fixed #211: Status "away" or "busy" incorrectly mapped to "Invisible"
+        - Fixed #209: group chat doesn't like HTML
+        - Fixed #200: OCS archiving system blocks audio/video connection
+        - Fixed #187: Duplicate messages in group chat
+        - Fixed #184: Duplicate users showing in Group Chat
+        - fix EWS autodiscover for Office 365
+        - add support for group chat history
+        - add support for buddy photos on Lync 2013
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 24 Sep 2013 19:36:57 +0200
+
 pidgin-sipe (1.16.1-1) unstable; urgency=low
 
   * New upstream release (Closes: #714354).
