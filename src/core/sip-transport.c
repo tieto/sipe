@@ -176,6 +176,7 @@ static void sipe_make_signature(struct sipe_core_private *sipe_private,
 
 static const gchar *const auth_type_to_protocol[] = {
 	NULL,       /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+	NULL,       /* SIPE_AUTHENTICATION_TYPE_BASIC     */
 	"NTLM",     /* SIPE_AUTHENTICATION_TYPE_NTLM      */
 	"Kerberos", /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 	NULL,       /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
@@ -871,6 +872,12 @@ void sip_transport_subscribe(struct sipe_core_private *sipe_private,
 			      callback);
 }
 
+void sip_transport_update(struct sipe_core_private *sipe_private,
+			  struct sip_dialog *dialog)
+{
+	sip_transport_simple_request(sipe_private, "UPDATE", dialog);
+}
+
 static const gchar *get_auth_header(struct sipe_core_private *sipe_private,
 				    struct sip_auth *auth,
 				    struct sipmsg *msg)
@@ -1419,6 +1426,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 					/* Are we registered? */
 					if (transport->reregister_set) {
 						SIPE_DEBUG_INFO_NOFORMAT("process_input_message: 401 response to non-REGISTER message. Retrying with new authentication.");
+						sipmsg_remove_header_now(trans->msg, "Authorization");
 						sign_outgoing_message(sipe_private,
 								      trans->msg);
 					} else {
@@ -1874,7 +1882,8 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	sipe_private->authentication_type = authentication;
+	/* backend initialization is complete */
+	sipe_core_backend_initialized(sipe_private, authentication);
 
 	/*
 	 * Initializing the certificate sub-system will trigger the generation

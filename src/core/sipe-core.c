@@ -82,6 +82,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-crypt.h"
+#include "sipe-ews-autodiscover.h"
 #include "sipe-group.h"
 #include "sipe-groupchat.h"
 #include "sipe-http.h"
@@ -94,6 +95,7 @@
 #include "sipe-status.h"
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
+#include "sipe-ucs.h"
 #include "sipe-utils.h"
 #include "sipe-webticket.h"
 
@@ -220,35 +222,6 @@ gchar *sipe_core_about(void)
 		);
 }
 
-static guint sipe_ht_hash_nick(const char *nick)
-{
-	char *lc = g_utf8_strdown(nick, -1);
-	guint bucket = g_str_hash(lc);
-	g_free(lc);
-
-	return bucket;
-}
-
-static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
-{
-	char *nick1_norm = NULL;
-	char *nick2_norm = NULL;
-	gboolean equal;
-
-	if (nick1 == NULL && nick2 == NULL) return TRUE;
-	if (nick1 == NULL || nick2 == NULL    ||
-	    !g_utf8_validate(nick1, -1, NULL) ||
-	    !g_utf8_validate(nick2, -1, NULL)) return FALSE;
-
-	nick1_norm = g_utf8_casefold(nick1, -1);
-	nick2_norm = g_utf8_casefold(nick2, -1);
-	equal = g_utf8_collate(nick1_norm, nick2_norm) == 0;
-	g_free(nick2_norm);
-	g_free(nick1_norm);
-
-	return equal;
-}
-
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    gboolean sso,
 					    const gchar *login_domain,
@@ -335,13 +308,37 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sipe_private->public.sip_domain = g_strdup(user_domain[1]);
 	g_strfreev(user_domain);
 
-	sipe_private->buddies = g_hash_table_new((GHashFunc)sipe_ht_hash_nick, (GEqualFunc)sipe_ht_equals_nick);
+	sipe_group_init(sipe_private);
+	sipe_buddy_init(sipe_private);
 	sipe_private->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 							       g_free, (GDestroyNotify)g_hash_table_destroy);
 	sipe_subscriptions_init(sipe_private);
+	sipe_ews_autodiscover_init(sipe_private);
 	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_UNSET);
 
 	return((struct sipe_core_public *)sipe_private);
+}
+
+void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
+				   guint authentication)
+{
+	const gchar *value;
+
+	sipe_private->authentication_type = authentication;
+
+	/* user specified email login? */
+	value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
+	if (!is_empty(value)) {
+		/* Allowed domain-account separators are / or \ */
+		gchar **domain_user = g_strsplit_set(value, "/\\", 2);
+		gboolean has_domain = domain_user[1] != NULL;
+
+		sipe_private->email_authdomain = has_domain ? g_strdup(domain_user[0]) : NULL;
+		sipe_private->email_authuser   = g_strdup(domain_user[has_domain ? 1 : 0]);
+		sipe_private->email_password   = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
+									       SIPE_SETTING_EMAIL_PASSWORD));
+		g_strfreev(domain_user);
+	}
 }
 
 void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
@@ -371,11 +368,6 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 	if (sipe_private->focus_factory_uri)
 		g_free(sipe_private->focus_factory_uri);
 	sipe_private->focus_factory_uri = NULL;
-
-	if (sipe_private->calendar) {
-		sipe_cal_calendar_free(sipe_private->calendar);
-	}
-	sipe_private->calendar = NULL;
 
 	sipe_groupchat_free(sipe_private);
 }
@@ -407,6 +399,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	/* pending service requests must be cancelled first */
 	sipe_svc_free(sipe_private);
 	sipe_webticket_free(sipe_private);
+	sipe_ucs_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
 		sipe_subscriptions_unsubscribe(sipe_private);
@@ -414,11 +407,16 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	}
 
 	sipe_core_connection_cleanup(sipe_private);
+	sipe_ews_autodiscover_free(sipe_private);
+	sipe_cal_calendar_free(sipe_private->calendar);
 	sipe_certificate_free(sipe_private);
 
 	g_free(sipe_private->public.sip_name);
 	g_free(sipe_private->public.sip_domain);
 	g_free(sipe_private->username);
+	g_free(sipe_private->email_password);
+	g_free(sipe_private->email_authuser);
+	g_free(sipe_private->email_authdomain);
 	g_free(sipe_private->email);
 	g_free(sipe_private->password);
 	g_free(sipe_private->authdomain);
@@ -427,17 +425,11 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->note);
 	g_free(sipe_private->ocs2005_user_states);
 
-	sipe_buddy_free_all(sipe_private);
-	g_hash_table_destroy(sipe_private->buddies);
+	sipe_buddy_free(sipe_private);
 	g_hash_table_destroy(sipe_private->our_publications);
 	g_hash_table_destroy(sipe_private->user_state_publications);
 	sipe_subscriptions_destroy(sipe_private);
-
-	if (sipe_private->groups) {
-		GSList *entry;
-		while ((entry = sipe_private->groups) != NULL)
-			sipe_group_free(sipe_private, entry->data);
-	}
+	sipe_group_free(sipe_private);
 
 	if (sipe_private->our_publication_keys)
 		sipe_utils_slist_free_full(sipe_private->our_publication_keys, g_free);
@@ -451,9 +443,21 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_media_relay_list_free(sipe_private->media_relays);
 #endif
 
+	g_free(sipe_private->persistentChatPool_uri);
 	g_free(sipe_private->addressbook_uri);
 	g_free(sipe_private->dlx_uri);
 	g_free(sipe_private);
+}
+
+void sipe_core_email_authentication(struct sipe_core_private *sipe_private,
+				    struct sipe_http_request *request)
+{
+	if (sipe_private->email_authuser) {
+		sipe_http_request_authentication(request,
+						 sipe_private->email_authdomain,
+						 sipe_private->email_authuser,
+						 sipe_private->email_password);
+	}
 }
 
 /*

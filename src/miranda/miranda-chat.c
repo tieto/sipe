@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -213,6 +213,7 @@ gboolean sipe_backend_chat_is_operator(struct sipe_backend_chat_session *backend
 void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
 			       struct sipe_backend_chat_session *backend_session,
 			       const gchar *from,
+			       time_t when,
 			       const gchar *html)
 {
 	SIPPROTO *pr = backend_session->pr;

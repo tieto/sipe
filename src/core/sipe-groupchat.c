@@ -31,8 +31,10 @@
  *   <http://technet.microsoft.com/en-us/library/ee323524%28office.13%29.aspx>
  *  Microsoft Office Communications Server 2007 R2 Technical Reference Guide
  *   <http://go.microsoft.com/fwlink/?LinkID=159649>
- *  XML XCCOS message specification
- *   <???> (searches on the internet currently reveal nothing)
+ *  Microsoft DevNet: [MS-XCCOSIP] Extensible Chat Control Over SIP
+ *   <http://msdn.microsoft.com/en-us/library/hh624112.aspx>
+ *  RFC 4028: Session Timers in the Session Initiation Protocol (SIP)
+ *   <http://www.rfc-editor.org/rfc/rfc4028.txt>
  *
  *
  * @TODO:
@@ -73,15 +75,6 @@
  *
  *     use this to sync chats in buddy list on multiple clients?
  *
- *   - cmd:bccontext
- *     send after cmd:join to trigger rpl:bccontext
- *
- *   - rpl:bccontext
- *     according to available documentation delivers channel history, etc.
- *     [no log file examples]
- *     can we add the history to the window when we open the window, or would
- *     that confuse users that use history based on client log?
- *
  *   - cmd:getinv
  *       <inv inviteId="1" domain="<DOMAIN>" />
  *     rpl:getinv
@@ -92,7 +85,7 @@
  *     should we automatically join those channels or ask user to join/add?
  *
  *   - chatserver_command_message()
- *     needs to support multiple <chatgrp> nodes?
+ *     needs to support multiple <grpchat> nodes?
  *     [no log file examples]
  *
  *   - create/delete chat rooms
@@ -163,6 +156,7 @@ struct sipe_groupchat {
 	GHashTable *uri_to_chat_session;
 	GHashTable *msgs;
 	guint envid;
+	guint expires;
 	gboolean connected;
 };
 
@@ -246,9 +240,12 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 {
 	const gchar *setting = sipe_backend_setting(SIPE_CORE_PUBLIC,
 						    SIPE_SETTING_GROUPCHAT_USER);
-	gboolean user_set = !is_empty(setting);
-	gchar **parts = g_strsplit(user_set ? setting : sipe_private->username,
-				   "@", 2);
+	const gchar *persistent = sipe_private->persistentChatPool_uri;
+	gboolean user_set    = !is_empty(setting);
+	gboolean provisioned = !is_empty(persistent);
+	gchar **parts = g_strsplit(user_set ? setting :
+				   provisioned ? persistent :
+				   sipe_private->username, "@", 2);
 	gboolean domain_found = !is_empty(parts[1]);
 	const gchar *user = "ocschat";
 	const gchar *domain = parts[domain_found ? 1 : 0];
@@ -256,13 +253,14 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private)
 	struct sip_session *session;
 	struct sipe_groupchat *groupchat;
 
-	/* User specified valid 'user@company.com' */
-	if (user_set && domain_found && !is_empty(parts[0]))
+	/* User specified or provisioned URI is valid 'user@company.com' */
+	if ((user_set || provisioned) && domain_found && !is_empty(parts[0]))
 		user = parts[0];
 
-	SIPE_DEBUG_INFO("sipe_groupchat_init: username '%s' setting '%s' split '%s'/'%s' GC user %s@%s",
-			sipe_private->username, setting ? setting : "(null)", parts[0],
-			parts[1] ? parts[1] : "(null)", user, domain);
+	SIPE_DEBUG_INFO("sipe_groupchat_init: username '%s' setting '%s' persistent '%s' split '%s'/'%s' GC user %s@%s",
+			sipe_private->username, setting ? setting : "(null)",
+			persistent ? persistent : "(null)",
+			parts[0], parts[1] ? parts[1] : "(null)", user, domain);
 
 	if (!sipe_private->groupchat)
 		sipe_groupchat_allocate(sipe_private);
@@ -299,7 +297,7 @@ static void groupchat_init_retry(struct sipe_core_private *sipe_private)
 	groupchat->connected = FALSE;
 
 	sipe_schedule_seconds(sipe_private,
-			      "<+grouchat-retry>",
+			      "<+groupchat-retry>",
 			      NULL,
 			      GROUPCHAT_RETRY_TIMEOUT,
 			      groupchat_init_retry_cb,
@@ -364,11 +362,29 @@ static gchar *generate_chanid_node(const gchar *uri, guint key)
 	return chanid;
 }
 
+/* sipe_schedule_action */
+static void groupchat_update_cb(struct sipe_core_private *sipe_private,
+				SIPE_UNUSED_PARAMETER gpointer data)
+{
+	struct sipe_groupchat *groupchat = sipe_private->groupchat;
+	struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
+						     groupchat->session->with);
+
+	sip_transport_update(sipe_private, dialog);
+	sipe_schedule_seconds(sipe_private,
+			      "<+groupchat-expires>",
+			      NULL,
+			      groupchat->expires,
+			      groupchat_update_cb,
+			      NULL);
+}
+
 static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *sipe_private,
 						     const gchar *cmd);
 
 void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
-				    struct sip_dialog *dialog)
+				    struct sip_dialog *dialog,
+				    struct sipmsg *response)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 
@@ -378,12 +394,33 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 		/* response to initial invite */
 		struct sipe_groupchat_msg *msg = generate_xccos_message(groupchat,
 									"<cmd id=\"cmd:requri\" seqid=\"1\"><data/></cmd>");
+		const gchar *session_expires = sipmsg_find_header(response,
+								  "Session-Expires");
+
 		sip_transport_info(sipe_private,
 				   "Content-Type: text/plain\r\n",
 				   msg->xccos,
 				   dialog,
 				   NULL);
 		sipe_groupchat_msg_remove(msg);
+
+		if (session_expires) {
+			groupchat->expires = strtoul(session_expires, NULL, 10);
+
+			if (groupchat->expires) {
+				SIPE_DEBUG_INFO("sipe_groupchat_invite_response: session expires in %d seconds",
+						groupchat->expires);
+
+				if (groupchat->expires > 10)
+					groupchat->expires -= 10;
+				sipe_schedule_seconds(sipe_private,
+						      "<+groupchat-expires>",
+						      NULL,
+						      groupchat->expires,
+						      groupchat_update_cb,
+						      NULL);
+			}
+		}
 
 	} else {
 		/* response to group chat server invite */
@@ -499,7 +536,7 @@ static void chatserver_response_uri(struct sipe_core_private *sipe_private,
 			session->is_groupchat = TRUE;
 			sipe_im_invite(sipe_private, session, uri, NULL, NULL, NULL, FALSE);
 		} else {
-			SIPE_DEBUG_WARNING_NOFORMAT("process_incoming_info_groupchat: no server URI found!");
+			SIPE_DEBUG_WARNING_NOFORMAT("chatserver_response_uri: no server URI found!");
 			groupchat_init_retry(sipe_private);
 		}
 }
@@ -648,7 +685,7 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 											     uri);
 				gboolean new = (chat_session == NULL);
 				const gchar *attr = sipe_xml_attribute(node, "name");
-				char *self = sip_uri_self(sipe_private);
+				gchar *self = sip_uri_self(sipe_private);
 				const sipe_xml *aib;
 
 				if (new) {
@@ -709,11 +746,40 @@ static void chatserver_response_join(struct sipe_core_private *sipe_private,
 						g_strfreev(ids);
 					}
 				}
+
+				/* Request last 25 entries from channel history */
+				self = g_strdup_printf("<cmd id=\"cmd:bccontext\" seqid=\"1\">"
+						       "<data>"
+						       "<chanib uri=\"%s\"/>"
+						       "<bcq><last cnt=\"25\"/></bcq>"
+						       "</data>"
+						       "</cmd>", chat_session->id);
+				chatserver_command(sipe_private, self);
+				g_free(self);
 			}
 		}
 
 		g_hash_table_destroy(user_ids);
 	}
+}
+
+static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
+				       const sipe_xml *grpchat);
+
+static void chatserver_response_history(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+					SIPE_UNUSED_PARAMETER struct sip_session *session,
+					SIPE_UNUSED_PARAMETER guint result,
+					SIPE_UNUSED_PARAMETER const gchar *message,
+					const sipe_xml *xml)
+{
+	const sipe_xml *grpchat;
+
+	for (grpchat = sipe_xml_child(xml, "chanib/msg");
+	     grpchat;
+	     grpchat = sipe_xml_twin(grpchat))
+		if (sipe_strequal(sipe_xml_attribute(grpchat, "id"),
+				  "grpchat"))
+			chatserver_grpchat_message(sipe_private, grpchat);
 }
 
 static void chatserver_response_part(struct sipe_core_private *sipe_private,
@@ -837,14 +903,15 @@ static const struct response {
 			       guint result, const gchar *,
 			       const sipe_xml *xml);
 } response_table[] = {
-	{ "rpl:requri",   chatserver_response_uri },
-	{ "rpl:chansrch", chatserver_response_channel_search },
-	{ "rpl:join",     chatserver_response_join },
-	{ "rpl:bjoin",    chatserver_response_join },
-	{ "rpl:part",     chatserver_response_part },
-	{ "ntc:join",     chatserver_notice_join },
-	{ "ntc:bjoin",    chatserver_notice_join },
-	{ "ntc:part",     chatserver_notice_part },
+	{ "rpl:requri",    chatserver_response_uri },
+	{ "rpl:chansrch",  chatserver_response_channel_search },
+	{ "rpl:join",      chatserver_response_join },
+	{ "rpl:bjoin",     chatserver_response_join },
+	{ "rpl:bccontext", chatserver_response_history },
+	{ "rpl:part",      chatserver_response_part },
+	{ "ntc:join",      chatserver_notice_join },
+	{ "ntc:bjoin",     chatserver_notice_join },
+	{ "ntc:part",      chatserver_notice_part },
 	{ NULL, NULL }
 };
 
@@ -894,12 +961,13 @@ static void chatserver_response(struct sipe_core_private *sipe_private,
 }
 
 static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
-				       const sipe_xml *chatgrp)
+				       const sipe_xml *grpchat)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	const gchar *uri = sipe_xml_attribute(chatgrp, "chanUri");
-	const gchar *from = sipe_xml_attribute(chatgrp, "author");
-	gchar *text = sipe_xml_data(sipe_xml_child(chatgrp, "chat"));
+	const gchar *uri = sipe_xml_attribute(grpchat, "chanUri");
+	const gchar *from = sipe_xml_attribute(grpchat, "author");
+	time_t when = sipe_utils_str_to_time(sipe_xml_attribute(grpchat, "ts"));
+	gchar *text = sipe_xml_data(sipe_xml_child(grpchat, "chat"));
 	struct sipe_chat_session *chat_session;
 	gchar *escaped;
 
@@ -923,7 +991,7 @@ static void chatserver_grpchat_message(struct sipe_core_private *sipe_private,
 	escaped = g_markup_escape_text(text, -1);
 	g_free(text);
 	sipe_backend_chat_message(SIPE_CORE_PUBLIC, chat_session->backend,
-				  from, escaped);
+				  from, when, escaped);
 	g_free(escaped);
 }
 
@@ -933,19 +1001,40 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 {
 	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
 	const sipe_xml *node;
+	const gchar *callid;
+	struct sip_dialog *dialog;
 
-	/* @TODO: is this always correct?*/
-	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+	callid = sipmsg_find_header(msg, "Call-ID");
+	dialog = sipe_dialog_find(session, session->with);
+	if (sipe_strequal(callid, dialog->callid)) {
 
-	if (!xml) return;
+		sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 
-	if        (((node = sipe_xml_child(xml, "rpl")) != NULL) ||
-		   ((node = sipe_xml_child(xml, "ntc")) != NULL)) {
-		chatserver_response(sipe_private, node, session);
-	} else if ((node = sipe_xml_child(xml, "grpchat")) != NULL) {
-		chatserver_grpchat_message(sipe_private, node);
+		if        (((node = sipe_xml_child(xml, "rpl")) != NULL) ||
+			   ((node = sipe_xml_child(xml, "ntc")) != NULL)) {
+			chatserver_response(sipe_private, node, session);
+		} else if ((node = sipe_xml_child(xml, "grpchat")) != NULL) {
+			chatserver_grpchat_message(sipe_private, node);
+		} else {
+			SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
+		}
+
 	} else {
-		SIPE_DEBUG_INFO_NOFORMAT("process_incoming_info_groupchat: ignoring unknown response");
+		/*
+		 * Our last session got disconnected without proper shutdown,
+		 * e.g. by Pidgin crashing or network connection loss. When
+		 * we reconnect to the group chat the server will send INFO
+		 * messages to the current *AND* the obsolete Call-ID, until
+		 * the obsolete session expires.
+		 *
+		 * Ignore these INFO messages to avoid, e.g. duplicate texts,
+		 * and respond with an error so that the server knows that we
+		 * consider this dialog to be terminated.
+		 */
+		SIPE_DEBUG_INFO("process_incoming_info_groupchat: ignoring unsolicited INFO message to obsolete Call-ID: %s",
+				callid);
+
+		sip_transport_response(sipe_private, msg, 487, "Request Terminated", NULL);
 	}
 
 	sipe_xml_free(xml);
@@ -957,6 +1046,7 @@ void sipe_groupchat_send(struct sipe_core_private *sipe_private,
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
 	gchar *cmd, *self, *timestamp, *tmp;
+	gchar **lines, **strvp;
 	struct sipe_groupchat_msg *msg;
 
 	if (!groupchat || !chat_session)
@@ -976,12 +1066,24 @@ void sipe_groupchat_send(struct sipe_core_private *sipe_private,
 	 *    < -> &lt;
 	 *    & -> &amp;
 	 *
-	 * No need to escape them here.
+	 * Group Chat only accepts plain text, not full HTML. So we have to
+	 * strip all HTML tags and XML escape the text.
 	 *
-	 * Only exception are line breaks which are encoded as <br>.
-	 * Replace them with the correct XML tag <br/>.
+	 * Line breaks are encoded as <br> and therefore need to be replaced
+	 * before stripping. In order to prevent HTML stripping to strip line
+	 * endings, we need to split the text into lines on <br>.
 	 */
-        tmp = replace(what, "<br>", "<br/>");
+	lines = g_strsplit(what, "<br>", 0);
+	for (strvp = lines; *strvp; strvp++) {
+		/* replace array entry with HTML stripped & XML escaped version */
+		gchar *stripped = sipe_backend_markup_strip_html(*strvp);
+		gchar *escaped  = g_markup_escape_text(stripped, -1);
+		g_free(stripped);
+		g_free(*strvp);
+		*strvp = escaped;
+	}
+	tmp = g_strjoinv("\r\n", lines);
+	g_strfreev(lines);
 	cmd = g_strdup_printf("<grpchat id=\"grpchat\" seqid=\"1\" chanUri=\"%s\" author=\"%s\" ts=\"%s\">"
 			      "<chat>%s</chat>"
 			      "</grpchat>",

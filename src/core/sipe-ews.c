@@ -55,24 +55,10 @@ be great to implement too.
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-ews.h"
+#include "sipe-ews-autodiscover.h"
 #include "sipe-http.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-
-/**
- * Autodiscover request for Exchange Web Services
- * @param email (%s) Ex.: alice@cosmo.local
- */
-#define SIPE_EWS_AUTODISCOVER_REQUEST \
-"<?xml version=\"1.0\"?>"\
-"<Autodiscover xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/outlook/requestschema/2006\">"\
-  "<Request>"\
-    "<EMailAddress>%s</EMailAddress>"\
-    "<AcceptableResponseSchema>"\
-      "http://schemas.microsoft.com/exchange/autodiscover/outlook/responseschema/2006a"\
-    "</AcceptableResponseSchema>"\
-  "</Request>"\
-"</Autodiscover>"
 
 /**
  * GetUserOofSettingsRequest SOAP request to Exchange Web Services
@@ -146,13 +132,11 @@ be great to implement too.
 "</soap:Envelope>"
 
 #define SIPE_EWS_STATE_NONE			 0
-#define SIPE_EWS_STATE_AUTODISCOVER_SUCCESS	 1
-#define SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE	-1
-#define SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE	-2
-#define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	 3
-#define SIPE_EWS_STATE_AVAILABILITY_FAILURE	-3
-#define SIPE_EWS_STATE_OOF_SUCCESS		 4
-#define SIPE_EWS_STATE_OOF_FAILURE		-4
+#define SIPE_EWS_STATE_IDLE			 1
+#define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	 2
+#define SIPE_EWS_STATE_AVAILABILITY_FAILURE	-2
+#define SIPE_EWS_STATE_OOF_SUCCESS		 3
+#define SIPE_EWS_STATE_OOF_FAILURE		-3
 
 char *
 sipe_ews_get_oof_note(struct sipe_calendar *cal)
@@ -366,107 +350,14 @@ static void sipe_ews_process_oof_response(SIPE_UNUSED_PARAMETER struct sipe_core
 	}
 }
 
-static void sipe_ews_process_autodiscover(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
-					  guint status,
-					  SIPE_UNUSED_PARAMETER GSList *headers,
-					  const gchar *body,
-					  gpointer data)
-{
-	struct sipe_calendar *cal = data;
-
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_autodiscover: cb started.");
-
-	cal->request = NULL;
-
-	if ((status == SIPE_HTTP_STATUS_OK) && body) {
-		const sipe_xml *node;
-		/** ref: [MS-OXDSCLI] */
-		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
-
-		/* Autodiscover/Response/User/LegacyDN (trim()) */
-		cal->legacy_dn = sipe_xml_data(sipe_xml_child(xml, "Response/User/LegacyDN"));
-		cal->legacy_dn = cal->legacy_dn ? g_strstrip(cal->legacy_dn) : NULL;
-
-		/* Protocols */
-		for (node = sipe_xml_child(xml, "Response/Account/Protocol");
-		     node;
-		     node = sipe_xml_twin(node))
-		{
-			char *type = sipe_xml_data(sipe_xml_child(node, "Type"));
-			if (sipe_strequal("EXCH", type)) {
-				cal->as_url  = sipe_xml_data(sipe_xml_child(node, "ASUrl"));
-				cal->oof_url = sipe_xml_data(sipe_xml_child(node, "OOFUrl"));
-				cal->oab_url = sipe_xml_data(sipe_xml_child(node, "OABUrl"));
-
-				SIPE_DEBUG_INFO("sipe_ews_process_autodiscover:as_url %s",
-						cal->as_url ? cal->as_url : "");
-				SIPE_DEBUG_INFO("sipe_ews_process_autodiscover:oof_url %s",
-						cal->oof_url ? cal->oof_url : "");
-				SIPE_DEBUG_INFO("sipe_ews_process_autodiscover:oab_url %s",
-						cal->oab_url ? cal->oab_url : "");
-
-				g_free(type);
-				break;
-			} else {
-				g_free(type);
-				continue;
-			}
-		}
-
-		sipe_xml_free(xml);
-
-		cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
-		sipe_ews_run_state_machine(cal);
-
-	} else if ((status == SIPE_HTTP_STATUS_CLIENT_FORBIDDEN) && cal->retry) {
-		/*
-		 * Authentication succeeded but we still weren't allowed to view the page.
-		 * At least at our work place this error is temporary, i.e. the next access
-		 * with the exact same authentication succeeds. Simply retry once.
-		 */
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_process_autodiscover: failed, let's retry once.");
-		sipe_ews_run_state_machine(cal);
-		cal->retry = FALSE;
-
-	} else {
-		switch (cal->auto_disco_method) {
-			case 1:
-				cal->state = SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE; break;
-			case 2:
-				cal->state = SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE; break;
-		}
-		sipe_ews_run_state_machine(cal);
-	}
-}
-
 static void sipe_ews_send_http_request(struct sipe_calendar *cal)
 {
 	if (cal->request) {
-		sipe_cal_http_authentication(cal);
+		sipe_core_email_authentication(cal->sipe_private,
+					       cal->request);
 		sipe_http_request_allow_redirect(cal->request);
 		sipe_http_request_ready(cal->request);
 	}
-}
-
-static void sipe_ews_do_autodiscover(struct sipe_calendar *cal,
-				     const gchar *autodiscover_url)
-{
-	gchar *body;
-
-	SIPE_DEBUG_INFO("sipe_ews_do_autodiscover: going autodiscover url=%s",
-			autodiscover_url ? autodiscover_url : "");
-
-	body = g_strdup_printf(SIPE_EWS_AUTODISCOVER_REQUEST, cal->email);
-	cal->request = sipe_http_request_post(cal->sipe_private,
-					      autodiscover_url,
-					      NULL,
-					      body,
-					      "text/xml",
-					      sipe_ews_process_autodiscover,
-					      cal);
-	g_free(body);
-
-	sipe_ews_send_http_request(cal);
 }
 
 static void sipe_ews_do_avail_request(struct sipe_calendar *cal)
@@ -535,80 +426,69 @@ static void
 sipe_ews_run_state_machine(struct sipe_calendar *cal)
 {
 	switch (cal->state) {
-		case SIPE_EWS_STATE_NONE:
-			{
-				char *maildomain = strstr(cal->email, "@") + 1;
-				char *autodisc_url = g_strdup_printf("https://Autodiscover.%s/Autodiscover/Autodiscover.xml", maildomain);
-
-				cal->retry             = TRUE;
-				cal->auto_disco_method = 1;
-
-				sipe_ews_do_autodiscover(cal, autodisc_url);
-
-				g_free(autodisc_url);
-				break;
-			}
-		case SIPE_EWS_STATE_AUTODISCOVER_1_FAILURE:
-			{
-				char *maildomain = strstr(cal->email, "@") + 1;
-				char *autodisc_url = g_strdup_printf("https://%s/Autodiscover/Autodiscover.xml", maildomain);
-
-				cal->retry             = TRUE;
-				cal->auto_disco_method = 2;
-
-				sipe_ews_do_autodiscover(cal, autodisc_url);
-
-				g_free(autodisc_url);
-				break;
-			}
-		case SIPE_EWS_STATE_AUTODISCOVER_2_FAILURE:
-		case SIPE_EWS_STATE_AVAILABILITY_FAILURE:
-		case SIPE_EWS_STATE_OOF_FAILURE:
-			cal->is_ews_disabled = TRUE;
-			break;
-		case SIPE_EWS_STATE_AUTODISCOVER_SUCCESS:
-			sipe_ews_do_avail_request(cal);
-			break;
-		case SIPE_EWS_STATE_AVAILABILITY_SUCCESS:
-			sipe_ews_do_oof_request(cal);
-			break;
-		case SIPE_EWS_STATE_OOF_SUCCESS:
+	case SIPE_EWS_STATE_AVAILABILITY_FAILURE:
+	case SIPE_EWS_STATE_OOF_FAILURE:
+		cal->is_ews_disabled = TRUE;
+		break;
+	case SIPE_EWS_STATE_IDLE:
+		sipe_ews_do_avail_request(cal);
+		break;
+	case SIPE_EWS_STATE_AVAILABILITY_SUCCESS:
+		sipe_ews_do_oof_request(cal);
+		break;
+	case SIPE_EWS_STATE_OOF_SUCCESS:
 		{
 			struct sipe_core_private *sipe_private = cal->sipe_private;
 
-			cal->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
+			cal->state = SIPE_EWS_STATE_IDLE;
 			cal->is_updated = TRUE;
 			sipe_cal_presence_publish(sipe_private, TRUE);
-			break;
 		}
+		break;
 	}
 }
 
-void
-sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
+static void sipe_calendar_ews_autodiscover_cb(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+					      const struct sipe_ews_autodiscover_data *ews_data,
+					      gpointer callback_data)
+{
+	struct sipe_calendar *cal = callback_data;
+
+	if (ews_data) {
+		cal->as_url    = g_strdup(ews_data->as_url);
+		cal->legacy_dn = g_strdup(ews_data->legacy_dn);
+		cal->oab_url   = g_strdup(ews_data->oab_url);
+		cal->oof_url   = g_strdup(ews_data->oof_url);
+		cal->state     = SIPE_EWS_STATE_IDLE;
+		sipe_ews_run_state_machine(cal);
+	} else {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_calendar_ews_autodiscover_cb: EWS disabled");
+		cal->is_ews_disabled = TRUE;
+	}
+}
+
+void sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
 {
 	//char *autodisc_srv = g_strdup_printf("_autodiscover._tcp.%s", maildomain);
-	gboolean has_url;
+	struct sipe_calendar *cal;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: started.");
 
-	if (sipe_cal_calendar_init(sipe_private, &has_url)) {
-		if (has_url) {
-			sipe_private->calendar->state = SIPE_EWS_STATE_AUTODISCOVER_SUCCESS;
-		}
-	}
+	sipe_cal_calendar_init(sipe_private);
+	cal = sipe_private->calendar;
 
-	if (sipe_private->calendar->is_ews_disabled) {
+	if (cal->is_ews_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: disabled, exiting.");
-		return;
+	} else if (!cal->as_url && !cal->ews_autodiscover_triggered) {
+		cal->ews_autodiscover_triggered = TRUE;
+		sipe_ews_autodiscover_start(sipe_private,
+					    sipe_calendar_ews_autodiscover_cb,
+					    cal);
+	} else {
+		sipe_ews_run_state_machine(cal);
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: finished.");
 	}
-
-	sipe_ews_run_state_machine(sipe_private->calendar);
-
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: finished.");
 }
-
-
 
 /*
   Local Variables:

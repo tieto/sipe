@@ -126,6 +126,9 @@
     <ClCompile Include="src\core\sipe-tls.c">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="src\core\sipe-ucs.c">
+      <Filter>core</Filter>
+    </ClCompile>
     <ClCompile Include="src\core\sipe-user.c">
       <Filter>core</Filter>
     </ClCompile>
@@ -333,6 +336,9 @@
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\sipe-tls.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="src\core\sipe-ucs.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\sipe-utils.h">

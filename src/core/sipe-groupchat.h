@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
  */
 
 /* Forward declarations */
+struct sipmsg;
 struct sip_dialog;
 struct sip_session;
 struct sipe_chat_session;
@@ -31,7 +32,8 @@ void sipe_groupchat_init(struct sipe_core_private *sipe_private);
 void sipe_groupchat_invite_failed(struct sipe_core_private *sipe_private,
 				  struct sip_session *session);
 void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
-				    struct sip_dialog *dialog);
+				    struct sip_dialog *dialog,
+				    struct sipmsg *response);
 void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg,
 				     struct sip_session *session);

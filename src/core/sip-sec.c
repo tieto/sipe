@@ -48,6 +48,12 @@
 #define SIP_SEC_WINDOWS_SSPI 0
 #endif
 
+/* SIPE_AUTHENTICATION_TYPE_BASIC */
+#include "sip-sec-basic.h"
+#define sip_sec_create_context__Basic      sip_sec_create_context__basic
+/* Basic is only used for HTTP, not for SIP */
+#define sip_sec_password__Basic            sip_sec_password__NONE
+
 /* SIPE_AUTHENTICATION_TYPE_NTLM */
 #if SIP_SEC_WINDOWS_SSPI
 #define sip_sec_create_context__NTLM       sip_sec_create_context__sspi
@@ -115,6 +121,7 @@ sip_sec_create_context(guint type,
 	/* Map authentication type to module initialization hook & name */
 	static sip_sec_create_context_func const auth_to_hook[] = {
 		sip_sec_create_context__NONE,      /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+		sip_sec_create_context__Basic,     /* SIPE_AUTHENTICATION_TYPE_BASIC     */
 		sip_sec_create_context__NTLM,      /* SIPE_AUTHENTICATION_TYPE_NTLM      */
 		sip_sec_create_context__Kerberos,  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 		sip_sec_create_context__Negotiate, /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
@@ -242,6 +249,7 @@ gboolean sip_sec_requires_password(guint authentication,
 	/* Map authentication type to module initialization hook & name */
 	static sip_sec_password_func const auth_to_hook[] = {
 		sip_sec_password__NONE,      /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+		sip_sec_password__Basic,     /* SIPE_AUTHENTICATION_TYPE_BASIC     */
 		sip_sec_password__NTLM,      /* SIPE_AUTHENTICATION_TYPE_NTLM      */
 		sip_sec_password__Kerberos,  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 		sip_sec_password__Negotiate, /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */

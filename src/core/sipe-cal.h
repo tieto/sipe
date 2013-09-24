@@ -59,11 +59,11 @@ struct sipe_calendar {
 	int state;
 	char *email;
 	char *legacy_dn;
-	int auto_disco_method;
 	int is_ews_disabled;
 	int is_domino_disabled;
 	int is_updated;
 	gboolean retry;
+	gboolean ews_autodiscover_triggered;
 
 	char *as_url;
 	char *oof_url;
@@ -79,9 +79,6 @@ struct sipe_calendar {
 
 	struct sipe_http_session *session;
 	struct sipe_http_request *request;
-	gchar *auth_domain;
-	gchar *auth_user; /* NULL -> use default authentication */
-	gchar *password;
 
 	time_t fb_start;
 	/* hex form */
@@ -99,9 +96,8 @@ sipe_cal_events_free(GSList *cal_events);
 void
 sipe_cal_calendar_free(struct sipe_calendar *cal);
 
-gboolean
-sipe_cal_calendar_init(struct sipe_core_private *sipe_private,
-		       gboolean *has_url);
+void
+sipe_cal_calendar_init(struct sipe_core_private *sipe_private);
 
 /**
  * Returns hash of Calendar Event for comparison.
@@ -194,8 +190,3 @@ void sipe_cal_presence_publish(struct sipe_core_private *sipe_private,
  * Schedule calendar update
  */
 void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private);
-
-/**
- * Set authentication for HTTP request
- */
-void sipe_cal_http_authentication(struct sipe_calendar *cal);

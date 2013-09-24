@@ -41,6 +41,7 @@ struct sipe_http_connection_public {
 
 	GSList *pending_requests;        /* handled by sipe-http-request.c */
 	struct sip_sec_context *context; /* handled by sipe-http-request.c */
+	gchar *cached_authorization;     /* handled by sipe-http-request.c */
 
 	gchar *host;
 	guint32 port;
@@ -64,12 +65,14 @@ gboolean sipe_http_shutting_down(struct sipe_core_private *sipe_private);
  * @param sipe_private SIPE core private data
  * @param host         name of the host to connect to
  * @param port         port number to connect to
+ * @param use_tls      use TLS if @c TRUE, otherwise TCP
  *
  * @return HTTP connection public data
  */
 struct sipe_http_connection_public *sipe_http_transport_new(struct sipe_core_private *sipe_private,
 							    const gchar *host,
-							    guint32 port);
+							    guint32 port,
+							    gboolean use_tls);
 
 /**
  * Send HTTP request

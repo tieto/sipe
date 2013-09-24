@@ -42,6 +42,7 @@ src/telepathy/data/org.freedesktop.Telepathy.ConnectionManager.sipe.service
 stamp-h1
 siplcs.vcxproj.user
 test-driver
+*.trs
 *.DS_Store
 adium/SIPEAdiumPlugin.xcodeproj/project.xcworkspace/*
 adium/SIPEAdiumPlugin.xcodeproj/xcuserdata/*

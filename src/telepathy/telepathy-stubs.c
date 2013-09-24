@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,6 +106,7 @@ gboolean sipe_backend_chat_is_operator(SIPE_UNUSED_PARAMETER struct sipe_backend
 void sipe_backend_chat_message(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 			       SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *backend_session,
 			       SIPE_UNUSED_PARAMETER const gchar *from,
+			       SIPE_UNUSED_PARAMETER time_t when,
 			       SIPE_UNUSED_PARAMETER const gchar *html) {}
 void sipe_backend_chat_operator(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_session *backend_session,
 				SIPE_UNUSED_PARAMETER const gchar *uri) {}

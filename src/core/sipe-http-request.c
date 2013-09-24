@@ -81,11 +81,16 @@ struct sipe_http_request {
 #define SIPE_HTTP_REQUEST_FLAG_AUTHDATA 0x00000004
 
 static void sipe_http_request_free(struct sipe_core_private *sipe_private,
-				   struct sipe_http_request *req)
+				   struct sipe_http_request *req,
+				   guint status)
 {
 	if (req->cb)
-		/* Callback: aborted */
-		(*req->cb)(sipe_private, 0, NULL, NULL, req->cb_data);
+		/* Callback: aborted/failed/cancelled */
+		(*req->cb)(sipe_private,
+			   status,
+			   NULL,
+			   NULL,
+			   req->cb_data);
 	g_free(req->path);
 	g_free(req->headers);
 	g_free(req->body);
@@ -117,6 +122,7 @@ static void sipe_http_request_send(struct sipe_http_connection_public *conn_publ
 				 content ? "POST" : "GET",
 				 req->path,
 				 conn_public->host,
+				 conn_public->cached_authorization ? conn_public->cached_authorization :
 				 req->authorization ? req->authorization : "",
 				 req->headers ? req->headers : "",
 				 cookie ? cookie : "",
@@ -153,7 +159,8 @@ static void sipe_http_request_enqueue(struct sipe_core_private *sipe_private,
 	req->path       = g_strdup(parsed_uri->path);
 	req->connection = conn_public = sipe_http_transport_new(sipe_private,
 								parsed_uri->host,
-								parsed_uri->port);
+								parsed_uri->port,
+								parsed_uri->tls);
 	if (!sipe_http_request_pending(conn_public))
 		req->flags |= SIPE_HTTP_REQUEST_FLAG_FIRST;
 
@@ -207,7 +214,7 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 	gboolean failed = TRUE;
 
 #if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
-#define DEBUG_STRING "NTLM and Negotiate authentications are"
+#define DEBUG_STRING ", NTLM and Negotiate"
 	/* Use "Negotiate" unless the user requested "NTLM" */
 	if (sipe_private->authentication_type != SIPE_AUTHENTICATION_TYPE_NTLM)
 		header = sipmsg_find_auth_header(msg, "Negotiate");
@@ -216,13 +223,20 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 		name   = "Negotiate";
 	} else
 #else
-#define DEBUG_STRING "NTLM authentication is"
+#define DEBUG_STRING " and NTLM"
 	(void) sipe_private; /* keep compiler happy */
 #endif
 	{
 		header = sipmsg_find_auth_header(msg, "NTLM");
 		type   = SIPE_AUTHENTICATION_TYPE_NTLM;
 		name   = "NTLM";
+	}
+
+	/* only fall back to "Basic" after everything else fails */
+	if (!header) {
+		header = sipmsg_find_auth_header(msg, "Basic");
+		type   = SIPE_AUTHENTICATION_TYPE_BASIC;
+		name   = "Basic";
 	}
 
 	if (header) {
@@ -260,6 +274,15 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 				g_free(token);
 
 				/*
+				 * authorization never changes for Basic
+				 * authentication scheme, so we can keep it.
+				 */
+				if (type == SIPE_AUTHENTICATION_TYPE_BASIC) {
+					g_free(conn_public->cached_authorization);
+					conn_public->cached_authorization = g_strdup(req->authorization);
+				}
+
+				/*
 				 * Keep the request in the queue. As it is at
 				 * the head it will be pulled automatically
 				 * by the transport layer after returning.
@@ -274,7 +297,7 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 		} else
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: security context creation failed");
 	} else
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: only " DEBUG_STRING " supported");
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: only Basic" DEBUG_STRING " authentication schemes are supported");
 
 	return(failed);
 }
@@ -348,11 +371,15 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 								 msg);
 
 	} else {
-		/* On error throw away the security context */
-		if ((msg->response >= SIPE_HTTP_STATUS_CLIENT_ERROR) &&
+		/* On some errors throw away the security context */
+		if (((msg->response == SIPE_HTTP_STATUS_CLIENT_FORBIDDEN)  ||
+		     (msg->response == SIPE_HTTP_STATUS_CLIENT_PROXY_AUTH) ||
+		     (msg->response >= SIPE_HTTP_STATUS_SERVER_ERROR))     &&
 		    conn_public->context) {
 			SIPE_DEBUG_INFO("sipe_http_request_response: response was %d, throwing away security context",
 					msg->response);
+			g_free(conn_public->cached_authorization);
+			conn_public->cached_authorization = NULL;
 			sip_sec_destroy_context(conn_public->context);
 			conn_public->context = NULL;
 		}
@@ -366,20 +393,28 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 
 	if (failed) {
 		/* Callback: request failed */
-		(*req->cb)(sipe_private, 0, NULL, NULL, req->cb_data);
+		(*req->cb)(sipe_private,
+			   SIPE_HTTP_STATUS_FAILED,
+			   NULL,
+			   NULL,
+			   req->cb_data);
 
 		/* remove failed request */
 		sipe_http_request_cancel(req);
 	}
 }
 
-void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
+void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public,
+				gboolean abort)
 {
 	if (conn_public->pending_requests) {
 		GSList *entry = conn_public->pending_requests;
 		while (entry) {
 			sipe_http_request_free(conn_public->sipe_private,
-					       entry->data);
+					       entry->data,
+					       abort ?
+					       SIPE_HTTP_STATUS_ABORTED :
+					       SIPE_HTTP_STATUS_FAILED);
 			entry = entry->next;
 		}
 		g_slist_free(conn_public->pending_requests);
@@ -387,6 +422,8 @@ void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public)
 	}
 
 	if (conn_public->context) {
+		g_free(conn_public->cached_authorization);
+		conn_public->cached_authorization = NULL;
 		sip_sec_destroy_context(conn_public->context);
 		conn_public->context = NULL;
 	}
@@ -473,7 +510,9 @@ void sipe_http_request_cancel(struct sipe_http_request *request)
 	/* cancelled by requester, don't use callback */
 	request->cb = NULL;
 
-	sipe_http_request_free(conn_public->sipe_private, request);
+	sipe_http_request_free(conn_public->sipe_private,
+			       request,
+			       SIPE_HTTP_STATUS_CANCELLED);
 }
 
 void sipe_http_request_session(struct sipe_http_request *request,

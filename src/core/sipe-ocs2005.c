@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -501,9 +501,9 @@ static void update_calendar_status(struct sipe_core_private *sipe_private,
 				   SIPE_UNUSED_PARAMETER void *unused)
 {
 	SIPE_DEBUG_INFO_NOFORMAT("update_calendar_status() started.");
-	g_hash_table_foreach(sipe_private->buddies,
-			     (GHFunc)update_calendar_status_cb,
-			     sipe_private);
+	sipe_buddy_foreach(sipe_private,
+			   (GHFunc) update_calendar_status_cb,
+			   sipe_private);
 
 	/* repeat scheduling */
 	sipe_ocs2005_schedule_status_update(sipe_private,

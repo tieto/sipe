@@ -25,12 +25,17 @@ struct sip_address_data;
 struct sip_csta;
 struct sip_service_data;
 struct sip_transport;
+struct sipe_buddies;
 struct sipe_calendar;
 struct sipe_certificate;
-struct sipe_media_call_private;
+struct sipe_ews_autodiscover;
 struct sipe_groupchat;
+struct sipe_groups;
 struct sipe_http;
+struct sipe_http_request;
+struct sipe_media_call_private;
 struct sipe_svc;
+struct sipe_ucs;
 struct sipe_webticket;
 
 /**
@@ -58,6 +63,9 @@ struct sipe_core_private {
 	gchar *authuser;   /* NULL when SSO is enabled */
 	gchar *password;   /* NULL when SSO is enabled */
 	gchar *email;
+	gchar *email_authdomain;
+	gchar *email_authuser;   /* NULL -> use default authentication */
+	gchar *email_password;
 
 	/* SIPE protocol information */
 	gchar *contact;
@@ -89,11 +97,14 @@ struct sipe_core_private {
 	GHashTable *user_state_publications;
 
 	/* Buddies */
-	GSList *groups;
-	GHashTable *buddies;
+	struct sipe_groups *groups;
+	struct sipe_buddies *buddies;
 
 	/* Calendar and related stuff */
 	struct sipe_calendar *calendar;
+
+	/* EWS autodiscover */
+	struct sipe_ews_autodiscover *ews_autodiscover;
 
 	/*
 	 * 2005 Custom XML piece
@@ -129,6 +140,7 @@ struct sipe_core_private {
 
 	/* Group chat */
 	struct sipe_groupchat *groupchat;
+	gchar *persistentChatPool_uri;
 
 	/* buddy menu memory allocation */
 	GSList *blist_menu_containers;
@@ -146,14 +158,14 @@ struct sipe_core_private {
 	struct sipe_webticket *webticket;
 	struct sipe_svc *svc;
 
+	/* Unified Contact Store */
+	struct sipe_ucs *ucs;
+
 	/* [MS-DLX] server URI */
 	gchar *dlx_uri;
 
 	/* Addressbook server URI */
 	gchar *addressbook_uri;
-
-	/* Pending photo download HTTP requests */
-	GSList *pending_photo_requests;
 };
 
 /**
@@ -178,6 +190,8 @@ struct sipe_core_private {
 #define SIPE_CORE_PRIVATE_FLAG_SUBSCRIBED_BUDDIES 0x01000000
 /* user enabled Single-Sign On */
 #define SIPE_CORE_PRIVATE_FLAG_SSO                0x00800000
+/* server is Lync 2013+ */
+#define SIPE_CORE_PRIVATE_FLAG_LYNC2013           0x00400000
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
@@ -199,7 +213,11 @@ struct sipe_core_private {
 /**
  * sipe-core internal functions
  */
+void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
+				   guint authentication);
 void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private);
+void sipe_core_email_authentication(struct sipe_core_private *sipe_private,
+				    struct sipe_http_request *request);
 
 /*
   Local Variables:

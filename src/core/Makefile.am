@@ -17,6 +17,8 @@ libsipe_core_la_SOURCES = \
 	sip-csta.c \
 	sip-sec.h \
 	sip-sec.c \
+	sip-sec-basic.h \
+	sip-sec-basic.c \
 	sip-sec-digest.h \
 	sip-sec-digest.c \
 	sip-sec-mech.h \
@@ -45,6 +47,8 @@ libsipe_core_la_SOURCES = \
 	sipe-digest.h \
 	sipe-ews.h \
 	sipe-ews.c \
+	sipe-ews-autodiscover.h \
+	sipe-ews-autodiscover.c \
 	sipe-ft.h \
 	sipe-ft.c \
 	sipe-ft-tftp.c \
@@ -82,10 +86,12 @@ libsipe_core_la_SOURCES = \
 	sipe-svc.c \
 	sipe-tls.h \
 	sipe-tls.c \
+	sipe-ucs.h \
+	sipe-ucs.c \
+	sipe-user.h \
+	sipe-user.c \
 	sipe-utils.h \
 	sipe-utils.c \
-	sipe-user.c \
-	sipe-user.h \
 	sipe-webticket.h \
 	sipe-webticket.c \
 	sipe-xml.h \
