@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -608,6 +608,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 						sipe_backend_chat_message(SIPE_CORE_PUBLIC,
 									  session->chat_session->backend,
 									  from,
+									  0,
 									  html);
 					} else {
 						sipe_backend_im_message(SIPE_CORE_PUBLIC,
@@ -666,12 +667,14 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 				sipe_backend_chat_message(SIPE_CORE_PUBLIC,
 							  session->chat_session->backend,
 							  sender,
+							  0,
 							  html);
 				g_free(sender);
 			} else { /* a multiparty chat */
 				sipe_backend_chat_message(SIPE_CORE_PUBLIC,
 							  session->chat_session->backend,
 							  from,
+							  0,
 							  html);
 			}
 		} else {

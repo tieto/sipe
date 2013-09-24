@@ -35,8 +35,13 @@
 #include "sipe-core-private.h"
 #include "sipe-group.h"
 #include "sipe-nls.h"
+#include "sipe-ucs.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
+
+struct sipe_groups {
+	GSList *list;
+};
 
 struct group_user_context {
 	gchar *group_name;
@@ -63,7 +68,6 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 		sipe_xml *xml;
 		const sipe_xml *node;
 		char *group_id;
-		struct sipe_buddy *buddy;
 
 		xml = sipe_xml_parse(msg->body, msg->bodylen);
 		if (!xml) {
@@ -82,20 +86,18 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 			return FALSE;
 		}
 
-		group = g_new0(struct sipe_group, 1);
-		group->id = (int)g_ascii_strtod(group_id, NULL);
+		group = sipe_group_add(sipe_private,
+				       ctx->group_name,
+				       NULL,
+				       NULL,
+				       g_ascii_strtoull(group_id, NULL, 10));
 		g_free(group_id);
-		group->name = g_strdup(ctx->group_name);
 
-		sipe_group_add(sipe_private, group);
-
-		if (ctx->user_name) {
-			buddy = g_hash_table_lookup(sipe_private->buddies, ctx->user_name);
+		if (group) {
+			struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+									  ctx->user_name);
 			if (buddy) {
-				buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-										      group,
-										      (GCompareFunc)sipe_group_compare,
-										      NULL);
+				sipe_buddy_insert_group(buddy, group);
 				sipe_group_update_buddy(sipe_private, buddy);
 			}
 		}
@@ -106,14 +108,9 @@ process_add_group_response(struct sipe_core_private *sipe_private,
 	return FALSE;
 }
 
-int
-sipe_group_compare(struct sipe_group *group1, struct sipe_group *group2) {
-	return group1->id - group2->id;
-}
-
 struct sipe_group*
 sipe_group_find_by_id(struct sipe_core_private *sipe_private,
-		      int id)
+		      guint id)
 {
 	struct sipe_group *group;
 	GSList *entry;
@@ -121,7 +118,7 @@ sipe_group_find_by_id(struct sipe_core_private *sipe_private,
 	if (!sipe_private)
 		return NULL;
 
-	entry = sipe_private->groups;
+	entry = sipe_private->groups->list;
 	while (entry) {
 		group = entry->data;
 		if (group->id == id) {
@@ -142,7 +139,7 @@ sipe_group_find_by_name(struct sipe_core_private *sipe_private,
 	if (!sipe_private || !name)
 		return NULL;
 
-	entry = sipe_private->groups;
+	entry = sipe_private->groups->list;
 	while (entry) {
 		group = entry->data;
 		if (sipe_strequal(group->name, name)) {
@@ -155,28 +152,37 @@ sipe_group_find_by_name(struct sipe_core_private *sipe_private,
 
 void
 sipe_group_create(struct sipe_core_private *sipe_private,
+		  struct sipe_ucs_transaction *trans,
 		  const gchar *name,
 		  const gchar *who)
 {
-	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
-	struct group_user_context *ctx = g_new0(struct group_user_context, 1);
-	const gchar *soap_name = sipe_strequal(name, _("Other Contacts")) ? "~" : name;
-	gchar *request;
-	ctx->group_name = g_strdup(name);
-	ctx->user_name = g_strdup(who);
-	payload->destroy = sipe_group_context_destroy;
-	payload->data = ctx;
+	/* "trans" is always set for UCS code paths, otherwise NULL */
+	if (trans) {
+		sipe_ucs_group_create(sipe_private,
+				      trans,
+				      name,
+				      who);
+	} else {
+		struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+		struct group_user_context *ctx = g_new0(struct group_user_context, 1);
+		const gchar *soap_name = sipe_strequal(name, _("Other Contacts")) ? "~" : name;
+		gchar *request;
+		ctx->group_name = g_strdup(name);
+		ctx->user_name = g_strdup(who);
+		payload->destroy = sipe_group_context_destroy;
+		payload->data = ctx;
 
-	/* soap_name can contain restricted characters */
-	request = g_markup_printf_escaped("<m:name>%s</m:name>"
-					  "<m:externalURI />",
-					  soap_name);
-	sip_soap_request_cb(sipe_private,
-			    "addGroup",
-			    request,
-			    process_add_group_response,
-			    payload);
-	g_free(request);
+		/* soap_name can contain restricted characters */
+		request = g_markup_printf_escaped("<m:name>%s</m:name>"
+						  "<m:externalURI />",
+						  soap_name);
+		sip_soap_request_cb(sipe_private,
+				    "addGroup",
+				    request,
+				    process_add_group_response,
+				    payload);
+		g_free(request);
+	}
 }
 
 gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
@@ -193,28 +199,53 @@ gboolean sipe_group_rename(struct sipe_core_private *sipe_private,
 	return(renamed);
 }
 
-void
-sipe_group_add(struct sipe_core_private *sipe_private,
-	       struct sipe_group * group)
+struct sipe_group *sipe_group_add(struct sipe_core_private *sipe_private,
+				  const gchar *name,
+				  const gchar *exchange_key,
+				  const gchar *change_key,
+				  guint id)
 {
-	if (sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC,group->name))
-	{
-		SIPE_DEBUG_INFO("added group %s (id %d)", group->name, group->id);
-		sipe_private->groups = g_slist_append(sipe_private->groups,
-						      group);
+	struct sipe_group *group = NULL;
+
+	if (!is_empty(name)) {
+		group = sipe_group_find_by_name(sipe_private, name);
+
+		if (!group &&
+		    sipe_backend_buddy_group_add(SIPE_CORE_PUBLIC, name)) {
+
+			group       = g_new0(struct sipe_group, 1);
+			group->name = g_strdup(name);
+			group->id   = id;
+
+			if (exchange_key)
+				group->exchange_key = g_strdup(exchange_key);
+			if (change_key)
+				group->change_key = g_strdup(change_key);
+
+			sipe_private->groups->list = g_slist_append(sipe_private->groups->list,
+								    group);
+
+			SIPE_DEBUG_INFO("sipe_group_add: created backend group '%s' with id %d",
+					group->name, group->id);
+		} else {
+			SIPE_DEBUG_INFO("sipe_group_add: backend group '%s' already exists",
+					name ? name : "");
+			if (group)
+				group->is_obsolete = FALSE;
+		}
 	}
-	else
-	{
-		SIPE_DEBUG_INFO("did not add group %s", group->name ? group->name : "");
-	}
+
+	return(group);
 }
 
-void sipe_group_free(struct sipe_core_private *sipe_private,
-		     struct sipe_group *group)
+static void group_free(struct sipe_core_private *sipe_private,
+		       struct sipe_group *group)
 {
-	sipe_private->groups = g_slist_remove(sipe_private->groups,
-					      group);
+	sipe_private->groups->list = g_slist_remove(sipe_private->groups->list,
+						    group);
 	g_free(group->name);
+	g_free(group->exchange_key);
+	g_free(group->change_key);
 	g_free(group);
 }
 
@@ -222,9 +253,9 @@ void sipe_group_remove(struct sipe_core_private *sipe_private,
 		       struct sipe_group *group)
 {
 	if (group) {
-		SIPE_DEBUG_INFO("removing group %s (id %d)", group->name, group->id);
+		SIPE_DEBUG_INFO("sipe_group_remove: %s (id %d)", group->name, group->id);
 		sipe_backend_buddy_group_remove(SIPE_CORE_PUBLIC, group->name);
-		sipe_group_free(sipe_private, group);
+		group_free(sipe_private, group);
 	}
 }
 
@@ -237,22 +268,29 @@ sipe_core_group_rename(struct sipe_core_public *sipe_public,
 	struct sipe_group *s_group = sipe_group_find_by_name(sipe_private, old_name);
 
 	if (s_group) {
-		gchar *request;
-		SIPE_DEBUG_INFO("Renaming group %s to %s", old_name, new_name);
-		/* new_name can contain restricted characters */
-		request = g_markup_printf_escaped("<m:groupID>%d</m:groupID>"
-						  "<m:name>%s</m:name>"
-						  "<m:externalURI />",
-						  s_group->id, new_name);
-		sip_soap_request(sipe_private,
-				 "modifyGroup",
-				 request);
-		g_free(request);
+		SIPE_DEBUG_INFO("sipe_core_group_rename: from '%s' to '%s'", old_name, new_name);
+
+		if (sipe_ucs_is_migrated(sipe_private)) {
+			sipe_ucs_group_rename(sipe_private,
+					      s_group,
+					      new_name);
+		} else {
+			/* new_name can contain restricted characters */
+			gchar *request = g_markup_printf_escaped("<m:groupID>%d</m:groupID>"
+								 "<m:name>%s</m:name>"
+								 "<m:externalURI />",
+								 s_group->id,
+								 new_name);
+			sip_soap_request(sipe_private,
+					 "modifyGroup",
+					 request);
+			g_free(request);
+		}
 
 		g_free(s_group->name);
 		s_group->name = g_strdup(new_name);
 	} else {
-		SIPE_DEBUG_INFO("Cannot find group %s to rename", old_name);
+		SIPE_DEBUG_INFO("sipe_core_group_rename: cannot find group '%s'", old_name);
 	}
 }
 
@@ -264,54 +302,40 @@ sipe_core_group_remove(struct sipe_core_public *sipe_public,
 	struct sipe_group *s_group = sipe_group_find_by_name(sipe_private, name);
 
 	if (s_group) {
-		gchar *request;
-		SIPE_DEBUG_INFO("Deleting group %s", name);
-		request = g_strdup_printf("<m:groupID>%d</m:groupID>",
-					  s_group->id);
-		sip_soap_request(sipe_private,
-				 "deleteGroup",
-				 request);
-		g_free(request);
 
-		sipe_group_free(sipe_private, s_group);
+		/* ignore backend events while deleting obsoleted groups */
+		if (!s_group->is_obsolete) {
+			SIPE_DEBUG_INFO("sipe_core_group_remove: delete '%s'", name);
+
+			if (sipe_ucs_is_migrated(sipe_private)) {
+				sipe_ucs_group_remove(sipe_private,
+						      s_group);
+			} else {
+				gchar *request = g_strdup_printf("<m:groupID>%d</m:groupID>",
+								 s_group->id);
+				sip_soap_request(sipe_private,
+						 "deleteGroup",
+						 request);
+				g_free(request);
+			}
+
+			group_free(sipe_private, s_group);
+		}
 	} else {
-		SIPE_DEBUG_INFO("Cannot find group %s to delete", name);
+		SIPE_DEBUG_INFO("sipe_core_group_remove: cannot find group '%s'", name);
 	}
-}
-
-/**
- * Returns string like "2 4 7 8" - group ids buddy belong to.
- */
-static gchar *sipe_get_buddy_groups_string(struct sipe_buddy *buddy)
-{
-	int i = 0;
-	gchar *res;
-	//creating array from GList, converting int to gchar*
-	gchar **ids_arr = g_new(gchar *, g_slist_length(buddy->groups) + 1);
-	GSList *entry = buddy->groups;
-
-	if (!ids_arr) return NULL;
-
-	while (entry) {
-		struct sipe_group * group = entry->data;
-		ids_arr[i] = g_strdup_printf("%d", group->id);
-		entry = entry->next;
-		i++;
-	}
-	ids_arr[i] = NULL;
-	res = g_strjoinv(" ", ids_arr);
-	g_strfreev(ids_arr);
-	return res;
 }
 
 /**
  * Sends buddy update to server
+ *
+ * NOTE: must not be called when contact list has been migrated to UCS
  */
 static void send_buddy_update(struct sipe_core_private *sipe_private,
 			      struct sipe_buddy *buddy,
 			      const gchar *alias)
 {
-	gchar *groups = sipe_get_buddy_groups_string(buddy);
+	gchar *groups = sipe_buddy_groups_string(buddy);
 
 	if (groups) {
 		gchar *request;
@@ -324,7 +348,9 @@ static void send_buddy_update(struct sipe_core_private *sipe_private,
 						  "<m:subscribed>true</m:subscribed>"
 						  "<m:URI>%s</m:URI>"
 						  "<m:externalURI />",
-						  alias, groups, buddy->name);
+						  alias ? alias : "",
+						  groups,
+						  buddy->name);
 		g_free(groups);
 
 		sip_soap_request(sipe_private,
@@ -334,7 +360,11 @@ static void send_buddy_update(struct sipe_core_private *sipe_private,
 	}
 }
 
-/* indicates that buddy information on the server needs updating */
+/**
+ * indicates that buddy information on the server needs updating
+ *
+ * NOTE: must not be called when contact list has been migrated to UCS
+ */
 void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
 			     struct sipe_buddy *buddy)
 {
@@ -351,16 +381,77 @@ void sipe_group_update_buddy(struct sipe_core_private *sipe_private,
 	}
 }
 
+/**
+ * @param alias new alias (may be @c NULL)
+ */
 void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
 			       const gchar *who,
 			       const gchar *alias)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies,
-						       who);
 
-	if (buddy)
-		send_buddy_update(sipe_private, buddy, alias);
+	/* UCS does not support setting of display name/alias */
+	if (sipe_ucs_is_migrated(sipe_private))
+		SIPE_DEBUG_INFO("sipe_core_group_set_alias: not supported for UCS (uri '%s' alias '%s')",
+				who, alias ? alias : "<UNDEFINED>");
+	else {
+		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+								  who);
+
+		if (buddy)
+			send_buddy_update(sipe_private, buddy, alias);
+	}
+}
+
+void sipe_group_update_start(struct sipe_core_private *sipe_private)
+{
+	GSList *entry = sipe_private->groups->list;
+
+	while (entry) {
+		((struct sipe_group *) entry->data)->is_obsolete = TRUE;
+		entry = entry->next;
+	}
+}
+
+void sipe_group_update_finish(struct sipe_core_private *sipe_private)
+{
+	GSList *entry = sipe_private->groups->list;
+
+	while (entry) {
+		struct sipe_group *group = entry->data;
+
+		/* next group entry */
+		entry = entry->next;
+
+		if (group->is_obsolete)
+			sipe_group_remove(sipe_private, group);
+	}
+}
+
+struct sipe_group *sipe_group_first(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->groups->list ? sipe_private->groups->list->data : NULL);
+}
+
+guint sipe_group_count(struct sipe_core_private *sipe_private)
+{
+	return(g_slist_length(sipe_private->groups->list));
+}
+
+void sipe_group_init(struct sipe_core_private *sipe_private)
+{
+	sipe_private->groups = g_new0(struct sipe_groups, 1);
+}
+
+void sipe_group_free(struct sipe_core_private *sipe_private)
+{
+	GSList *entry;
+
+	while ((entry = sipe_private->groups->list) != NULL)
+		group_free(sipe_private, entry->data);
+
+	g_free(sipe_private->groups);
+	sipe_private->groups = NULL;
 }
 
 /*

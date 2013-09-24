@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -46,7 +46,7 @@ void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
 {
 	gchar *contact = get_contact(sipe_private);
 	gchar *hdr = g_strdup_printf("Contact: %s\r\n"
-	                             "Content-Type: application/SOAP+xml\r\n",
+				     "Content-Type: application/SOAP+xml\r\n",
 				     contact);
 
 	struct transaction *trans = sip_transport_service(sipe_private,

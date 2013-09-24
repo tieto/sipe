@@ -47,6 +47,7 @@
 /* Mechanism names */
 static const gchar * const mech_names[] = {
 	"",          /* SIPE_AUTHENTICATION_TYPE_UNSET     */
+	"",          /* SIPE_AUTHENTICATION_TYPE_BASIC     */
 	"NTLM",      /* SIPE_AUTHENTICATION_TYPE_NTLM      */
 	"Kerberos",  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 	"Negotiate", /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */

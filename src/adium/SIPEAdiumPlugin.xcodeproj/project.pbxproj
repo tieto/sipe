@@ -41,6 +41,7 @@
 		1CF2611412C2E1AA0045B6CC /* sdpmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2610812C2E1AA0045B6CC /* sdpmsg.c */; };
 		1CF2611812C2E1AA0045B6CC /* sipe-groupchat.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2610C12C2E1AA0045B6CC /* sipe-groupchat.c */; };
 		1CF2611912C2E1AA0045B6CC /* sipe-incoming.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2610D12C2E1AA0045B6CC /* sipe-incoming.c */; };
+		1CF2611B12C2E1AA0045B6CC /* sipe-ucs.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2610F12C2E1AA0045B6CC /* sipe-ucs.c */; };
 		1CF2611C12C2E1AA0045B6CC /* sipe-subscriptions.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2611012C2E1AA0045B6CC /* sipe-subscriptions.c */; };
 		1CF2611D12C2E1AA0045B6CC /* sipe-user.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2611112C2E1AA0045B6CC /* sipe-user.c */; };
 		1CF2612C12C2E73F0045B6CC /* ESPurpleSIPEAccount.m in Sources */ = {isa = PBXBuildFile; fileRef = C99F358E109AE68400E79CB2 /* ESPurpleSIPEAccount.m */; };
@@ -68,6 +69,7 @@
 		7B6505BC170BCB22002107A1 /* libnspr4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */; };
 		7B78055816DEC73400B844A6 /* ESSIPEAccountView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */; };
 		7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */; };
+		7B7805DA16DFF8D300B844A6 /* sip-sec-basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */; };
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
 		B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB4F119D5155001CE037 /* purple-connection.c */; };
@@ -95,6 +97,7 @@
 		B13FABF8119D585A001CE037 /* sipe-dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBC119D585A001CE037 /* sipe-dialog.c */; };
 		B13FABFB119D585A001CE037 /* sipe-domino.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBF119D585A001CE037 /* sipe-domino.c */; };
 		B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC1119D585A001CE037 /* sipe-ews.c */; };
+		B13FABFE119D585A001CE037 /* sipe-ews-autodiscover.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */; };
 		B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC3119D585A001CE037 /* sipe-ft.c */; };
 		B13FAC04119D585A001CE037 /* sipe-schedule.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC8119D585A001CE037 /* sipe-schedule.c */; };
 		B13FAC06119D585A001CE037 /* sipe-session.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABCA119D585A001CE037 /* sipe-session.c */; };
@@ -250,6 +253,7 @@
 		1CF2610812C2E1AA0045B6CC /* sdpmsg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sdpmsg.c; sourceTree = "<group>"; };
 		1CF2610C12C2E1AA0045B6CC /* sipe-groupchat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-groupchat.c"; sourceTree = "<group>"; };
 		1CF2610D12C2E1AA0045B6CC /* sipe-incoming.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-incoming.c"; sourceTree = "<group>"; };
+		1CF2610F12C2E1AA0045B6CC /* sipe-ucs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ucs.c"; sourceTree = "<group>"; };
 		1CF2611012C2E1AA0045B6CC /* sipe-subscriptions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-subscriptions.c"; sourceTree = "<group>"; };
 		1CF2611112C2E1AA0045B6CC /* sipe-user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-user.c"; sourceTree = "<group>"; };
 		32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIPEAdiumPlugin_Prefix.pch; sourceTree = "<group>"; };
@@ -266,6 +270,7 @@
 		7B57773F166EC5FB000DBCD5 /* libnss3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnss3.dylib; path = mozilla/security/nss/lib/nss/Darwin11.4.2_64_OPT.OBJ/libnss3.dylib; sourceTree = NSS_SRCPATH; };
 		7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ESSIPEAccountView.xib; path = English.lproj/ESSIPEAccountView.xib; sourceTree = "<group>"; };
 		7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-negotiate.c"; sourceTree = "<group>"; };
+		7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-basic.c"; sourceTree = "<group>"; };
 		8D5B49B6048680CD000E48DA /* SIPEAdiumPlugin.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SIPEAdiumPlugin.AdiumLibpurplePlugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		B13FAB4F119D5155001CE037 /* purple-connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-connection.c"; sourceTree = "<group>"; };
@@ -293,6 +298,7 @@
 		B13FABBC119D585A001CE037 /* sipe-dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-dialog.c"; sourceTree = "<group>"; };
 		B13FABBF119D585A001CE037 /* sipe-domino.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-domino.c"; sourceTree = "<group>"; };
 		B13FABC1119D585A001CE037 /* sipe-ews.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ews.c"; sourceTree = "<group>"; };
+		B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ews-autodiscover.c"; sourceTree = "<group>"; };
 		B13FABC3119D585A001CE037 /* sipe-ft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ft.c"; sourceTree = "<group>"; };
 		B13FABC8119D585A001CE037 /* sipe-schedule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-schedule.c"; sourceTree = "<group>"; };
 		B13FABCA119D585A001CE037 /* sipe-session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-session.c"; sourceTree = "<group>"; };
@@ -514,6 +520,7 @@
 				1CE4A00114A17FD100663393 /* sip-sec-digest.c */,
 				1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */,
 				7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */,
+				7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */,
 				1CE4A00214A17FD100663393 /* sipe-certificate.c */,
 				1CE4A00414A17FD100663393 /* sipe-tls-tester.c */,
 				1CE4A00514A17FD100663393 /* sipe-tls.c */,
@@ -530,6 +537,7 @@
 				1CF2610812C2E1AA0045B6CC /* sdpmsg.c */,
 				1CF2610C12C2E1AA0045B6CC /* sipe-groupchat.c */,
 				1CF2610D12C2E1AA0045B6CC /* sipe-incoming.c */,
+				1CF2610F12C2E1AA0045B6CC /* sipe-ucs.c */,
 				1CF2611012C2E1AA0045B6CC /* sipe-subscriptions.c */,
 				1CF2611112C2E1AA0045B6CC /* sipe-user.c */,
 				B13FABA3119D585A001CE037 /* sip-csta.c */,
@@ -542,6 +550,7 @@
 				B13FABBC119D585A001CE037 /* sipe-dialog.c */,
 				B13FABBF119D585A001CE037 /* sipe-domino.c */,
 				B13FABC1119D585A001CE037 /* sipe-ews.c */,
+				B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */,
 				B13FABC3119D585A001CE037 /* sipe-ft.c */,
 				B13FABC8119D585A001CE037 /* sipe-schedule.c */,
 				B13FABCA119D585A001CE037 /* sipe-session.c */,
@@ -735,6 +744,7 @@
 				1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */,
 				1CDEE46112C35DAD00790CAF /* ESSIPEAccountViewController.m in Sources */,
 				7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */,
+				7B7805DA16DFF8D300B844A6 /* sip-sec-basic.c in Sources */,
 				7B379594176A2DDF001A02FD /* sipe-http-request.c in Sources */,
 				7B379595176A2DDF001A02FD /* sipe-http-transport.c in Sources */,
 				7B379596176A2DDF001A02FD /* sipe-http.c in Sources */,
@@ -770,6 +780,7 @@
 				B13FABF8119D585A001CE037 /* sipe-dialog.c in Sources */,
 				B13FABFB119D585A001CE037 /* sipe-domino.c in Sources */,
 				B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */,
+				B13FABFE119D585A001CE037 /* sipe-ews-autodiscover.c in Sources */,
 				B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */,
 				B13FAC04119D585A001CE037 /* sipe-schedule.c in Sources */,
 				B13FAC06119D585A001CE037 /* sipe-session.c in Sources */,
@@ -788,6 +799,7 @@
 				1CF2611412C2E1AA0045B6CC /* sdpmsg.c in Sources */,
 				1CF2611812C2E1AA0045B6CC /* sipe-groupchat.c in Sources */,
 				1CF2611912C2E1AA0045B6CC /* sipe-incoming.c in Sources */,
+				1CF2611B12C2E1AA0045B6CC /* sipe-ucs.c in Sources */,
 				1CF2611C12C2E1AA0045B6CC /* sipe-subscriptions.c in Sources */,
 				1CF2611D12C2E1AA0045B6CC /* sipe-user.c in Sources */,
 				1C822BED12F8E87500CC4AEA /* sipe-im.c in Sources */,
@@ -917,8 +929,8 @@
 					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
-					"PACKAGE_VERSION=\\\"1.16.1\\\"",
-					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.16.1\\\"",
+					"PACKAGE_VERSION=\\\"1.17.0\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.0\\\"",
 					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
 					"STDC_HEADERS=1",
 					"HAVE_SYS_TYPES_H=1",
@@ -990,8 +1002,8 @@
 					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
-					"PACKAGE_VERSION=\\\"1.16.1\\\"",
-					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.16.1\\\"",
+					"PACKAGE_VERSION=\\\"1.17.0\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.0\\\"",
 					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
 					"STDC_HEADERS=1",
 					"HAVE_SYS_TYPES_H=1",
@@ -1061,8 +1073,8 @@
 					"ADIUM=1",
 					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
-					"PACKAGE_VERSION=\\\"1.16.1\\\"",
-					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.16.1\\\"",
+					"PACKAGE_VERSION=\\\"1.17.0\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.0\\\"",
 					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
 					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
 					"STDC_HEADERS=1",
@@ -1117,8 +1129,8 @@
 					"ADIUM=1",
 					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
-					"PACKAGE_VERSION=\\\"1.16.1\\\"",
-					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.16.1\\\"",
+					"PACKAGE_VERSION=\\\"1.17.0\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.0\\\"",
 					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
 					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
 					"STDC_HEADERS=1",

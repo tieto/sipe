@@ -43,7 +43,7 @@ void sipe_subscribe_presence_single(struct sipe_core_private *sipe_private,
 				    const gchar *to);
 void sipe_subscribe_presence_single_cb(struct sipe_core_private *sipe_private,
 				       gpointer uri);
-void sipe_subscribe_presence_batched(struct sipe_core_private *sipe_private);
+void sipe_subscribe_presence_initial(struct sipe_core_private *sipe_private);
 void sipe_subscribe_poolfqdn_resource_uri(const gchar *host,
 					  GSList *server,
 					  struct sipe_core_private *sipe_private);

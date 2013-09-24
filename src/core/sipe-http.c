@@ -48,12 +48,20 @@ void sipe_http_parsed_uri_free(struct sipe_http_parsed_uri *parsed_uri)
 struct sipe_http_parsed_uri *sipe_http_parse_uri(const gchar *uri)
 {
 	struct sipe_http_parsed_uri *parsed_uri = NULL;
+	guint offset = 0;
+	gboolean tls = FALSE;
 
 //	SIPE_DEBUG_INFO("sipe_http_parse_uri: '%s'", uri);
 
-	/* Currently only HTTPS is supported */
 	if (g_str_has_prefix(uri, "https://")) {
-		gchar **hostport_path = g_strsplit(uri + 8, "/", 2);
+		offset = 8;
+		tls    = TRUE;
+	} else if (g_str_has_prefix(uri, "http://")) {
+		offset = 7;
+	}
+
+	if (offset) {
+		gchar **hostport_path = g_strsplit(uri + offset, "/", 2);
 
 		if (hostport_path && hostport_path[0] && hostport_path[1]) {
 			gchar **host_port = g_strsplit(hostport_path[0], ":", 2);
@@ -66,14 +74,20 @@ struct sipe_http_parsed_uri *sipe_http_parse_uri(const gchar *uri)
 				parsed_uri = g_new0(struct sipe_http_parsed_uri, 1);
 				parsed_uri->host = g_strdup(host_port[0]);
 				parsed_uri->path = g_strdup(hostport_path[1]);
+				parsed_uri->tls  = tls;
 
 				if (host_port[1])
 					parsed_uri->port = g_ascii_strtoull(host_port[1],
 									    NULL,
 									    10);
-				if (parsed_uri->port == 0)
-					/* default port for https */
-					parsed_uri->port = 443;
+				if (parsed_uri->port == 0) {
+					if (tls)
+						/* default port for https */
+						parsed_uri->port = 443;
+					else
+						/* default port for http */
+						parsed_uri->port = 80;
+				}
 
 				SIPE_DEBUG_INFO("sipe_http_parse_uri: host '%s' port %d path '%s'",
 						parsed_uri->host, parsed_uri->port, parsed_uri->path);

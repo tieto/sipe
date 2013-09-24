@@ -53,9 +53,23 @@
 #include "sipe-status.h"
 #include "sipe-subscriptions.h"
 #include "sipe-svc.h"
+#include "sipe-ucs.h"
 #include "sipe-utils.h"
 #include "sipe-webticket.h"
 #include "sipe-xml.h"
+
+struct sipe_buddies {
+	GHashTable *uri;
+	GHashTable *exchange_key;
+
+	/* Pending photo download HTTP requests */
+	GSList *pending_photo_requests;
+};
+
+struct buddy_group_data {
+	const struct sipe_group *group;
+	gboolean is_obsolete;
+};
 
 struct photo_response_data {
 	gchar *who;
@@ -67,23 +81,282 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 			      const gchar *uri);
 static void photo_response_data_free(struct photo_response_data *data);
 
-struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
-				  const gchar *uri)
+void sipe_buddy_add_keys(struct sipe_core_private *sipe_private,
+			 struct sipe_buddy *buddy,
+			 const gchar *exchange_key,
+			 const gchar *change_key)
 {
-	struct sipe_buddy *buddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	if (exchange_key) {
+		buddy->exchange_key = g_strdup(exchange_key);
+		g_hash_table_insert(sipe_private->buddies->exchange_key,
+				    buddy->exchange_key,
+				    buddy);
+	}
+	if (change_key)
+		buddy->change_key = g_strdup(change_key);
+}
+
+struct sipe_buddy *sipe_buddy_add(struct sipe_core_private *sipe_private,
+				  const gchar *uri,
+				  const gchar *exchange_key,
+				  const gchar *change_key)
+{
+	/* Buddy name must be lower case as we use purple_normalize_nocase() to compare */
+	gchar *normalized_uri = g_ascii_strdown(uri, -1);
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+							  normalized_uri);
+
 	if (!buddy) {
 		buddy = g_new0(struct sipe_buddy, 1);
-		buddy->name = g_strdup(uri);
-		g_hash_table_insert(sipe_private->buddies, buddy->name, buddy);
+		buddy->name = normalized_uri;
+		g_hash_table_insert(sipe_private->buddies->uri,
+				    buddy->name,
+				    buddy);
 
-		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", uri);
+		sipe_buddy_add_keys(sipe_private,
+				    buddy,
+				    exchange_key,
+				    change_key);
 
-		buddy_fetch_photo(sipe_private, uri);
+		SIPE_DEBUG_INFO("sipe_buddy_add: Added buddy %s", normalized_uri);
+
+		if (SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES)) {
+			buddy->just_added = TRUE;
+			sipe_subscribe_presence_single_cb(sipe_private,
+							  buddy->name);
+		}
+
+		buddy_fetch_photo(sipe_private, normalized_uri);
+
+		normalized_uri = NULL; /* buddy takes ownership */
 	} else {
-		SIPE_DEBUG_INFO("sipe_buddy_add: Buddy %s already exists", uri);
+		SIPE_DEBUG_INFO("sipe_buddy_add: Buddy %s already exists", normalized_uri);
+		buddy->is_obsolete = FALSE;
+	}
+	g_free(normalized_uri);
+
+	return(buddy);
+}
+
+static gboolean is_buddy_in_group(struct sipe_buddy *buddy,
+				  const gchar *name)
+{
+	if (buddy) {
+		GSList *entry = buddy->groups;
+
+		while (entry) {
+			struct buddy_group_data *bgd = entry->data;
+			if (sipe_strequal(bgd->group->name, name)) {
+				bgd->is_obsolete = FALSE;
+				return(TRUE);
+			}
+			entry = entry->next;
+		}
 	}
 
-	return buddy;
+	return(FALSE);
+}
+
+void sipe_buddy_add_to_group(struct sipe_core_private *sipe_private,
+			     struct sipe_buddy *buddy,
+			     struct sipe_group *group,
+			     const gchar *alias)
+{
+	const gchar *uri = buddy->name;
+	const gchar *group_name = group->name;
+	sipe_backend_buddy bb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+							uri,
+							group_name);
+
+	if (!bb) {
+		bb = sipe_backend_buddy_add(SIPE_CORE_PUBLIC,
+					    uri,
+					    alias,
+					    group_name);
+		SIPE_DEBUG_INFO("sipe_buddy_add_to_group: created backend buddy '%s' with alias '%s'",
+				uri, alias ? alias : "<NONE>");
+	}
+
+
+	if (!is_empty(alias)) {
+		gchar *old_alias = sipe_backend_buddy_get_alias(SIPE_CORE_PUBLIC,
+								bb);
+
+		if (sipe_strcase_equal(sipe_get_no_sip_uri(uri),
+				       old_alias)) {
+			sipe_backend_buddy_set_alias(SIPE_CORE_PUBLIC,
+						     bb,
+						     alias);
+			SIPE_DEBUG_INFO("sipe_buddy_add_to_group: replaced alias for buddy '%s': old '%s' new '%s'",
+					uri, old_alias, alias);
+		}
+		g_free(old_alias);
+	}
+
+	if (!is_buddy_in_group(buddy, group_name)) {
+		sipe_buddy_insert_group(buddy, group);
+		SIPE_DEBUG_INFO("sipe_buddy_add_to_group: added buddy %s to group %s",
+				uri, group_name);
+	}
+}
+
+static gint buddy_group_compare(gconstpointer a, gconstpointer b)
+{
+	return(((const struct buddy_group_data *)a)->group->id -
+	       ((const struct buddy_group_data *)b)->group->id);
+}
+
+void sipe_buddy_insert_group(struct sipe_buddy *buddy,
+			     struct sipe_group *group)
+{
+	struct buddy_group_data *bgd = g_new0(struct buddy_group_data, 1);
+
+	bgd->group = group;
+
+	buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
+							      bgd,
+							      buddy_group_compare,
+							      NULL);
+}
+
+static void buddy_group_free(gpointer data)
+{
+	g_free(data);
+}
+
+static void buddy_group_remove(struct sipe_buddy *buddy,
+			       struct buddy_group_data *bgd)
+{
+	buddy->groups = g_slist_remove(buddy->groups, bgd);
+	buddy_group_free(bgd);
+}
+
+static void sipe_buddy_remove_group(struct sipe_buddy *buddy,
+				    const struct sipe_group *group)
+{
+	GSList *entry = buddy->groups;
+	struct buddy_group_data *bgd = NULL;
+
+	while (entry) {
+		bgd = entry->data;
+		if (bgd->group == group)
+			break;
+		entry = entry->next;
+	}
+
+	buddy_group_remove(buddy, bgd);
+}
+
+void sipe_buddy_update_groups(struct sipe_core_private *sipe_private,
+			      struct sipe_buddy *buddy,
+			      GSList *new_groups)
+{
+	const gchar *uri = buddy->name;
+	GSList *entry = buddy->groups;
+
+	while (entry) {
+		struct buddy_group_data *bgd = entry->data;
+		const struct sipe_group *group = bgd->group;
+
+		/* next buddy group */
+		entry = entry->next;
+
+		/* old group NOT found in new list? */
+		if (g_slist_find(new_groups, group) == NULL) {
+			sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+									  uri,
+									  group->name);
+			SIPE_DEBUG_INFO("sipe_buddy_update_groups: removing buddy %s from group '%s'",
+					uri, group->name);
+			/* this should never be NULL */
+			if (oldb)
+				sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+							  oldb);
+			buddy_group_remove(buddy, bgd);
+		}
+	}
+}
+
+gchar *sipe_buddy_groups_string(struct sipe_buddy *buddy)
+{
+	guint i = 0;
+	gchar *string;
+	/* creating array from GList, converting guint to gchar * */
+	gchar **ids_arr = g_new(gchar *, g_slist_length(buddy->groups) + 1);
+	GSList *entry = buddy->groups;
+
+	if (!ids_arr)
+		return(NULL);
+
+	while (entry) {
+		const struct sipe_group *group = ((struct buddy_group_data *) entry->data)->group;
+		ids_arr[i] = g_strdup_printf("%u", group->id);
+		entry = entry->next;
+		i++;
+	}
+	ids_arr[i] = NULL;
+
+	string = g_strjoinv(" ", ids_arr);
+	g_strfreev(ids_arr);
+
+	return(string);
+}
+
+void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
+{
+	GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC,
+						      NULL,
+						      NULL);
+	GSList *entry = buddies;
+
+	SIPE_DEBUG_INFO("sipe_buddy_cleanup_local_list: overall %d backend buddies (including clones)",
+			g_slist_length(buddies));
+	SIPE_DEBUG_INFO("sipe_buddy_cleanup_local_list: %d sipe buddies (unique)",
+			sipe_buddy_count(sipe_private));
+	while (entry) {
+		sipe_backend_buddy bb = entry->data;
+		gchar *bname = sipe_backend_buddy_get_name(SIPE_CORE_PUBLIC,
+							   bb);
+		gchar *gname = sipe_backend_buddy_get_group_name(SIPE_CORE_PUBLIC,
+								 bb);
+		struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+								  bname);
+
+		if (!is_buddy_in_group(buddy, gname)) {
+			SIPE_DEBUG_INFO("sipe_buddy_cleanup_local_list: REMOVING '%s' from local group '%s', as buddy is not in that group on remote contact list",
+					bname, gname);
+			sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, bb);
+		}
+
+		g_free(gname);
+		g_free(bname);
+
+		entry = entry->next;
+	}
+
+	g_slist_free(buddies);
+}
+
+struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private,
+					  const gchar *uri)
+{
+	return(g_hash_table_lookup(sipe_private->buddies->uri, uri));
+}
+
+struct sipe_buddy *sipe_buddy_find_by_exchange_key(struct sipe_core_private *sipe_private,
+						   const gchar *exchange_key)
+{
+	return(g_hash_table_lookup(sipe_private->buddies->exchange_key,
+				   exchange_key));
+}
+
+void sipe_buddy_foreach(struct sipe_core_private *sipe_private,
+			GHFunc callback,
+			gpointer callback_data)
+{
+	g_hash_table_foreach(sipe_private->buddies->uri,
+			     callback,
+			     callback_data);
 }
 
 static void buddy_free(struct sipe_buddy *buddy)
@@ -104,6 +377,8 @@ static void buddy_free(struct sipe_buddy *buddy)
 	  */
 	g_free(buddy->name);
 #endif
+	g_free(buddy->exchange_key);
+	g_free(buddy->change_key);
 	g_free(buddy->activity);
 	g_free(buddy->meeting_subject);
 	g_free(buddy->meeting_location);
@@ -117,7 +392,7 @@ static void buddy_free(struct sipe_buddy *buddy)
 	sipe_cal_free_working_hours(buddy->cal_working_hours);
 
 	g_free(buddy->device_name);
-	g_slist_free(buddy->groups);
+	sipe_utils_slist_free_full(buddy->groups, buddy_group_free);
 	g_free(buddy);
 }
 
@@ -130,20 +405,112 @@ static gboolean buddy_free_cb(SIPE_UNUSED_PARAMETER gpointer key,
 	return(TRUE);
 }
 
-void sipe_buddy_free_all(struct sipe_core_private *sipe_private)
+void sipe_buddy_free(struct sipe_core_private *sipe_private)
 {
-	g_hash_table_foreach_steal(sipe_private->buddies,
+	struct sipe_buddies *buddies = sipe_private->buddies;
+
+	g_hash_table_foreach_steal(buddies->uri,
 				   buddy_free_cb,
 				   NULL);
 
 	/* core is being deallocated, remove all its pending photo requests */
-	while (sipe_private->pending_photo_requests) {
+	while (buddies->pending_photo_requests) {
 		struct photo_response_data *data =
-			sipe_private->pending_photo_requests->data;
-		sipe_private->pending_photo_requests =
-			g_slist_remove(sipe_private->pending_photo_requests, data);
+			buddies->pending_photo_requests->data;
+		buddies->pending_photo_requests =
+			g_slist_remove(buddies->pending_photo_requests, data);
 		photo_response_data_free(data);
 	}
+
+	g_hash_table_destroy(buddies->uri);
+	g_hash_table_destroy(buddies->exchange_key);
+	g_free(buddies);
+	sipe_private->buddies = NULL;
+}
+
+static void buddy_set_obsolete_flag(SIPE_UNUSED_PARAMETER gpointer key,
+				    gpointer value,
+				    SIPE_UNUSED_PARAMETER gpointer user_data)
+{
+	struct sipe_buddy *buddy = value;
+	GSList *entry = buddy->groups;
+
+	buddy->is_obsolete = TRUE;
+	while (entry) {
+		((struct buddy_group_data *) entry->data)->is_obsolete = TRUE;
+		entry = entry->next;
+	}
+}
+
+void sipe_buddy_update_start(struct sipe_core_private *sipe_private)
+{
+	g_hash_table_foreach(sipe_private->buddies->uri,
+			     buddy_set_obsolete_flag,
+			     NULL);
+}
+
+static gboolean buddy_check_obsolete_flag(SIPE_UNUSED_PARAMETER gpointer key,
+					  gpointer value,
+					  gpointer user_data)
+{
+	struct sipe_core_private *sipe_private = user_data;
+	struct sipe_buddy *buddy = value;
+	const gchar *uri = buddy->name;
+
+	if (buddy->is_obsolete) {
+		/* all backend buddies in different groups */
+		GSList *buddies = sipe_backend_buddy_find_all(SIPE_CORE_PUBLIC,
+							      uri,
+							      NULL);
+		GSList *entry = buddies;
+
+		SIPE_DEBUG_INFO("buddy_check_obsolete_flag: REMOVING %d backend buddies for '%s'",
+				g_slist_length(buddies),
+				uri);
+
+		while (entry) {
+			sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+						  entry->data);
+			entry = entry->next;
+		}
+		g_slist_free(buddies);
+
+		buddy_free(buddy);
+		/* return TRUE as the key/value have already been deleted */
+		return(TRUE);
+
+	} else {
+		GSList *entry = buddy->groups;
+
+		while (entry) {
+			struct buddy_group_data *bgd = entry->data;
+
+			/* next buddy group */
+			entry = entry->next;
+
+			if (bgd->is_obsolete) {
+				const struct sipe_group *group = bgd->group;
+				sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+										  uri,
+										  group->name);
+				SIPE_DEBUG_INFO("buddy_check_obsolete_flag: removing buddy '%s' from group '%s'",
+						uri, group->name);
+				/* this should never be NULL */
+				if (oldb)
+					sipe_backend_buddy_remove(SIPE_CORE_PUBLIC,
+								  oldb);
+				buddy_group_remove(buddy, bgd);
+			}
+		}
+		return(FALSE);
+	}
+}
+
+void sipe_buddy_update_finish(struct sipe_core_private *sipe_private)
+{
+	g_hash_table_foreach_remove(sipe_private->buddies->uri,
+				    buddy_check_obsolete_flag,
+				    sipe_private);
 }
 
 gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
@@ -156,7 +523,7 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 
 	if (!sipe_public) return NULL; /* happens on pidgin exit */
 
-	sbuddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, uri);
+	sbuddy = sipe_buddy_find_by_uri(SIPE_CORE_PRIVATE, uri);
 	if (!sbuddy) return NULL;
 
 	activity_str = sbuddy->activity ? sbuddy->activity :
@@ -190,36 +557,82 @@ void sipe_core_buddy_group(struct sipe_core_public *sipe_public,
 			   const gchar *old_group_name,
 			   const gchar *new_group_name)
 {
-	struct sipe_buddy * buddy = g_hash_table_lookup(SIPE_CORE_PRIVATE->buddies, who);
-	struct sipe_group * old_group = NULL;
-	struct sipe_group * new_group;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+							  who);
+	struct sipe_group *old_group = NULL;
+	struct sipe_group *new_group;
+	struct sipe_ucs_transaction *ucs_trans = NULL;
 
-	SIPE_DEBUG_INFO("sipe_core_buddy_group: who:%s old_group_name:%s new_group_name:%s",
-			who ? who : "", old_group_name ? old_group_name : "", new_group_name ? new_group_name : "");
+	SIPE_DEBUG_INFO("sipe_core_buddy_group: buddy '%s' old group '%s' new group '%s'",
+			who ? who : "",
+			old_group_name ? old_group_name : "<UNDEFINED>",
+			new_group_name ? new_group_name : "<UNDEFINED>");
 
-	if(!buddy) { // buddy not in roaming list
+	if (!buddy)
+		/* buddy not in roaming list */
 		return;
-	}
 
-	if (old_group_name) {
-		old_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, old_group_name);
-	}
-	new_group = sipe_group_find_by_name(SIPE_CORE_PRIVATE, new_group_name);
-
+	old_group = sipe_group_find_by_name(sipe_private, old_group_name);
 	if (old_group) {
-		buddy->groups = g_slist_remove(buddy->groups, old_group);
-		SIPE_DEBUG_INFO("sipe_core_buddy_group: buddy %s removed from old group %s", who, old_group_name);
+		sipe_buddy_remove_group(buddy, old_group);
+		SIPE_DEBUG_INFO("sipe_core_buddy_group: buddy '%s' removed from old group '%s'",
+				who, old_group_name);
 	}
 
-	if (!new_group) {
-		sipe_group_create(SIPE_CORE_PRIVATE, new_group_name, who);
-	} else {
-		buddy->groups = sipe_utils_slist_insert_unique_sorted(buddy->groups,
-								      new_group,
-								      (GCompareFunc)sipe_group_compare,
-								      NULL);
-		sipe_group_update_buddy(SIPE_CORE_PRIVATE, buddy);
+	new_group = sipe_group_find_by_name(sipe_private, new_group_name);
+	if (new_group) {
+		sipe_buddy_insert_group(buddy, new_group);
+		SIPE_DEBUG_INFO("sipe_core_buddy_group: buddy '%s' added to new group '%s'",
+				who, new_group_name);
 	}
+
+	if (sipe_ucs_is_migrated(sipe_private)) {
+
+		/* UCS handling */
+		ucs_trans = sipe_ucs_transaction(sipe_private);
+
+		if (new_group) {
+			/*
+			 * 1. new buddy added to existing group
+			 * 2. existing buddy moved from old to existing group
+			 */
+			sipe_ucs_group_add_buddy(sipe_private,
+						 ucs_trans,
+						 new_group,
+						 buddy,
+						 buddy->name);
+			if (old_group)
+				sipe_ucs_group_remove_buddy(sipe_private,
+							    ucs_trans,
+							    old_group,
+							    buddy);
+
+		} else if (old_group) {
+			/*
+			 * 3. existing buddy removed from one of its groups
+			 * 4. existing buddy removed from last group
+			 */
+			sipe_ucs_group_remove_buddy(sipe_private,
+						    ucs_trans,
+						    old_group,
+						    buddy);
+			if (g_slist_length(buddy->groups) < 1)
+				sipe_buddy_remove(sipe_private,
+						  buddy);
+				/* buddy no longer valid */
+		}
+
+	/* non-UCS handling */
+	} else if (new_group)
+		sipe_group_update_buddy(sipe_private, buddy);
+
+	/* 5. buddy added to new group */
+	if (!new_group)
+		sipe_group_create(sipe_private,
+				  ucs_trans,
+				  new_group_name,
+				  who);
 }
 
 void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
@@ -228,16 +641,14 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-	if (!g_hash_table_lookup(sipe_private->buddies, uri)) {
-		struct sipe_buddy *b = sipe_buddy_add(sipe_private, uri);
-		b->just_added = TRUE;
-
-		sipe_subscribe_presence_single_cb(sipe_private, b->name);
-
-	} else {
+	if (!sipe_buddy_find_by_uri(sipe_private, uri))
+		sipe_buddy_add(sipe_private,
+			       uri,
+			       NULL,
+			       NULL);
+	else
 		SIPE_DEBUG_INFO("sipe_core_buddy_add: buddy %s already in internal list",
 				uri);
-	}
 
 	sipe_core_buddy_group(sipe_public,
 			      uri,
@@ -248,11 +659,31 @@ void sipe_core_buddy_add(struct sipe_core_public *sipe_public,
 void sipe_buddy_remove(struct sipe_core_private *sipe_private,
 		       struct sipe_buddy *buddy)
 {
-	gchar *action_name = sipe_utils_presence_key(buddy->name);
+	struct sipe_buddies *buddies = sipe_private->buddies;
+	const gchar *uri = buddy->name;
+	GSList *entry = buddy->groups;
+	gchar *action_name = sipe_utils_presence_key(uri);
+
 	sipe_schedule_cancel(sipe_private, action_name);
 	g_free(action_name);
 
-	g_hash_table_remove(sipe_private->buddies, buddy->name);
+	/* If the buddy still has groups, we need to delete backend buddies */
+	while (entry) {
+		const struct sipe_group *group = ((struct buddy_group_data *) entry->data)->group;
+		sipe_backend_buddy oldb = sipe_backend_buddy_find(SIPE_CORE_PUBLIC,
+								  uri,
+								  group->name);
+		/* this should never be NULL */
+		if (oldb)
+			sipe_backend_buddy_remove(SIPE_CORE_PUBLIC, oldb);
+
+		entry = entry->next;
+	}
+
+	g_hash_table_remove(buddies->uri, uri);
+	if (buddy->exchange_key)
+		g_hash_table_remove(buddies->exchange_key,
+				    buddy->exchange_key);
 
 	buddy_free(buddy);
 }
@@ -267,34 +698,48 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 			    const gchar *group_name)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *b = g_hash_table_lookup(sipe_private->buddies,
-						   uri);
+	struct sipe_buddy *buddy = sipe_buddy_find_by_uri(sipe_private,
+							  uri);
+	struct sipe_group *group = NULL;
 
-	if (!b) return;
+	if (!buddy) return;
 
 	if (group_name) {
-		struct sipe_group *g = sipe_group_find_by_name(sipe_private,
-							       group_name);
-		if (g) {
-			b->groups = g_slist_remove(b->groups, g);
-			SIPE_DEBUG_INFO("sipe_core_buddy_remove: buddy %s removed from group %s",
-					uri, g->name);
+		group = sipe_group_find_by_name(sipe_private, group_name);
+		if (group) {
+			sipe_buddy_remove_group(buddy, group);
+			SIPE_DEBUG_INFO("sipe_core_buddy_remove: buddy '%s' removed from group '%s'",
+					uri, group->name);
 		}
 	}
 
-	if (g_slist_length(b->groups) < 1) {
-		gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
-						 b->name);
-		sip_soap_request(sipe_private,
-				 "deleteContact",
-				 request);
-		g_free(request);
-		sipe_buddy_remove(sipe_private, b);
-	} else {
-		/* updates groups on server */
-		sipe_group_update_buddy(sipe_private, b);
-	}
+	if (g_slist_length(buddy->groups) < 1) {
 
+		if (sipe_ucs_is_migrated(sipe_private)) {
+			sipe_ucs_group_remove_buddy(sipe_private,
+						    NULL,
+						    group,
+						    buddy);
+		} else {
+			gchar *request = g_strdup_printf("<m:URI>%s</m:URI>",
+							 buddy->name);
+			sip_soap_request(sipe_private,
+					 "deleteContact",
+					 request);
+			g_free(request);
+		}
+
+		sipe_buddy_remove(sipe_private, buddy);
+	} else {
+		if (sipe_ucs_is_migrated(sipe_private)) {
+			sipe_ucs_group_remove_buddy(sipe_private,
+						    NULL,
+						    group,
+						    buddy);
+		} else
+			/* updates groups on server */
+			sipe_group_update_buddy(sipe_private, buddy);
+	}
 }
 
 void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
@@ -302,8 +747,8 @@ void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 				guint activity)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies,
-							uri);
+	struct sipe_buddy *sbuddy = sipe_buddy_find_by_uri(sipe_private,
+							   uri);
 
 	if (!sbuddy) return;
 
@@ -344,7 +789,8 @@ void sipe_core_buddy_tooltip_info(struct sipe_core_public *sipe_public,
 	sipe_backend_buddy_tooltip_add(sipe_public, tooltip, (l), (t))
 
 	if (sipe_public) { /* happens on pidgin exit */
-		struct sipe_buddy *sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+		struct sipe_buddy *sbuddy = sipe_buddy_find_by_uri(sipe_private,
+								   uri);
 		if (sbuddy) {
 			note = sbuddy->note;
 			is_oof_note = sbuddy->is_oof_note;
@@ -931,7 +1377,7 @@ static void get_info_finalize(struct sipe_core_private *sipe_private,
 		g_free(value);
 	}
 
-	sbuddy = g_hash_table_lookup(sipe_private->buddies, uri);
+	sbuddy = sipe_buddy_find_by_uri(sipe_private, uri);
 	if (sbuddy && sbuddy->device_name) {
 		sipe_backend_buddy_info_add(SIPE_CORE_PUBLIC,
 					    info,
@@ -1265,8 +1711,8 @@ static void process_buddy_photo_response(struct sipe_core_private *sipe_private,
 		}
 	}
 
-	sipe_private->pending_photo_requests =
-		g_slist_remove(sipe_private->pending_photo_requests, rdata);
+	sipe_private->buddies->pending_photo_requests =
+		g_slist_remove(sipe_private->buddies->pending_photo_requests, rdata);
 
 	photo_response_data_free(rdata);
 }
@@ -1351,8 +1797,8 @@ static void get_photo_ab_entry_response(struct sipe_core_private *sipe_private,
 						      data);
 
 		if (data->request) {
-			sipe_private->pending_photo_requests =
-				g_slist_append(sipe_private->pending_photo_requests, data);
+			sipe_private->buddies->pending_photo_requests =
+				g_slist_append(sipe_private->buddies->pending_photo_requests, data);
 			sipe_http_request_ready(data->request);
 		} else {
 			photo_response_data_free(data);
@@ -1376,20 +1822,29 @@ static void get_photo_ab_entry_failed(SIPE_UNUSED_PARAMETER struct sipe_core_pri
 static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 			      const gchar *uri)
 {
-	if (sipe_backend_uses_photo() &&
-	    sipe_private->dlx_uri && sipe_private->addressbook_uri) {
-		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+        if (sipe_backend_uses_photo()) {
 
-		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup("msRTCSIP-PrimaryUserAddress"));
-		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup(uri));
+		/* Lync 2013 or newer: use UCS */
+		if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013)) {
 
-		mdd->other           = g_strdup(uri);
-		mdd->max_returns     = 1;
-		mdd->callback        = get_photo_ab_entry_response;
-		mdd->failed_callback = get_photo_ab_entry_failed;
-		mdd->session         = sipe_svc_session_start();
+			sipe_ucs_get_photo(sipe_private, uri);
 
-		ms_dlx_webticket_request(sipe_private, mdd);
+		/* Lync 2010: use [MS-DLX] */
+		} else if (sipe_private->dlx_uri         &&
+			   sipe_private->addressbook_uri) {
+			struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+
+			mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup("msRTCSIP-PrimaryUserAddress"));
+			mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup(uri));
+
+			mdd->other           = g_strdup(uri);
+			mdd->max_returns     = 1;
+			mdd->callback        = get_photo_ab_entry_response;
+			mdd->failed_callback = get_photo_ab_entry_failed;
+			mdd->session         = sipe_svc_session_start();
+
+			ms_dlx_webticket_request(sipe_private, mdd);
+		}
 	}
 }
 
@@ -1402,7 +1857,7 @@ static void buddy_refresh_photos_cb(gpointer uri,
 
 void sipe_buddy_refresh_photos(struct sipe_core_private *sipe_private)
 {
-	g_hash_table_foreach(sipe_private->buddies,
+	g_hash_table_foreach(sipe_private->buddies->uri,
 			     buddy_refresh_photos_cb,
 			     sipe_private);
 }
@@ -1642,6 +2097,50 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 											buddy_name));
 
 	return(menu);
+}
+
+guint sipe_buddy_count(struct sipe_core_private *sipe_private)
+{
+	return(g_hash_table_size(sipe_private->buddies->uri));
+}
+
+static guint sipe_ht_hash_nick(const char *nick)
+{
+	char *lc = g_utf8_strdown(nick, -1);
+	guint bucket = g_str_hash(lc);
+	g_free(lc);
+
+	return bucket;
+}
+
+static gboolean sipe_ht_equals_nick(const char *nick1, const char *nick2)
+{
+	char *nick1_norm = NULL;
+	char *nick2_norm = NULL;
+	gboolean equal;
+
+	if (nick1 == NULL && nick2 == NULL) return TRUE;
+	if (nick1 == NULL || nick2 == NULL    ||
+	    !g_utf8_validate(nick1, -1, NULL) ||
+	    !g_utf8_validate(nick2, -1, NULL)) return FALSE;
+
+	nick1_norm = g_utf8_casefold(nick1, -1);
+	nick2_norm = g_utf8_casefold(nick2, -1);
+	equal = g_utf8_collate(nick1_norm, nick2_norm) == 0;
+	g_free(nick2_norm);
+	g_free(nick1_norm);
+
+	return equal;
+}
+
+void sipe_buddy_init(struct sipe_core_private *sipe_private)
+{
+	struct sipe_buddies *buddies = g_new0(struct sipe_buddies, 1);
+	buddies->uri          = g_hash_table_new((GHashFunc)  sipe_ht_hash_nick,
+						 (GEqualFunc) sipe_ht_equals_nick);
+	buddies->exchange_key = g_hash_table_new(g_str_hash,
+						 g_str_equal);
+	sipe_private->buddies = buddies;
 }
 
 /*

@@ -307,7 +307,8 @@ sipe_domino_time_to_str(time_t timestamp)
 static void sipe_domino_send_http_request(struct sipe_calendar *cal)
 {
 	if (cal->request) {
-		sipe_cal_http_authentication(cal);
+		sipe_core_email_authentication(cal->sipe_private,
+					       cal->request);
 		sipe_http_request_session(cal->request, cal->session);
 		sipe_http_request_ready(cal->request);
 	}
@@ -433,11 +434,12 @@ static void
 sipe_domino_do_login_request(struct sipe_calendar *cal)
 {
 	if (cal->domino_url) {
+		struct sipe_core_private *sipe_private = cal->sipe_private;
 		char *body;
 		const char *content_type = "application/x-www-form-urlencoded";
 		char *login_url = g_strconcat(cal->domino_url, "/?Login", NULL);
 		char *user;
-		gchar *password = cal->password ? cal->password : cal->sipe_private->password;
+		gchar *password = sipe_private->email_password ? sipe_private->email_password : sipe_private->password;
 
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_do_login_request: going Login req.");
 
@@ -451,7 +453,7 @@ sipe_domino_do_login_request(struct sipe_calendar *cal)
 		g_free(user);
 		g_free(password);
 
-		cal->request = sipe_http_request_post(cal->sipe_private,
+		cal->request = sipe_http_request_post(sipe_private,
 						      login_url,
 						      NULL,
 						      body,
@@ -549,7 +551,7 @@ sipe_domino_update_calendar(struct sipe_core_private *sipe_private)
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_domino_update_calendar: started.");
 
-	sipe_cal_calendar_init(sipe_private, NULL);
+	sipe_cal_calendar_init(sipe_private);
 
 	/* check if URL is valid if provided */
 	cal = sipe_private->calendar;

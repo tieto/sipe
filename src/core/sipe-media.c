@@ -1110,13 +1110,37 @@ reinvite_on_candidate_pair_cb(struct sipe_core_public *sipe_public)
 }
 
 static gboolean
+maybe_retry_call_with_ice_v6(struct sipe_core_private *sipe_private,
+			     struct transaction *trans)
+{
+	struct sipe_media_call_private *call_private = sipe_private->media_call;
+
+	if (call_private->ice_version == SIPE_ICE_RFC_5245 &&
+	    sip_transaction_cseq(trans) == 1) {
+		gchar *with = g_strdup(call_private->with);
+		struct sipe_backend_media *backend_private = call_private->public.backend_private;
+		gboolean with_video = sipe_backend_media_get_stream_by_id(backend_private, "video") != NULL;
+
+		sipe_media_hangup(call_private);
+		SIPE_DEBUG_INFO_NOFORMAT("Retrying call witn ICEv6.");
+		// We might be calling to OC 2007 instance, retry with ICEv6
+		sipe_media_initiate_call(sipe_private, with,
+					  SIPE_ICE_DRAFT_6, with_video);
+
+		g_free(with);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+static gboolean
 process_invite_call_response(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg,
 			     struct transaction *trans)
 {
 	const gchar *with;
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
-	struct sipe_backend_media *backend_private;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	struct sdpmsg *smsg;
@@ -1127,7 +1151,6 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	session = sipe_session_find_call(sipe_private, call_private->with);
 	dialog = session->dialogs->data;
 
-	backend_private = call_private->public.backend_private;
 	with = dialog->with;
 
 	dialog->outgoing_invite = NULL;
@@ -1153,6 +1176,14 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				title = _("Call rejected");
 				g_string_append_printf(desc, _("User %s rejected call"), with);
 				break;
+			case 415:
+				// OCS/Lync really sends response string with 'Mutipart' typo.
+				if (sipe_strequal(msg->responsestr, "Mutipart mime in content type not supported by Archiving CDR service") &&
+				    maybe_retry_call_with_ice_v6(sipe_private, trans)) {
+					return TRUE;
+				}
+				title = _("Unsupported media type");
+				break;
 			case 488: {
 				/* Check for incompatible encryption levels error.
 				 *
@@ -1172,17 +1203,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 					break;
 				}
 
-				if (call_private->ice_version == SIPE_ICE_RFC_5245 &&
-				    sip_transaction_cseq(trans) == 1) {
-					gchar *with = g_strdup(call_private->with);
-					gboolean with_video = sipe_backend_media_get_stream_by_id(backend_private, "video") != NULL;
-
-					sipe_media_hangup(call_private);
-					// We might be calling to OC 2007 instance, retry with ICEv6
-					sipe_media_initiate_call(sipe_private, with,
-								  SIPE_ICE_DRAFT_6, with_video);
-
-					g_free(with);
+				if (maybe_retry_call_with_ice_v6(sipe_private, trans)) {
 					return TRUE;
 				}
 				// Break intentionally omitted

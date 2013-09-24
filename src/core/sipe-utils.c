@@ -376,19 +376,31 @@ time_t
 sipe_utils_str_to_time(const gchar *timestamp)
 {
 	GTimeVal time;
-	guint len;
+	gboolean success = FALSE;
 
-	/* We have to make sure that the ISO8601 contains a time zone offset,
-	   otherwise the time is interpreted as local time, not UTC!
-	   @TODO: is there a better way to check this? */
-	if (timestamp && (len = strlen(timestamp) > 0) &&
-	    isdigit(timestamp[len - 1])) {
-		gchar *tmp = g_strdup_printf("%sZ", timestamp);
-		g_time_val_from_iso8601(tmp, &time);
-		g_free(tmp);
-	} else {
-		g_time_val_from_iso8601(timestamp, &time);
+	/* g_time_val_from_iso8601() warns about NULL pointer */
+	if (timestamp) {
+		guint len;
+
+		/* We have to make sure that the ISO8601 contains a time zone offset,
+		   otherwise the time is interpreted as local time, not UTC!
+		   @TODO: is there a better way to check this? */
+		if (((len = strlen(timestamp)) > 0) &&
+		    isdigit(timestamp[len-1])) {
+			gchar *tmp = g_strdup_printf("%sZ", timestamp);
+			success = g_time_val_from_iso8601(tmp, &time);
+			g_free(tmp);
+		} else {
+			success = g_time_val_from_iso8601(timestamp, &time);
+		}
 	}
+
+	if (!success) {
+		SIPE_DEBUG_ERROR("sipe_utils_str_to_time: failed to parse ISO8601 string '%s'",
+				 timestamp ? timestamp : "");
+		time.tv_sec = 0;
+	}
+
 	return time.tv_sec;
 }
 

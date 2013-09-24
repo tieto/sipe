@@ -426,7 +426,11 @@ static void password_ok_cb(PurpleConnection *gc,
 
 		if (purple_request_fields_get_bool(fields, "remember"))
 			purple_account_set_remember_password(account, TRUE);
-		purple_account_set_password(account, password);
+		purple_account_set_password(account, password
+#if PURPLE_VERSION_CHECK(3,0,0)
+					    , NULL, NULL
+#endif
+					   );
 
 		/* Now we have a password and we can connect */
 		connect_to_core(gc, account, password);

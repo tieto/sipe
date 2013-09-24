@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,6 +105,8 @@ void sip_transport_subscribe(struct sipe_core_private *sipe_private,
 			     const gchar *body,
 			     struct sip_dialog *dialog,
 			     TransCallback callback);
+void sip_transport_update(struct sipe_core_private *sipe_private,
+			  struct sip_dialog *dialog);
 
 /* Misc. SIP transport stuff */
 guint sip_transport_port(struct sipe_core_private *sipe_private);

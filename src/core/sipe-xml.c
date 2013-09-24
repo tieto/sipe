@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-13 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,6 +54,16 @@ struct _parser_data {
 	gboolean error;
 };
 
+/* our string equal function is case insensitive -> hash must be too! */
+static guint sipe_ascii_strdown_hash(gconstpointer key)
+{
+	gchar *lc = g_ascii_strdown((const gchar *) key, -1);
+	guint bucket = g_str_hash(lc);
+	g_free(lc);
+
+	return(bucket);
+}
+
 static void callback_start_element(void *user_data, const xmlChar *name, const xmlChar **attrs)
 {
 	struct _parser_data *pd = user_data;
@@ -86,7 +96,7 @@ static void callback_start_element(void *user_data, const xmlChar *name, const x
 	if (attrs) {
 		const xmlChar *key;
 
-		node->attributes = g_hash_table_new_full(g_str_hash,
+		node->attributes = g_hash_table_new_full(sipe_ascii_strdown_hash,
 							 (GEqualFunc) sipe_strcase_equal,
 							 g_free, g_free);
 		while ((key = *attrs++) != NULL) {

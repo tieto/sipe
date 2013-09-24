@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -236,7 +236,7 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 	}
 
 	if (session->is_groupchat) {
-		sipe_groupchat_invite_response(sipe_private, dialog);
+		sipe_groupchat_invite_response(sipe_private, dialog, msg);
 	}
 
 	if(g_slist_find_custom(dialog->supported, "ms-text-format", (GCompareFunc)g_ascii_strcasecmp)) {
@@ -639,6 +639,7 @@ void sipe_im_process_queue(struct sipe_core_private *sipe_private,
 			sipe_backend_chat_message(SIPE_CORE_PUBLIC,
 						  session->chat_session->backend,
 						  who,
+						  0,
 						  msg->body);
 			g_free(who);
 		}
