@@ -1,4 +1,4 @@
-pidgin-sipe (1.17.0-1) UNRELEASED; urgency=low
+pidgin-sipe (1.17.0-1) unstable; urgency=low
 
   * New upstream release.
         - Feature #62: Support for Lync 2013 Unified Contact Store
@@ -12,7 +12,7 @@ pidgin-sipe (1.17.0-1) UNRELEASED; urgency=low
         - add support for group chat history
         - add support for buddy photos on Lync 2013
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 24 Sep 2013 19:36:57 +0200
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 01 Oct 2013 17:03:10 +0200
 
 pidgin-sipe (1.16.1-1) unstable; urgency=low
 
