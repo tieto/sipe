@@ -25,8 +25,8 @@
 #include <glib.h>
 #include <string.h>
 #include <gssapi/gssapi.h>
+#include <gssapi/gssapi_ext.h>
 #include <gssapi/gssapi_krb5.h>
-#include <krb5.h>
 
 #include "sipe-common.h"
 #include "sip-sec.h"
@@ -37,6 +37,7 @@
 /* Security context for Kerberos */
 typedef struct _context_krb5 {
 	struct sip_sec_context common;
+	gss_cred_id_t cred_krb5;
 	gss_ctx_id_t ctx_krb5;
 	const gchar *domain;
 	const gchar *username;
@@ -46,8 +47,6 @@ typedef struct _context_krb5 {
 #define SIP_SEC_FLAG_KRB5_RETRY_AUTH 0x00010000
 
 static void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 minor);
-
-static gboolean sip_sec_krb5_obtain_tgt(context_krb5 context);
 
 static void sip_sec_krb5_destroy_context(context_krb5 context)
 {
@@ -61,6 +60,84 @@ static void sip_sec_krb5_destroy_context(context_krb5 context)
 			SIPE_DEBUG_ERROR("sip_sec_krb5_destroy_context: failed to delete security context (ret=%d)", (int)ret);
 		}
 		context->ctx_krb5 = GSS_C_NO_CONTEXT;
+	}
+
+	if (context->cred_krb5 != GSS_C_NO_CREDENTIAL) {
+		ret = gss_release_cred(&minor, &(context->cred_krb5));
+		if (GSS_ERROR(ret)) {
+			sip_sec_krb5_print_gss_error("gss_release_cred", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_krb5_destroy_context: failed to release credentials (ret=%d)", (int)ret);
+		}
+		context->cred_krb5 = GSS_C_NO_CREDENTIAL;
+	}
+}
+
+static gboolean sip_sec_krb5_acquire_credentials(context_krb5 context)
+{
+	gchar **user_realm;
+	const gchar *user, *realm;
+	gchar *username, *tmp;
+	OM_uint32 ret;
+	OM_uint32 minor, minor_ignore;
+	gss_cred_id_t credentials;
+	gss_buffer_desc input_name_buffer;
+	gss_name_t user_name;
+
+	if (!(context->username || context->password)) {
+		SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_krb5_acquire_credentials: no valid authentication information provided");
+		return(FALSE);
+	}
+
+	user_realm = g_strsplit(context->username, "@", 2);
+	if (user_realm[1]) {
+		/* "user@domain" -> use domain as realm */
+		user  = user_realm[0];
+		realm = user_realm[1];
+	} else {
+		/* use provided domain as realm */
+		user  = context->username;
+		realm = context->domain;
+	}
+	username = g_strdup_printf("%s@%s",
+				   user, tmp = g_ascii_strup(realm, -1));
+	g_free(tmp);
+	g_strfreev(user_realm);
+
+	input_name_buffer.value  = (void *) username;
+	input_name_buffer.length = strlen(username) + 1;
+
+	ret = gss_import_name(&minor,
+			      &input_name_buffer,
+			      (gss_OID) GSS_C_NT_USER_NAME,
+			      &user_name);
+	g_free(username);
+	if (GSS_ERROR(ret)) {
+		sip_sec_krb5_print_gss_error("gss_import_name", ret, minor);
+		SIPE_DEBUG_ERROR("sip_sec_krb5_acquire_credentials: failed to construct user name (ret=%d)", (int)ret);
+		return(FALSE);
+	}
+
+	/* Acquire user credentials with password */
+	input_name_buffer.value  = (void *) context->password;
+	input_name_buffer.length = strlen(context->password) + 1;
+	ret = gss_acquire_cred_with_password(&minor,
+					     user_name,
+					     &input_name_buffer,
+					     GSS_C_INDEFINITE,
+					     GSS_C_NO_OID_SET,
+					     GSS_C_INITIATE,
+					     &credentials,
+					     NULL,
+					     NULL);
+	gss_release_name(&minor_ignore, &user_name);
+
+	if (GSS_ERROR(ret)) {
+		sip_sec_krb5_print_gss_error("gss_acquire_cred_with_password", ret, minor);
+		SIPE_DEBUG_ERROR("sip_sec_krb5_acquire_credentials: failed to acquire credentials (ret=%d)", (int)ret);
+		return(FALSE);
+	} else {
+		context->cred_krb5 = credentials;
+		return(TRUE);
 	}
 }
 
@@ -97,7 +174,7 @@ static gboolean sip_sec_krb5_initialize_context(context_krb5 context,
 	output_token.value = NULL;
 
 	ret = gss_init_sec_context(&minor,
-				   GSS_C_NO_CREDENTIAL,
+				   context->cred_krb5,
 				   &(context->ctx_krb5),
 				   target_name,
 				   (gss_OID) gss_mech_krb5,
@@ -143,9 +220,9 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__krb5: started");
 
 	/* remember authentication information */
-	ctx->domain     = domain ? domain : "";
-	ctx->username   = username;
-	ctx->password   = password;
+	ctx->domain   = domain ? domain : "";
+	ctx->username = username;
+	ctx->password = password;
 
 	/*
 	 * This will be TRUE for SIP, which is the first time when we'll try
@@ -203,7 +280,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	 */
 	if (!result && (context->flags & SIP_SEC_FLAG_KRB5_RETRY_AUTH)) {
 		sip_sec_krb5_destroy_context(ctx);
-		result = sip_sec_krb5_obtain_tgt(ctx)          &&
+		result = sip_sec_krb5_acquire_credentials(ctx) &&
 			 sip_sec_krb5_initialize_context(ctx,
 							 in_buff,
 							 out_buff,
@@ -304,7 +381,8 @@ sip_sec_create_context__krb5(SIPE_UNUSED_PARAMETER guint type)
 	context->common.make_signature_func   = sip_sec_make_signature__krb5;
 	context->common.verify_signature_func = sip_sec_verify_signature__krb5;
 
-	context->ctx_krb5 = GSS_C_NO_CONTEXT;
+	context->cred_krb5 = GSS_C_NO_CREDENTIAL;
+	context->ctx_krb5  = GSS_C_NO_CONTEXT;
 
 	return((SipSecContext) context);
 }
@@ -344,119 +422,6 @@ static void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 mi
 {
 	sip_sec_krb5_print_gss_error0(func, ret, GSS_C_GSS_CODE);
 	sip_sec_krb5_print_gss_error0(func, minor, GSS_C_MECH_CODE);
-}
-
-/**
- * Prints out errors of Kerberos 5 function invocation
- */
-static void
-sip_sec_krb5_print_error(const gchar *func,
-			 krb5_context context,
-			 krb5_error_code ret);
-
-/**
- * Obtains Kerberos TGT and stores it in default credentials cache.
- * Similar what kinit util would do.
- * Can be checked with klist util.
- *
- * kinit would require the following name:
- * alice@ATLANTA.LOCAL
- * where 'alice' is a username and
- * 'ATLANTA.LOCAL' is a realm (domain) .
- */
-static gboolean sip_sec_krb5_obtain_tgt(context_krb5 ctx)
-{
-	krb5_context	context = NULL;
-	krb5_error_code	ret;
-	char *realm;
-	char *username;
-	gchar **user_realm;
-
-	if (!ctx->username && !ctx->password) {
-		SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_krb5_obtain_tgt: no valid authentication information provided");
-		return(FALSE);
-	}
-
-	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_krb5_obtain_tgt: started");
-
-	user_realm = g_strsplit(ctx->username, "@", 2);
-	if (user_realm[1]) {
-		/* "user@domain" -> use domain as realm */
-		realm    = g_ascii_strup(user_realm[1], -1);
-		username = g_strdup(user_realm[0]);
-	} else {
-		/* use provided domain as realm */
-		realm    = g_ascii_strup(ctx->domain, -1);
-		username = g_strdup(ctx->username);
-	}
-	g_strfreev(user_realm);
-
-	/* Obtait TGT */
-	ret = krb5_init_context(&context);
-	if (ret) {
-		sip_sec_krb5_print_error("krb5_init_context", context, ret);
-	} else {
-		krb5_principal principal = NULL;
-
-		ret = krb5_build_principal(context, &principal, strlen(realm), realm, username, NULL);
-		if (ret) {
-			sip_sec_krb5_print_error("krb5_build_principal", context, ret);
-		} else {
-			krb5_creds credentials;
-
-			memset(&credentials, 0, sizeof(krb5_creds));
-
-			ret = krb5_get_init_creds_password(context, &credentials, principal, (char *)ctx->password, NULL, NULL, 0, NULL, NULL);
-			if (ret) {
-				sip_sec_krb5_print_error("krb5_get_init_creds_password", context, ret);
-			} else {
-				krb5_ccache ccdef = NULL;
-
-				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_krb5_obtain_tgt: new TGT obtained");
-
-				/* Store TGT in default credential cache */
-				ret = krb5_cc_default(context, &ccdef);
-				if (ret) {
-					sip_sec_krb5_print_error("krb5_cc_default", context, ret);
-				} else {
-					/* First try without initializing */
-					ret = krb5_cc_store_cred(context, ccdef, &credentials);
-					if (ret) {
-						ret = krb5_cc_initialize(context, ccdef, credentials.client);
-						if (ret) {
-							sip_sec_krb5_print_error("krb5_cc_initialize", context, ret);
-						} else {
-							/* Second try after initializing the default credential cache */
-							ret = krb5_cc_store_cred(context, ccdef, &credentials);
-							if (ret) {
-								sip_sec_krb5_print_error("krb5_cc_store_cred", context, ret);
-							} else {
-								SIPE_DEBUG_INFO_NOFORMAT("sip_sec_krb5_obtain_tgt: new TGT stored in default credentials cache");
-							}
-						}
-					}
-					krb5_cc_close(context, ccdef);
-				}
-				krb5_free_cred_contents(context, &credentials);
-			}
-			krb5_free_principal(context, principal);
-		}
-		krb5_free_context(context);
-	}
-	g_free(username);
-	g_free(realm);
-
-	return(!ret);
-}
-
-static void
-sip_sec_krb5_print_error(const gchar *func,
-			 krb5_context context,
-			 krb5_error_code ret)
-{
-	const gchar *error_message = krb5_get_error_message(context, ret);
-	SIPE_DEBUG_ERROR("Kerberos 5 ERROR in %s: %s", func, error_message);
-	krb5_free_error_message(context, error_message);
 }
 
 /*
