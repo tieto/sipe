@@ -174,8 +174,13 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__krb5: started");
 
-	/* Delete old context first */
-	if (ctx->ctx_krb5 != GSS_C_NO_CONTEXT) {
+	/*
+	 * If authentication was already completed, then this mean a new
+	 * authentication handshake has started on the existing connection.
+	 * We must throw away the old context, because we need a new one.
+	 */
+	if ((context->flags & SIP_SEC_FLAG_COMMON_READY) &&
+	    (ctx->ctx_krb5 != GSS_C_NO_CONTEXT)) {
 		ret = gss_delete_sec_context(&minor,
 					     &(ctx->ctx_krb5),
 					     GSS_C_NO_BUFFER);
