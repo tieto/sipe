@@ -157,21 +157,29 @@ AS_IF([test "x$with_krb5" = xno], [], dnl disabled by user
 		 KRB5_LDFLAGS=""
 
 		 dnl same as AC_CHECK_LIB()
-		 LIBS="$LIBS `krb5-config --libs gssapi 2>/dev/null`"
-		 AC_DEFINE(HAVE_LIBKRB5, 1, [Define to 1 if you have the `krb5' library (-lkrb5)])],
+		 LIBS="$LIBS `krb5-config --libs gssapi 2>/dev/null`"],
 		[AC_MSG_RESULT(no)
 		 with_krb5=no])],
       [                               dnl path specified by user
 	KRB5_CFLAGS="-I${with_krb5}/include"
 	KRB5_LDFLAGS="-L${with_krb5}/lib"
-	ac_save_LDFLAGS="$LDLAGS"
-	LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
-	AC_CHECK_LIB(krb5, krb5_rd_req,          [],
-		[AC_CHECK_LIB(krb5, krb5_rd_req, [],
-			[AC_ERROR(Kerberos 5 libraries not found)])])
-	AC_CHECK_LIB(gssapi_krb5, gss_krb5_export_lucid_sec_context, [],
-			[AC_ERROR(GSSAPI Kerberos 5 libraries not found)])
-	LDFLAGS="$ac_save_LDFLAGS"])
+      ])
+AS_IF([test "x$with_krb5" != xno],
+      [ac_save_CFLAGS="$CFLAGS"
+       ac_save_LDFLAGS="$LDLAGS"
+       CFLAGS="$CFLAGS $KRB5_CFLAGS"
+       LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
+       AC_CHECK_HEADERS([gssapi/gssapi.h gssapi/gssapi_ext.h gssapi/gssapi_krb5.h],
+			,
+			[AC_ERROR([GSSAPI headers not found])])
+       AC_CHECK_FUNC([gss_acquire_cred_with_password],
+		     ,
+		     [AC_ERROR([GSSAPI libraries not found])])
+       CFLAGS="$ac_save_CFLAGS"
+       LDFLAGS="$ac_save_LDFLAGS"
+       AC_DEFINE(HAVE_LIBKRB5, 1, [Define to 1 ifyou have the `krb5' library (-lkrb5)])
+      ])
+
 AM_CONDITIONAL(SIP_SEC_KRB5, [test "x$with_krb5" != xno])
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
