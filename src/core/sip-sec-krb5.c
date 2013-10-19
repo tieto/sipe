@@ -33,6 +33,7 @@
 #include "sip-sec-mech.h"
 #include "sip-sec-krb5.h"
 #include "sipe-backend.h"
+#include "sipe-utils.h"
 
 /* Security context for Kerberos */
 typedef struct _context_krb5 {
@@ -88,9 +89,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 
 	/* With SSO we use the default credentials */
 	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
-		gchar **user_realm;
-		const gchar *user, *realm;
-		gchar *username_new, *tmp;
+		gchar *username_new;
 		OM_uint32 ret;
 		OM_uint32 minor, minor_ignore;
 		gss_cred_id_t credentials;
@@ -104,21 +103,41 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 		}
 
 		/* Construct user name to acquire credentials for */
-		user_realm = g_strsplit(username, "@", 2);
-		if (user_realm[1]) {
-			/* "user@domain" -> use domain as realm */
-			user  = user_realm[0];
-			realm = user_realm[1];
+		if (!is_empty(domain)) {
+			/* User specified a domain */
+			gchar *realm = g_ascii_strup(domain, -1);
+
+			username_new = g_strdup_printf("%s@%s",
+						       username,
+						       realm);
+			g_free(realm);
+
+		} else if (strchr(username, '@')) {
+			/* No domain, username matches XXX@YYY */
+			gchar **user_realm = g_strsplit(username, "@", 2);
+			gchar *realm       = g_ascii_strup(user_realm[1], -1);
+
+			/*
+			 * We should escape the "@" to generate a enterprise
+			 * principal, i.e. XXX\@YYY
+			 *
+			 * But krb5 libraries currently don't support this:
+			 *
+			 * http://krbdev.mit.edu/rt/Ticket/Display.html?id=7729
+			 *
+			 * username_new = g_strdup_printf("%s\\@%s",
+			 */
+			username_new = g_strdup_printf("%s@%s",
+						       user_realm[0],
+						       realm);
+			g_free(realm);
+			g_strfreev(user_realm);
 		} else {
-			/* use provided domain as realm */
-			user  = username;
-			realm = domain ? domain : "";
+			/* Otherwise use username as is */
+			username_new = g_strdup(username);
 		}
-		username_new = g_strdup_printf("%s@%s",
-					       user, tmp = g_ascii_strup(realm, -1));
-		g_free(tmp);
-		g_strfreev(user_realm);
-		SIPE_DEBUG_INFO("sip_sec_acquire_cred__krb5: username '%s'", username_new);
+		SIPE_DEBUG_INFO("sip_sec_acquire_cred__krb5: username '%s'",
+				username_new);
 
 		/* Import user name into GSS format */
 		input_name_buffer.value  = (void *) username_new;
