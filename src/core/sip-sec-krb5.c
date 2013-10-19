@@ -76,30 +76,6 @@ static void sip_sec_krb5_print_gss_error(char *func,
 	sip_sec_krb5_print_gss_error0(func, minor, GSS_C_MECH_CODE);
 }
 
-static void sip_sec_krb5_destroy_context(context_krb5 context)
-{
-	OM_uint32 ret;
-	OM_uint32 minor;
-
-	if (context->ctx_krb5 != GSS_C_NO_CONTEXT) {
-		ret = gss_delete_sec_context(&minor, &(context->ctx_krb5), GSS_C_NO_BUFFER);
-		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_delete_sec_context", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_krb5_destroy_context: failed to delete security context (ret=%d)", (int)ret);
-		}
-		context->ctx_krb5 = GSS_C_NO_CONTEXT;
-	}
-
-	if (context->cred_krb5 != GSS_C_NO_CREDENTIAL) {
-		ret = gss_release_cred(&minor, &(context->cred_krb5));
-		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_release_cred", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_krb5_destroy_context: failed to release credentials (ret=%d)", (int)ret);
-		}
-		context->cred_krb5 = GSS_C_NO_CREDENTIAL;
-	}
-}
-
 /* sip-sec-mech.h API implementation for Kerberos/GSSAPI */
 
 static gboolean
@@ -348,7 +324,28 @@ sip_sec_verify_signature__krb5(SipSecContext context,
 static void
 sip_sec_destroy_sec_context__krb5(SipSecContext context)
 {
-	sip_sec_krb5_destroy_context((context_krb5) context);
+	context_krb5 ctx = (context_krb5) context;
+	OM_uint32 ret;
+	OM_uint32 minor;
+
+	if (ctx->ctx_krb5 != GSS_C_NO_CONTEXT) {
+		ret = gss_delete_sec_context(&minor, &(ctx->ctx_krb5), GSS_C_NO_BUFFER);
+		if (GSS_ERROR(ret)) {
+			sip_sec_krb5_print_gss_error("gss_delete_sec_context", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__krb5: failed to delete security context (ret=%d)", (int)ret);
+		}
+		ctx->ctx_krb5 = GSS_C_NO_CONTEXT;
+	}
+
+	if (ctx->cred_krb5 != GSS_C_NO_CREDENTIAL) {
+		ret = gss_release_cred(&minor, &(ctx->cred_krb5));
+		if (GSS_ERROR(ret)) {
+			sip_sec_krb5_print_gss_error("gss_release_cred", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__krb5: failed to release credentials (ret=%d)", (int)ret);
+		}
+		ctx->cred_krb5 = GSS_C_NO_CREDENTIAL;
+	}
+
 	g_free(context);
 }
 
