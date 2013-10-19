@@ -100,72 +100,6 @@ static void sip_sec_krb5_destroy_context(context_krb5 context)
 	}
 }
 
-static gboolean sip_sec_krb5_initialize_context(context_krb5 context,
-						SipSecBuffer in_buff,
-						SipSecBuffer *out_buff,
-						const gchar *service_name)
-{
-	OM_uint32 ret;
-	OM_uint32 minor, minor_ignore;
-	OM_uint32 expiry;
-	gss_buffer_desc input_token;
-	gss_buffer_desc output_token;
-	gss_buffer_desc input_name_buffer;
-	gss_name_t target_name;
-
-	input_name_buffer.value  = (void *) service_name;
-	input_name_buffer.length = strlen(service_name) + 1;
-
-	ret = gss_import_name(&minor,
-			      &input_name_buffer,
-			      (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME,
-			      &target_name);
-	if (GSS_ERROR(ret)) {
-		sip_sec_krb5_print_gss_error("gss_import_name", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_krb5_initialize_context: failed to construct target name (ret=%d)", (int)ret);
-		return(FALSE);
-	}
-
-	input_token.length = in_buff.length;
-	input_token.value = in_buff.value;
-
-	output_token.length = 0;
-	output_token.value = NULL;
-
-	ret = gss_init_sec_context(&minor,
-				   context->cred_krb5,
-				   &(context->ctx_krb5),
-				   target_name,
-				   (gss_OID) gss_mech_krb5,
-				   GSS_C_INTEG_FLAG,
-				   GSS_C_INDEFINITE,
-				   GSS_C_NO_CHANNEL_BINDINGS,
-				   &input_token,
-				   NULL,
-				   &output_token,
-				   NULL,
-				   &expiry);
-	gss_release_name(&minor_ignore, &target_name);
-
-	if (GSS_ERROR(ret)) {
-		gss_release_buffer(&minor_ignore, &output_token);
-		sip_sec_krb5_print_gss_error("gss_init_sec_context", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_krb5_initialize_context: failed to initialize context (ret=%d)", (int)ret);
-		return(FALSE);
-	}
-
-	out_buff->length = output_token.length;
-	out_buff->value  = g_memdup(output_token.value, output_token.length);
-	gss_release_buffer(&minor_ignore, &output_token);
-
-	context->common.expires = (int)expiry;
-
-	/* Authentication is completed */
-	context->common.flags |= SIP_SEC_FLAG_COMMON_READY;
-
-	return(TRUE);
-}
-
 /* sip-sec-mech.h API implementation for Kerberos/GSSAPI */
 
 static gboolean
@@ -260,6 +194,12 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 			       const gchar *service_name)
 {
 	context_krb5 ctx = (context_krb5) context;
+	OM_uint32 ret;
+	OM_uint32 minor, minor_ignore;
+	OM_uint32 expiry;
+	gss_buffer_desc input_token;
+	gss_buffer_desc output_token;
+	gss_name_t target_name;
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__krb5: started");
 
@@ -270,10 +210,10 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	 */
 	if ((context->flags & SIP_SEC_FLAG_COMMON_READY) &&
 	    (ctx->ctx_krb5 != GSS_C_NO_CONTEXT)) {
-		OM_uint32 minor;
-		OM_uint32 ret = gss_delete_sec_context(&minor,
-						       &(ctx->ctx_krb5),
-						       GSS_C_NO_BUFFER);
+		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__krb5: dropping old context");
+		ret = gss_delete_sec_context(&minor,
+					     &(ctx->ctx_krb5),
+					     GSS_C_NO_BUFFER);
 		if (GSS_ERROR(ret)) {
 			sip_sec_krb5_print_gss_error("gss_delete_sec_context", ret, minor);
 			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to delete security context (ret=%d)", (int)ret);
@@ -281,10 +221,59 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 		ctx->ctx_krb5 = GSS_C_NO_CONTEXT;
 	}
 
-	return(sip_sec_krb5_initialize_context(ctx,
-					       in_buff,
-					       out_buff,
-					       service_name));
+	/* Import service name to GSS */
+	input_token.value  = (void *) service_name;
+	input_token.length = strlen(service_name) + 1;
+
+	ret = gss_import_name(&minor,
+			      &input_token,
+			      (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME,
+			      &target_name);
+	if (GSS_ERROR(ret)) {
+		sip_sec_krb5_print_gss_error("gss_import_name", ret, minor);
+		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to construct target name (ret=%d)", (int)ret);
+		return(FALSE);
+	}
+
+	/* Create context */
+	input_token.length = in_buff.length;
+	input_token.value = in_buff.value;
+
+	output_token.length = 0;
+	output_token.value = NULL;
+
+	ret = gss_init_sec_context(&minor,
+				   ctx->cred_krb5,
+				   &(ctx->ctx_krb5),
+				   target_name,
+				   (gss_OID) gss_mech_krb5,
+				   GSS_C_INTEG_FLAG,
+				   GSS_C_INDEFINITE,
+				   GSS_C_NO_CHANNEL_BINDINGS,
+				   &input_token,
+				   NULL,
+				   &output_token,
+				   NULL,
+				   &expiry);
+	gss_release_name(&minor_ignore, &target_name);
+
+	if (GSS_ERROR(ret)) {
+		gss_release_buffer(&minor_ignore, &output_token);
+		sip_sec_krb5_print_gss_error("gss_init_sec_context", ret, minor);
+		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to initialize context (ret=%d)", (int)ret);
+		return(FALSE);
+	}
+
+	out_buff->length = output_token.length;
+	out_buff->value  = g_memdup(output_token.value, output_token.length);
+	gss_release_buffer(&minor_ignore, &output_token);
+
+	context->expires = (int)expiry;
+
+	/* Authentication is completed */
+	context->flags |= SIP_SEC_FLAG_COMMON_READY;
+
+	return(TRUE);
 }
 
 /**
