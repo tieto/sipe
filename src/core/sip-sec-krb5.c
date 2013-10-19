@@ -46,7 +46,40 @@ typedef struct _context_krb5 {
 
 #define SIP_SEC_FLAG_KRB5_RETRY_AUTH 0x00010000
 
-static void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 minor);
+static void sip_sec_krb5_print_gss_error0(char *func,
+					  OM_uint32 status,
+					  int type)
+{
+	OM_uint32 minor;
+	OM_uint32 message_context = 0;
+	gss_buffer_desc status_string;
+
+	do {
+		gss_display_status(&minor,
+				   status,
+				   type,
+				   GSS_C_NO_OID,
+				   &message_context,
+				   &status_string);
+
+		SIPE_DEBUG_ERROR("sip_sec_krb5: GSSAPI error in %s (%s): %s",
+				 func,
+				 (type == GSS_C_GSS_CODE ? "GSS" : "Mech"),
+				 (gchar *) status_string.value);
+		gss_release_buffer(&minor, &status_string);
+	} while (message_context != 0);
+}
+
+/**
+ * Prints out errors of GSSAPI function invocation
+ */
+static void sip_sec_krb5_print_gss_error(char *func,
+					 OM_uint32 ret,
+					 OM_uint32 minor)
+{
+	sip_sec_krb5_print_gss_error0(func, ret,   GSS_C_GSS_CODE);
+	sip_sec_krb5_print_gss_error0(func, minor, GSS_C_MECH_CODE);
+}
 
 static void sip_sec_krb5_destroy_context(context_krb5 context)
 {
@@ -207,7 +240,7 @@ static gboolean sip_sec_krb5_initialize_context(context_krb5 context,
 	return(TRUE);
 }
 
-/* sip-sec-mech.h API implementation for Kerberos/GSS-API */
+/* sip-sec-mech.h API implementation for Kerberos/GSSAPI */
 
 static gboolean
 sip_sec_acquire_cred__krb5(SipSecContext context,
@@ -391,37 +424,6 @@ gboolean sip_sec_password__krb5(void)
 {
 	/* Kerberos supports Single-Sign On */
 	return(FALSE);
-}
-
-static void
-sip_sec_krb5_print_gss_error0(char *func,
-			     OM_uint32 status,
-			     int type)
-{
-	OM_uint32 minor;
-	OM_uint32 message_context = 0;
-	gss_buffer_desc status_string;
-
-	do {
-		gss_display_status(&minor,
-				   status,
-				   type,
-				   GSS_C_NO_OID,
-				   &message_context,
-				   &status_string);
-
-		SIPE_DEBUG_ERROR("sip_sec_krb5: GSS-API error in %s (%s): %s", func, (type == GSS_C_GSS_CODE ? "GSS" : "Mech"), (char *)status_string.value);
-		gss_release_buffer(&minor, &status_string);
-	} while (message_context != 0);
-}
-
-/**
- * Prints out errors of GSS-API function invocation
- */
-static void sip_sec_krb5_print_gss_error(char *func, OM_uint32 ret, OM_uint32 minor)
-{
-	sip_sec_krb5_print_gss_error0(func, ret, GSS_C_GSS_CODE);
-	sip_sec_krb5_print_gss_error0(func, minor, GSS_C_MECH_CODE);
 }
 
 /*
