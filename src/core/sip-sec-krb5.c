@@ -22,10 +22,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 #include <string.h>
 #include <gssapi/gssapi.h>
+#ifdef HAVE_GSSAPI_PASSWORD_SUPPORT
 #include <gssapi/gssapi_ext.h>
+#endif
 #include <gssapi/gssapi_krb5.h>
 
 #include "sipe-common.h"
@@ -89,6 +95,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 
 	/* With SSO we use the default credentials */
 	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
+#ifdef HAVE_GSSAPI_PASSWORD_SUPPORT
 		gchar *username_new;
 		OM_uint32 ret;
 		OM_uint32 minor, minor_ignore;
@@ -177,6 +184,13 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 			((context_krb5) context)->cred_krb5 = credentials;
 			return(TRUE);
 		}
+#else
+		(void) domain;   /* keep compiler happy */
+		(void) username; /* keep compiler happy */
+		(void) password; /* keep compiler happy */
+		SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__krb5: non-SSO mode not supported");
+		return(FALSE);
+#endif
 	}
 
 	return(TRUE);
