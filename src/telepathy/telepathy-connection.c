@@ -300,7 +300,7 @@ static gboolean start_connecting(TpBaseConnection *base,
 
 	/* map option list to flags - default is NTLM */
 	self->authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
-#ifdef HAVE_LIBKRB5
+#ifdef HAVE_GSSAPI_GSSAPI_H
 	if (sipe_strequal(self->authentication, "krb5")) {
 		SIPE_DEBUG_INFO_NOFORMAT("start_connecting: KRB5 selected");
 		self->authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;

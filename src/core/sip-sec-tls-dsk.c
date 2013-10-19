@@ -229,7 +229,7 @@ sip_sec_create_context__tls_dsk(SIPE_UNUSED_PARAMETER guint type)
 
 gboolean sip_sec_password__tls_dsk(void)
 {
-#if defined(HAVE_SSPI) || defined(HAVE_LIBKRB5)
+#if defined(HAVE_SSPI) || defined(HAVE_GSSAPI_GSSAPI_H)
 	/*
 	 * TLS-DSK authenticates with a published client certificate. This
 	 * process uses Web Tickets and therefore goes through HTTP. If we

@@ -177,7 +177,6 @@ AS_IF([test "x$with_krb5" != xno],
 		     [AC_ERROR([GSSAPI libraries not found])])
        CFLAGS="$ac_save_CFLAGS"
        LDFLAGS="$ac_save_LDFLAGS"
-       AC_DEFINE(HAVE_LIBKRB5, 1, [Define to 1 ifyou have the `krb5' library (-lkrb5)])
       ])
 
 AM_CONDITIONAL(SIP_SEC_KRB5, [test "x$with_krb5" != xno])

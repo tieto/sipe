@@ -68,7 +68,7 @@
 #if SIP_SEC_WINDOWS_SSPI
 #define sip_sec_create_context__Kerberos   sip_sec_create_context__sspi
 #define sip_sec_password__Kerberos         sip_sec_password__sspi
-#elif defined(HAVE_LIBKRB5)
+#elif defined(HAVE_GSSAPI_GSSAPI_H)
 #include "sip-sec-krb5.h"
 #define sip_sec_create_context__Kerberos   sip_sec_create_context__krb5
 #define sip_sec_password__Kerberos         sip_sec_password__krb5
@@ -80,7 +80,7 @@
 /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
 #if SIP_SEC_WINDOWS_SSPI
 #define sip_sec_create_context__Negotiate  sip_sec_create_context__sspi
-#elif defined(HAVE_LIBKRB5)
+#elif defined(HAVE_GSSAPI_GSSAPI_H)
 #include "sip-sec-negotiate.h"
 #define sip_sec_create_context__Negotiate  sip_sec_create_context__negotiate
 #else

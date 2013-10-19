@@ -81,7 +81,7 @@
  *  - is Single Sign-On supported, and
  *  - is Kerberos supported
  */
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 #define PURPLE_SIPE_SSO_AND_KERBEROS 1
 #else
 #define PURPLE_SIPE_SSO_AND_KERBEROS 0

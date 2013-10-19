@@ -213,7 +213,7 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 	guint type;
 	gboolean failed = TRUE;
 
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 #define DEBUG_STRING ", NTLM and Negotiate"
 	/* Use "Negotiate" unless the user requested "NTLM" */
 	if (sipe_private->authentication_type != SIPE_AUTHENTICATION_TYPE_NTLM)
