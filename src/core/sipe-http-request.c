@@ -168,6 +168,14 @@ static void sipe_http_request_enqueue(struct sipe_core_private *sipe_private,
 						       req);
 }
 
+static void sipe_http_request_drop_context(struct sipe_http_connection_public *conn_public)
+{
+	g_free(conn_public->cached_authorization);
+	conn_public->cached_authorization = NULL;
+	sip_sec_destroy_context(conn_public->context);
+	conn_public->context = NULL;
+}
+
 static void sipe_http_request_finalize_negotiate(struct sipe_http_request *req,
 						 struct sipmsg *msg)
 {
@@ -194,8 +202,12 @@ static void sipe_http_request_finalize_negotiate(struct sipe_http_request *req,
 						      spn,
 						      parts[1],
 						      &token,
-						      NULL))
+						      NULL)) {
 				g_free(token);
+			} else {
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_finalize_negotiate: security context init step failed, throwing away context");
+				sipe_http_request_drop_context(conn_public);
+			}
 
 			g_free(spn);
 			g_strfreev(parts);
@@ -331,8 +343,10 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 				 */
 				failed = FALSE;
 
-			} else
-				SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: security context init step failed");
+			} else {
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: security context init step failed, throwing away context");
+				sipe_http_request_drop_context(conn_public);
+			}
 
 			g_free(spn);
 			g_strfreev(parts);
@@ -422,10 +436,7 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 		    conn_public->context) {
 			SIPE_DEBUG_INFO("sipe_http_request_response: response was %d, throwing away security context",
 					msg->response);
-			g_free(conn_public->cached_authorization);
-			conn_public->cached_authorization = NULL;
-			sip_sec_destroy_context(conn_public->context);
-			conn_public->context = NULL;
+			sipe_http_request_drop_context(conn_public);
 		}
 
 		/* All other cases are passed on to the user */
