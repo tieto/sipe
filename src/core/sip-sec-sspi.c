@@ -67,14 +67,52 @@ typedef struct _context_sspi {
 
 #define SIP_SEC_FLAG_SSPI_SIP_NTLM 0x00010000
 
-static int
-sip_sec_get_interval_from_now_sec(TimeStamp timestamp);
+/* Utility Functions */
 
 static void
 sip_sec_sspi_print_error(const gchar *func,
-			 SECURITY_STATUS ret);
+			 SECURITY_STATUS ret)
+{
+	gchar *error_message;
+	static char *buff;
+	guint buff_length;
 
-/** internal method */
+	buff_length = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+				    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				    FORMAT_MESSAGE_IGNORE_INSERTS,
+				    0,
+				    ret,
+				    0,
+				    (LPTSTR)&buff,
+				    16384,
+				    0);
+	error_message = g_strndup(buff, buff_length);
+	LocalFree(buff);
+
+	SIPE_DEBUG_ERROR("SSPI ERROR [%d] in %s: %s", (int)ret, func, error_message);
+	g_free(error_message);
+}
+
+/* Returns interval in seconds from now till provided value */
+static guint
+sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
+{
+	SYSTEMTIME stNow;
+	FILETIME ftNow;
+	ULARGE_INTEGER uliNow, uliTo;
+
+	GetLocalTime(&stNow);
+	SystemTimeToFileTime(&stNow, &ftNow);
+
+	uliNow.LowPart = ftNow.dwLowDateTime;
+	uliNow.HighPart = ftNow.dwHighDateTime;
+
+	uliTo.LowPart = timestamp.LowPart;
+	uliTo.HighPart = timestamp.HighPart;
+
+	return((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
+}
+
 static void
 sip_sec_destroy_sspi_context(context_sspi context)
 {
@@ -90,7 +128,7 @@ sip_sec_destroy_sspi_context(context_sspi context)
 	}
 }
 
-/* sip-sec-mech.h API implementation for SSPI - Kerberos and NTLM */
+/* sip-sec-mech.h API implementation for SSPI - Kerberos, NTLM and Negotiate */
 
 static gboolean
 sip_sec_acquire_cred__sspi(SipSecContext context,
@@ -381,55 +419,6 @@ gboolean sip_sec_password__sspi(void)
 	/* SSPI supports Single-Sign On */
 	return(FALSE);
 }
-
-/* Utility Functions */
-
-/**
- * Returns interval in seconds from now till provided value
- */
-static int
-sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
-{
-	SYSTEMTIME stNow;
-	FILETIME ftNow;
-	ULARGE_INTEGER uliNow, uliTo;
-
-	GetLocalTime(&stNow);
-	SystemTimeToFileTime(&stNow, &ftNow);
-
-	uliNow.LowPart = ftNow.dwLowDateTime;
-	uliNow.HighPart = ftNow.dwHighDateTime;
-
-	uliTo.LowPart = timestamp.LowPart;
-	uliTo.HighPart = timestamp.HighPart;
-
-	return (int)((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
-}
-
-static void
-sip_sec_sspi_print_error(const gchar *func,
-			 SECURITY_STATUS ret)
-{
-	gchar *error_message;
-	static char *buff;
-	guint buff_length;
-
-	buff_length = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-				    FORMAT_MESSAGE_ALLOCATE_BUFFER |
-				    FORMAT_MESSAGE_IGNORE_INSERTS,
-				    0,
-				    ret,
-				    0,
-				    (LPTSTR)&buff,
-				    16384,
-				    0);
-	error_message = g_strndup(buff, buff_length);
-	LocalFree(buff);
-
-	SIPE_DEBUG_ERROR("SSPI ERROR [%d] in %s: %s", (int)ret, func, error_message);
-	g_free(error_message);
-}
-
 
 /*
   Local Variables:
