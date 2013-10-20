@@ -230,6 +230,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to delete security context (ret=%d)", (int)ret);
 		}
 		ctx->ctx_krb5 = GSS_C_NO_CONTEXT;
+		context->flags &= ~SIP_SEC_FLAG_COMMON_READY;
 	}
 
 	/* Import service name to GSS */

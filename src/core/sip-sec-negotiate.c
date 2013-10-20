@@ -65,6 +65,8 @@ static void sip_sec_negotiate_copy_settings(context_negotiate ctx,
 {
 	if (context->flags & SIP_SEC_FLAG_COMMON_READY)
 		ctx->common.flags |= SIP_SEC_FLAG_COMMON_READY;
+	else
+		ctx->common.flags &= ~SIP_SEC_FLAG_COMMON_READY;
 	ctx->common.expires = context->expires;
 }
 

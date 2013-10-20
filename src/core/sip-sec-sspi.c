@@ -216,6 +216,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 		DeleteSecurityContext(ctx->ctx_sspi);
 		g_free(ctx->ctx_sspi);
 		ctx->ctx_sspi = NULL;
+		context->flags &= ~SIP_SEC_FLAG_COMMON_READY;
 	}
 
 	/* reuse existing context on following calls */
