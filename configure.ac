@@ -170,15 +170,19 @@ AS_IF([test "x$with_krb5" != xno],
        CFLAGS="$CFLAGS $KRB5_CFLAGS"
        LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
        AC_CHECK_HEADERS([gssapi/gssapi.h gssapi/gssapi_krb5.h],
-			,
+			[],
 			[AC_ERROR([GSSAPI headers not found])])
        AC_CHECK_FUNC([gss_init_sec_context],
-		     ,
+		     [],
 		     [AC_ERROR([GSSAPI libraries not found])])
+
+       dnl older GSSAPI releases don't have gss_acquire_cred_with_passwd()
        AC_CHECK_HEADER([gssapi/gssapi_ext.h],
-			AC_CHECK_FUNC([gss_acquire_cred_with_password],
+		       [AC_CHECK_FUNC([gss_acquire_cred_with_password],
 				      [AC_DEFINE(HAVE_GSSAPI_PASSWORD_SUPPORT, 1, [Define to 1 if gssapi has gss_acquire_cred_with_passwd()])],
-				      [AC_MSG_NOTICE([gss_acquire_cred_with_passwd() required: disabling GSSAPI non-SSO support])]))
+				      [AC_MSG_NOTICE([gss_acquire_cred_with_passwd() required: disabling GSSAPI non-SSO support])])],
+		       [AC_MSG_NOTICE([gssapi/gssapi_ext.h required: disabling GSSAPI non-SSO support])])
+
        CFLAGS="$ac_save_CFLAGS"
        LDFLAGS="$ac_save_LDFLAGS"
       ])

@@ -72,9 +72,7 @@ static void sip_sec_krb5_print_gss_error0(char *func,
 	} while (message_context != 0);
 }
 
-/**
- * Prints out errors of GSSAPI function invocation
- */
+/* Prints out errors of GSSAPI function invocation */
 static void sip_sec_krb5_print_gss_error(char *func,
 					 OM_uint32 ret,
 					 OM_uint32 minor)
@@ -185,6 +183,10 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 			return(TRUE);
 		}
 #else
+		/*
+		 * non-SSO support requires gss_acquire_cred_with_password()
+		 * which is not available on older GSSAPI releases.
+		 */
 		(void) domain;   /* keep compiler happy */
 		(void) username; /* keep compiler happy */
 		(void) password; /* keep compiler happy */
