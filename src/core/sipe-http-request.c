@@ -168,13 +168,55 @@ static void sipe_http_request_enqueue(struct sipe_core_private *sipe_private,
 						       req);
 }
 
+static void sipe_http_request_finalize_negotiate(struct sipe_http_request *req,
+						 struct sipmsg *msg)
+{
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
+	/*
+	 * Negotiate sends a final package in the successful response.
+	 * We need to forward this to the context or otherwise it will
+	 * never reach the ready state.
+	 */
+	struct sipe_http_connection_public *conn_public = req->connection;
+
+	if (conn_public->context) {
+		const gchar *header = sipmsg_find_auth_header(msg, "Negotiate");
+
+		if (header) {
+			gchar **parts = g_strsplit(header, " ", 0);
+			gchar *spn    = g_strdup_printf("HTTP/%s", conn_public->host);
+			gchar *token;
+
+			SIPE_DEBUG_INFO("sipe_http_request_finalize_negotiate: init context target '%s' token '%s'",
+					spn, parts[1] ? parts[1] : "<NULL>");
+
+			if (sip_sec_init_context_step(conn_public->context,
+						      spn,
+						      parts[1],
+						      &token,
+						      NULL))
+				g_free(token);
+
+			g_free(spn);
+			g_strfreev(parts);
+		}
+	}
+#else
+	(void) req; /* keep compiler happy */
+	(void) msg; /* keep compiler happy */
+#endif
+}
+
+
 /* TRUE indicates failure */
 static gboolean sipe_http_request_response_redirection(struct sipe_core_private *sipe_private,
-						   struct sipe_http_request *req,
-						   struct sipmsg *msg)
+						       struct sipe_http_request *req,
+						       struct sipmsg *msg)
 {
 	const gchar *location = sipmsg_find_header(msg, "Location");
 	gboolean failed = TRUE;
+
+	sipe_http_request_finalize_negotiate(req, msg);
 
 	if (location) {
 		struct sipe_http_parsed_uri *parsed_uri = sipe_http_parse_uri(location);
@@ -307,6 +349,8 @@ static void sipe_http_request_response_callback(struct sipe_core_private *sipe_p
 						struct sipmsg *msg)
 {
 	const gchar *hdr;
+
+	sipe_http_request_finalize_negotiate(req, msg);
 
 	/* Set-Cookie: RMID=732423sdfs73242; expires=Fri, 31-Dec-2010 23:59:59 GMT; path=/; domain=.example.net */
 	if (req->session &&
