@@ -65,8 +65,7 @@ typedef struct _context_sspi {
 	guint type;
 } *context_sspi;
 
-#define SIP_SEC_FLAG_SSPI_INITIAL  0x00010000
-#define SIP_SEC_FLAG_SSPI_SIP_NTLM 0x00020000
+#define SIP_SEC_FLAG_SSPI_SIP_NTLM 0x00010000
 
 static int
 sip_sec_get_interval_from_now_sec(TimeStamp timestamp);
@@ -105,8 +104,6 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	context_sspi ctx = (context_sspi)context;
 
 	/* this is the first time we are allowed to set private flags */
-	context->flags |= SIP_SEC_FLAG_SSPI_INITIAL;
-
 	if (((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
 	    (ctx->type == SIPE_AUTHENTICATION_TYPE_NTLM))
 		context->flags |= SIP_SEC_FLAG_SSPI_SIP_NTLM;
@@ -170,39 +167,13 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
 
-	if (context->flags & SIP_SEC_FLAG_SSPI_SIP_NTLM) {
-		if (context->flags & SIP_SEC_FLAG_SSPI_INITIAL) {
-			/* empty initial message for connection-less NTLM */
-			if (in_buff.value == NULL) {
-				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: initial message for connection-less NTLM");
-				out_buff->length = 0;
-				out_buff->value = (guint8 *) g_strdup("");
-				return TRUE;
-
-				/* call again to create context for connection-less NTLM */
-			} else {
-				SipSecBuffer empty = { 0, NULL };
-
-				context->flags &= ~SIP_SEC_FLAG_SSPI_INITIAL;
-				if (sip_sec_init_sec_context__sspi(context,
-								   empty,
-								   out_buff,
-								   service_name)) {
-					SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: connection-less NTLM second round");
-					g_free(out_buff->value);
-				} else {
-					return FALSE;
-				}
-			}
-		}
-	} else if ((context->flags & SIP_SEC_FLAG_COMMON_HTTP) &&
-		   ctx->ctx_sspi &&
-		   (in_buff.value == NULL)) {
-		/*
-		 * We already have an initialized connection-based context
-		 * and we're asked to initialize it with a NULL token. This
-		 * will fail with "invalid token". Drop old context instead.
-		 */
+	/*
+	 * If authentication was already completed, then this mean a new
+	 * authentication handshake has started on the existing connection.
+	 * We must throw away the old context, because we need a new one.
+	 */
+	if ((context->flags & SIP_SEC_FLAG_COMMON_READY) &&
+	    ctx->ctx_sspi) {
 		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: dropping old context");
 		DeleteSecurityContext(ctx->ctx_sspi);
 		g_free(ctx->ctx_sspi);
@@ -260,12 +231,14 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	}
 
 	out_buff->length = out_token.cbBuffer;
-	out_buff->value = NULL;
 	if (out_token.cbBuffer) {
 		out_buff->value = g_malloc(out_token.cbBuffer);
 		memcpy(out_buff->value, out_token.pvBuffer, out_token.cbBuffer);
-		FreeContextBuffer(out_token.pvBuffer);
+	} else {
+		/* Special case: empty token */
+		out_buff->value = (guint8 *) g_strdup("");
 	}
+	FreeContextBuffer(out_token.pvBuffer);
 
 	ctx->ctx_sspi = out_context;
 
