@@ -1,3 +1,10 @@
+version 1.18.0 "XXXX" (2013-XX-XX)
+	- cleanup for sip-sec Kerberos & SSPI modules (Stefan Becker)
+	  * replace old TGT hack with gss_acquire_cred_with_password()
+	  * clean up Kerberos detection in configure
+	  * remove special case handling; code is more straight-forward now
+	  * thanks to David Woodhouse and Simo Sorce for the GSSAPI information
+
 version 1.17.1 "Bug Fixes I" (2013-XX-XX)
 	- Fixed #215: Password not entity encoded in WSSE element (Stefan Becker)
 
