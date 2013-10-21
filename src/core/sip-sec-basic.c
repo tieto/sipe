@@ -104,6 +104,12 @@ sip_sec_destroy_sec_context__basic(SipSecContext context)
 	g_free(ctx);
 }
 
+static const gchar *
+sip_sec_context_name__basic(SIPE_UNUSED_PARAMETER SipSecContext context)
+{
+	return("Basic");
+}
+
 SipSecContext
 sip_sec_create_context__basic(SIPE_UNUSED_PARAMETER guint type)
 {
@@ -115,6 +121,7 @@ sip_sec_create_context__basic(SIPE_UNUSED_PARAMETER guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__basic;
 	context->common.make_signature_func   = sip_sec_make_signature__basic;
 	context->common.verify_signature_func = sip_sec_verify_signature__basic;
+	context->common.context_name_func     = sip_sec_context_name__basic;
 
 	return((SipSecContext) context);
 }

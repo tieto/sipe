@@ -263,7 +263,6 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 							struct sipmsg *msg)
 {
 	const gchar *header = NULL;
-	const gchar *name;
 	guint type;
 	gboolean failed = TRUE;
 
@@ -274,7 +273,6 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 		header = sipmsg_find_auth_header(msg, "Negotiate");
 	if (header) {
 		type   = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
-		name   = "Negotiate";
 	} else
 #else
 #define DEBUG_STRING " and NTLM"
@@ -283,14 +281,12 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 	{
 		header = sipmsg_find_auth_header(msg, "NTLM");
 		type   = SIPE_AUTHENTICATION_TYPE_NTLM;
-		name   = "NTLM";
 	}
 
 	/* only fall back to "Basic" after everything else fails */
 	if (!header) {
 		header = sipmsg_find_auth_header(msg, "Basic");
 		type   = SIPE_AUTHENTICATION_TYPE_BASIC;
-		name   = "Basic";
 	}
 
 	if (header) {
@@ -323,7 +319,7 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 
 				/* generate authorization header */
 				req->authorization = g_strdup_printf("Authorization: %s %s\r\n",
-								     name,
+								     sip_sec_context_name(conn_public->context),
 								     token ? token : "");
 				g_free(token);
 

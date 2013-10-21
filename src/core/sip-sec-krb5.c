@@ -385,6 +385,12 @@ sip_sec_destroy_sec_context__krb5(SipSecContext context)
 	g_free(context);
 }
 
+static const gchar *
+sip_sec_context_name__krb5(SIPE_UNUSED_PARAMETER SipSecContext context)
+{
+	return("Kerberos");
+}
+
 SipSecContext
 sip_sec_create_context__krb5(SIPE_UNUSED_PARAMETER guint type)
 {
@@ -396,6 +402,7 @@ sip_sec_create_context__krb5(SIPE_UNUSED_PARAMETER guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__krb5;
 	context->common.make_signature_func   = sip_sec_make_signature__krb5;
 	context->common.verify_signature_func = sip_sec_verify_signature__krb5;
+	context->common.context_name_func     = sip_sec_context_name__krb5;
 
 	context->cred_krb5 = GSS_C_NO_CREDENTIAL;
 	context->ctx_krb5  = GSS_C_NO_CONTEXT;

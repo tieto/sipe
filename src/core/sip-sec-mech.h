@@ -61,6 +61,8 @@ typedef gboolean
 				 const gchar *message,
 				 SipSecBuffer signature);
 
+typedef const gchar *(*sip_sec_context_name_func)(SipSecContext context);
+
 typedef gboolean (*sip_sec_password_func)(void);
 
 
@@ -70,6 +72,7 @@ struct sip_sec_context {
 	sip_sec_destroy_context_func  destroy_context_func;
 	sip_sec_make_signature_func   make_signature_func;
 	sip_sec_verify_signature_func verify_signature_func;
+	sip_sec_context_name_func     context_name_func;
 	guint type;
 	/** Security Context expiration interval in seconds */
 	guint expires;

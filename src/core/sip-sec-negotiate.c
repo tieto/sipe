@@ -199,6 +199,21 @@ sip_sec_destroy_sec_context__negotiate(SipSecContext context)
 	g_free(ctx);
 }
 
+/*
+ * This module doesn't implement SPNEGO (RFC 4559) but instead returns raw
+ * NTLM. Therefore we should not use "Authorization: Negotiate" for NTLM
+ * although Microsoft servers *do* accept them.
+ */
+static const gchar *
+sip_sec_context_name__negotiate(SipSecContext context)
+{
+	context_negotiate ctx = (context_negotiate) context;
+	if (ctx->krb5)
+		return("Negotiate");
+	else
+		return("NTLM");
+}
+
 SipSecContext
 sip_sec_create_context__negotiate(guint type)
 {
@@ -217,6 +232,7 @@ sip_sec_create_context__negotiate(guint type)
 				context->common.destroy_context_func  = sip_sec_destroy_sec_context__negotiate;
 				context->common.make_signature_func   = sip_sec_make_signature__negotiate;
 				context->common.verify_signature_func = sip_sec_verify_signature__negotiate;
+				context->common.context_name_func     = sip_sec_context_name__negotiate;
 				context->krb5 = krb5;
 				context->ntlm = ntlm;
 			} else {

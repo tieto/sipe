@@ -206,6 +206,14 @@ gboolean sip_sec_context_is_ready(SipSecContext context)
 	return(context && (context->flags & SIP_SEC_FLAG_COMMON_READY));
 }
 
+const gchar *sip_sec_context_name(SipSecContext context)
+{
+	if (context)
+		return((*context->context_name_func)(context));
+	else
+		return(NULL);
+}
+
 guint sip_sec_context_type(SipSecContext context)
 {
 	if (context)

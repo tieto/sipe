@@ -212,6 +212,12 @@ sip_sec_destroy_sec_context__tls_dsk(SipSecContext context)
 	g_free(ctx);
 }
 
+static const gchar *
+sip_sec_context_name__tls_dsk(SIPE_UNUSED_PARAMETER SipSecContext context)
+{
+	return("TLS-DSK");
+}
+
 SipSecContext
 sip_sec_create_context__tls_dsk(SIPE_UNUSED_PARAMETER guint type)
 {
@@ -223,6 +229,7 @@ sip_sec_create_context__tls_dsk(SIPE_UNUSED_PARAMETER guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__tls_dsk;
 	context->common.make_signature_func   = sip_sec_make_signature__tls_dsk;
 	context->common.verify_signature_func = sip_sec_verify_signature__tls_dsk;
+	context->common.context_name_func     = sip_sec_context_name__tls_dsk;
 
 	return((SipSecContext) context);
 }
