@@ -62,7 +62,6 @@ typedef struct _context_sspi {
 	struct sip_sec_context common;
 	CredHandle* cred_sspi;
 	CtxtHandle* ctx_sspi;
-	guint type;
 } *context_sspi;
 
 #define SIP_SEC_FLAG_SSPI_SIP_NTLM 0x00010000
@@ -143,7 +142,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 
 	/* this is the first time we are allowed to set private flags */
 	if (((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
-	    (ctx->type == SIPE_AUTHENTICATION_TYPE_NTLM))
+	    (context->type == SIPE_AUTHENTICATION_TYPE_NTLM))
 		context->flags |= SIP_SEC_FLAG_SSPI_SIP_NTLM;
 
 	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
@@ -169,7 +168,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	ctx->cred_sspi = g_malloc0(sizeof(CredHandle));
 
 	ret = AcquireCredentialsHandleA(NULL,
-					(SEC_CHAR *)mech_names[ctx->type],
+					(SEC_CHAR *)mech_names[context->type],
 					SECPKG_CRED_OUTBOUND,
 					NULL,
 					(context->flags & SIP_SEC_FLAG_COMMON_SSO) ? NULL : &auth_identity,
@@ -281,7 +280,7 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 
 	ctx->ctx_sspi = out_context;
 
-	if (ctx->type == SIPE_AUTHENTICATION_TYPE_KERBEROS) {
+	if (context->type == SIPE_AUTHENTICATION_TYPE_KERBEROS) {
 		context->expires = sip_sec_get_interval_from_now_sec(expiry);
 	}
 
@@ -410,7 +409,6 @@ sip_sec_create_context__sspi(guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->type = type;
 
 	return((SipSecContext) context);
 }
