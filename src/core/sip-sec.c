@@ -36,6 +36,7 @@
 #include "sipe-common.h"
 #include "sip-sec.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
 #include "sipe-utils.h"
 
 #include "sip-sec-mech.h"
@@ -134,6 +135,8 @@ sip_sec_create_context(guint type,
 	context = (*(auth_to_hook[type]))(type);
 	if (context) {
 
+		context->type = type;
+
 		/* NOTE: mechanism must set private flags acquire_cred_func()! */
 		context->flags = 0;
 
@@ -203,8 +206,15 @@ gboolean sip_sec_context_is_ready(SipSecContext context)
 	return(context && (context->flags & SIP_SEC_FLAG_COMMON_READY));
 }
 
-void
-sip_sec_destroy_context(SipSecContext context)
+guint sip_sec_context_type(SipSecContext context)
+{
+	if (context)
+		return(context->type);
+	else
+		return(SIPE_AUTHENTICATION_TYPE_UNSET);
+}
+
+void sip_sec_destroy_context(SipSecContext context)
 {
 	if (context) (*context->destroy_context_func)(context);
 }

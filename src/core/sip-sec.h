@@ -79,6 +79,15 @@ sip_sec_init_context_step(SipSecContext context,
 gboolean sip_sec_context_is_ready(SipSecContext context);
 
 /**
+ * Return type of a security context
+ *
+ * @param context (in) security context. May be @c NULL.
+ *
+ * @return @c context type or SIPE_SIPE_AUTHENTICATION_TYPE_UNSET
+ */
+guint sip_sec_context_type(SipSecContext context);
+
+/**
  * A convenience method for sipe.
  * Destroys security context.
  *

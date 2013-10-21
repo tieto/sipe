@@ -181,13 +181,13 @@ static void sipe_http_request_finalize_negotiate(struct sipe_http_request *req,
 {
 #if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 	/*
-	 * Negotiate sends a final package in the successful response.
+	 * Negotiate can send a final package in the successful response.
 	 * We need to forward this to the context or otherwise it will
 	 * never reach the ready state.
 	 */
 	struct sipe_http_connection_public *conn_public = req->connection;
 
-	if (conn_public->context) {
+	if (sip_sec_context_type(conn_public->context) == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) {
 		const gchar *header = sipmsg_find_auth_header(msg, "Negotiate");
 
 		if (header) {
