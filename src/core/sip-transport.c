@@ -1129,10 +1129,9 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				timeout = sipmsg_find_part_of_header(sipmsg_find_header(msg, "ms-keep-alive"),
 								     "timeout=", ";", NULL);
 				if (timeout != NULL) {
-					sscanf(timeout, "%u", &sipe_private->public.keepalive_timeout);
+					sscanf(timeout, "%u", &transport->keepalive_timeout);
 					SIPE_DEBUG_INFO("process_register_response: server determined keep alive timeout is %u seconds",
-							sipe_private->public.keepalive_timeout);
-					transport->keepalive_timeout = sipe_private->public.keepalive_timeout;
+							transport->keepalive_timeout);
 					g_free(timeout);
 				}
 
@@ -1973,12 +1972,6 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 		sipe_private->transport_type = transport;
 		resolve_next_service(sipe_private, services[transport]);
 	}
-}
-
-void sipe_core_transport_sip_keepalive(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
-{
-	SIPE_DEBUG_INFO("DEACTIVATED sending keep alive %d",
-			sipe_public->keepalive_timeout);
 }
 
 const gchar *sipe_core_transport_sip_server_name(struct sipe_core_public *sipe_public)
