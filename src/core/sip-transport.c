@@ -537,8 +537,8 @@ static void keepalive_timeout(struct sipe_core_private *sipe_private,
 {
 	struct sip_transport *transport = sipe_private->transport;
 	if (transport) {
-		time_t since_last = time(NULL) - transport->last_message;
-		guint restart     = transport->keepalive_timeout;
+		guint since_last = time(NULL) - transport->last_message;
+		guint restart    = transport->keepalive_timeout;
 		if (since_last >= restart) {
 			SIPE_DEBUG_INFO("keepalive_timeout: expired %d", restart);
 			send_sip_message(transport, "\r\n\r\n");
