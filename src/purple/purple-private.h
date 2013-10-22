@@ -44,7 +44,6 @@ struct sipe_backend_private {
 	GList *rejoin_chats;
 	GSList *transports;
 	GSList *dns_queries;
-	time_t last_keepalive;
 };
 
 struct sipe_backend_fd {

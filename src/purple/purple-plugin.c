@@ -521,21 +521,6 @@ static void sipe_purple_add_deny(PurpleConnection *gc, const char *name)
 	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, FALSE);
 }
 
-static void sipe_purple_keep_alive(PurpleConnection *gc)
-{
-	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
-	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	time_t now = time(NULL);
-
-	if ((sipe_public->keepalive_timeout > 0) &&
-	    ((guint) (now - purple_private->last_keepalive) >= sipe_public->keepalive_timeout) &&
-	    ((guint) (now - gc->last_received) >= sipe_public->keepalive_timeout)
-		) {
-		sipe_core_transport_sip_keepalive(sipe_public);
-		purple_private->last_keepalive = now;
-	}
-}
-
 static void sipe_purple_alias_buddy(PurpleConnection *gc, const char *name,
 				    const char *alias)
 {
@@ -662,7 +647,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	sipe_purple_chat_leave,			/* chat_leave */
 	NULL,					/* chat_whisper */
 	sipe_purple_chat_send,			/* chat_send */
-	sipe_purple_keep_alive,			/* keepalive */
+	NULL,					/* keepalive */
 	NULL,					/* register_user */
 	NULL,					/* get_cb_info */	// deprecated
 #if !PURPLE_VERSION_CHECK(3,0,0)
