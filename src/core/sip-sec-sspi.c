@@ -37,6 +37,7 @@
 
 #include <glib.h>
 
+#include "sipe-common.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-sspi.h"
@@ -406,7 +407,7 @@ sip_sec_context_name__sspi(SipSecContext context)
 }
 
 SipSecContext
-sip_sec_create_context__sspi(guint type)
+sip_sec_create_context__sspi(SIPE_UNUSED_PARAMETER guint type)
 {
 	context_sspi context = g_malloc0(sizeof(struct _context_sspi));
 	if (!context) return(NULL);
