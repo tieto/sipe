@@ -42,15 +42,15 @@
 #include "sipe-utils.h"
 
 /* Security context for Kerberos */
-typedef struct _context_krb5 {
+typedef struct _context_gssapi {
 	struct sip_sec_context common;
-	gss_cred_id_t cred_krb5;
-	gss_ctx_id_t ctx_krb5;
-} *context_krb5;
+	gss_cred_id_t cred_gssapi;
+	gss_ctx_id_t ctx_gssapi;
+} *context_gssapi;
 
-static void sip_sec_krb5_print_gss_error0(char *func,
-					  OM_uint32 status,
-					  int type)
+static void sip_sec_gssapi_print_gss_error0(char *func,
+					    OM_uint32 status,
+					    int type)
 {
 	OM_uint32 minor;
 	OM_uint32 message_context = 0;
@@ -64,7 +64,7 @@ static void sip_sec_krb5_print_gss_error0(char *func,
 				   &message_context,
 				   &status_string);
 
-		SIPE_DEBUG_ERROR("sip_sec_krb5: GSSAPI error in %s (%s): %s",
+		SIPE_DEBUG_ERROR("sip_sec_gssapi: GSSAPI error in %s (%s): %s",
 				 func,
 				 (type == GSS_C_GSS_CODE ? "GSS" : "Mech"),
 				 (gchar *) status_string.value);
@@ -73,23 +73,23 @@ static void sip_sec_krb5_print_gss_error0(char *func,
 }
 
 /* Prints out errors of GSSAPI function invocation */
-static void sip_sec_krb5_print_gss_error(char *func,
-					 OM_uint32 ret,
-					 OM_uint32 minor)
+static void sip_sec_gssapi_print_gss_error(char *func,
+					   OM_uint32 ret,
+					   OM_uint32 minor)
 {
-	sip_sec_krb5_print_gss_error0(func, ret,   GSS_C_GSS_CODE);
-	sip_sec_krb5_print_gss_error0(func, minor, GSS_C_MECH_CODE);
+	sip_sec_gssapi_print_gss_error0(func, ret,   GSS_C_GSS_CODE);
+	sip_sec_gssapi_print_gss_error0(func, minor, GSS_C_MECH_CODE);
 }
 
 /* sip-sec-mech.h API implementation for Kerberos/GSSAPI */
 
 static gboolean
-sip_sec_acquire_cred__krb5(SipSecContext context,
-			   const gchar *domain,
-			   const gchar *username,
-			   const gchar *password)
+sip_sec_acquire_cred__gssapi(SipSecContext context,
+			     const gchar *domain,
+			     const gchar *username,
+			     const gchar *password)
 {
-	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__krb5: started");
+	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__gssapi: started");
 
 	/* With SSO we use the default credentials */
 	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
@@ -103,7 +103,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 
 		/* Without SSO we need user name and password */
 		if (!username || !password) {
-			SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__krb5: no valid authentication information provided");
+			SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__gssapi: no valid authentication information provided");
 			return(FALSE);
 		}
 
@@ -141,7 +141,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 			/* Otherwise use username as is */
 			username_new = g_strdup(username);
 		}
-		SIPE_DEBUG_INFO("sip_sec_acquire_cred__krb5: username '%s'",
+		SIPE_DEBUG_INFO("sip_sec_acquire_cred__gssapi: username '%s'",
 				username_new);
 
 		/* Import user name into GSS format */
@@ -155,8 +155,8 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 		g_free(username_new);
 
 		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_import_name", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__krb5: failed to construct user name (ret=%d)", (int)ret);
+			sip_sec_gssapi_print_gss_error("gss_import_name", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to construct user name (ret=%d)", (int)ret);
 			return(FALSE);
 		}
 
@@ -175,11 +175,11 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 		gss_release_name(&minor_ignore, &user_name);
 
 		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_acquire_cred_with_password", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__krb5: failed to acquire credentials (ret=%d)", (int)ret);
+			sip_sec_gssapi_print_gss_error("gss_acquire_cred_with_password", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to acquire credentials (ret=%d)", (int)ret);
 			return(FALSE);
 		} else {
-			((context_krb5) context)->cred_krb5 = credentials;
+			((context_gssapi) context)->cred_gssapi = credentials;
 			return(TRUE);
 		}
 #else
@@ -190,7 +190,7 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 		(void) domain;   /* keep compiler happy */
 		(void) username; /* keep compiler happy */
 		(void) password; /* keep compiler happy */
-		SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__krb5: non-SSO mode not supported");
+		SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__gssapi: non-SSO mode not supported");
 		return(FALSE);
 #endif
 	}
@@ -199,12 +199,12 @@ sip_sec_acquire_cred__krb5(SipSecContext context,
 }
 
 static gboolean
-sip_sec_init_sec_context__krb5(SipSecContext context,
-			       SipSecBuffer in_buff,
-			       SipSecBuffer *out_buff,
-			       const gchar *service_name)
+sip_sec_init_sec_context__gssapi(SipSecContext context,
+				 SipSecBuffer in_buff,
+				 SipSecBuffer *out_buff,
+				 const gchar *service_name)
 {
-	context_krb5 ctx = (context_krb5) context;
+	context_gssapi ctx = (context_gssapi) context;
 	OM_uint32 ret;
 	OM_uint32 minor, minor_ignore;
 	OM_uint32 expiry;
@@ -212,7 +212,7 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	gss_buffer_desc output_token;
 	gss_name_t target_name;
 
-	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__krb5: started");
+	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: started");
 
 	/*
 	 * If authentication was already completed, then this mean a new
@@ -220,16 +220,16 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	 * We must throw away the old context, because we need a new one.
 	 */
 	if ((context->flags & SIP_SEC_FLAG_COMMON_READY) &&
-	    (ctx->ctx_krb5 != GSS_C_NO_CONTEXT)) {
-		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__krb5: dropping old context");
+	    (ctx->ctx_gssapi != GSS_C_NO_CONTEXT)) {
+		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: dropping old context");
 		ret = gss_delete_sec_context(&minor,
-					     &(ctx->ctx_krb5),
+					     &(ctx->ctx_gssapi),
 					     GSS_C_NO_BUFFER);
 		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_delete_sec_context", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to delete security context (ret=%d)", (int)ret);
+			sip_sec_gssapi_print_gss_error("gss_delete_sec_context", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to delete security context (ret=%d)", (int)ret);
 		}
-		ctx->ctx_krb5 = GSS_C_NO_CONTEXT;
+		ctx->ctx_gssapi = GSS_C_NO_CONTEXT;
 		context->flags &= ~SIP_SEC_FLAG_COMMON_READY;
 	}
 
@@ -242,8 +242,8 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 			      (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME,
 			      &target_name);
 	if (GSS_ERROR(ret)) {
-		sip_sec_krb5_print_gss_error("gss_import_name", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to construct target name (ret=%d)", (int)ret);
+		sip_sec_gssapi_print_gss_error("gss_import_name", ret, minor);
+		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to construct target name (ret=%d)", (int)ret);
 		return(FALSE);
 	}
 
@@ -255,8 +255,8 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 	output_token.value = NULL;
 
 	ret = gss_init_sec_context(&minor,
-				   ctx->cred_krb5,
-				   &(ctx->ctx_krb5),
+				   ctx->cred_gssapi,
+				   &(ctx->ctx_gssapi),
 				   target_name,
 				   (gss_OID) gss_mech_krb5,
 				   GSS_C_INTEG_FLAG,
@@ -271,8 +271,8 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
 
 	if (GSS_ERROR(ret)) {
 		gss_release_buffer(&minor_ignore, &output_token);
-		sip_sec_krb5_print_gss_error("gss_init_sec_context", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__krb5: failed to initialize context (ret=%d)", (int)ret);
+		sip_sec_gssapi_print_gss_error("gss_init_sec_context", ret, minor);
+		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to initialize context (ret=%d)", (int)ret);
 		return(FALSE);
 	}
 
@@ -292,9 +292,9 @@ sip_sec_init_sec_context__krb5(SipSecContext context,
  * @param message a NULL terminated string to sign
  */
 static gboolean
-sip_sec_make_signature__krb5(SipSecContext context,
-			     const gchar *message,
-			     SipSecBuffer *signature)
+sip_sec_make_signature__gssapi(SipSecContext context,
+			       const gchar *message,
+			       SipSecBuffer *signature)
 {
 	OM_uint32 ret;
 	OM_uint32 minor;
@@ -305,14 +305,14 @@ sip_sec_make_signature__krb5(SipSecContext context,
 	input_message.length = strlen(input_message.value);
 
 	ret = gss_get_mic(&minor,
-			  ((context_krb5)context)->ctx_krb5,
+			  ((context_gssapi)context)->ctx_gssapi,
 			  GSS_C_QOP_DEFAULT,
 			  &input_message,
 			  &output_token);
 
 	if (GSS_ERROR(ret)) {
-		sip_sec_krb5_print_gss_error("gss_get_mic", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_make_signature__krb5: failed to make signature (ret=%d)", (int)ret);
+		sip_sec_gssapi_print_gss_error("gss_get_mic", ret, minor);
+		SIPE_DEBUG_ERROR("sip_sec_make_signature__gssapi: failed to make signature (ret=%d)", (int)ret);
 		return FALSE;
 	} else {
 		signature->length = output_token.length;
@@ -327,9 +327,9 @@ sip_sec_make_signature__krb5(SipSecContext context,
  * @param message a NULL terminated string to check signature of
  */
 static gboolean
-sip_sec_verify_signature__krb5(SipSecContext context,
-			       const gchar *message,
-			       SipSecBuffer signature)
+sip_sec_verify_signature__gssapi(SipSecContext context,
+				 const gchar *message,
+				 SipSecBuffer signature)
 {
 	OM_uint32 ret;
 	OM_uint32 minor;
@@ -343,14 +343,14 @@ sip_sec_verify_signature__krb5(SipSecContext context,
 	input_token.length = signature.length;
 
 	ret = gss_verify_mic(&minor,
-			     ((context_krb5)context)->ctx_krb5,
+			     ((context_gssapi)context)->ctx_gssapi,
 			     &input_message,
 			     &input_token,
 			     NULL);
 
 	if (GSS_ERROR(ret)) {
-		sip_sec_krb5_print_gss_error("gss_verify_mic", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_verify_signature__krb5: failed to make signature (ret=%d)", (int)ret);
+		sip_sec_gssapi_print_gss_error("gss_verify_mic", ret, minor);
+		SIPE_DEBUG_ERROR("sip_sec_verify_signature__gssapi: failed to make signature (ret=%d)", (int)ret);
 		return FALSE;
 	} else {
 		return TRUE;
@@ -358,59 +358,59 @@ sip_sec_verify_signature__krb5(SipSecContext context,
 }
 
 static void
-sip_sec_destroy_sec_context__krb5(SipSecContext context)
+sip_sec_destroy_sec_context__gssapi(SipSecContext context)
 {
-	context_krb5 ctx = (context_krb5) context;
+	context_gssapi ctx = (context_gssapi) context;
 	OM_uint32 ret;
 	OM_uint32 minor;
 
-	if (ctx->ctx_krb5 != GSS_C_NO_CONTEXT) {
-		ret = gss_delete_sec_context(&minor, &(ctx->ctx_krb5), GSS_C_NO_BUFFER);
+	if (ctx->ctx_gssapi != GSS_C_NO_CONTEXT) {
+		ret = gss_delete_sec_context(&minor, &(ctx->ctx_gssapi), GSS_C_NO_BUFFER);
 		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_delete_sec_context", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__krb5: failed to delete security context (ret=%d)", (int)ret);
+			sip_sec_gssapi_print_gss_error("gss_delete_sec_context", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__gssapi: failed to delete security context (ret=%d)", (int)ret);
 		}
-		ctx->ctx_krb5 = GSS_C_NO_CONTEXT;
+		ctx->ctx_gssapi = GSS_C_NO_CONTEXT;
 	}
 
-	if (ctx->cred_krb5 != GSS_C_NO_CREDENTIAL) {
-		ret = gss_release_cred(&minor, &(ctx->cred_krb5));
+	if (ctx->cred_gssapi != GSS_C_NO_CREDENTIAL) {
+		ret = gss_release_cred(&minor, &(ctx->cred_gssapi));
 		if (GSS_ERROR(ret)) {
-			sip_sec_krb5_print_gss_error("gss_release_cred", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__krb5: failed to release credentials (ret=%d)", (int)ret);
+			sip_sec_gssapi_print_gss_error("gss_release_cred", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__gssapi: failed to release credentials (ret=%d)", (int)ret);
 		}
-		ctx->cred_krb5 = GSS_C_NO_CREDENTIAL;
+		ctx->cred_gssapi = GSS_C_NO_CREDENTIAL;
 	}
 
 	g_free(context);
 }
 
 static const gchar *
-sip_sec_context_name__krb5(SIPE_UNUSED_PARAMETER SipSecContext context)
+sip_sec_context_name__gssapi(SIPE_UNUSED_PARAMETER SipSecContext context)
 {
 	return("Kerberos");
 }
 
 SipSecContext
-sip_sec_create_context__krb5(SIPE_UNUSED_PARAMETER guint type)
+sip_sec_create_context__gssapi(SIPE_UNUSED_PARAMETER guint type)
 {
-	context_krb5 context = g_malloc0(sizeof(struct _context_krb5));
+	context_gssapi context = g_malloc0(sizeof(struct _context_gssapi));
 	if (!context) return(NULL);
 
-	context->common.acquire_cred_func     = sip_sec_acquire_cred__krb5;
-	context->common.init_context_func     = sip_sec_init_sec_context__krb5;
-	context->common.destroy_context_func  = sip_sec_destroy_sec_context__krb5;
-	context->common.make_signature_func   = sip_sec_make_signature__krb5;
-	context->common.verify_signature_func = sip_sec_verify_signature__krb5;
-	context->common.context_name_func     = sip_sec_context_name__krb5;
+	context->common.acquire_cred_func     = sip_sec_acquire_cred__gssapi;
+	context->common.init_context_func     = sip_sec_init_sec_context__gssapi;
+	context->common.destroy_context_func  = sip_sec_destroy_sec_context__gssapi;
+	context->common.make_signature_func   = sip_sec_make_signature__gssapi;
+	context->common.verify_signature_func = sip_sec_verify_signature__gssapi;
+	context->common.context_name_func     = sip_sec_context_name__gssapi;
 
-	context->cred_krb5 = GSS_C_NO_CREDENTIAL;
-	context->ctx_krb5  = GSS_C_NO_CONTEXT;
+	context->cred_gssapi = GSS_C_NO_CREDENTIAL;
+	context->ctx_gssapi  = GSS_C_NO_CONTEXT;
 
 	return((SipSecContext) context);
 }
 
-gboolean sip_sec_password__krb5(void)
+gboolean sip_sec_password__gssapi(void)
 {
 	/* Kerberos supports Single-Sign On */
 	return(FALSE);

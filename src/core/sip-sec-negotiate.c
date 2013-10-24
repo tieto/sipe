@@ -218,7 +218,7 @@ SipSecContext
 sip_sec_create_context__negotiate(guint type)
 {
 	context_negotiate context = NULL;
-	SipSecContext krb5 = sip_sec_create_context__krb5(type);
+	SipSecContext krb5 = sip_sec_create_context__gssapi(type);
 
 	if (krb5) {
 		SipSecContext ntlm = sip_sec_create_context__ntlm(type);
