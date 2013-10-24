@@ -187,7 +187,7 @@ AS_IF([test "x$with_krb5" != xno],
        LDFLAGS="$ac_save_LDFLAGS"
       ])
 
-AM_CONDITIONAL(SIP_SEC_KRB5, [test "x$with_krb5" != xno])
+AM_CONDITIONAL(SIP_SEC_GSSAPI, [test "x$with_krb5" != xno])
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
 

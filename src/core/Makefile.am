@@ -141,7 +141,7 @@ if !SIPE_OS_WIN32
 libsipe_core_tests_la_CFLAGS = $(libsipe_core_la_CFLAGS)
 endif
 
-if SIP_SEC_KRB5
+if SIP_SEC_GSSAPI
 libsipe_core_la_SOURCES += \
 	sip-sec-gssapi.h \
 	sip-sec-gssapi.c \

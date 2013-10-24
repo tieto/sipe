@@ -64,7 +64,7 @@ libsipe_la_CFLAGS += -DHAVE_SSPI=1
 libsipe_la_LIBADD += -lws2_32 -lsecur32
 endif
 
-if SIP_SEC_KRB5
+if SIP_SEC_GSSAPI
 libsipe_la_LIBADD += $(KRB5_LDFLAGS)
 endif
 
