@@ -1,5 +1,5 @@
 /**
- * @file sip-sec-krb5.h
+ * @file sip-sec-gssapi.h
  *
  * pidgin-sipe
  *

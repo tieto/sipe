@@ -21,7 +21,7 @@
     <ClCompile Include="src\core\sip-csta.c">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="src\core\sip-sec-krb5.c">
+    <ClCompile Include="src\core\sip-sec-gssapi.c">
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="src\core\sip-sec-ntlm.c">
@@ -236,7 +236,7 @@
     <ClInclude Include="src\core\sip-csta.h">
       <Filter>core</Filter>
     </ClInclude>
-    <ClInclude Include="src\core\sip-sec-krb5.h">
+    <ClInclude Include="src\core\sip-sec-gssapi.h">
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="src\core\sip-sec-mech.h">

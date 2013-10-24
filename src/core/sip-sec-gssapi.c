@@ -1,5 +1,5 @@
 /**
- * @file sip-sec-krb5.c
+ * @file sip-sec-gssapi.c
  *
  * pidgin-sipe
  *
@@ -37,7 +37,7 @@
 #include "sipe-common.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
-#include "sip-sec-krb5.h"
+#include "sip-sec-gssapi.h"
 #include "sipe-backend.h"
 #include "sipe-utils.h"
 

@@ -30,7 +30,7 @@
 #include "sipe-common.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
-#include "sip-sec-krb5.h"
+#include "sip-sec-gssapi.h" /* for Kerberos */
 #include "sip-sec-negotiate.h"
 #include "sip-sec-ntlm.h"
 #include "sipe-backend.h"

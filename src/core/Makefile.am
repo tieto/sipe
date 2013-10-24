@@ -143,8 +143,8 @@ endif
 
 if SIP_SEC_KRB5
 libsipe_core_la_SOURCES += \
-	sip-sec-krb5.h \
-	sip-sec-krb5.c \
+	sip-sec-gssapi.h \
+	sip-sec-gssapi.c \
 	sip-sec-negotiate.h \
 	sip-sec-negotiate.c
 libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
