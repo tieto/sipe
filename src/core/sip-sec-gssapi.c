@@ -20,6 +20,17 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ *
+ * This module implements sip-sec authentication API using GSSAPI.
+ *
+ * It can be compiled in two different modes:
+ *
+ *  - Kerberos-only: NTLM & SPNEGO are using SIPE internal implementation
+ *                   [HAVE_GSSAPI_ONLY is not defined]
+ *
+ *  - pure GSSAPI:   this modules handles Kerberos, NTLM & SPNEGO
+ *                   [HAVE_GSSAPI_ONLY is defined]
  */
 
 #ifdef HAVE_CONFIG_H
@@ -33,6 +44,9 @@
 #include <gssapi/gssapi_ext.h>
 #endif
 #include <gssapi/gssapi_krb5.h>
+#ifdef HAVE_GSSAPI_ONLY
+#include <gssapi/gssapi_ntlmssp.h>
+#endif
 
 #include "sipe-common.h"
 #include "sip-sec.h"

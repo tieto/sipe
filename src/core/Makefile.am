@@ -107,6 +107,8 @@ libsipe_core_la_SOURCES += \
 	sipe-win32dep.h \
 	sipe-win32dep.c
 else
+
+if !SIP_SEC_GSSAPI_ONLY
 libsipe_core_la_SOURCES += \
 	md4.h \
 	md4.c \
@@ -118,6 +120,8 @@ noinst_LTLIBRARIES += \
 
 libsipe_core_tests_la_SOURCES = \
 	sip-sec-ntlm-tests.c
+endif
+
 endif
 
 libsipe_core_crypto_nss_la_SOURCES = \
@@ -138,17 +142,24 @@ libsipe_core_la_CFLAGS = \
 	-I$(srcdir)/../api
 
 if !SIPE_OS_WIN32
+if !SIP_SEC_GSSAPI_ONLY
 libsipe_core_tests_la_CFLAGS = $(libsipe_core_la_CFLAGS)
+endif
 endif
 
 if SIP_SEC_GSSAPI
 libsipe_core_la_SOURCES += \
 	sip-sec-gssapi.h \
-	sip-sec-gssapi.c \
+	sip-sec-gssapi.c
+libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
+
+if !SIP_SEC_GSSAPI_ONLY
+libsipe_core_la_SOURCES += \
 	sip-sec-negotiate.h \
 	sip-sec-negotiate.c
-libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
 endif
+endif
+
 
 if SIPE_MIME_GMIME
 noinst_LTLIBRARIES           += libsipe_core_mime.la

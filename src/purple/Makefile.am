@@ -74,6 +74,7 @@ tests_load_CFLAGS  = $(GMODULE_CFLAGS)
 tests_load_LDADD   = $(GMODULE_LIBS)
 
 if !SIPE_OS_WIN32
+if !SIP_SEC_GSSAPI_ONLY
 check_PROGRAMS += tests
 tests_SOURCES   = tests.c
 tests_CFLAGS    = $(libsipe_la_CFLAGS)
@@ -85,15 +86,18 @@ tests_LDADD     = \
 	$(NSS_LIBS) \
 	$(PURPLE_LIBS)
 endif
+endif
 
 if SIPE_MIME_GMIME
 libsipe_la_LIBADD += \
 	../core/libsipe_core_mime.la \
 	$(GMIME_LIBS)
 if !SIPE_OS_WIN32
+if !SIP_SEC_GSSAPI_ONLY
 tests_LDADD       += \
 	../core/libsipe_core_mime.la \
 	$(GMIME_LIBS)
+endif
 endif
 else
 libsipe_backend_la_SOURCES += purple-mime.c
