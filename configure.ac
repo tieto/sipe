@@ -77,7 +77,7 @@ export PKG_CONFIG_PATH
 dnl debug mode
 AC_ARG_ENABLE(debug,
 	[AS_HELP_STRING([--enable-debug],
-			[compile with debugging support [default=no]])],
+			[compile with debugging support @<:@default=no@:>@])],
 	[],
 	[enable_debug=no])
 
@@ -89,7 +89,7 @@ dnl quality check mode
 dnl For people who are interested in finding bugs and not hiding them
 AC_ARG_ENABLE(quality-check,
 	[AS_HELP_STRING([--enable-quality-check],
-			[compile with compiler checks enabled [default=yes]])],
+			[compile with compiler checks enabled @<:@default=yes@:>@])],
 	[],
 	[enable_quality_check=yes])
 
@@ -190,6 +190,21 @@ AS_IF([test "x$with_krb5" != xno],
 AM_CONDITIONAL(SIP_SEC_KRB5, [test "x$with_krb5" != xno])
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
+
+AC_ARG_ENABLE(gssapi_only,
+	[AS_HELP_STRING([--enable-gssapi-only],
+			[disable all internal authentication code and only use
+                         GSSAPI for authentication @<:@default=yes@:>@])],
+	[],
+        dnl requires Kerberos which provides GSSAPI
+	[enable_gssapi_only=$with_krb5])
+AS_IF([test "x$enable_gssapi_only" != xno],
+	[AC_CHECK_HEADER([gssapi/gssapi_ntlmssp.h],
+		       [AC_DEFINE(HAVE_GSSAPI_ONLY, 1, [Define to 1 to enable GSSAPI-only mode])],
+		       [AC_MSG_NOTICE([gssapi/gssapi_ntlm.h required: falling back to internal authentication implementation])
+                        enable_gssapi_only=no])
+        ])
+AM_CONDITIONAL(SIP_SEC_GSSAPI_ONLY, [test "x$enable_gssapi_only" != xno])
 
 dnl check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
@@ -511,6 +526,10 @@ AS_IF([test "x$with_krb5" = xno],
 	[AS_ECHO("Build with Kerberos 5 support")
 	 AS_ECHO("KRB5_CFLAGS    : $KRB5_CFLAGS")
 	 AS_ECHO("KRB5_LDFLAGS   : $KRB5_LDFLAGS")])
+AS_ECHO()
+AS_IF([test "x$enable_gssapi_only" = xno],
+	[AS_ECHO("Using internal authentication implementation")],
+	[AS_ECHO("Using only GSSAPI for authentication")])
 AS_ECHO()
 AS_IF([test "x$enable_debug" = xno],
 	[AS_ECHO("Debugging not enabled")],
