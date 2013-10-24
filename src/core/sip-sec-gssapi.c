@@ -63,6 +63,18 @@ typedef struct _context_gssapi {
 	gss_ctx_id_t ctx_gssapi;
 } *context_gssapi;
 
+#ifdef HAVE_GSSAPI_ONLY
+static const gss_OID_desc gss_mech_ntlmssp = {
+	GSS_NTLMSSP_OID_LENGTH,
+	GSS_NTLMSSP_OID_STRING
+};
+
+static const gss_OID_desc gss_mech_spnego = {
+	6,
+	"\x2b\x06\x01\x05\x05\x02"
+};
+#endif
+
 static void sip_sec_gssapi_print_gss_error0(char *func,
 					    OM_uint32 status,
 					    int type)
@@ -101,13 +113,6 @@ static gss_OID_set create_mechs_set(guint type)
 	OM_uint32 ret;
 	OM_uint32 minor;
 	gss_OID_set set = GSS_C_NO_OID_SET;
-
-#ifdef HAVE_GSSAPI_ONLY
-	static const gss_OID_desc gss_mech_ntlmssp = {
-		GSS_NTLMSSP_OID_LENGTH,
-		GSS_NTLMSSP_OID_STRING
-	};
-#endif
 
 	ret = gss_create_empty_oid_set(&minor, &set);
 	if (GSS_ERROR(ret)) {
@@ -316,9 +321,17 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 	OM_uint32 ret;
 	OM_uint32 minor, minor_ignore;
 	OM_uint32 expiry;
+	OM_uint32 flags = GSS_C_INTEG_FLAG;
+	gss_OID name_oid, mech_oid;
 	gss_buffer_desc input_token;
 	gss_buffer_desc output_token;
 	gss_name_t target_name;
+#ifdef HAVE_GSSAPI_ONLY
+	gchar *hostbased_service_name = NULL;
+	gboolean sip_ntlm =
+		(((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
+		(context->type == SIPE_AUTHENTICATION_TYPE_NTLM));
+#endif
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: started");
 
@@ -341,14 +354,63 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		context->flags &= ~SIP_SEC_FLAG_COMMON_READY;
 	}
 
+#ifdef HAVE_GSSAPI_ONLY
+	switch(context->type) {
+	case SIPE_AUTHENTICATION_TYPE_NTLM:
+		name_oid          = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
+		mech_oid          = (gss_OID) &gss_mech_ntlmssp;
+		input_token.value = (void *)  service_name;
+		if (sip_ntlm)
+			flags |= GSS_C_DATAGRAM_FLAG;
+		break;
+
+	case SIPE_AUTHENTICATION_TYPE_KERBEROS:
+#endif
+		name_oid          = (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME;
+		mech_oid          = (gss_OID) gss_mech_krb5;
+		input_token.value = (void *)  service_name;
+#ifdef HAVE_GSSAPI_ONLY
+		break;
+
+	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE: {
+			/* Convert to hostbased so NTLM fallback can work */
+			gchar **type_service = g_strsplit(service_name, "/", 2);
+			if (type_service[1]) {
+				gchar *type_lower = g_ascii_strdown(type_service[0], -1);
+				hostbased_service_name = g_strdup_printf("%s@%s",
+									 type_lower,
+									 type_service[1]);
+				g_free(type_lower);
+				input_token.value = (void *) hostbased_service_name;
+			} else {
+				input_token.value = (void *) service_name;
+			}
+			g_strfreev(type_service);
+
+			name_oid = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
+			mech_oid = (gss_OID) &gss_mech_spnego;
+		}
+		break;
+
+	default:
+		SIPE_DEBUG_ERROR("sip_sec_gssapi_initialize_context invoked for invalid type %d",
+				 context->type);
+		return(FALSE);
+	}
+#endif
+
 	/* Import service name to GSS */
-	input_token.value  = (void *) service_name;
-	input_token.length = strlen(service_name) + 1;
+	input_token.length = strlen(input_token.value) + 1;
 
 	ret = gss_import_name(&minor,
 			      &input_token,
-			      (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME,
+			      name_oid,
 			      &target_name);
+
+#ifdef HAVE_GSSAPI_ONLY
+	g_free(hostbased_service_name);
+#endif
+
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_import_name", ret, minor);
 		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to construct target name (ret=%d)", (int)ret);
@@ -366,8 +428,8 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 				   ctx->cred_gssapi,
 				   &(ctx->ctx_gssapi),
 				   target_name,
-				   (gss_OID) gss_mech_krb5,
-				   GSS_C_INTEG_FLAG,
+				   mech_oid,
+				   flags,
 				   GSS_C_INDEFINITE,
 				   GSS_C_NO_CHANNEL_BINDINGS,
 				   &input_token,
@@ -385,13 +447,20 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 	}
 
 	out_buff->length = output_token.length;
-	out_buff->value  = g_memdup(output_token.value, output_token.length);
+	if (out_buff->length)
+		out_buff->value = g_memdup(output_token.value, output_token.length);
+	else
+		/* Special case: empty token */
+		out_buff->value = (guint8 *) g_strdup("");
+
 	gss_release_buffer(&minor_ignore, &output_token);
 
 	context->expires = (int)expiry;
 
-	/* Authentication is completed */
-	context->flags |= SIP_SEC_FLAG_COMMON_READY;
+	if (ret == GSS_S_COMPLETE) {
+		/* Authentication is completed */
+		context->flags |= SIP_SEC_FLAG_COMMON_READY;
+	}
 
 	return(TRUE);
 }
