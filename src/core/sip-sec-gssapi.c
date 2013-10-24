@@ -53,6 +53,7 @@
 #include "sip-sec-mech.h"
 #include "sip-sec-gssapi.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
 #include "sipe-utils.h"
 
 /* Security context for Kerberos */
@@ -95,6 +96,61 @@ static void sip_sec_gssapi_print_gss_error(char *func,
 	sip_sec_gssapi_print_gss_error0(func, minor, GSS_C_MECH_CODE);
 }
 
+static gss_OID_set create_mechs_set(guint type)
+{
+	OM_uint32 ret;
+	OM_uint32 minor;
+	gss_OID_set set = GSS_C_NO_OID_SET;
+
+#ifdef HAVE_GSSAPI_ONLY
+	static const gss_OID_desc gss_mech_ntlmssp = {
+		GSS_NTLMSSP_OID_LENGTH,
+		GSS_NTLMSSP_OID_STRING
+	};
+#endif
+
+	ret = gss_create_empty_oid_set(&minor, &set);
+	if (GSS_ERROR(ret)) {
+		sip_sec_gssapi_print_gss_error("gss_create_empty_oid_set", ret, minor);
+		SIPE_DEBUG_ERROR("create_mech_set: can't create mech set (ret=%d)", (int)ret);
+		return(GSS_C_NO_OID_SET);
+	}
+
+#ifdef HAVE_GSSAPI_ONLY
+	if ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ||
+	    (type == SIPE_AUTHENTICATION_TYPE_KERBEROS)) {
+#else
+		(void) type; /* keep compiler happy */
+#endif
+		ret = gss_add_oid_set_member(&minor,
+					     (gss_OID) gss_mech_krb5,
+					     &set);
+		if (GSS_ERROR(ret)) {
+			sip_sec_gssapi_print_gss_error("gss_add_oid_set_member(krb5)", ret, minor);
+			SIPE_DEBUG_ERROR("create_mech_set: can't add Kerberos to mech set (ret=%d)", (int)ret);
+			gss_release_oid_set(&minor, &set);
+			return(GSS_C_NO_OID_SET);
+		}
+#ifdef HAVE_GSSAPI_ONLY
+	}
+
+	if ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ||
+	    (type == SIPE_AUTHENTICATION_TYPE_NTLM)) {
+		ret = gss_add_oid_set_member(&minor,
+					     (gss_OID) &gss_mech_ntlmssp,
+					     &set);
+		if (GSS_ERROR(ret)) {
+			sip_sec_gssapi_print_gss_error("gss_add_oid_set_member(ntlmssp)", ret, minor);
+			SIPE_DEBUG_ERROR("create_mech_set: can't add NTLM to mech set (ret=%d)", (int)ret);
+			gss_release_oid_set(&minor, &set);
+			return(GSS_C_NO_OID_SET);
+		}
+	}
+#endif
+
+	return(set);
+}
+
 /* sip-sec-mech.h API implementation for Kerberos/GSSAPI */
 
 static gboolean
@@ -111,6 +167,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 		gchar *username_new;
 		OM_uint32 ret;
 		OM_uint32 minor, minor_ignore;
+		gss_OID_set mechs_set;
 		gss_cred_id_t credentials;
 		gss_buffer_desc input_name_buffer;
 		gss_name_t user_name;
@@ -120,6 +177,10 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 			SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__gssapi: no valid authentication information provided");
 			return(FALSE);
 		}
+
+		mechs_set = create_mechs_set(context->type);
+		if (mechs_set == GSS_C_NO_OID_SET)
+			return(FALSE);
 
 		/* Construct user name to acquire credentials for */
 		if (!is_empty(domain)) {
@@ -171,6 +232,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_import_name", ret, minor);
 			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to construct user name (ret=%d)", (int)ret);
+			gss_release_oid_set(&minor, &mechs_set);
 			return(FALSE);
 		}
 
@@ -181,12 +243,13 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 						     user_name,
 						     &input_name_buffer,
 						     GSS_C_INDEFINITE,
-						     GSS_C_NO_OID_SET,
+						     mechs_set,
 						     GSS_C_INITIATE,
 						     &credentials,
 						     NULL,
 						     NULL);
 		gss_release_name(&minor_ignore, &user_name);
+		gss_release_oid_set(&minor, &mechs_set);
 
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_acquire_cred_with_password", ret, minor);
@@ -208,8 +271,39 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 		return(FALSE);
 #endif
 	}
+#ifdef HAVE_GSSAPI_ONLY
+	else {
+		OM_uint32 ret;
+		OM_uint32 minor;
+		gss_OID_set mechs_set;
+		gss_cred_id_t credentials;
 
+		mechs_set = create_mechs_set(context->type);
+		if (mechs_set == GSS_C_NO_OID_SET)
+			return(FALSE);
+
+		ret = gss_acquire_cred(&minor,
+				       GSS_C_NO_NAME,
+				       GSS_C_INDEFINITE,
+				       mechs_set,
+				       GSS_C_INITIATE,
+				       &credentials,
+				       NULL,
+				       NULL);
+		gss_release_oid_set(&minor, &mechs_set);
+
+		if (GSS_ERROR(ret)) {
+			sip_sec_gssapi_print_gss_error("gss_acquire_cred", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to acquire credentials (ret=%d)", (int)ret);
+			return(FALSE);
+		} else {
+			((context_gssapi) context)->cred_gssapi = credentials;
+			return(TRUE);
+		}
+	}
+#else
 	return(TRUE);
+#endif
 }
 
 static gboolean
