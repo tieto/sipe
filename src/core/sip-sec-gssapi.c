@@ -156,6 +156,36 @@ static gss_OID_set create_mechs_set(guint type)
 	return(set);
 }
 
+#ifdef HAVE_GSSAPI_ONLY
+static gboolean gssntlm_reset_mic_sequence(context_gssapi context)
+{
+	OM_uint32 ret;
+	OM_uint32 minor;
+	gss_buffer_desc value;
+	guint sequence = 100;
+
+	static const gss_OID_desc set_sequence_num_oid = {
+		GSS_NTLMSSP_SET_SEQ_NUM_OID_LENGTH,
+		GSS_NTLMSSP_SET_SEQ_NUM_OID_STRING
+	};
+
+	value.length = sizeof(sequence);
+	value.value  = &sequence;
+
+	ret = gss_set_sec_context_option(&minor,
+					 &context->ctx_gssapi,
+					 (gss_OID_desc *) &set_sequence_num_oid,
+					 &value);
+	if (GSS_ERROR(ret)) {
+		sip_sec_gssapi_print_gss_error("gss_set_sec_context_option", ret, minor);
+		SIPE_DEBUG_ERROR("gssntlm_reset_mic_sequence: failed to reset MIC sequence number (ret=%d)", (int)ret);
+		return(FALSE);
+	}
+
+	return(TRUE);
+}
+#endif
+
 /* sip-sec-mech.h API implementation for Kerberos/GSSAPI */
 
 static gboolean
@@ -460,6 +490,11 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 	if (ret == GSS_S_COMPLETE) {
 		/* Authentication is completed */
 		context->flags |= SIP_SEC_FLAG_COMMON_READY;
+
+#ifdef HAVE_GSSAPI_ONLY
+		if (sip_ntlm && !gssntlm_reset_mic_sequence(ctx))
+			return(FALSE);
+#endif
 	}
 
 	return(TRUE);
