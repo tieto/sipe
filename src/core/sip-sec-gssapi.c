@@ -108,6 +108,7 @@ static void sip_sec_gssapi_print_gss_error(char *func,
 	sip_sec_gssapi_print_gss_error0(func, minor, GSS_C_MECH_CODE);
 }
 
+#if defined(HAVE_GSSAPI_PASSWORD_SUPPORT) || defined(HAVE_GSSAPI_ONLY)
 static gss_OID_set create_mechs_set(guint type)
 {
 	OM_uint32 ret;
@@ -155,6 +156,7 @@ static gss_OID_set create_mechs_set(guint type)
 
 	return(set);
 }
+#endif
 
 #ifdef HAVE_GSSAPI_ONLY
 static gboolean gssntlm_reset_mic_sequence(context_gssapi context)
