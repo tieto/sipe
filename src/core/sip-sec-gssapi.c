@@ -598,9 +598,30 @@ sip_sec_destroy_sec_context__gssapi(SipSecContext context)
 }
 
 static const gchar *
-sip_sec_context_name__gssapi(SIPE_UNUSED_PARAMETER SipSecContext context)
+sip_sec_context_name__gssapi(SipSecContext context)
 {
-	return("Kerberos");
+	const gchar *name = "Kerberos";
+
+#ifdef HAVE_GSSAPI_ONLY
+	switch(context->type) {
+	case SIPE_AUTHENTICATION_TYPE_NTLM:
+		name = "NTLM";
+		break;
+
+	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE:
+		name = "Negotiate";
+		break;
+
+	default:
+#endif
+		name = "Kerberos";
+#ifdef HAVE_GSSAPI_ONLY
+		break;
+	}
+#else
+	(void) context; /* keep compiler happy */
+#endif
+	return(name);
 }
 
 SipSecContext
