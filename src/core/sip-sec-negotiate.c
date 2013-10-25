@@ -25,6 +25,10 @@
  * It is a wrapper that will always try Kerberos first and fall back to NTLM.
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 
 #include "sipe-common.h"
@@ -222,7 +226,12 @@ sip_sec_create_context__negotiate(SIPE_UNUSED_PARAMETER guint type)
 	SipSecContext krb5 = sip_sec_create_context__gssapi(SIPE_AUTHENTICATION_TYPE_KERBEROS);
 
 	if (krb5) {
-		SipSecContext ntlm = sip_sec_create_context__ntlm(SIPE_AUTHENTICATION_TYPE_NTLM);
+		SipSecContext ntlm =
+#ifdef HAVE_GSSAPI_ONLY
+			sip_sec_create_context__gssapi(SIPE_AUTHENTICATION_TYPE_NTLM);
+#else
+			sip_sec_create_context__ntlm(SIPE_AUTHENTICATION_TYPE_NTLM);
+#endif
 
 		if (ntlm) {
 			context = g_malloc0(sizeof(struct _context_negotiate));

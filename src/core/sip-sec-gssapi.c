@@ -29,7 +29,7 @@
  *  - Kerberos-only: NTLM & SPNEGO are using SIPE internal implementation
  *                   [HAVE_GSSAPI_ONLY is not defined]
  *
- *  - pure GSSAPI:   this modules handles Kerberos, NTLM & SPNEGO
+ *  - pure GSSAPI:   this modules handles Kerberos & NTLM
  *                   [HAVE_GSSAPI_ONLY is defined]
  */
 
@@ -68,15 +68,9 @@ static const gss_OID_desc gss_mech_ntlmssp = {
 	GSS_NTLMSSP_OID_LENGTH,
 	GSS_NTLMSSP_OID_STRING
 };
-
-static const gss_OID_desc gss_mech_spnego = {
-	6,
-	"\x2b\x06\x01\x05\x05\x02"
-};
 #endif
 
-#define SIP_SEC_FLAG_GSSAPI_SIP_NTLM           0x00010000
-#define SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK 0x00020000
+#define SIP_SEC_FLAG_GSSAPI_SIP_NTLM 0x00010000
 
 static void sip_sec_gssapi_print_gss_error0(char *func,
 					    OM_uint32 status,
@@ -126,8 +120,7 @@ static gss_OID_set create_mechs_set(guint type)
 	}
 
 #ifdef HAVE_GSSAPI_ONLY
-	if ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ||
-	    (type == SIPE_AUTHENTICATION_TYPE_KERBEROS)) {
+	if (type == SIPE_AUTHENTICATION_TYPE_KERBEROS) {
 #else
 		(void) type; /* keep compiler happy */
 #endif
@@ -143,8 +136,7 @@ static gss_OID_set create_mechs_set(guint type)
 #ifdef HAVE_GSSAPI_ONLY
 	}
 
-	if ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ||
-	    (type == SIPE_AUTHENTICATION_TYPE_NTLM)) {
+	if (type == SIPE_AUTHENTICATION_TYPE_NTLM) {
 		ret = gss_add_oid_set_member(&minor,
 					     (gss_OID) &gss_mech_ntlmssp,
 					     &set);
@@ -383,9 +375,6 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 	gss_buffer_desc input_token;
 	gss_buffer_desc output_token;
 	gss_name_t target_name;
-#ifdef HAVE_GSSAPI_ONLY
-	gchar *hostbased_service_name = NULL;
-#endif
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: started");
 
@@ -403,63 +392,17 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 #ifdef HAVE_GSSAPI_ONLY
 	switch(context->type) {
 	case SIPE_AUTHENTICATION_TYPE_NTLM:
-		name_oid          = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
-		mech_oid          = (gss_OID) &gss_mech_ntlmssp;
-		input_token.value = (void *)  service_name;
+		name_oid = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
+		mech_oid = (gss_OID) &gss_mech_ntlmssp;
 		if (context->flags & SIP_SEC_FLAG_GSSAPI_SIP_NTLM)
 			flags |= GSS_C_DATAGRAM_FLAG;
 		break;
 
 	case SIPE_AUTHENTICATION_TYPE_KERBEROS:
 #endif
-		name_oid          = (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME;
-		mech_oid          = (gss_OID) gss_mech_krb5;
-		input_token.value = (void *)  service_name;
+		name_oid = (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME;
+		mech_oid = (gss_OID) gss_mech_krb5;
 #ifdef HAVE_GSSAPI_ONLY
-		break;
-
-	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE: {
-			gchar **type_service;
-
-			/*
-			 * Some servers do not accept SPNEGO for Negotiate.
-			 * If come back here with an existing security context
-			 * and NULL input token we will fall back to NTLM
-			 */
-			if (ctx->ctx_gssapi && (in_buff.value == NULL)) {
-
-				/* Only try this once */
-				if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK) {
-					SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_init_sec_context__gssapi: SPNEGO-to-NTLM fallback failed");
-					return(FALSE);
-				}
-
-				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: SPNEGO failed. Falling back to NTLM");
-				drop_gssapi_context(context);
-
-				context->flags |= SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK;
-			}
-
-			/* Convert to hostbased so NTLM fallback can work */
-			type_service = g_strsplit(service_name, "/", 2);
-			if (type_service[1]) {
-				gchar *type_lower = g_ascii_strdown(type_service[0], -1);
-				hostbased_service_name = g_strdup_printf("%s@%s",
-									 type_lower,
-									 type_service[1]);
-				g_free(type_lower);
-				input_token.value = (void *) hostbased_service_name;
-			} else {
-				input_token.value = (void *) service_name;
-			}
-			g_strfreev(type_service);
-
-			name_oid = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
-			if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK)
-				mech_oid = (gss_OID) &gss_mech_ntlmssp;
-			else
-				mech_oid = (gss_OID) &gss_mech_spnego;
-		}
 		break;
 
 	default:
@@ -470,16 +413,13 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 #endif
 
 	/* Import service name to GSS */
+	input_token.value = (void *)  service_name;
 	input_token.length = strlen(input_token.value) + 1;
 
 	ret = gss_import_name(&minor,
 			      &input_token,
 			      name_oid,
 			      &target_name);
-
-#ifdef HAVE_GSSAPI_ONLY
-	g_free(hostbased_service_name);
-#endif
 
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_import_name", ret, minor);
@@ -635,31 +575,14 @@ sip_sec_destroy_sec_context__gssapi(SipSecContext context)
 static const gchar *
 sip_sec_context_name__gssapi(SipSecContext context)
 {
-	const gchar *name = "Kerberos";
-
-#ifdef HAVE_GSSAPI_ONLY
-	switch(context->type) {
-	case SIPE_AUTHENTICATION_TYPE_NTLM:
-		name = "NTLM";
-		break;
-
-	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE:
-		if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK)
-			name = "NTLM";
-		else
-			name = "Negotiate";
-		break;
-
-	default:
-#endif
-		name = "Kerberos";
-#ifdef HAVE_GSSAPI_ONLY
-		break;
-	}
-#else
+#ifndef HAVE_GSSAPI_ONLY
 	(void) context; /* keep compiler happy */
+#else
+	if (context->type == SIPE_AUTHENTICATION_TYPE_NTLM)
+		return("NTLM");
+	else
 #endif
-	return(name);
+		return("Kerberos");
 }
 
 SipSecContext
