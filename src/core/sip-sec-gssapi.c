@@ -75,6 +75,8 @@ static const gss_OID_desc gss_mech_spnego = {
 };
 #endif
 
+#define SIP_SEC_FLAG_GSSAPI_SIP_NTLM 0x00010000
+
 static void sip_sec_gssapi_print_gss_error0(char *func,
 					    OM_uint32 status,
 					    int type)
@@ -197,6 +199,11 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 			     const gchar *password)
 {
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__gssapi: started");
+
+	/* this is the first time we are allowed to set private flags */
+	if (((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
+	    (context->type == SIPE_AUTHENTICATION_TYPE_NTLM))
+		context->flags |= SIP_SEC_FLAG_GSSAPI_SIP_NTLM;
 
 	/* With SSO we use the default credentials */
 	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
@@ -360,9 +367,6 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 	gss_name_t target_name;
 #ifdef HAVE_GSSAPI_ONLY
 	gchar *hostbased_service_name = NULL;
-	gboolean sip_ntlm =
-		(((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
-		(context->type == SIPE_AUTHENTICATION_TYPE_NTLM));
 #endif
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: started");
@@ -392,7 +396,7 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		name_oid          = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
 		mech_oid          = (gss_OID) &gss_mech_ntlmssp;
 		input_token.value = (void *)  service_name;
-		if (sip_ntlm)
+		if (context->flags & SIP_SEC_FLAG_GSSAPI_SIP_NTLM)
 			flags |= GSS_C_DATAGRAM_FLAG;
 		break;
 
@@ -494,7 +498,8 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		context->flags |= SIP_SEC_FLAG_COMMON_READY;
 
 #ifdef HAVE_GSSAPI_ONLY
-		if (sip_ntlm && !gssntlm_reset_mic_sequence(ctx))
+		if ((context->flags & SIP_SEC_FLAG_GSSAPI_SIP_NTLM) &&
+		    !gssntlm_reset_mic_sequence(ctx))
 			return(FALSE);
 #endif
 	}
