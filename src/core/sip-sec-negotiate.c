@@ -34,6 +34,7 @@
 #include "sip-sec-negotiate.h"
 #include "sip-sec-ntlm.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
 
 /* Security context for Negotiate */
 typedef struct _context_negotiate {
@@ -215,13 +216,13 @@ sip_sec_context_name__negotiate(SipSecContext context)
 }
 
 SipSecContext
-sip_sec_create_context__negotiate(guint type)
+sip_sec_create_context__negotiate(SIPE_UNUSED_PARAMETER guint type)
 {
 	context_negotiate context = NULL;
-	SipSecContext krb5 = sip_sec_create_context__gssapi(type);
+	SipSecContext krb5 = sip_sec_create_context__gssapi(SIPE_AUTHENTICATION_TYPE_KERBEROS);
 
 	if (krb5) {
-		SipSecContext ntlm = sip_sec_create_context__ntlm(type);
+		SipSecContext ntlm = sip_sec_create_context__ntlm(SIPE_AUTHENTICATION_TYPE_NTLM);
 
 		if (ntlm) {
 			context = g_malloc0(sizeof(struct _context_negotiate));
@@ -235,6 +236,10 @@ sip_sec_create_context__negotiate(guint type)
 				context->common.context_name_func     = sip_sec_context_name__negotiate;
 				context->krb5 = krb5;
 				context->ntlm = ntlm;
+
+				krb5->type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
+				ntlm->type = SIPE_AUTHENTICATION_TYPE_NTLM;
+
 			} else {
 				ntlm->destroy_context_func(ntlm);
 			}
