@@ -75,7 +75,8 @@ static const gss_OID_desc gss_mech_spnego = {
 };
 #endif
 
-#define SIP_SEC_FLAG_GSSAPI_SIP_NTLM 0x00010000
+#define SIP_SEC_FLAG_GSSAPI_SIP_NTLM           0x00010000
+#define SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK 0x00020000
 
 static void sip_sec_gssapi_print_gss_error0(char *func,
 					    OM_uint32 status,
@@ -189,6 +190,23 @@ static gboolean gssntlm_reset_mic_sequence(context_gssapi context)
 	return(TRUE);
 }
 #endif
+
+static void drop_gssapi_context(SipSecContext context)
+{
+	context_gssapi ctx = (context_gssapi) context;
+	OM_uint32 ret;
+	OM_uint32 minor;
+
+	ret = gss_delete_sec_context(&minor,
+				     &(ctx->ctx_gssapi),
+				     GSS_C_NO_BUFFER);
+	if (GSS_ERROR(ret)) {
+		sip_sec_gssapi_print_gss_error("gss_delete_sec_context", ret, minor);
+		SIPE_DEBUG_ERROR("drop_gssapi_context: failed to delete security context (ret=%d)", (int)ret);
+	}
+	ctx->ctx_gssapi = GSS_C_NO_CONTEXT;
+	context->flags &= ~SIP_SEC_FLAG_COMMON_READY;
+}
 
 /* sip-sec-mech.h API implementation for Kerberos/GSSAPI */
 
@@ -379,15 +397,7 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 	if ((context->flags & SIP_SEC_FLAG_COMMON_READY) &&
 	    (ctx->ctx_gssapi != GSS_C_NO_CONTEXT)) {
 		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: dropping old context");
-		ret = gss_delete_sec_context(&minor,
-					     &(ctx->ctx_gssapi),
-					     GSS_C_NO_BUFFER);
-		if (GSS_ERROR(ret)) {
-			sip_sec_gssapi_print_gss_error("gss_delete_sec_context", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to delete security context (ret=%d)", (int)ret);
-		}
-		ctx->ctx_gssapi = GSS_C_NO_CONTEXT;
-		context->flags &= ~SIP_SEC_FLAG_COMMON_READY;
+		drop_gssapi_context(context);
 	}
 
 #ifdef HAVE_GSSAPI_ONLY
@@ -409,8 +419,29 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		break;
 
 	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE: {
+			gchar **type_service;
+
+			/*
+			 * Some servers do not accept SPNEGO for Negotiate.
+			 * If come back here with an existing security context
+			 * and NULL input token we will fall back to NTLM
+			 */
+			if (ctx->ctx_gssapi && (in_buff.value == NULL)) {
+
+				/* Only try this once */
+				if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK) {
+					SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_init_sec_context__gssapi: SPNEGO-to-NTLM fallback failed");
+					return(FALSE);
+				}
+
+				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: SPNEGO failed. Falling back to NTLM");
+				drop_gssapi_context(context);
+
+				context->flags |= SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK;
+			}
+
 			/* Convert to hostbased so NTLM fallback can work */
-			gchar **type_service = g_strsplit(service_name, "/", 2);
+			type_service = g_strsplit(service_name, "/", 2);
 			if (type_service[1]) {
 				gchar *type_lower = g_ascii_strdown(type_service[0], -1);
 				hostbased_service_name = g_strdup_printf("%s@%s",
@@ -424,7 +455,10 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 			g_strfreev(type_service);
 
 			name_oid = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
-			mech_oid = (gss_OID) &gss_mech_spnego;
+			if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK)
+				mech_oid = (gss_OID) &gss_mech_ntlmssp;
+			else
+				mech_oid = (gss_OID) &gss_mech_spnego;
 		}
 		break;
 
@@ -583,14 +617,8 @@ sip_sec_destroy_sec_context__gssapi(SipSecContext context)
 	OM_uint32 ret;
 	OM_uint32 minor;
 
-	if (ctx->ctx_gssapi != GSS_C_NO_CONTEXT) {
-		ret = gss_delete_sec_context(&minor, &(ctx->ctx_gssapi), GSS_C_NO_BUFFER);
-		if (GSS_ERROR(ret)) {
-			sip_sec_gssapi_print_gss_error("gss_delete_sec_context", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__gssapi: failed to delete security context (ret=%d)", (int)ret);
-		}
-		ctx->ctx_gssapi = GSS_C_NO_CONTEXT;
-	}
+	if (ctx->ctx_gssapi != GSS_C_NO_CONTEXT)
+		drop_gssapi_context(context);
 
 	if (ctx->cred_gssapi != GSS_C_NO_CREDENTIAL) {
 		ret = gss_release_cred(&minor, &(ctx->cred_gssapi));
@@ -616,7 +644,10 @@ sip_sec_context_name__gssapi(SipSecContext context)
 		break;
 
 	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE:
-		name = "Negotiate";
+		if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK)
+			name = "NTLM";
+		else
+			name = "Negotiate";
 		break;
 
 	default:
