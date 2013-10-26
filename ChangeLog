@@ -1,9 +1,18 @@
 version 1.18.0 "XXXX" (2013-XX-XX)
+	- Feature #64: Add support for GSS-NTLMSSP (Stefan Becker)
+	  * sip-sec-krb5.c module has been renamed to sip-sec-gssapi.c
+	  * if gssapi/gssapi_ntlmssp.h is detected then sip-sec-ntlm.c will
+	    be disabled and NTLM will be handled by sip-sec-gssapi.c instead
+	  * NOTE: at the time of this writing the user has to set up
+	          GSS-NTLMSSP by hand on his system, i.e. /etc/gss/mech
+	  * NOTE: GSSAPI SPNEGO support has been disabled for now, until the
+		  problems can be debugged (see commit 1503593)
 	- cleanup for sip-sec Kerberos & SSPI modules (Stefan Becker)
 	  * replace old TGT hack with gss_acquire_cred_with_password()
 	  * clean up Kerberos detection in configure
 	  * remove special case handling; code is more straight-forward now
 	  * thanks to David Woodhouse and Simo Sorce for the GSSAPI information
+	- implement internal keepalive handling (Stefan Becker)
 
 version 1.17.1 "Bug Fixes I" (2013-XX-XX)
 	- Fixed #215: Password not entity encoded in WSSE element (Stefan Becker)
