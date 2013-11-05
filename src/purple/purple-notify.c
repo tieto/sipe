@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -26,6 +26,7 @@
 
 #include "conversation.h"
 #include "notify.h"
+#include "version.h"
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -77,7 +78,11 @@ void sipe_backend_notify_error(struct sipe_core_public *sipe_public,
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
-	purple_notify_error(purple_private->gc, NULL, title, msg);
+	purple_notify_error(purple_private->gc, NULL, title, msg
+#if PURPLE_VERSION_CHECK(3,0,0)
+			    , NULL
+#endif
+			    );
 }
 
 /*

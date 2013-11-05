@@ -55,12 +55,6 @@
 #include "plugin.h"
 #include "request.h"
 #include "status.h"
-/*
- * NOTE: Currently PURPLE_VERSION_CHECK(2,y,z) returns FALSE for libpurple >= 3.0.0.
- *       See also <http://developer.pidgin.im/ticket/14551>
- *
- * As a workaround an additional PURPLE_VERSION_CHECK(3,0,0) needs to be added.
- */
 #include "version.h"
 
 #include "sipe-backend.h"
@@ -701,6 +695,8 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 #if PURPLE_VERSION_CHECK(2,8,0)
 	NULL,					/* add_buddy_with_invite */
 	NULL,					/* add_buddies_with_invite */
+#elif PURPLE_VERSION_CHECK(3,0,0)
+	NULL,					/* get_max_message_size */
 #endif
 #endif
 #endif
@@ -815,6 +811,9 @@ static void sipe_purple_show_find_contact(PurplePluginAction *action)
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *group;
 	PurpleRequestField *field;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_connection(gc);
+#endif
 
 	fields = purple_request_fields_new();
 	group = purple_request_field_group_new(NULL);
@@ -832,13 +831,18 @@ static void sipe_purple_show_find_contact(PurplePluginAction *action)
 	purple_request_field_group_add_field(group, field);
 
 	purple_request_fields(gc,
-		_("Search"),
-		_("Search for a contact"),
-		_("Enter the information for the person you wish to find. Empty fields will be ignored."),
-		fields,
-		_("_Search"), G_CALLBACK(sipe_purple_find_contact_cb),
-		_("_Cancel"), NULL,
-		purple_connection_get_account(gc), NULL, NULL, gc);
+			      _("Search"),
+			      _("Search for a contact"),
+			      _("Enter the information for the person you wish to find. Empty fields will be ignored."),
+			      fields,
+			      _("_Search"), G_CALLBACK(sipe_purple_find_contact_cb),
+			      _("_Cancel"), NULL,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      cpar, gc);
+	purple_request_cpar_unref(cpar);
+#else
+			      purple_connection_get_account(gc), NULL, NULL, gc);
+#endif
 }
 
 static void sipe_purple_join_conference_cb(PurpleConnection *gc,
@@ -883,6 +887,9 @@ static void sipe_purple_phone_call(PurplePluginAction *action)
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *group;
 	PurpleRequestField *field;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_connection(gc);
+#endif
 
 	fields = purple_request_fields_new();
 	group = purple_request_field_group_new(NULL);
@@ -892,13 +899,18 @@ static void sipe_purple_phone_call(PurplePluginAction *action)
 	purple_request_field_group_add_field(group, field);
 
 	purple_request_fields(gc,
-		_("Call a phone number"),
-		_("Call a phone number"),
-		NULL,
-		fields,
-		_("_Call"), G_CALLBACK(sipe_purple_phone_call_cb),
-		_("_Cancel"), NULL,
-		purple_connection_get_account(gc), NULL, NULL, gc);
+			      _("Call a phone number"),
+			      _("Call a phone number"),
+			      NULL,
+			      fields,
+			      _("_Call"), G_CALLBACK(sipe_purple_phone_call_cb),
+			      _("_Cancel"), NULL,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      cpar, gc);
+	purple_request_cpar_unref(cpar);
+#else
+			      purple_connection_get_account(gc), NULL, NULL, gc);
+#endif
 }
 
 static void sipe_purple_test_call(PurplePluginAction *action)
@@ -914,6 +926,9 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *group;
 	PurpleRequestField *field;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_connection(gc);
+#endif
 
 	fields = purple_request_fields_new();
 	group = purple_request_field_group_new(NULL);
@@ -923,19 +938,24 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 	purple_request_field_group_add_field(group, field);
 
 	purple_request_fields(gc,
-		_("Join conference"),
-		_("Join scheduled conference"),
-		_("Enter meeting location string you received in the invitation.\n"
-		  "\n"
-		  "Valid location will be something like\n"
-		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
-		  "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
-		  "or\n"
-		  "https://meet.company.com/someone/abcdef1234"),
-		fields,
-		_("_Join"), G_CALLBACK(sipe_purple_join_conference_cb),
-		_("_Cancel"), NULL,
-		purple_connection_get_account(gc), NULL, NULL, gc);
+			      _("Join conference"),
+			      _("Join scheduled conference"),
+			      _("Enter meeting location string you received in the invitation.\n"
+				"\n"
+				"Valid location will be something like\n"
+				"meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+				"conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+				"or\n"
+				"https://meet.company.com/someone/abcdef1234"),
+			      fields,
+			      _("_Join"), G_CALLBACK(sipe_purple_join_conference_cb),
+			      _("_Cancel"), NULL,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      cpar, gc);
+	purple_request_cpar_unref(cpar);
+#else
+			      purple_connection_get_account(gc), NULL, NULL, gc);
+#endif
 }
 
 static void sipe_purple_republish_calendar(PurplePluginAction *action)

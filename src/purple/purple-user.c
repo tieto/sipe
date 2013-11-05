@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-13 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 
 #include "request.h"
 #include "server.h"
+#include "version.h"
 
 #include "purple-private.h"
 
@@ -59,12 +60,23 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 			   gpointer key)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_account(purple_private->account);
+#endif
 
 	purple_request_action(key, "Office Communicator", message,
-			      NULL, 0, purple_private->account,
-			      NULL, NULL, key, 2,
+			      NULL, 0,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      cpar,
+#else
+			      purple_private->account, NULL, NULL,
+#endif
+			      key, 2,
 			      accept_label, (PurpleRequestActionCb) ask_cb,
 			      decline_label, (PurpleRequestActionCb) ask_cb);
+#if PURPLE_VERSION_CHECK(3,0,0)
+	purple_request_cpar_unref(cpar);
+#endif
 }
 
 void sipe_backend_user_close_ask(gpointer key)

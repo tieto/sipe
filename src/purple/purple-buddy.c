@@ -450,7 +450,11 @@ void sipe_purple_add_buddy(PurpleConnection *gc,
 			purple_blist_remove_buddy(buddy);
 			purple_notify_error(gc, NULL,
 					    _("User name should be a valid SIP URI\nExample: user@company.com"),
-					    NULL);
+					    NULL
+#if PURPLE_VERSION_CHECK(3,0,0)
+					    , NULL
+#endif
+					    );
 		}
 	}
 }
@@ -555,7 +559,16 @@ static void sipe_purple_ask_access_domain_cb(PurpleConnection *gc,
 					     PurpleRequestFields *fields)
 {
 	const gchar *domain = purple_request_fields_get_string(fields, "access_domain");
-	guint index         = purple_request_fields_get_choice(fields, "container_id");
+	guint index         =
+#if PURPLE_VERSION_CHECK(3,0,0)
+		GPOINTER_TO_UINT(
+#endif
+			purple_request_fields_get_choice(fields, "container_id")
+#if PURPLE_VERSION_CHECK(3,0,0)
+				)
+#endif
+		;
+
 	sipe_core_change_access_level_for_domain(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 						 domain,
 						 index);
@@ -568,6 +581,9 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *g;
 	PurpleRequestField *f;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_account(buddy->account);
+#endif
 
 	fields = purple_request_fields_new();
 
@@ -582,12 +598,21 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 	f = purple_request_field_choice_new("container_id",
 					    _("Access level"),
 					    0);
+#if PURPLE_VERSION_CHECK(3,0,0)
+	purple_request_field_choice_add(f, _("Personal"), GUINT_TO_POINTER(0));
+	purple_request_field_choice_add(f, _("Team"),     GUINT_TO_POINTER(1));
+	purple_request_field_choice_add(f, _("Company"),  GUINT_TO_POINTER(2));
+	purple_request_field_choice_add(f, _("Public"),   GUINT_TO_POINTER(3));
+	purple_request_field_choice_add(f, _("Blocked"),  GUINT_TO_POINTER(4));
+	purple_request_field_choice_set_default_value(f,  GUINT_TO_POINTER(3));
+#else
 	purple_request_field_choice_add(f, _("Personal")); /* index 0 */
 	purple_request_field_choice_add(f, _("Team"));
 	purple_request_field_choice_add(f, _("Company"));
 	purple_request_field_choice_add(f, _("Public"));
 	purple_request_field_choice_add(f, _("Blocked")); /* index 4 */
 	purple_request_field_choice_set_default_value(f, 3); /* index */
+#endif
 	purple_request_field_set_required(f, TRUE);
 	purple_request_field_group_add_field(g, f);
 
@@ -597,7 +622,12 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 			      _("Add new domain"), NULL, fields,
 			      _("Add"), G_CALLBACK(sipe_purple_ask_access_domain_cb),
 			      _("Cancel"), NULL,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      cpar, gc);
+	purple_request_cpar_unref(cpar);
+#else
 			      buddy->account, NULL, NULL, gc);
+#endif
 }
 
 typedef void (*buddy_menu_callback)(PurpleBuddy *buddy,
