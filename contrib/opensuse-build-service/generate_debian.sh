@@ -68,6 +68,9 @@ do \
     cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
 done
 
+# Update SHA-2 256 checksum in Arch Linux PKGBUILD
+sed -i -e "s/@@SHA256SUM@@/$(sha256sum pidgin-sipe-${version}.tar.gz | cut -d' ' -f1)/" PKGBUILD
+
 # That's all folks...
 echo "Done."
 osc status
