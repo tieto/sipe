@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-13 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -118,21 +118,31 @@ static gboolean process_info_typing_response(struct sipe_core_private *sipe_priv
 }
 
 void sipe_core_user_feedback_typing(struct sipe_core_public *sipe_public,
-				    const gchar *to)
+				    const gchar *to,
+				    gboolean typing)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sip_session *session = sipe_session_find_im(sipe_private, to);
 	struct sip_dialog *dialog = sipe_dialog_find(session, to);
 
+	/* only enable this debug output while testing
+	SIPE_DEBUG_INFO("sipe_core_user_feedback_typing session %p (%s) dialog %p (%s) established %s",
+			session, session ? session->callid : "N/A",
+			dialog, dialog ? dialog->callid : "N/A",
+			(dialog && dialog->is_established) ? "YES" : "NO"); */
+
 	if (session && dialog && dialog->is_established) {
+		gchar *body = g_strdup_printf("<?xml version=\"1.0\"?>"
+					      "<KeyboardActivity>"
+					      " <status status=\"%s\" />"
+					      "</KeyboardActivity>",
+					      typing ? "type" : "idle");
 		sip_transport_info(sipe_private,
 				   "Content-Type: application/xml\r\n",
-				   "<?xml version=\"1.0\"?>"
-				   "<KeyboardActivity>"
-				   "<status status=\"type\" />"
-				   "</KeyboardActivity>",
+				   body,
 				   dialog,
 				   process_info_typing_response);
+		g_free(body);
 	}
 }
 

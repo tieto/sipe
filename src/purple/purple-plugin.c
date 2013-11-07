@@ -484,19 +484,21 @@ static int sipe_purple_send_im(PurpleConnection *gc,
 	return 1;
 }
 
-#define SIPE_TYPING_SEND_TIMEOUT 4
-
 static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 					    const char *who,
 					    PurpleTypingState state)
 {
-	if (state == PURPLE_NOT_TYPING)
-		return 0;
+	gboolean typing = (state == PURPLE_TYPING);
+
+	/* only enable this debug output while testing
+	   SIPE_DEBUG_INFO("sipe_purple_send_typing: '%s' state %d", who, state); */
 
 	sipe_core_user_feedback_typing(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
-				       who);
+				       who,
+				       typing);
 
-	return SIPE_TYPING_SEND_TIMEOUT;
+	/* tell libpurple to send typing indications every 4 seconds */
+	return(typing ? 4 : 0);
 }
 
 static void sipe_purple_get_info(PurpleConnection *gc, const char *who)
