@@ -288,6 +288,11 @@ static void generate_federation_wsse(struct sipe_webticket *webticket,
 	gchar *timestamp = generate_timestamp(raw, "t:Lifetime");
 	gchar *keydata   = sipe_xml_extract_raw(raw, "saml:Assertion", TRUE);
 
+	/* try alternative names */
+	if (!timestamp)
+		timestamp = generate_timestamp(raw, "wst:Lifetime");
+	if (!keydata)
+		keydata   = sipe_xml_extract_raw(raw, "saml1:Assertion", TRUE);
 
 	/* clear old ADFS token */
 	g_free(webticket->adfs_token);
