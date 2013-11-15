@@ -262,36 +262,48 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 							struct sipe_http_request *req,
 							struct sipmsg *msg)
 {
+	struct sipe_http_connection_public *conn_public = req->connection;
 	const gchar *header = NULL;
 	guint type;
 	gboolean failed = TRUE;
 
+	/*
+	 * There are some buggy HTTP servers out there that add superfluous
+	 * WWW-Authenticate: headers during the authentication handshake.
+	 * Look only for the header of the active security context.
+	 */
+	if (conn_public->context &&
+	    ((header = sipmsg_find_auth_header(msg,
+					       sip_sec_context_name(conn_public->context)))
+	     != NULL)) {
+		type = sip_sec_context_type(conn_public->context);
+
+	} else {
 #if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 #define DEBUG_STRING ", NTLM and Negotiate"
-	/* Use "Negotiate" unless the user requested "NTLM" */
-	if (sipe_private->authentication_type != SIPE_AUTHENTICATION_TYPE_NTLM)
-		header = sipmsg_find_auth_header(msg, "Negotiate");
-	if (header) {
-		type   = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
-	} else
+		/* Use "Negotiate" unless the user requested "NTLM" */
+		if (sipe_private->authentication_type != SIPE_AUTHENTICATION_TYPE_NTLM)
+			header = sipmsg_find_auth_header(msg, "Negotiate");
+		if (header) {
+			type   = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
+		} else
 #else
 #define DEBUG_STRING " and NTLM"
-	(void) sipe_private; /* keep compiler happy */
+		(void) sipe_private; /* keep compiler happy */
 #endif
-	{
-		header = sipmsg_find_auth_header(msg, "NTLM");
-		type   = SIPE_AUTHENTICATION_TYPE_NTLM;
-	}
+		{
+			header = sipmsg_find_auth_header(msg, "NTLM");
+			type   = SIPE_AUTHENTICATION_TYPE_NTLM;
+		}
 
-	/* only fall back to "Basic" after everything else fails */
-	if (!header) {
-		header = sipmsg_find_auth_header(msg, "Basic");
-		type   = SIPE_AUTHENTICATION_TYPE_BASIC;
+		/* only fall back to "Basic" after everything else fails */
+		if (!header) {
+			header = sipmsg_find_auth_header(msg, "Basic");
+			type   = SIPE_AUTHENTICATION_TYPE_BASIC;
+		}
 	}
 
 	if (header) {
-		struct sipe_http_connection_public *conn_public = req->connection;
-
 		if (!conn_public->context) {
 			gboolean valid = req->flags & SIPE_HTTP_REQUEST_FLAG_AUTHDATA;
 			conn_public->context = sip_sec_create_context(type,
