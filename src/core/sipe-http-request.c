@@ -76,9 +76,10 @@ struct sipe_http_request {
 	guint32 flags;
 };
 
-#define SIPE_HTTP_REQUEST_FLAG_FIRST    0x00000001
-#define SIPE_HTTP_REQUEST_FLAG_REDIRECT 0x00000002
-#define SIPE_HTTP_REQUEST_FLAG_AUTHDATA 0x00000004
+#define SIPE_HTTP_REQUEST_FLAG_FIRST     0x00000001
+#define SIPE_HTTP_REQUEST_FLAG_REDIRECT  0x00000002
+#define SIPE_HTTP_REQUEST_FLAG_AUTHDATA  0x00000004
+#define SIPE_HTTP_REQUEST_FLAG_HANDSHAKE 0x00000008
 
 static void sipe_http_request_free(struct sipe_core_private *sipe_private,
 				   struct sipe_http_request *req,
@@ -241,7 +242,8 @@ static gboolean sipe_http_request_response_redirection(struct sipe_core_private 
 
 			/* free old request data */
 			g_free(req->path);
-			req->flags &= ~SIPE_HTTP_REQUEST_FLAG_FIRST;
+			req->flags &= ~( SIPE_HTTP_REQUEST_FLAG_FIRST |
+					 SIPE_HTTP_REQUEST_FLAG_HANDSHAKE );
 
 			/* resubmit request on other connection */
 			sipe_http_request_enqueue(sipe_private, req, parsed_uri);
@@ -314,26 +316,38 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 								      valid ? req->password : NULL);
 		}
 
-
 		if (conn_public->context) {
 			gchar **parts = g_strsplit(header, " ", 0);
 			gchar *spn    = g_strdup_printf("HTTP/%s", conn_public->host);
-			gchar *token;
+			gchar *token_out;
+			const gchar *token_in = parts[1];
 
 			SIPE_DEBUG_INFO("sipe_http_request_response_unauthorized: init context target '%s' token '%s'",
-					spn, parts[1] ? parts[1] : "<NULL>");
+					spn, token_in ? token_in : "<NULL>");
 
-			if (sip_sec_init_context_step(conn_public->context,
+			/*
+			 * If we receive a NULL token during the handshake
+			 * then the authentication scheme has failed.
+			 */
+			if ((req->flags & SIPE_HTTP_REQUEST_FLAG_HANDSHAKE) &&
+			    !token_in) {
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: authentication failed, throwing away context");
+				sipe_http_request_drop_context(conn_public);
+
+			} else if (sip_sec_init_context_step(conn_public->context,
 						      spn,
-						      parts[1],
-						      &token,
+						      token_in,
+						      &token_out,
 						      NULL)) {
+
+				/* handshake has started */
+				req->flags |= SIPE_HTTP_REQUEST_FLAG_HANDSHAKE;
 
 				/* generate authorization header */
 				req->authorization = g_strdup_printf("Authorization: %s %s\r\n",
 								     sip_sec_context_name(conn_public->context),
-								     token ? token : "");
-				g_free(token);
+								     token_out ? token_out : "");
+				g_free(token_out);
 
 				/*
 				 * authorization never changes for Basic
