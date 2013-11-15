@@ -274,11 +274,17 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 	 * WWW-Authenticate: headers during the authentication handshake.
 	 * Look only for the header of the active security context.
 	 */
-	if (conn_public->context &&
-	    ((header = sipmsg_find_auth_header(msg,
-					       sip_sec_context_name(conn_public->context)))
-	     != NULL)) {
-		type = sip_sec_context_type(conn_public->context);
+	if (conn_public->context) {
+		const gchar *name = sip_sec_context_name(conn_public->context);
+
+		header = sipmsg_find_auth_header(msg, name);
+		type   = sip_sec_context_type(conn_public->context);
+
+		if (!header) {
+			SIPE_DEBUG_INFO("sipe_http_request_response_unauthorized: expected authentication scheme %s not found",
+					name);
+			return(failed);
+		}
 
 	} else {
 #if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
