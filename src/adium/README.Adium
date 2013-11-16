@@ -1,45 +1,81 @@
 Compiling SIPE plugin for Adium
 ===============================
-To compile the Adium plugin you will need XCode, then to get the following dependencies:
 
-* Adium 1.5+ code:          	http://trac.adium.im/wiki/GettingNewestAdiumSource
-* libnss 3.14+libnspr 4.9.2:	https://developer.mozilla.org/en-US/docs/NSS/NSS_3.14_release_notes
+To compile the Adium plugin you will need XCode and the source code from
+the following URLs:
+
+* Adium 1.5+ code:           http://trac.adium.im/wiki/GettingNewestAdiumSource
+* libnss 3.14+libnspr 4.9.2: https://developer.mozilla.org/en-US/docs/NSS/NSS_3.14_release_notes
+* SIPE code:                 http://sourceforge.net/projects/sipe/files/sipe/
 
 1. Get Adium
---------------
+-------------
+
+NOTE: you only have to do this step once. If you don't change the Adium
+      source code, then you can reuse the results from this step in future
+      SIPEAdiumPlugin builds.
+
 Follow the instructions at their URL above.
 
-2. Setup Adium Source Tree variable in XCode 
-----------------------------------------------
-Point a source tree variable ($ADIUM_SRCPATH) to the directory you put Adium in.
-i.e If Adium is located in /tmp/Adium,  $ADIUM_SRCPATH should be set to /tmp/Adium
-
-3. Get and build libnss and libnspr
+2. Get and build libnss and libnspr
 -------------------------------------
-$ curl -O https://ftp.mozilla.org/pub/mozilla.org/security/nss/releases/NSS_3_14_RTM/src/nss-3.14-with-nspr-4.9.2.tar.gz
-$ tar -xvzf nss-3.14-with-nspr-4.9.2.tar.gz
-$ cd nss-3.14
-$ grep -lR '@executable_path' * | xargs sed -i '.orig' -e 's/@executable_path/@rpath/g' 
-$ make nss_build_all install -C mozilla/security/nss BUILD_OPT=1 NSS_ENABLE_ECC=1 NS_USE_GCC=1 NO_MDUPDATE=1 NSS_USE_SYSTEM_SQLITE=1 USE_64=1 NSPR_INCLUDE_DIR=mozilla/nsprpub/dist/include/nspr
 
-NOTE: Make sure the directory name for where nss is located does not have a space in it.  The nss make scripts don't quote paths, so it fails with spaces.
+NOTE: you only have to do this step once. If you don't change the NSS
+      source code, then you can reuse the results from this step in future
+      SIPEAdiumPlugin builds.
 
-TODO: Import NSS/NSPR as an external build system target in XCode project, and pull RELEASE_OBJDIR_NAME from the autoconf.mk file to dynamically find the build products.
+Open a terminal and run the following commands:
 
-4. Setup NSS Source Tree variable in XCode 
+   $ curl -O https://ftp.mozilla.org/pub/mozilla.org/security/nss/releases/NSS_3_14_RTM/src/nss-3.14-with-nspr-4.9.2.tar.gz
+   $ tar -xvzf nss-3.14-with-nspr-4.9.2.tar.gz
+   $ cd nss-3.14
+   $ grep -lR '@executable_path' * | xargs sed -i '.orig' -e 's/@executable_path/@rpath/g' 
+   $ make nss_build_all install -C mozilla/security/nss BUILD_OPT=1 NSS_ENABLE_ECC=1 NS_USE_GCC=1 NO_MDUPDATE=1 NSS_USE_SYSTEM_SQLITE=1 USE_64=1 NSPR_INCLUDE_DIR=mozilla/nsprpub/dist/include/nspr
+
+NOTE: Make sure the directory name for where nss is located does not have a
+space in it.  The nss make scripts don't quote paths, so it fails with spaces.
+
+TODO: Import NSS/NSPR as an external build system target in XCode project, and
+      pull RELEASE_OBJDIR_NAME from the autoconf.mk file to dynamically find
+      the build products.
+
+3. Configure Xcode
+------------------
+
+NOTE: you only have to do this step once. If you don't change the NSS or
+      Adium source code locations, then you can reuse the settings in future
+      SIPEAdiumPlugin builds.
+
+Start Xcode and go to menu Xcode -> Preferences -> Locations -> Source Trees.
+Press the "+" button and add the following variables
+
+   ADIUM_SRCPATH    /path/to/your/Adium/source/tree (from Step 1)
+   NSS_SRCPATH      /path/to/your/NSS/source/tree   (from Step 2)
+
+4. Prepare the SIPEAdiumPlugin Xcode project
 --------------------------------------------
-Point a source tree variable ($NSS_SRCPATH) to the directory you put NSS/NSPR in
-i.e if NSS is located in /tmp/nss-3.14 ,  $NSS_SRCPATH should be /tmp/nss-3.14
 
-5. Correct the NSS/NSPR library paths in XCode
-------------------------------------------------
-Note: The XCode project file has hardcoded paths based off of the RELEASE_OBJDIR_NAME in autoconf.mk.  The path is different for different MacOS versions (e.g. Darwin11.4.2 for Lion, Darwin12.2.1 for Mountain Lion).  This project file is currently pointing to the Lion build variant.  You will have to correct the file path for the files that show as "missing" (in red in the Project Explorer view) to point to the correct RELEASE_OBJDIR_NAME if you are running on something other than Lion.  The above noted TODO, should resolve this, but for now it's required to build cleanly.
+Download the SIPE source code and execute the following commands in a terminal:
 
-6. Build SIPEAdiumPlugin.xcodeproj and test it
-------------------------------------------------
-Load the project in XCode, hit build!
+   $ tar xf /path/to/your/download/pidin-sipe-1.17.1.tar.bz2
+   $ cd pidgin-sipe-1.17.1
+   $ find /path/to/your/NSS/source/tree -name "libnss3.dylib"
+   /Users/stefanb/workarea/sipe/nss-3.14/mozilla/dist/Darwin13.0.0_64_OPT.OBJ/lib/libnss3.dylib
 
+Note down the "DarwinXX.Y.Z" string and insert it in the following sed command:
 
-Now fire up Adium and add an Office Communicator account type.
+   $ sed -i -e 's/Darwin11.4.2/DarwinXX.Y.Z/g' src/adium/SIPEAdiumPlugin.xcodeproj/project.pbxproj
 
+5. Build the SIPEAdiumPlugin Xcode project
+------------------------------------------
 
+In Xcode go to the Menu File -> Open..., browse to the locatio of your SIPE
+source tree, go into the src/adium directory, select SIPEAdiumPlugin.xcodeproj
+and press "Open".
+
+NOTE: please always make sure that the correct scheme has been selected by
+      selecting the menu Product -> Scheme -> SIPEAdiumPlugin. Otherwise you
+      will get cryptic build failures.
+
+Now you can just select Product -> Build and after a short while you should
+get a SIPEAdiumPlugin binary that you can install into your Adium application. 
