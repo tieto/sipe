@@ -1,0 +1,32 @@
+diff -r 9c8daca7bb8b Plugins/Purple Service/libpurple_extensions/ssl-cdsa.c
+--- a/Plugins/Purple Service/libpurple_extensions/ssl-cdsa.c	Wed Oct 23 16:08:03 2013 +0200
++++ b/Plugins/Purple Service/libpurple_extensions/ssl-cdsa.c	Sat Nov 16 14:28:04 2013 +0200
+@@ -37,6 +37,7 @@
+ 
+ //#define CDSA_DEBUG
+ 
++#import <Availability.h>
+ #import <Security/Security.h>
+ #import <unistd.h>
+ 
+@@ -504,6 +505,20 @@
+         protoErr = SSLSetProtocolVersionEnabled(cdsa_data->ssl_ctx, kTLSProtocol1, true);
+     }
+     
++    if (!strcmp(purple_account_get_protocol_id(account),"prpl-sipe")) {
++        purple_debug_info("cdsa", "Explicitly disabling SSL BEAST mitigation for Microsoft Lync 2010 connections\n");
++
++        OSStatus protoErr;
++#if __MAC_OS_X_VERSION_MAX_ALLOWED <= 1090
++#define kSSLSessionOptionSendOneByteRecord 4 /* appears in 10.9 */
++#endif
++
++        protoErr = SSLSetSessionOption(cdsa_data->ssl_ctx, kSSLSessionOptionSendOneByteRecord, false);
++        if (protoErr != noErr) {
++            purple_debug_info("cdsa", "SSLSetSessionOption failed to disable SSL BEAST mitigation\n");
++        }
++    }
++
+     if(gsc->host) {
+         /*
+          * Set the peer's domain name so CDSA can check the certificate's CN
