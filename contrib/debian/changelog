@@ -1,3 +1,15 @@
+pidgin-sipe (1.17.1-1) unstable; urgency=low
+
+  * New upstream version 1.17.1 "Bug Fixes I" (2013-11-16)
+	- Fixed #215: Password not entity encoded in WSSE element (Stefan Becker)
+	- Fixed #214: Typing notification does not always work (Stefan Becker)
+	- accept alternatives for webticket timestamp/keydata (Stefan Becker)
+	- adium: add "don't publish calendar" to account UI (Stefan Becker)
+	- contrib: add SSL BEAST mitigation patch for Adium (Stefan Becker)
+	- updated translations: French (fr)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 16 Nov 2013 16:21:00 +0200
+
 pidgin-sipe (1.17.0-1) unstable; urgency=low
 
   * New upstream version 1.17.0 "Lync 2013" (2013-09-21)
