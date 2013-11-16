@@ -20,6 +20,7 @@
 #define KEY_SIPE_GROUP_CHAT_PROXY       @"SIPE:Group Chat Proxy"
 #define KEY_SIPE_USER_AGENT             @"SIPE:User Agent"
 #define KEY_SIPE_SINGLE_SIGN_ON         @"SIPE:Single Sign On"
+#define KEY_SIPE_DONT_PUBLISH           @"SIPE:Dont Publish"
 #define KEY_SIPE_AUTH_SCHEME            @"SIPE:Authentication Scheme"
 #define KEY_SIPE_AUTODISCOVER           @"SIPE:Autodiscover"
 

@@ -24,6 +24,7 @@
     
     IBOutlet	NSButton		*checkBox_autoDiscover;
     IBOutlet	NSButton		*checkBox_singleSignOn;
+    IBOutlet	NSButton		*checkbox_dontPublish;
     
 	IBOutlet	NSPopUpButton	*popup_connectionType;
    	IBOutlet	NSPopUpButton	*popup_authenticationScheme;

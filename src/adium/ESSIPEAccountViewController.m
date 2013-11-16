@@ -34,6 +34,8 @@
     
  	[checkBox_singleSignOn setState:[[account preferenceForKey:KEY_SIPE_SINGLE_SIGN_ON group:GROUP_ACCOUNT_STATUS] boolValue]];
     
+	[checkbox_dontPublish setState:[[account preferenceForKey:KEY_SIPE_DONT_PUBLISH group:GROUP_ACCOUNT_STATUS] boolValue]];
+
 	NSString *userAgent = [account preferenceForKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
 	[textField_userAgent setStringValue:(userAgent ? userAgent : @"")];
     
@@ -86,6 +88,9 @@
 	[account setPreference:[NSNumber numberWithBool:[checkBox_singleSignOn state]]
                     forKey:KEY_SIPE_SINGLE_SIGN_ON group:GROUP_ACCOUNT_STATUS];
     
+	[account setPreference:[NSNumber numberWithBool:[checkbox_dontPublish state]]
+                    forKey:KEY_SIPE_DONT_PUBLISH group:GROUP_ACCOUNT_STATUS];
+
 	[account setPreference:
      ([[textField_userAgent stringValue] length] ? [textField_userAgent stringValue] : nil)
                     forKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
