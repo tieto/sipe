@@ -30,7 +30,6 @@
 		1CE4A01F14A180E100663393 /* purple-status.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A01D14A180E100663393 /* purple-status.c */; };
 		1CE4A02514A1816B00663393 /* sipe-cert-crypto-nss.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A02214A1816B00663393 /* sipe-cert-crypto-nss.c */; };
 		1CE4A02614A1816B00663393 /* sipe-crypt-nss.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A02314A1816B00663393 /* sipe-crypt-nss.c */; };
-		1CE4A02714A1816B00663393 /* sipe-digest-nss.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A02414A1816B00663393 /* sipe-digest-nss.c */; };
 		1CF260F912C2DFA00045B6CC /* purple-buddy.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F112C2DFA00045B6CC /* purple-buddy.c */; };
 		1CF260FA12C2DFA00045B6CC /* purple-chat.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F212C2DFA00045B6CC /* purple-chat.c */; };
 		1CF260FB12C2DFA00045B6CC /* purple-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F312C2DFA00045B6CC /* purple-ft.c */; };
@@ -107,6 +106,7 @@
 		B13FAC13119D585A001CE037 /* sipmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD7119D585A001CE037 /* sipmsg.c */; };
 		B13FAC15119D585A001CE037 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD9119D585A001CE037 /* uuid.c */; };
 		B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAC60119D721E001CE037 /* libxml2.dylib */; };
+		B8C5457A183820C800C81D33 /* sipe-digest-macosx.c in Sources */ = {isa = PBXBuildFile; fileRef = B8C54579183820C800C81D33 /* sipe-digest-macosx.c */; };
 		C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE7E109ADC54004EEEAF /* Kerberos.framework */; };
 		C9FDAEF6109ADF97004EEEAF /* sipe.png in Resources */ = {isa = PBXBuildFile; fileRef = C9FDAEF4109ADF97004EEEAF /* sipe.png */; };
 /* End PBXBuildFile section */
@@ -242,7 +242,6 @@
 		1CE4A01D14A180E100663393 /* purple-status.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-status.c"; sourceTree = "<group>"; };
 		1CE4A02214A1816B00663393 /* sipe-cert-crypto-nss.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-cert-crypto-nss.c"; sourceTree = "<group>"; };
 		1CE4A02314A1816B00663393 /* sipe-crypt-nss.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-crypt-nss.c"; sourceTree = "<group>"; };
-		1CE4A02414A1816B00663393 /* sipe-digest-nss.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-digest-nss.c"; sourceTree = "<group>"; };
 		1CF260F112C2DFA00045B6CC /* purple-buddy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-buddy.c"; sourceTree = "<group>"; };
 		1CF260F212C2DFA00045B6CC /* purple-chat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-chat.c"; sourceTree = "<group>"; };
 		1CF260F312C2DFA00045B6CC /* purple-ft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-ft.c"; sourceTree = "<group>"; };
@@ -308,6 +307,7 @@
 		B13FABD7119D585A001CE037 /* sipmsg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sipmsg.c; sourceTree = "<group>"; };
 		B13FABD9119D585A001CE037 /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = uuid.c; sourceTree = "<group>"; };
 		B13FAC60119D721E001CE037 /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
+		B8C54579183820C800C81D33 /* sipe-digest-macosx.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-digest-macosx.c"; sourceTree = "<group>"; };
 		C948843B109B2F8100ABFAF7 /* ESSIPEService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPEService.h; sourceTree = "<group>"; };
 		C948843C109B2F8100ABFAF7 /* ESSIPEService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ESSIPEService.m; sourceTree = "<group>"; };
 		C9488444109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPELibpurpleServicePlugin.h; sourceTree = "<group>"; };
@@ -506,13 +506,13 @@
 		B13FAB9C119D585A001CE037 /* core */ = {
 			isa = PBXGroup;
 			children = (
+				B8C54579183820C800C81D33 /* sipe-digest-macosx.c */,
 				7B379591176A2DDF001A02FD /* sipe-http-request.c */,
 				7B379592176A2DDF001A02FD /* sipe-http-transport.c */,
 				7B379593176A2DDF001A02FD /* sipe-http.c */,
 				1C1DC3CF14A8005A001F6A0F /* md4.c */,
 				1CE4A02214A1816B00663393 /* sipe-cert-crypto-nss.c */,
 				1CE4A02314A1816B00663393 /* sipe-crypt-nss.c */,
-				1CE4A02414A1816B00663393 /* sipe-digest-nss.c */,
 				B13FABAD119D585A001CE037 /* sip-sec.c */,
 				B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */,
 				1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */,
@@ -760,6 +760,7 @@
 				B13FAB63119D5155001CE037 /* purple-dnsquery.c in Sources */,
 				B13FAB64119D5155001CE037 /* purple-markup.c in Sources */,
 				B13FAB66119D5155001CE037 /* purple-mime.c in Sources */,
+				B8C5457A183820C800C81D33 /* sipe-digest-macosx.c in Sources */,
 				B13FAB67119D5155001CE037 /* purple-network.c in Sources */,
 				B13FAB68119D5155001CE037 /* purple-plugin.c in Sources */,
 				B13FAB6A119D5155001CE037 /* purple-schedule.c in Sources */,
@@ -822,7 +823,6 @@
 				1CE4A01F14A180E100663393 /* purple-status.c in Sources */,
 				1CE4A02514A1816B00663393 /* sipe-cert-crypto-nss.c in Sources */,
 				1CE4A02614A1816B00663393 /* sipe-crypt-nss.c in Sources */,
-				1CE4A02714A1816B00663393 /* sipe-digest-nss.c in Sources */,
 				1C1DC3D014A8005A001F6A0F /* md4.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

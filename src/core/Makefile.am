@@ -1,6 +1,7 @@
 EXTRA_DIST = \
 	Makefile.mingw \
-	libsiperc.rc.in
+	libsiperc.rc.in \
+	sipe-digest-macosx.c
 
 noinst_LTLIBRARIES = \
 	libsipe_core.la \
