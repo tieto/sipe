@@ -499,9 +499,23 @@ static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 	/* only enable this debug output while testing
 	   SIPE_DEBUG_INFO("sipe_purple_send_typing: '%s' state %d", who, state); */
 
-	sipe_core_user_feedback_typing(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
-				       who,
-				       typing);
+	/*
+	 * libpurple calls this function with PURPLE_NOT_TYPING *after*
+	 * calling sipe_purple_send_im() with the message. This causes
+	 * SIPE core to send out two SIP messages to the same dialog in
+	 * short succession without waiting for the response to the first
+	 * one. Some servers then reject the first one with
+	 *
+	 *    SIP/2.0 500 Stale CSeq Value
+	 *
+	 * which triggers a "message not delivered" error for the user.
+	 *
+	 * Work around this by filtering out PURPLE_NOT_TYPING events.
+	 */
+	if (state != PURPLE_NOT_TYPING)
+		sipe_core_user_feedback_typing(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+					       who,
+					       typing);
 
 	/* tell libpurple to send typing indications every 4 seconds */
 	return(typing ? 4 : 0);
