@@ -486,7 +486,8 @@
 				7BB8CC21183ABE72004351FF /* libsmime3.dylib */,
 				7BB8CC22183ABE72004351FF /* libsoftokn3.dylib */,
 			);
-			path = "NSS Libraries";
+			name = "NSS Libraries";
+			path = NSSLibraries;
 			sourceTree = "<group>";
 		};
 		B13FAB4D119D5155001CE037 /* purple */ = {
