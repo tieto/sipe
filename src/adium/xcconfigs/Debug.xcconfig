@@ -1,0 +1,16 @@
+//
+//  Debug.xcconfig
+//  SIPEAdiumPlugin
+//
+//  Created by Lamb, Michael on 11/13/13.
+//
+//
+#include "Base.xcconfig"
+//:configuration = Debug
+ONLY_ACTIVE_ARCH = YES
+COPY_PHASE_STRIP = NO
+ALWAYS_SEARCH_USER_PATHS = NO
+HEADER_SEARCH_PATHS = $(inherited) ../purple ../api /usr/include/libxml2
+LIBRARY_SEARCH_PATHS = $(inherited)
+GCC_DYNAMIC_NO_PIC = NO
+GCC_OPTIMIZATION_LEVEL = 0

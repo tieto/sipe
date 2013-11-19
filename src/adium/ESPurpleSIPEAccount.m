@@ -130,8 +130,8 @@ extern void AILog(NSString *fmt, ...);
                 [self setPasswordTemporarily:@"placeholder"];
     }
 
-	BOOL dont_publish = [[self preferenceForKey:KEY_SIPE_DONT_PUBLISH group:GROUP_ACCOUNT_STATUS] boolValue];
-	purple_account_set_bool(account, "dont-publish", dont_publish);
+	BOOL dontPublish = [[self preferenceForKey:KEY_SIPE_DONT_PUBLISH group:GROUP_ACCOUNT_STATUS] boolValue];
+	purple_account_set_bool(account, "dont-publish", dontPublish);
 
     // Connection preferences
     id connType = [self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS];

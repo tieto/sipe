@@ -27,18 +27,18 @@
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application"/>
         <customView id="1" userLabel="Options">
-            <rect key="frame" x="0.0" y="0.0" width="360" height="436"/>
+            <rect key="frame" x="0.0" y="0.0" width="360" height="468"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
             <subviews>
                 <box autoresizesSubviews="NO" title="Connection Settings" borderType="line" id="272">
-                    <rect key="frame" x="5" y="215" width="351" height="201"/>
+                    <rect key="frame" x="5" y="276" width="351" height="172"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <view key="contentView">
-                        <rect key="frame" x="1" y="1" width="349" height="185"/>
+                        <rect key="frame" x="1" y="1" width="349" height="156"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
                             <textField autoresizesSubviews="NO" verticalHuggingPriority="750" id="4">
-                                <rect key="frame" x="8" y="156" width="81" height="17"/>
+                                <rect key="frame" x="8" y="127" width="81" height="17"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Server[:Port]" id="5">
                                     <font key="font" metaFont="system"/>
@@ -47,7 +47,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField verticalHuggingPriority="750" id="31">
-                                <rect key="frame" x="175" y="153" width="156" height="22"/>
+                                <rect key="frame" x="175" y="124" width="156" height="22"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="32">
                                     <font key="font" metaFont="system"/>
@@ -56,7 +56,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField verticalHuggingPriority="750" id="10">
-                                <rect key="frame" x="8" y="127" width="111" height="17"/>
+                                <rect key="frame" x="8" y="98" width="111" height="17"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Connection type:" id="11">
                                     <font key="font" metaFont="system"/>
@@ -65,7 +65,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField verticalHuggingPriority="750" id="16">
-                                <rect key="frame" x="8" y="65" width="78" height="17"/>
+                                <rect key="frame" x="8" y="36" width="78" height="17"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="User Agent:" id="17">
                                     <font key="font" metaFont="system"/>
@@ -74,7 +74,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField verticalHuggingPriority="750" id="25">
-                                <rect key="frame" x="8" y="97" width="153" height="17"/>
+                                <rect key="frame" x="8" y="68" width="153" height="17"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Authentication scheme:" id="26">
                                     <font key="font" metaFont="system"/>
@@ -83,11 +83,11 @@
                                 </textFieldCell>
                             </textField>
                             <popUpButton verticalHuggingPriority="750" id="39">
-                                <rect key="frame" x="172" y="121" width="162" height="26"/>
+                                <rect key="frame" x="172" y="92" width="162" height="26"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <popUpButtonCell key="cell" type="push" title="Auto" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" selectedItem="42" id="40">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
+                                    <font key="font" metaFont="menu"/>
                                     <menu key="menu" title="OtherViews" id="41">
                                         <items>
                                             <menuItem title="Auto" state="on" id="42"/>
@@ -98,7 +98,7 @@
                                 </popUpButtonCell>
                             </popUpButton>
                             <textField verticalHuggingPriority="750" id="49">
-                                <rect key="frame" x="175" y="62" width="156" height="22"/>
+                                <rect key="frame" x="175" y="33" width="156" height="22"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="50">
                                     <font key="font" metaFont="system"/>
@@ -107,14 +107,14 @@
                                 </textFieldCell>
                             </textField>
                             <popUpButton verticalHuggingPriority="750" id="65">
-                                <rect key="frame" x="172" y="91" width="162" height="26"/>
+                                <rect key="frame" x="172" y="62" width="162" height="26"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <popUpButtonCell key="cell" type="push" title="NTLM" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" state="on" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="66">
+                                <popUpButtonCell key="cell" type="push" bezelStyle="rounded" alignment="left" lineBreakMode="truncatingTail" borderStyle="borderAndBezel" imageScaling="proportionallyDown" inset="2" id="66">
                                     <behavior key="behavior" lightByBackground="YES" lightByGray="YES"/>
-                                    <font key="font" metaFont="system"/>
+                                    <font key="font" metaFont="menu"/>
                                     <menu key="menu" title="OtherViews" id="67">
                                         <items>
-                                            <menuItem title="NTLM" state="on" id="68"/>
+                                            <menuItem title="NTLM" id="68"/>
                                             <menuItem title="Kerberos" tag="1" id="69"/>
                                             <menuItem title="TLS-DSK" tag="2" id="70"/>
                                         </items>
@@ -122,17 +122,9 @@
                                 </popUpButtonCell>
                             </popUpButton>
                             <button id="225">
-                                <rect key="frame" x="8" y="32" width="144" height="18"/>
+                                <rect key="frame" x="8" y="12" width="144" height="18"/>
                                 <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                                 <buttonCell key="cell" type="check" title="Use Single Sign-On" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="226">
-                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
-                                    <font key="font" metaFont="system"/>
-                                </buttonCell>
-                            </button>
-                            <button id="E1F-yb-IqN">
-                                <rect key="frame" x="8" y="12" width="270" height="18"/>
-                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
-                                <buttonCell key="cell" type="check" title="Don't publish my calendar information" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="bvU-tw-rYT">
                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
@@ -143,7 +135,7 @@
                     <color key="fillColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                 </box>
                 <box autoresizesSubviews="NO" title="Email Settings" borderType="line" id="273">
-                    <rect key="frame" x="7" y="16" width="349" height="158"/>
+                    <rect key="frame" x="6" y="77" width="349" height="158"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <view key="contentView">
                         <rect key="frame" x="1" y="1" width="347" height="142"/>
@@ -227,7 +219,7 @@
                     <color key="fillColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
                 </box>
                 <textField verticalHuggingPriority="750" id="104">
-                    <rect key="frame" x="13" y="192" width="120" height="17"/>
+                    <rect key="frame" x="12" y="253" width="120" height="17"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" sendsActionOnEndEditing="YES" title="Group Chat Proxy:" id="105">
                         <font key="font" metaFont="system"/>
@@ -236,7 +228,7 @@
                     </textFieldCell>
                 </textField>
                 <textField verticalHuggingPriority="750" id="136">
-                    <rect key="frame" x="184" y="189" width="156" height="22"/>
+                    <rect key="frame" x="183" y="250" width="156" height="22"/>
                     <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
                     <textFieldCell key="cell" scrollable="YES" lineBreakMode="clipping" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" state="on" borderStyle="bezel" drawsBackground="YES" id="137">
                         <font key="font" metaFont="system"/>
@@ -244,6 +236,26 @@
                         <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                     </textFieldCell>
                 </textField>
+                <box autoresizesSubviews="NO" title="Calendar Options" borderType="line" id="2gf-zd-3kf">
+                    <rect key="frame" x="6" y="16" width="349" height="57"/>
+                    <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                    <view key="contentView">
+                        <rect key="frame" x="1" y="1" width="347" height="41"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <button id="E1F-yb-IqN">
+                                <rect key="frame" x="10" y="15" width="270" height="18"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMinY="YES"/>
+                                <buttonCell key="cell" type="check" title="Don't publish calendar information" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="bvU-tw-rYT">
+                                    <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
+                                    <font key="font" metaFont="system"/>
+                                </buttonCell>
+                            </button>
+                        </subviews>
+                    </view>
+                    <color key="borderColor" white="0.0" alpha="0.41999999999999998" colorSpace="calibratedWhite"/>
+                    <color key="fillColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
+                </box>
             </subviews>
         </customView>
         <customView id="157" userLabel="Setup">

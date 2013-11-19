@@ -50,25 +50,25 @@
 		7B379595176A2DDF001A02FD /* sipe-http-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379592176A2DDF001A02FD /* sipe-http-transport.c */; };
 		7B379596176A2DDF001A02FD /* sipe-http.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379593176A2DDF001A02FD /* sipe-http.c */; };
 		7B50EFAB16DB326100F897D1 /* PurpleDefaultsSIPE.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */; };
-		7B5DD2EB16DB1E0A00B3D188 /* libnss3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B57773F166EC5FB000DBCD5 /* libnss3.dylib */; };
-		7B5DD2EC16DB1E0A00B3D188 /* libsoftokn3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */; };
-		7B5DD2ED16DB1E0A00B3D188 /* libfreebl3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */; };
-		7B5DD2EE16DB1E0A00B3D188 /* libplds4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B5777121668103B000DBCD5 /* libplds4.dylib */; };
-		7B5DD2EF16DB1E0A00B3D188 /* libplc4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B5777101668102A000DBCD5 /* libplc4.dylib */; };
-		7B5DD2F016DB1E0A00B3D188 /* libnssutil3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B2AB0931666A17D0020766F /* libnssutil3.dylib */; };
-		7B5DD2F116DB1E0A00B3D188 /* libsmime3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */; };
-		7B5DD2F216DB1E0A00B3D188 /* libnspr4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */; };
-		7B6505B5170BCB0C002107A1 /* libnss3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B57773F166EC5FB000DBCD5 /* libnss3.dylib */; };
-		7B6505B6170BCB0E002107A1 /* libsoftokn3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */; };
-		7B6505B7170BCB11002107A1 /* libfreebl3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */; };
-		7B6505B8170BCB14002107A1 /* libplds4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5777121668103B000DBCD5 /* libplds4.dylib */; };
-		7B6505B9170BCB16002107A1 /* libplc4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5777101668102A000DBCD5 /* libplc4.dylib */; };
-		7B6505BA170BCB19002107A1 /* libnssutil3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B2AB0931666A17D0020766F /* libnssutil3.dylib */; };
-		7B6505BB170BCB1C002107A1 /* libsmime3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */; };
-		7B6505BC170BCB22002107A1 /* libnspr4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */; };
 		7B78055816DEC73400B844A6 /* ESSIPEAccountView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */; };
 		7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */; };
 		7B7805DA16DFF8D300B844A6 /* sip-sec-basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */; };
+		7BB8CC23183ABE72004351FF /* libfreebl3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BB8CC1C183ABE72004351FF /* libfreebl3.dylib */; };
+		7BB8CC24183ABE72004351FF /* libnspr4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BB8CC1D183ABE72004351FF /* libnspr4.dylib */; };
+		7BB8CC25183ABE72004351FF /* libnss3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BB8CC1E183ABE72004351FF /* libnss3.dylib */; };
+		7BB8CC26183ABE72004351FF /* libnssutil3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BB8CC1F183ABE72004351FF /* libnssutil3.dylib */; };
+		7BB8CC27183ABE72004351FF /* libplds4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BB8CC20183ABE72004351FF /* libplds4.dylib */; };
+		7BB8CC28183ABE72004351FF /* libsmime3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BB8CC21183ABE72004351FF /* libsmime3.dylib */; };
+		7BB8CC29183ABE72004351FF /* libsoftokn3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BB8CC22183ABE72004351FF /* libsoftokn3.dylib */; };
+		7BB8CC40183AD5C0004351FF /* libfreebl3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7BB8CC1C183ABE72004351FF /* libfreebl3.dylib */; };
+		7BB8CC41183AD5C0004351FF /* libnspr4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7BB8CC1D183ABE72004351FF /* libnspr4.dylib */; };
+		7BB8CC42183AD5C0004351FF /* libnss3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7BB8CC1E183ABE72004351FF /* libnss3.dylib */; };
+		7BB8CC43183AD5C0004351FF /* libnssutil3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7BB8CC1F183ABE72004351FF /* libnssutil3.dylib */; };
+		7BB8CC44183AD5C0004351FF /* libplds4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7BB8CC20183ABE72004351FF /* libplds4.dylib */; };
+		7BB8CC45183AD5C0004351FF /* libsmime3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7BB8CC21183ABE72004351FF /* libsmime3.dylib */; };
+		7BB8CC46183AD5C0004351FF /* libsoftokn3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7BB8CC22183ABE72004351FF /* libsoftokn3.dylib */; };
+		7BB8CC4D183AD97A004351FF /* libplc4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7BB8CC4C183AD97A004351FF /* libplc4.dylib */; };
+		7BB8CC57183AD994004351FF /* libplc4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7BB8CC4C183AD97A004351FF /* libplc4.dylib */; };
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
 		B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB4F119D5155001CE037 /* purple-connection.c */; };
@@ -112,75 +112,68 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		7B2AB02B1665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC1183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 34BD9DA9053146CC000AB133;
 			remoteInfo = Adium;
 		};
-		7B2AB02D1665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC3183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 34BD9DE105314751000AB133;
 			remoteInfo = Adium.Framework;
 		};
-		7B2AB02F1665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC5183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 3485D68009EB416300232CC4;
 			remoteInfo = AdiumLibpurple;
 		};
-		7B2AB0311665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC7183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 6334FBFC0F9C11DC003C77A9;
 			remoteInfo = AIUtilities.framework;
 		};
-		7B2AB0331665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC9183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 349C2EFA0867AC97000BF883;
 			remoteInfo = AdiumApplescriptRunner;
 		};
-		7B2AB0351665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBCB183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 312ED3CA0C7E875B00A6BDA9;
 			remoteInfo = "Unit tests";
 		};
-		7B2AB0371665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBCD183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 633D4FA40F9D3073004F491E;
 			remoteInfo = "Spotlight Importer";
 		};
-		7B2AB03A1665EEFA0020766F /* PBXContainerItemProxy */ = {
+		7BB8CC2A183AC198004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 34BD9DAF05314751000AB133;
-			remoteInfo = Adium.Framework;
+			remoteGlobalIDString = 34BD9CD1053146CC000AB133;
+			remoteInfo = Adium;
 		};
-		7B2AB03C1665EEFA0020766F /* PBXContainerItemProxy */ = {
+		7BB8CC3E183ACC3F004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 089C1669FE841209C02AAC07 /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = 3485D67F09EB416300232CC4;
-			remoteInfo = AdiumLibpurple;
-		};
-		7B2AB03E1665EEFA0020766F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 6334FBFB0F9C11DC003C77A9;
-			remoteInfo = AIUtilities.framework;
+			remoteGlobalIDString = 7BB8CC02183ABAB2004351FF;
+			remoteInfo = "Build NSS libs";
 		};
 		C92A79F110B25023009B64B9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -198,14 +191,14 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				7B5DD2EB16DB1E0A00B3D188 /* libnss3.dylib in CopyFiles */,
-				7B5DD2EC16DB1E0A00B3D188 /* libsoftokn3.dylib in CopyFiles */,
-				7B5DD2ED16DB1E0A00B3D188 /* libfreebl3.dylib in CopyFiles */,
-				7B5DD2EE16DB1E0A00B3D188 /* libplds4.dylib in CopyFiles */,
-				7B5DD2EF16DB1E0A00B3D188 /* libplc4.dylib in CopyFiles */,
-				7B5DD2F016DB1E0A00B3D188 /* libnssutil3.dylib in CopyFiles */,
-				7B5DD2F116DB1E0A00B3D188 /* libsmime3.dylib in CopyFiles */,
-				7B5DD2F216DB1E0A00B3D188 /* libnspr4.dylib in CopyFiles */,
+				7BB8CC57183AD994004351FF /* libplc4.dylib in CopyFiles */,
+				7BB8CC40183AD5C0004351FF /* libfreebl3.dylib in CopyFiles */,
+				7BB8CC41183AD5C0004351FF /* libnspr4.dylib in CopyFiles */,
+				7BB8CC42183AD5C0004351FF /* libnss3.dylib in CopyFiles */,
+				7BB8CC43183AD5C0004351FF /* libnssutil3.dylib in CopyFiles */,
+				7BB8CC44183AD5C0004351FF /* libplds4.dylib in CopyFiles */,
+				7BB8CC45183AD5C0004351FF /* libsmime3.dylib in CopyFiles */,
+				7BB8CC46183AD5C0004351FF /* libsoftokn3.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -216,8 +209,6 @@
 		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		089C167FFE841241C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
-		1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnspr4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/pr/src/libnspr4.dylib; sourceTree = NSS_SRCPATH; };
-		1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsmime3.dylib; path = mozilla/security/nss/lib/smime/Darwin11.4.2_64_OPT.OBJ/libsmime3.dylib; sourceTree = NSS_SRCPATH; };
 		1C1DC3CF14A8005A001F6A0F /* md4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = md4.c; sourceTree = "<group>"; };
 		1C7056D312C1E5820004E43B /* libpidgin-sipe.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libpidgin-sipe.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C822BEB12F8E87500CC4AEA /* sipe-im.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-im.c"; sourceTree = "<group>"; };
@@ -256,20 +247,29 @@
 		1CF2611012C2E1AA0045B6CC /* sipe-subscriptions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-subscriptions.c"; sourceTree = "<group>"; };
 		1CF2611112C2E1AA0045B6CC /* sipe-user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-user.c"; sourceTree = "<group>"; };
 		32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIPEAdiumPlugin_Prefix.pch; sourceTree = "<group>"; };
-		7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Adium.xcodeproj; sourceTree = ADIUM_SRCPATH; };
-		7B2AB0931666A17D0020766F /* libnssutil3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnssutil3.dylib; path = mozilla/security/nss/lib/util/Darwin11.4.2_64_OPT.OBJ/libnssutil3.dylib; sourceTree = NSS_SRCPATH; };
 		7B379591176A2DDF001A02FD /* sipe-http-request.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http-request.c"; sourceTree = "<group>"; };
 		7B379592176A2DDF001A02FD /* sipe-http-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http-transport.c"; sourceTree = "<group>"; };
 		7B379593176A2DDF001A02FD /* sipe-http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http.c"; sourceTree = "<group>"; };
 		7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PurpleDefaultsSIPE.plist; sourceTree = "<group>"; };
-		7B5777101668102A000DBCD5 /* libplc4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplc4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/libc/src/libplc4.dylib; sourceTree = NSS_SRCPATH; };
-		7B5777121668103B000DBCD5 /* libplds4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplds4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/ds/libplds4.dylib; sourceTree = NSS_SRCPATH; };
-		7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreebl3.dylib; path = mozilla/security/nss/lib/freebl/Darwin11.4.2_64_OPT.OBJ/Darwin_SINGLE_SHLIB/libfreebl3.dylib; sourceTree = NSS_SRCPATH; };
-		7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsoftokn3.dylib; path = mozilla/security/nss/lib/softoken/Darwin11.4.2_64_OPT.OBJ/libsoftokn3.dylib; sourceTree = NSS_SRCPATH; };
-		7B57773F166EC5FB000DBCD5 /* libnss3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnss3.dylib; path = mozilla/security/nss/lib/nss/Darwin11.4.2_64_OPT.OBJ/libnss3.dylib; sourceTree = NSS_SRCPATH; };
 		7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ESSIPEAccountView.xib; path = English.lproj/ESSIPEAccountView.xib; sourceTree = "<group>"; };
 		7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-negotiate.c"; sourceTree = "<group>"; };
 		7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-basic.c"; sourceTree = "<group>"; };
+		7BB8CB91183AA0BD004351FF /* Base.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
+		7BB8CB92183AA0BD004351FF /* Debug-Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Debug-Release.xcconfig"; sourceTree = "<group>"; };
+		7BB8CB93183AA0BD004351FF /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "libpidgin-sipe.xcconfig"; sourceTree = "<group>"; };
+		7BB8CB95183AA0BD004351FF /* NSS.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = NSS.xcconfig; sourceTree = "<group>"; };
+		7BB8CB96183AA0BD004351FF /* Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = SIPEAdiumPlugin.xcconfig; sourceTree = "<group>"; };
+		7BB8CBB3183AA600004351FF /* Adium.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Adium.xcodeproj; path = ../../../adium/Adium.xcodeproj; sourceTree = "<group>"; };
+		7BB8CC1C183ABE72004351FF /* libfreebl3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libfreebl3.dylib; sourceTree = "<group>"; };
+		7BB8CC1D183ABE72004351FF /* libnspr4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libnspr4.dylib; sourceTree = "<group>"; };
+		7BB8CC1E183ABE72004351FF /* libnss3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libnss3.dylib; sourceTree = "<group>"; };
+		7BB8CC1F183ABE72004351FF /* libnssutil3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libnssutil3.dylib; sourceTree = "<group>"; };
+		7BB8CC20183ABE72004351FF /* libplds4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libplds4.dylib; sourceTree = "<group>"; };
+		7BB8CC21183ABE72004351FF /* libsmime3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libsmime3.dylib; sourceTree = "<group>"; };
+		7BB8CC22183ABE72004351FF /* libsoftokn3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libsoftokn3.dylib; sourceTree = "<group>"; };
+		7BB8CC4C183AD97A004351FF /* libplc4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; path = libplc4.dylib; sourceTree = "<group>"; };
 		8D5B49B6048680CD000E48DA /* SIPEAdiumPlugin.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SIPEAdiumPlugin.AdiumLibpurplePlugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		B13FAB4F119D5155001CE037 /* purple-connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-connection.c"; sourceTree = "<group>"; };
@@ -326,14 +326,14 @@
 			files = (
 				8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */,
 				C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */,
-				7B6505B5170BCB0C002107A1 /* libnss3.dylib in Frameworks */,
-				7B6505B6170BCB0E002107A1 /* libsoftokn3.dylib in Frameworks */,
-				7B6505B7170BCB11002107A1 /* libfreebl3.dylib in Frameworks */,
-				7B6505B8170BCB14002107A1 /* libplds4.dylib in Frameworks */,
-				7B6505B9170BCB16002107A1 /* libplc4.dylib in Frameworks */,
-				7B6505BA170BCB19002107A1 /* libnssutil3.dylib in Frameworks */,
-				7B6505BB170BCB1C002107A1 /* libsmime3.dylib in Frameworks */,
-				7B6505BC170BCB22002107A1 /* libnspr4.dylib in Frameworks */,
+				7BB8CC23183ABE72004351FF /* libfreebl3.dylib in Frameworks */,
+				7BB8CC29183ABE72004351FF /* libsoftokn3.dylib in Frameworks */,
+				7BB8CC26183ABE72004351FF /* libnssutil3.dylib in Frameworks */,
+				7BB8CC28183ABE72004351FF /* libsmime3.dylib in Frameworks */,
+				7BB8CC25183ABE72004351FF /* libnss3.dylib in Frameworks */,
+				7BB8CC24183ABE72004351FF /* libnspr4.dylib in Frameworks */,
+				7BB8CC4D183AD97A004351FF /* libplc4.dylib in Frameworks */,
+				7BB8CC27183ABE72004351FF /* libplds4.dylib in Frameworks */,
 				1C3F91AC12C1F531000AA829 /* libpidgin-sipe.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -352,7 +352,7 @@
 		089C166AFE841209C02AAC07 /* SIPEAdiumPlugin */ = {
 			isa = PBXGroup;
 			children = (
-				7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */,
+				7BB8CBB3183AA600004351FF /* Adium.xcodeproj */,
 				08FB77AFFE84173DC02AAC07 /* Classes */,
 				C92A79B110B24C50009B64B9 /* pidgin-sipe */,
 				32C88E010371C26100C91783 /* Other Sources */,
@@ -366,7 +366,7 @@
 		089C1671FE841209C02AAC07 /* Frameworks and Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				7BC54799169BB9C0003DF552 /* NSS Libraries */,
+				7BB8CC19183ABDDB004351FF /* NSS Libraries */,
 				7B1E80001665C79300E0C654 /* Other Libraries */,
 				1058C7ACFEA557BF11CA2CBB /* Linked Frameworks */,
 				1058C7AEFEA557BF11CA2CBB /* Other Frameworks */,
@@ -432,6 +432,7 @@
 		32C88E010371C26100C91783 /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				7BB8CB90183AA07B004351FF /* xcconfigs */,
 				32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */,
 			);
 			name = "Other Sources";
@@ -445,33 +446,47 @@
 			name = "Other Libraries";
 			sourceTree = "<group>";
 		};
-		7B2AB01F1665EECF0020766F /* Products */ = {
+		7BB8CB90183AA07B004351FF /* xcconfigs */ = {
 			isa = PBXGroup;
 			children = (
-				7B2AB02C1665EECF0020766F /* Adium.app */,
-				7B2AB02E1665EECF0020766F /* Adium.framework */,
-				7B2AB0301665EECF0020766F /* AdiumLibpurple.framework */,
-				7B2AB0321665EECF0020766F /* AIUtilities.framework */,
-				7B2AB0341665EECF0020766F /* AdiumApplescriptRunner */,
-				7B2AB0361665EECF0020766F /* Unit tests.octest */,
-				7B2AB0381665EECF0020766F /* AdiumSpotlightImporter.mdimporter */,
+				7BB8CB91183AA0BD004351FF /* Base.xcconfig */,
+				7BB8CB92183AA0BD004351FF /* Debug-Release.xcconfig */,
+				7BB8CB93183AA0BD004351FF /* Debug.xcconfig */,
+				7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */,
+				7BB8CB95183AA0BD004351FF /* NSS.xcconfig */,
+				7BB8CB96183AA0BD004351FF /* Release.xcconfig */,
+				7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */,
+			);
+			path = xcconfigs;
+			sourceTree = "<group>";
+		};
+		7BB8CBB4183AA600004351FF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				7BB8CBC2183AA605004351FF /* Adium.app */,
+				7BB8CBC4183AA605004351FF /* Adium.framework */,
+				7BB8CBC6183AA605004351FF /* AdiumLibpurple.framework */,
+				7BB8CBC8183AA605004351FF /* AIUtilities.framework */,
+				7BB8CBCA183AA605004351FF /* AdiumApplescriptRunner */,
+				7BB8CBCC183AA605004351FF /* Unit tests.octest */,
+				7BB8CBCE183AA605004351FF /* AdiumSpotlightImporter.mdimporter */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		7BC54799169BB9C0003DF552 /* NSS Libraries */ = {
+		7BB8CC19183ABDDB004351FF /* NSS Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				7B57773F166EC5FB000DBCD5 /* libnss3.dylib */,
-				7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */,
-				7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */,
-				7B5777121668103B000DBCD5 /* libplds4.dylib */,
-				7B5777101668102A000DBCD5 /* libplc4.dylib */,
-				7B2AB0931666A17D0020766F /* libnssutil3.dylib */,
-				1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */,
-				1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */,
+				7BB8CC4C183AD97A004351FF /* libplc4.dylib */,
+				7BB8CC1C183ABE72004351FF /* libfreebl3.dylib */,
+				7BB8CC1D183ABE72004351FF /* libnspr4.dylib */,
+				7BB8CC1E183ABE72004351FF /* libnss3.dylib */,
+				7BB8CC1F183ABE72004351FF /* libnssutil3.dylib */,
+				7BB8CC20183ABE72004351FF /* libplds4.dylib */,
+				7BB8CC21183ABE72004351FF /* libsmime3.dylib */,
+				7BB8CC22183ABE72004351FF /* libsoftokn3.dylib */,
 			);
-			name = "NSS Libraries";
+			path = "NSS Libraries";
 			sourceTree = "<group>";
 		};
 		B13FAB4D119D5155001CE037 /* purple */ = {
@@ -592,6 +607,23 @@
 		};
 /* End PBXHeadersBuildPhase section */
 
+/* Begin PBXLegacyTarget section */
+		7BB8CC02183ABAB2004351FF /* Build NSS libs */ = {
+			isa = PBXLegacyTarget;
+			buildArgumentsString = "nss_build_all $(ACTION) -C mozilla/security/nss";
+			buildConfigurationList = 7BB8CC03183ABAB3004351FF /* Build configuration list for PBXLegacyTarget "Build NSS libs" */;
+			buildPhases = (
+			);
+			buildToolPath = /usr/bin/make;
+			buildWorkingDirectory = "${NSS_SRCPATH}";
+			dependencies = (
+			);
+			name = "Build NSS libs";
+			passBuildSettingsInEnvironment = 1;
+			productName = NSS;
+		};
+/* End PBXLegacyTarget section */
+
 /* Begin PBXNativeTarget section */
 		8D5B49AC048680CD000E48DA /* SIPEAdiumPlugin */ = {
 			isa = PBXNativeTarget;
@@ -606,9 +638,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				7B2AB03B1665EEFA0020766F /* PBXTargetDependency */,
-				7B2AB03D1665EEFA0020766F /* PBXTargetDependency */,
-				7B2AB03F1665EEFA0020766F /* PBXTargetDependency */,
+				7BB8CC2B183AC198004351FF /* PBXTargetDependency */,
 				C92A79F210B25023009B64B9 /* PBXTargetDependency */,
 			);
 			name = SIPEAdiumPlugin;
@@ -628,6 +658,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				7BB8CC3F183ACC3F004351FF /* PBXTargetDependency */,
 			);
 			name = "pidgin-sipe";
 			productName = "pidgin-sipe";
@@ -656,66 +687,67 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 7B2AB01F1665EECF0020766F /* Products */;
-					ProjectRef = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+					ProductGroup = 7BB8CBB4183AA600004351FF /* Products */;
+					ProjectRef = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 				},
 			);
 			projectRoot = "";
 			targets = (
 				8D5B49AC048680CD000E48DA /* SIPEAdiumPlugin */,
 				C92A796810B24BAD009B64B9 /* pidgin-sipe */,
+				7BB8CC02183ABAB2004351FF /* Build NSS libs */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		7B2AB02C1665EECF0020766F /* Adium.app */ = {
+		7BB8CBC2183AA605004351FF /* Adium.app */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.application;
 			path = Adium.app;
-			remoteRef = 7B2AB02B1665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC1183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB02E1665EECF0020766F /* Adium.framework */ = {
+		7BB8CBC4183AA605004351FF /* Adium.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
 			path = Adium.framework;
-			remoteRef = 7B2AB02D1665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC3183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0301665EECF0020766F /* AdiumLibpurple.framework */ = {
+		7BB8CBC6183AA605004351FF /* AdiumLibpurple.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
 			path = AdiumLibpurple.framework;
-			remoteRef = 7B2AB02F1665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC5183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0321665EECF0020766F /* AIUtilities.framework */ = {
+		7BB8CBC8183AA605004351FF /* AIUtilities.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
 			path = AIUtilities.framework;
-			remoteRef = 7B2AB0311665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC7183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0341665EECF0020766F /* AdiumApplescriptRunner */ = {
+		7BB8CBCA183AA605004351FF /* AdiumApplescriptRunner */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
 			path = AdiumApplescriptRunner;
-			remoteRef = 7B2AB0331665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC9183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0361665EECF0020766F /* Unit tests.octest */ = {
+		7BB8CBCC183AA605004351FF /* Unit tests.octest */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.cfbundle;
 			path = "Unit tests.octest";
-			remoteRef = 7B2AB0351665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBCB183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0381665EECF0020766F /* AdiumSpotlightImporter.mdimporter */ = {
+		7BB8CBCE183AA605004351FF /* AdiumSpotlightImporter.mdimporter */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.cfbundle;
 			path = AdiumSpotlightImporter.mdimporter;
-			remoteRef = 7B2AB0371665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBCD183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -830,20 +862,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		7B2AB03B1665EEFA0020766F /* PBXTargetDependency */ = {
+		7BB8CC2B183AC198004351FF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = Adium.Framework;
-			targetProxy = 7B2AB03A1665EEFA0020766F /* PBXContainerItemProxy */;
+			name = Adium;
+			targetProxy = 7BB8CC2A183AC198004351FF /* PBXContainerItemProxy */;
 		};
-		7B2AB03D1665EEFA0020766F /* PBXTargetDependency */ = {
+		7BB8CC3F183ACC3F004351FF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = AdiumLibpurple;
-			targetProxy = 7B2AB03C1665EEFA0020766F /* PBXContainerItemProxy */;
-		};
-		7B2AB03F1665EEFA0020766F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = AIUtilities.framework;
-			targetProxy = 7B2AB03E1665EEFA0020766F /* PBXContainerItemProxy */;
+			target = 7BB8CC02183ABAB2004351FF /* Build NSS libs */;
+			targetProxy = 7BB8CC3E183ACC3F004351FF /* PBXContainerItemProxy */;
 		};
 		C92A79F210B25023009B64B9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -866,8 +893,9 @@
 /* Begin XCBuildConfiguration section */
 		1DEB913B08733D840010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
@@ -875,8 +903,11 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/mlamb/Desktop/AdiumPlugin/siplcs/src/adium/NSS\\ Libraries",
+				);
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
 					"-undefined",
@@ -890,15 +921,19 @@
 		};
 		1DEB913C08733D840010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/mlamb/Desktop/AdiumPlugin/siplcs/src/adium/NSS\\ Libraries",
+				);
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
@@ -911,6 +946,7 @@
 		};
 		1DEB913F08733D840010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB93183AA0BD004351FF /* Debug.xcconfig */;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -957,27 +993,28 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
+					"$(NSS_SRCPATH)/**",
 					"\"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers\"",
 					"\"$(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers\"",
 					"\"$(ADIUM_SRCPATH)/Frameworks/libintl.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers\"",
-					"$(NSS_SRCPATH)/**",
 				);
 				INFOPLIST_PREPROCESS = YES;
 				INFOPLIST_PREPROCESSOR_DEFINITIONS = "${GCC_PREPROCESSOR_DEFINITIONS}";
 				LIBRARY_SEARCH_PATHS = (
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/util/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/nss/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.2_64_OPT.OBJ/lib\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/softoken/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/libc/src\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/freebl/Darwin11.4.2_64_OPT.OBJ/Darwin_SINGLE_SHLIB\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/ds\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/smime/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/pr/src\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/util/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/nss/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin13.0.0_64_OPT.OBJ/lib\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/softoken/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin13.0.0_64_OPT.OBJ/lib/libc/src\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/freebl/Darwin13.0.0_64_OPT.OBJ/Darwin_SINGLE_SHLIB\"",
+					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin13.0.0_64_OPT.OBJ/lib/ds\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/smime/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin13.0.0_64_OPT.OBJ/pr/src\"",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				NSPR_SRCPATH = "$(NSS_SRCPATH)/mozilla/nsprpub";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-16";
 			};
@@ -985,6 +1022,7 @@
 		};
 		1DEB914008733D840010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB96183AA0BD004351FF /* Release.xcconfig */;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				FRAMEWORK_SEARCH_PATHS = (
@@ -1041,23 +1079,296 @@
 				INFOPLIST_PREPROCESS = YES;
 				INFOPLIST_PREPROCESSOR_DEFINITIONS = "${GCC_PREPROCESSOR_DEFINITIONS}";
 				LIBRARY_SEARCH_PATHS = (
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/util/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/nss/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.2_64_OPT.OBJ/lib\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/softoken/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/libc/src\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/freebl/Darwin11.4.2_64_OPT.OBJ/Darwin_SINGLE_SHLIB\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/ds\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/smime/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/pr/src\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/util/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/nss/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin13.0.0_64_OPT.OBJ/lib\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/softoken/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin13.0.0_64_OPT.OBJ/lib/libc/src\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/freebl/Darwin13.0.0_64_OPT.OBJ/Darwin_SINGLE_SHLIB\"",
+					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin13.0.0_64_OPT.OBJ/lib/ds\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/smime/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin13.0.0_64_OPT.OBJ/pr/src\"",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				NSPR_SRCPATH = "$(NSS_SRCPATH)/mozilla/nsprpub";
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-16";
 			};
 			name = Release;
 		};
+		7BB8CBFE183AB83D004351FF /* Debug-Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB92183AA0BD004351FF /* Debug-Release.xcconfig */;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"$(BUILT_PRODUCTS_DIR)\"/**",
+					"\"$(ADIUM_SRCPATH)/Frameworks\"",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"LOCALEDIR=\\\"translations\\\"",
+					"PURPLE_STATIC_PRPL=1",
+					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
+					"ENABLE_NLS=1",
+					"ADIUM=1",
+					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
+					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
+					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
+					"PACKAGE_VERSION=\\\"1.17.1\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.1\\\"",
+					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
+					"STDC_HEADERS=1",
+					"HAVE_SYS_TYPES_H=1",
+					"HAVE_SYS_STAT_H=1",
+					"HAVE_STDLIB_H=1",
+					"HAVE_STRING_H=1",
+					"HAVE_MEMORY_H=1",
+					"HAVE_STRINGS_H=1",
+					"HAVE_INTTYPES_H=1",
+					"HAVE_STDINT_H=1",
+					"HAVE_UNISTD_H=1",
+					"HAVE_DLFCN_H=1",
+					"LT_OBJDIR=\\\".libs/\\\"",
+					"STDC_HEADERS=1",
+					"HAVE_LOCALE_H=1",
+					"HAVE_LC_MESSAGES=1",
+					"HAVE_DLFCN_H=1",
+					"HAVE_DCGETTEXT=1",
+					"HAVE_GETTEXT=1",
+					"HAVE_LOCALE_H=1",
+					"HAVE_GSSAPI_GSSAPI_H=1",
+					"HAVE_LANGINFO_CODESET=1",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"\"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers\"",
+					"\"$(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers\"",
+					"\"$(ADIUM_SRCPATH)/Frameworks/libintl.framework/Headers\"",
+					"\"$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers\"",
+					"\"$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers\"",
+					"\"$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers\"",
+					"$(NSS_SRCPATH)/**",
+				);
+				INFOPLIST_PREPROCESS = YES;
+				INFOPLIST_PREPROCESSOR_DEFINITIONS = "${GCC_PREPROCESSOR_DEFINITIONS}";
+				LIBRARY_SEARCH_PATHS = (
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/util/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/nss/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin13.0.0_64_OPT.OBJ/lib\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/softoken/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin13.0.0_64_OPT.OBJ/lib/libc/src\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/freebl/Darwin13.0.0_64_OPT.OBJ/Darwin_SINGLE_SHLIB\"",
+					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin13.0.0_64_OPT.OBJ/lib/ds\"",
+					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/smime/Darwin13.0.0_64_OPT.OBJ\"",
+					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin13.0.0_64_OPT.OBJ/pr/src\"",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				NSPR_SRCPATH = "$(NSS_SRCPATH)/mozilla/nsprpub";
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-16";
+			};
+			name = "Debug-Release";
+		};
+		7BB8CBFF183AB83D004351FF /* Debug-Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"/Users/mlamb/Desktop/AdiumPlugin/siplcs/src/adium/NSS\\ Libraries",
+				);
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PRODUCT_NAME = SIPEAdiumPlugin;
+				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../purple ../api";
+				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
+			};
+			name = "Debug-Release";
+		};
+		7BB8CC00183AB83D004351FF /* Debug-Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"LOCALEDIR=\\\"translations\\\"",
+					"PURPLE_STATIC_PRPL=1",
+					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
+					"ENABLE_NLS=1",
+					"ADIUM=1",
+					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
+					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
+					"PACKAGE_VERSION=\\\"1.17.1\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.1\\\"",
+					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
+					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
+					"STDC_HEADERS=1",
+					"HAVE_SYS_TYPES_H=1",
+					"HAVE_SYS_STAT_H=1",
+					"HAVE_STDLIB_H=1",
+					"HAVE_STRING_H=1",
+					"HAVE_MEMORY_H=1",
+					"HAVE_STRINGS_H=1",
+					"HAVE_INTTYPES_H=1",
+					"HAVE_STDINT_H=1",
+					"HAVE_UNISTD_H=1",
+					"HAVE_DLFCN_H=1",
+					"LT_OBJDIR=\\\".libs/\\\"",
+					"STDC_HEADERS=1",
+					"HAVE_LOCALE_H=1",
+					"HAVE_LC_MESSAGES=1",
+					"HAVE_DLFCN_H=1",
+					"HAVE_DCGETTEXT=1",
+					"HAVE_GETTEXT=1",
+					"HAVE_LOCALE_H=1",
+					"HAVE_GSSAPI_GSSAPI_H=1",
+					"HAVE_LANGINFO_CODESET=1",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../purple,
+					../api,
+					/usr/include/libxml2,
+				);
+				INSTALL_PATH = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				PRODUCT_NAME = "pidgin-sipe";
+				ZERO_LINK = NO;
+			};
+			name = "Debug-Release";
+		};
+		7BB8CC04183ABAB3004351FF /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB95183AA0BD004351FF /* NSS.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		7BB8CC05183ABAB3004351FF /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB95183AA0BD004351FF /* NSS.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		7BB8CC06183ABAB3004351FF /* Debug-Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB95183AA0BD004351FF /* NSS.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUGGING_SYMBOLS = YES;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = YES;
+				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.9;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_CFLAGS = "";
+				OTHER_LDFLAGS = "";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+			};
+			name = "Debug-Release";
+		};
 		C92A796A10B24BAD009B64B9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1114,6 +1425,7 @@
 		};
 		C92A796B10B24BAD009B64B9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1176,6 +1488,7 @@
 			buildConfigurations = (
 				1DEB913B08733D840010E9CD /* Debug */,
 				1DEB913C08733D840010E9CD /* Release */,
+				7BB8CBFF183AB83D004351FF /* Debug-Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1185,6 +1498,17 @@
 			buildConfigurations = (
 				1DEB913F08733D840010E9CD /* Debug */,
 				1DEB914008733D840010E9CD /* Release */,
+				7BB8CBFE183AB83D004351FF /* Debug-Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7BB8CC03183ABAB3004351FF /* Build configuration list for PBXLegacyTarget "Build NSS libs" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7BB8CC04183ABAB3004351FF /* Debug */,
+				7BB8CC05183ABAB3004351FF /* Release */,
+				7BB8CC06183ABAB3004351FF /* Debug-Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1194,6 +1518,7 @@
 			buildConfigurations = (
 				C92A796A10B24BAD009B64B9 /* Debug */,
 				C92A796B10B24BAD009B64B9 /* Release */,
+				7BB8CC00183AB83D004351FF /* Debug-Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

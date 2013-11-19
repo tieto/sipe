@@ -1,0 +1,14 @@
+//
+//  NSS.xcconfig
+//  SIPEAdiumPlugin
+//
+//  Created by Lamb, Michael on 11/13/13.
+//
+//
+BUILD_OPT=1
+NSS_ENABLE_ECC=1
+NS_USE_GCC=1
+NO_MDUPDATE=1
+NSS_USE_SYSTEM_SQLITE=1
+USE_64=1
+NSPR_INCLUDE_DIR=mozilla/nsprpub/dist/include/nspr

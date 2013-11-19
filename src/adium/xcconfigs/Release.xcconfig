@@ -1,0 +1,16 @@
+//
+//  Release.xcconfig
+//  SIPEAdiumPlugin
+//
+//  Created by Lamb, Michael on 11/13/13.
+//
+//
+#include "Base.xcconfig"
+//:configuration = Release
+DEBUG_INFORMATION_FORMAT = dwarf-with-dsym
+COPY_PHASE_STRIP = YES
+ALWAYS_SEARCH_USER_PATHS = NO
+HEADER_SEARCH_PATHS = $(inherited) ../purple ../api /usr/include/libxml2
+LIBRARY_SEARCH_PATHS = $(inherited)
+GCC_MODEL_TUNING = G5
+ZERO_LINK = NO
