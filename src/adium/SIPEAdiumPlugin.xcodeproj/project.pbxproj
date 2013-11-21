@@ -907,7 +907,6 @@
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/mlamb/Desktop/AdiumPlugin/siplcs/src/adium/NSS\\ Libraries",
 				);
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
@@ -915,7 +914,7 @@
 					dynamic_lookup,
 				);
 				PRODUCT_NAME = SIPEAdiumPlugin;
-				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../purple ../api";
+				USER_HEADER_SEARCH_PATHS = "../../../adium/Source ../purple ../api";
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Debug;
@@ -933,14 +932,13 @@
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/mlamb/Desktop/AdiumPlugin/siplcs/src/adium/NSS\\ Libraries",
 				);
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
 				);
 				PRODUCT_NAME = SIPEAdiumPlugin;
-				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../purple ../api";
+				USER_HEADER_SEARCH_PATHS = "../../../adium/Source ../purple ../api";
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Release;
@@ -952,7 +950,7 @@
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"\"$(BUILT_PRODUCTS_DIR)\"/**",
-					"\"$(ADIUM_SRCPATH)/Frameworks\"",
+					"\"../../../adium/Frameworks\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -995,9 +993,9 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
 					"$(NSS_SRCPATH)/**",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libintl.framework/Headers\"",
+					"\"../../../adium/Frameworks/libglib.framework/Headers\"",
+					"\"../../../adium/Frameworks/libpurple.framework/Headers\"",
+					"\"../../../adium/Frameworks/libintl.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers\"",
@@ -1028,7 +1026,7 @@
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"\"$(BUILT_PRODUCTS_DIR)\"/**",
-					"\"$(ADIUM_SRCPATH)/Frameworks\"",
+					"\"../../../adium/Frameworks\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1069,9 +1067,9 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"\"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libintl.framework/Headers\"",
+					"\"../../../adium/Frameworks/libglib.framework/Headers\"",
+					"\"../../../adium/Frameworks/libpurple.framework/Headers\"",
+					"\"../../../adium/Frameworks/libintl.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers\"",
@@ -1103,7 +1101,7 @@
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"\"$(BUILT_PRODUCTS_DIR)\"/**",
-					"\"$(ADIUM_SRCPATH)/Frameworks\"",
+					"\"../../../adium/Frameworks\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1144,9 +1142,9 @@
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"\"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libintl.framework/Headers\"",
+					"\"../../../adium/Frameworks/libglib.framework/Headers\"",
+					"\"../../../adium/Frameworks/libpurple.framework/Headers\"",
+					"\"../../../adium/Frameworks/libintl.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers\"",
@@ -1183,14 +1181,13 @@
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
 				LIBRARY_SEARCH_PATHS = (
 					"$(inherited)",
-					"/Users/mlamb/Desktop/AdiumPlugin/siplcs/src/adium/NSS\\ Libraries",
 				);
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
 				);
 				PRODUCT_NAME = SIPEAdiumPlugin;
-				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../purple ../api";
+				USER_HEADER_SEARCH_PATHS = "../../../adium/Source ../purple ../api";
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = "Debug-Release";

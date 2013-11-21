@@ -17,6 +17,9 @@ NOTE: you only have to do this step once. If you don't change the Adium
 
 Follow the instructions at their URL above.
 
+The directory needs to be called "adium" and at the same level as SIPE source
+code directory.
+
 2. Get and build libnss and libnspr
 -------------------------------------
 
@@ -49,7 +52,6 @@ NOTE: you only have to do this step once. If you don't change the NSS or
 Start Xcode and go to menu Xcode -> Preferences -> Locations -> Source Trees.
 Press the "+" button and add the following variables
 
-   ADIUM_SRCPATH    /path/to/your/Adium/source/tree (from Step 1)
    NSS_SRCPATH      /path/to/your/NSS/source/tree   (from Step 2)
 
 4. Prepare the SIPEAdiumPlugin Xcode project
@@ -64,7 +66,7 @@ Download the SIPE source code and execute the following commands in a terminal:
 
 Note down the "DarwinXX.Y.Z" string and insert it in the following sed command:
 
-   $ sed -i -e 's/Darwin11.4.2/DarwinXX.Y.Z/g' src/adium/SIPEAdiumPlugin.xcodeproj/project.pbxproj
+   $ sed -i -e 's/Darwin13.0.0/DarwinXX.Y.Z/g' src/adium/SIPEAdiumPlugin.xcodeproj/project.pbxproj
 
 5. Build the SIPEAdiumPlugin Xcode project
 ------------------------------------------
