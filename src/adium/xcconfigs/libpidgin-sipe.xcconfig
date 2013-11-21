@@ -6,7 +6,6 @@
 //
 //
 PRODUCT_NAME = pidgin-sipe
-HEADER_SEARCH_PATHS = $(inherited) ../purple ../api /usr/include/libxml2
-LIBRARY_SEARCH_PATHS = $(inherited)
+
 
 
