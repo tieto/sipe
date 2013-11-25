@@ -464,6 +464,22 @@ void sipe_groupchat_invite_response(struct sipe_core_private *sipe_private,
 	}
 }
 
+static void chatserver_command_error_notify(struct sipe_core_private *sipe_private,
+					    struct sipe_chat_session *chat_session,
+					    const gchar *content)
+{
+	gchar *label  = g_strdup_printf(_("This message was not delivered to chat room '%s'"),
+					chat_session->title);
+	gchar *errmsg = g_strdup_printf("%s:\n<font color=\"#888888\"></b>%s<b></font>",
+					label, content);
+	g_free(label);
+	sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
+					  chat_session->backend,
+					  NULL,
+					  errmsg);
+	g_free(errmsg);
+}
+
 /* TransCallback */
 static gboolean chatserver_command_response(struct sipe_core_private *sipe_private,
 					    struct sipmsg *msg,
@@ -475,18 +491,10 @@ static gboolean chatserver_command_response(struct sipe_core_private *sipe_priva
 
 		SIPE_DEBUG_INFO("chatserver_command_response: failure %d", msg->response);
 
-		if (chat_session) {
-			gchar *label  = g_strdup_printf(_("This message was not delivered to chat room '%s'"),
-							chat_session->title);
-			gchar *errmsg = g_strdup_printf("%s:\n<font color=\"#888888\"></b>%s<b></font>",
-							label, gmsg->content);
-			g_free(label);
-			sipe_backend_notify_message_error(SIPE_CORE_PUBLIC,
-							  chat_session->backend,
-							  NULL,
-							  errmsg);
-			g_free(errmsg);
-		}
+		if (chat_session)
+			chatserver_command_error_notify(sipe_private,
+							chat_session,
+							gmsg->content);
 	}
 	return TRUE;
 }
@@ -1102,6 +1110,10 @@ void sipe_groupchat_send(struct sipe_core_private *sipe_private,
 	if (msg) {
 		msg->session = chat_session;
 		msg->content = g_strdup(what);
+	} else {
+		chatserver_command_error_notify(sipe_private,
+						chat_session,
+						what);
 	}
 }
 
