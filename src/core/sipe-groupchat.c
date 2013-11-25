@@ -370,7 +370,8 @@ static void groupchat_update_cb(struct sipe_core_private *sipe_private,
 	struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
 						     groupchat->session->with);
 
-	sip_transport_update(sipe_private, dialog);
+	if (dialog)
+		sip_transport_update(sipe_private, dialog);
 	sipe_schedule_seconds(sipe_private,
 			      "<+groupchat-expires>",
 			      NULL,
@@ -494,21 +495,25 @@ static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *s
 						     const gchar *cmd)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	struct sipe_groupchat_msg *msg = generate_xccos_message(groupchat, cmd);
-
 	struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
 						     groupchat->session->with);
+	struct sipe_groupchat_msg *msg = NULL;
 
-	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
-	struct transaction *trans = sip_transport_info(sipe_private,
-						       "Content-Type: text/plain\r\n",
-						       msg->xccos,
-						       dialog,
-						       chatserver_command_response);
+	if (dialog) {
+		struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+		struct transaction *trans;
 
-	payload->destroy = sipe_groupchat_msg_remove;
-	payload->data    = msg;
-	trans->payload   = payload;
+		msg = generate_xccos_message(groupchat, cmd);
+		trans = sip_transport_info(sipe_private,
+					   "Content-Type: text/plain\r\n",
+					   msg->xccos,
+					   dialog,
+					   chatserver_command_response);
+
+		payload->destroy = sipe_groupchat_msg_remove;
+		payload->data    = msg;
+		trans->payload   = payload;
+	}
 
 	return(msg);
 }
@@ -1094,8 +1099,10 @@ void sipe_groupchat_send(struct sipe_core_private *sipe_private,
 	msg = chatserver_command(sipe_private, cmd);
 	g_free(cmd);
 
-	msg->session = chat_session;
-	msg->content = g_strdup(what);
+	if (msg) {
+		msg->session = chat_session;
+		msg->content = g_strdup(what);
+	}
 }
 
 void sipe_groupchat_leave(struct sipe_core_private *sipe_private,
