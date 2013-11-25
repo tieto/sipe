@@ -362,6 +362,22 @@ static gchar *generate_chanid_node(const gchar *uri, guint key)
 	return chanid;
 }
 
+/* TransCallback */
+static gboolean groupchat_expired_session_response(struct sipe_core_private *sipe_private,
+						   struct sipmsg *msg,
+						   SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	/* 481 Call Leg Does Not Exist -> server dropped session */
+	if (msg->response == 481) {
+		struct sipe_groupchat *groupchat = sipe_private->groupchat;
+		groupchat->session = NULL;
+		groupchat->connected = FALSE;
+		sipe_groupchat_init(sipe_private);
+	}
+
+	return(TRUE);
+}
+
 /* sipe_schedule_action */
 static void groupchat_update_cb(struct sipe_core_private *sipe_private,
 				SIPE_UNUSED_PARAMETER gpointer data)
@@ -371,7 +387,9 @@ static void groupchat_update_cb(struct sipe_core_private *sipe_private,
 						     groupchat->session->with);
 
 	if (dialog)
-		sip_transport_update(sipe_private, dialog);
+		sip_transport_update(sipe_private,
+				     dialog,
+				     groupchat_expired_session_response);
 	sipe_schedule_seconds(sipe_private,
 			      "<+groupchat-expires>",
 			      NULL,
@@ -496,13 +514,7 @@ static gboolean chatserver_command_response(struct sipe_core_private *sipe_priva
 							chat_session,
 							gmsg->content);
 
-		/* 481 Call Leg Does Not Exist -> server dropped session */
-		if (msg->response == 481) {
-			struct sipe_groupchat *groupchat = sipe_private->groupchat;
-			groupchat->session = NULL;
-			groupchat->connected = FALSE;
-			sipe_groupchat_init(sipe_private);
-		}
+		groupchat_expired_session_response(sipe_private, msg, trans);
 	}
 	return TRUE;
 }
