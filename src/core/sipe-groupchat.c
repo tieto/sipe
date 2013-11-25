@@ -495,6 +495,14 @@ static gboolean chatserver_command_response(struct sipe_core_private *sipe_priva
 			chatserver_command_error_notify(sipe_private,
 							chat_session,
 							gmsg->content);
+
+		/* 481 Call Leg Does Not Exist -> server dropped session */
+		if (msg->response == 481) {
+			struct sipe_groupchat *groupchat = sipe_private->groupchat;
+			groupchat->session = NULL;
+			groupchat->connected = FALSE;
+			sipe_groupchat_init(sipe_private);
+		}
 	}
 	return TRUE;
 }
