@@ -233,6 +233,12 @@ PKG_CHECK_MODULES(NSS, [nss],
 	])
 ])
 
+dnl check for OpenSSL - TEMPORARY for development
+PKG_CHECK_MODULES(OPENSSL_CRYPTO, [libcrypto],
+	[ac_have_openssl=yes],
+	[ac_have_openssl=no])
+AM_CONDITIONAL(SIPE_OPENSSL_CRYPTO, [test "x$ac_have_openssl" = xyes])
+
 dnl check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
 

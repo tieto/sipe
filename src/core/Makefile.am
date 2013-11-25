@@ -5,7 +5,7 @@ EXTRA_DIST = \
 
 noinst_LTLIBRARIES = \
 	libsipe_core.la \
-	libsipe_core_crypto_nss.la \
+	libsipe_core_crypto.la \
 	libsipe_core_libxml2.la
 
 MAINTAINERCLEANFILES = \
@@ -125,10 +125,17 @@ endif
 
 endif
 
-libsipe_core_crypto_nss_la_SOURCES = \
+libsipe_core_crypto_la_SOURCES = \
 	sipe-cert-crypto-nss.c \
-	sipe-crypt-nss.c \
+	sipe-crypt-nss.c
+
+if SIPE_OPENSSL_CRYPTO
+libsipe_core_crypto_la_SOURCES += \
+	sipe-digest-openssl.c
+else
+libsipe_core_crypto_la_SOURCES += \
 	sipe-digest-nss.c
+endif
 
 libsipe_core_libxml2_la_SOURCES = \
 	sipe-xml.c
@@ -168,9 +175,10 @@ if SIPE_OS_WIN32
 libsipe_core_la_CFLAGS  += -DHAVE_SSPI=1
 endif
 
-libsipe_core_crypto_nss_la_CFLAGS = \
+libsipe_core_crypto_la_CFLAGS = \
 	$(libsipe_core_la_CFLAGS) \
 	$(NSS_CFLAGS) \
+	$(OPENSSL_CRYPTO_CFLAGS) \
 	$(VALGRIND_CFLAGS)
 
 libsipe_core_libxml2_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(LIBXML2_CFLAGS)
@@ -196,9 +204,17 @@ sip_sec_digest_tests_SOURCES = sip-sec-digest-tests.c
 sip_sec_digest_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
 sip_sec_digest_tests_LDADD = \
 	libsipe_core_la-sipe-utils.lo \
-	libsipe_core_crypto_nss_la-sipe-crypt-nss.lo \
-	libsipe_core_crypto_nss_la-sipe-digest-nss.lo \
+	libsipe_core_crypto_la-sipe-crypt-nss.lo
+if SIPE_OPENSSL_CRYPTO
+sip_sec_digest_tests_LDADD += \
+	libsipe_core_crypto_la-sipe-digest-openssl.lo
+else
+sip_sec_digest_tests_LDADD += \
+	libsipe_core_crypto_la-sipe-digest-nss.lo
+endif
+sip_sec_digest_tests_LDADD += \
 	$(NSS_LIBS) \
+	$(OPENSSL_CRYPTO_LIBS) \
 	$(GLIB_LIBS)
 
 # disables "caching" of memory blocks in tests
@@ -214,10 +230,18 @@ sipe_tls_tester_SOURCES = sipe-tls-tester.c
 sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_tls_tester_LDADD = \
 	libsipe_core_la-sipe-tls.lo \
-	libsipe_core_crypto_nss_la-sipe-cert-crypto-nss.lo \
-	libsipe_core_crypto_nss_la-sipe-crypt-nss.lo \
-	libsipe_core_crypto_nss_la-sipe-digest-nss.lo \
+	libsipe_core_crypto_la-sipe-cert-crypto-nss.lo \
+	libsipe_core_crypto_la-sipe-crypt-nss.lo
+if SIPE_OPENSSL_CRYPTO
+sipe_tls_tester_LDADD += \
+	libsipe_core_crypto_la-sipe-digest-openssl.lo
+else
+sipe_tls_tester_LDADD += \
+	libsipe_core_crypto_la-sipe-digest-nss.lo
+endif
+sipe_tls_tester_LDADD += \
 	$(NSS_LIBS) \
+	$(OPENSSL_CRYPTO_LIBS) \
 	$(GLIB_LIBS)
 endif
 

@@ -51,11 +51,12 @@ libsipe_la_LDFLAGS = \
 
 libsipe_la_LIBADD = \
 	../core/libsipe_core.la \
-	../core/libsipe_core_crypto_nss.la \
+	../core/libsipe_core_crypto.la \
 	../core/libsipe_core_libxml2.la \
 	libsipe_backend.la \
         $(LIBXML2_LIBS) \
 	$(NSS_LIBS) \
+	$(OPENSSL_CRYPTO_LIBS) \
         $(GLIB_LIBS) \
 	$(PURPLE_LIBS)
 
@@ -81,9 +82,10 @@ tests_CFLAGS    = $(libsipe_la_CFLAGS)
 tests_LDADD     = \
 	../core/libsipe_core_tests.la \
 	../core/libsipe_core.la \
-	../core/libsipe_core_crypto_nss.la \
+	../core/libsipe_core_crypto.la \
 	libsipe_backend.la \
 	$(NSS_LIBS) \
+	$(OPENSSL_CRYPTO_LIBS) \
 	$(PURPLE_LIBS)
 endif
 endif
