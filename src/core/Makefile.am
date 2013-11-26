@@ -125,16 +125,15 @@ endif
 
 endif
 
-libsipe_core_crypto_la_SOURCES = \
-	sipe-crypt-nss.c
-
 if SIPE_OPENSSL_CRYPTO
-libsipe_core_crypto_la_SOURCES += \
+libsipe_core_crypto_la_SOURCES = \
 	sipe-cert-crypto-openssl.c \
+	sipe-crypt-openssl.c \
 	sipe-digest-openssl.c
 else
-libsipe_core_crypto_la_SOURCES += \
+libsipe_core_crypto_la_SOURCES = \
 	sipe-cert-crypto-nss.c \
+	sipe-crypt-nss.c \
 	sipe-digest-nss.c
 endif
 
@@ -177,10 +176,15 @@ libsipe_core_la_CFLAGS  += -DHAVE_SSPI=1
 endif
 
 libsipe_core_crypto_la_CFLAGS = \
-	$(libsipe_core_la_CFLAGS) \
+	$(libsipe_core_la_CFLAGS)
+if SIPE_OPENSSL_CRYPTO
+libsipe_core_crypto_la_CFLAGS += \
+	$(OPENSSL_CRYPTO_CFLAGS)
+else
+libsipe_core_crypto_la_CFLAGS += \
 	$(NSS_CFLAGS) \
-	$(OPENSSL_CRYPTO_CFLAGS) \
 	$(VALGRIND_CFLAGS)
+endif
 
 libsipe_core_libxml2_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(LIBXML2_CFLAGS)
 
@@ -204,18 +208,19 @@ check_PROGRAMS += sip_sec_digest_tests
 sip_sec_digest_tests_SOURCES = sip-sec-digest-tests.c
 sip_sec_digest_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
 sip_sec_digest_tests_LDADD = \
-	libsipe_core_la-sipe-utils.lo \
-	libsipe_core_crypto_la-sipe-crypt-nss.lo
+	libsipe_core_la-sipe-utils.lo
 if SIPE_OPENSSL_CRYPTO
 sip_sec_digest_tests_LDADD += \
-	libsipe_core_crypto_la-sipe-digest-openssl.lo
+	libsipe_core_crypto_la-sipe-crypt-openssl.lo \
+	libsipe_core_crypto_la-sipe-digest-openssl.lo \
+	$(OPENSSL_CRYPTO_LIBS)
 else
 sip_sec_digest_tests_LDADD += \
-	libsipe_core_crypto_la-sipe-digest-nss.lo
+	libsipe_core_crypto_la-sipe-crypt-nss.lo \
+	libsipe_core_crypto_la-sipe-digest-nss.lo \
+	$(NSS_LIBS)
 endif
 sip_sec_digest_tests_LDADD += \
-	$(NSS_LIBS) \
-	$(OPENSSL_CRYPTO_LIBS) \
 	$(GLIB_LIBS)
 
 # disables "caching" of memory blocks in tests
@@ -230,20 +235,21 @@ noinst_PROGRAMS += sipe_tls_tester
 sipe_tls_tester_SOURCES = sipe-tls-tester.c
 sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_tls_tester_LDADD = \
-	libsipe_core_la-sipe-tls.lo \
-	libsipe_core_crypto_la-sipe-crypt-nss.lo
+	libsipe_core_la-sipe-tls.lo
 if SIPE_OPENSSL_CRYPTO
 sipe_tls_tester_LDADD += \
 	libsipe_core_crypto_la-sipe-cert-crypto-openssl.lo \
-	libsipe_core_crypto_la-sipe-digest-openssl.lo
+	libsipe_core_crypto_la-sipe-crypt-openssl.lo \
+	libsipe_core_crypto_la-sipe-digest-openssl.lo \
+	$(OPENSSL_CRYPTO_LIBS)
 else
 sipe_tls_tester_LDADD += \
 	libsipe_core_crypto_la-sipe-cert-crypto-nss.lo \
-	libsipe_core_crypto_la-sipe-digest-nss.lo
+	libsipe_core_crypto_la-sipe-crypt-nss.lo \
+	libsipe_core_crypto_la-sipe-digest-nss.lo \
+	$(NSS_LIBS)
 endif
 sipe_tls_tester_LDADD += \
-	$(NSS_LIBS) \
-	$(OPENSSL_CRYPTO_LIBS) \
 	$(GLIB_LIBS)
 endif
 
