@@ -24,6 +24,7 @@
  * Cipher routines implementation based on OpenSSL.
  */
 #include <openssl/evp.h>
+#include <openssl/rsa.h>
 
 #include "glib.h"
 
@@ -92,53 +93,59 @@ void sipe_crypt_rc4(const guchar *key, gsize key_length,
 			      encrypted_text);
 }
 
-gboolean sipe_crypt_rsa_encrypt(gpointer public, gsize modulus_length,
+gboolean sipe_crypt_rsa_encrypt(gpointer public,
+				SIPE_UNUSED_PARAMETER gsize modulus_length,
 				const guchar *plaintext,
 				guchar *encrypted_text)
 {
-	/* TBD */
-	(void) public;
-	(void) encrypted_text;
-	(void) plaintext;
-	(void) modulus_length;
-	return(FALSE);
+	return(RSA_public_encrypt(RSA_size(public),
+				  plaintext,
+				  encrypted_text,
+				  public,
+				  RSA_NO_PADDING)
+	       != -1);
 }
 
-gboolean sipe_crypt_rsa_decrypt(gpointer private, gsize modulus_length,
+gboolean sipe_crypt_rsa_decrypt(gpointer private,
+				SIPE_UNUSED_PARAMETER gsize modulus_length,
 				const guchar *encrypted_text,
 				guchar *plaintext)
 {
-	/* TBD */
-	(void) private;
-	(void) encrypted_text;
-	(void) plaintext;
-	(void) modulus_length;
-	return(FALSE);
+	return(RSA_private_decrypt(RSA_size(private),
+				   encrypted_text,
+				   plaintext,
+				   private,
+				   RSA_NO_PADDING)
+	       != -1);
 }
 
 guchar *sipe_crypt_rsa_sign(gpointer private,
 			    const guchar *digest, gsize digest_length,
 			    gsize *signature_length)
 {
-	/* TBD */
-	(void) private;
-	(void) digest;
-	(void) digest_length;
-	(void) signature_length;
-	return(NULL);
+	guchar *signature = g_malloc(RSA_size(private));
+	unsigned int length;
+
+	if (!RSA_sign(NID_md5_sha1,
+		      digest, digest_length,
+		      signature, &length,
+		      private)) {
+		g_free(signature);
+		return(NULL);
+	}
+
+	*signature_length = length;
+	return(signature);
 }
 
 gboolean sipe_crypt_verify_rsa(gpointer public,
 			       const guchar *digest, gsize digest_length,
 			       const guchar *signature, gsize signature_length)
 {
-	/* TBD */
-	(void) public;
-	(void) digest;
-	(void) digest_length;
-	(void) signature;
-	(void) signature_length;
-	return(FALSE);
+	return(RSA_verify(NID_md5_sha1,
+			  digest, digest_length,
+			  signature, signature_length,
+			  public));
 }
 
 static gpointer openssl_rc4_init(const guchar *key, gsize key_length)
