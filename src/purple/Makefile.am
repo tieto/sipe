@@ -56,7 +56,7 @@ libsipe_la_LIBADD = \
 	libsipe_backend.la \
         $(LIBXML2_LIBS) \
 	$(NSS_LIBS) \
-	$(OPENSSL_CRYPTO_LIBS) \
+	$(OPENSSL_LIBS) \
         $(GLIB_LIBS) \
 	$(PURPLE_LIBS)
 
@@ -85,7 +85,7 @@ tests_LDADD     = \
 	../core/libsipe_core_crypto.la \
 	libsipe_backend.la \
 	$(NSS_LIBS) \
-	$(OPENSSL_CRYPTO_LIBS) \
+	$(OPENSSL_LIBS) \
 	$(PURPLE_LIBS)
 endif
 endif

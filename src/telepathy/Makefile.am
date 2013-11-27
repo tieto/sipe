@@ -41,7 +41,7 @@ telepathy_sipe_LDADD = \
 	$(GMIME_LIBS) \
 	$(LIBXML2_LIBS) \
 	$(NSS_LIBS) \
-	$(OPENSSL_CRYPTO_LIBS) \
+	$(OPENSSL_LIBS) \
 	$(TELEPATHY_GLIB_LIBS) \
 	$(DBUS_GLIB_LIBS) \
 	$(GIO_LIBS) \

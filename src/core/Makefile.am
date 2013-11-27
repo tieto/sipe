@@ -125,7 +125,7 @@ endif
 
 endif
 
-if SIPE_OPENSSL_CRYPTO
+if SIPE_OPENSSL
 libsipe_core_crypto_la_SOURCES = \
 	sipe-cert-crypto-openssl.c \
 	sipe-crypt-openssl.c \
@@ -177,9 +177,9 @@ endif
 
 libsipe_core_crypto_la_CFLAGS = \
 	$(libsipe_core_la_CFLAGS)
-if SIPE_OPENSSL_CRYPTO
+if SIPE_OPENSSL
 libsipe_core_crypto_la_CFLAGS += \
-	$(OPENSSL_CRYPTO_CFLAGS)
+	$(OPENSSL_CFLAGS)
 else
 libsipe_core_crypto_la_CFLAGS += \
 	$(NSS_CFLAGS) \
@@ -209,11 +209,11 @@ sip_sec_digest_tests_SOURCES = sip-sec-digest-tests.c
 sip_sec_digest_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
 sip_sec_digest_tests_LDADD = \
 	libsipe_core_la-sipe-utils.lo
-if SIPE_OPENSSL_CRYPTO
+if SIPE_OPENSSL
 sip_sec_digest_tests_LDADD += \
 	libsipe_core_crypto_la-sipe-crypt-openssl.lo \
 	libsipe_core_crypto_la-sipe-digest-openssl.lo \
-	$(OPENSSL_CRYPTO_LIBS)
+	$(OPENSSL_LIBS)
 else
 sip_sec_digest_tests_LDADD += \
 	libsipe_core_crypto_la-sipe-crypt-nss.lo \
@@ -236,12 +236,12 @@ sipe_tls_tester_SOURCES = sipe-tls-tester.c
 sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_tls_tester_LDADD = \
 	libsipe_core_la-sipe-tls.lo
-if SIPE_OPENSSL_CRYPTO
+if SIPE_OPENSSL
 sipe_tls_tester_LDADD += \
 	libsipe_core_crypto_la-sipe-cert-crypto-openssl.lo \
 	libsipe_core_crypto_la-sipe-crypt-openssl.lo \
 	libsipe_core_crypto_la-sipe-digest-openssl.lo \
-	$(OPENSSL_CRYPTO_LIBS)
+	$(OPENSSL_LIBS)
 else
 sipe_tls_tester_LDADD += \
 	libsipe_core_crypto_la-sipe-cert-crypto-nss.lo \
