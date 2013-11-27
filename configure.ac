@@ -223,21 +223,43 @@ AS_IF([test "x$ac_have_gmime" = xyes],
 	[AC_DEFINE(HAVE_GMIME, 1, [Define if gmime should be used in sipe.])])
 
 dnl check for NSS
-PKG_CHECK_MODULES(NSS, [nss],
+AC_ARG_ENABLE(nss,
+	[AS_HELP_STRING([--enable-nss],
+			[use NSS as crypto backend @<:@default=yes@:>@])],
 	[],
-	[PKG_CHECK_MODULES(NSS, [mozilla-nss],
+	[enable_nss=yes])
+AS_IF([test "x$enable_nss" != xno],
+	[PKG_CHECK_MODULES(NSS, [nss],
 		[],
-		[PKG_CHECK_MODULES(NSS, [microb-engine-nss],
+		[PKG_CHECK_MODULES(NSS, [mozilla-nss],
 			[],
-			[AC_ERROR([nss, mozilla-nss or microb-engine-nss package is required])])
+			[PKG_CHECK_MODULES(NSS, [microb-engine-nss],
+				[],
+				[enable_nss=no])
+			])
+		])
 	])
-])
 
-dnl check for OpenSSL - TEMPORARY for development
-PKG_CHECK_MODULES(OPENSSL, [libcrypto],
-	[ac_have_openssl=yes],
-	[ac_have_openssl=no])
-AM_CONDITIONAL(SIPE_OPENSSL, [test "x$ac_have_openssl" = xyes])
+dnl check for OpenSSL
+AC_ARG_ENABLE(openssl,
+	[AS_HELP_STRING([--enable-openssl],
+			[use OpenSSL as crypto backend @<:@default=yes@:>@])],
+	[],
+	[enable_openssl=yes])
+AS_IF([test "x$enable_openssl" != xno],
+	[PKG_CHECK_MODULES(OPENSSL, [libcrypto],
+		   [],
+		   [enable_openssl=no])
+	])
+AS_IF(
+	[test "x$enable_nss" != xno],
+		[ dnl NSS has priority over OpenSSL
+		  enable_openssl=no
+		  AC_MSG_NOTICE([using NSS as crypto backend.])],
+	[test "x$enable_openssl" != xno],
+		[AC_MSG_NOTICE([using OpenSSL as crypto backend.])],
+	[AC_ERROR([nss, mozilla-nss, microb-engine-nss or libcrypto package is required])])
+AM_CONDITIONAL(SIPE_OPENSSL, [test "x$enable_openssl" != xno])
 
 dnl check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
