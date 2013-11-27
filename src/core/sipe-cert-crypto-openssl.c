@@ -92,11 +92,59 @@ void sipe_cert_crypto_free(struct sipe_cert_crypto *scc)
 gchar *sipe_cert_crypto_request(struct sipe_cert_crypto *scc,
 				const gchar *subject)
 {
-	gchar *base64                   = NULL;
+	gchar *base64 = NULL;
+	EVP_PKEY *pkey;
 
-	/* TBD */
-	(void) scc;
-	(void) subject;
+	if (!scc || !subject)
+		return(NULL);
+
+	if ((pkey = EVP_PKEY_new()) != NULL) {
+		X509_REQ *x509_req;
+
+		if ((x509_req = X509_REQ_new()) != NULL) {
+			X509_NAME *name;
+
+			EVP_PKEY_set1_RSA(pkey, scc->key);
+
+			X509_REQ_set_version(x509_req, 2);
+			X509_REQ_set_pubkey(x509_req, pkey);
+
+			name = X509_REQ_get_subject_name(x509_req);
+			X509_NAME_add_entry_by_txt(name,
+						   "CN",
+						   MBSTRING_ASC,
+						   (guchar *) subject,
+						   -1, -1, 0);
+
+			if (X509_REQ_sign(x509_req, pkey, EVP_sha1())) {
+				gsize length;
+				guchar *buf, *tmp;
+
+				/*
+				 * Encode into DER format
+				 *
+				 * NOTE: i2d_X509(a, b) autoincrements b!
+				 */
+				length = i2d_X509_REQ(x509_req, NULL);
+				tmp = buf = g_malloc(length);
+				i2d_X509_REQ(x509_req, &tmp);
+
+				base64 = g_base64_encode(buf, length);
+				g_free(buf);
+
+			} else {
+				SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_request: can't sign certificate request");
+			}
+
+			X509_REQ_free(x509_req);
+		} else {
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_request: can't create x509 request data structure");
+		}
+
+		EVP_PKEY_free(pkey);
+	} else {
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_request: can't create private key data structure");
+	}
 
 	return(base64);
 }
