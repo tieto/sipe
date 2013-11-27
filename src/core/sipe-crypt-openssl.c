@@ -144,7 +144,8 @@ gboolean sipe_crypt_verify_rsa(gpointer public,
 {
 	return(RSA_verify(NID_md5_sha1,
 			  digest, digest_length,
-			  signature, signature_length,
+			  /* older OpenSSL version don't have "const" here */
+			  (guchar *) signature, signature_length,
 			  public));
 }
 
