@@ -23,9 +23,16 @@
 /**
  * Certificate routines implementation based on OpenSSL.
  */
+
+/* needed for strptime() */
+#define _XOPEN_SOURCE
+
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
+
+#include <string.h>
+#include <time.h>
 
 #include <glib.h>
 
@@ -224,20 +231,69 @@ gboolean sipe_cert_crypto_valid(gpointer certificate,
 				guint offset)
 {
 	struct certificate_openssl *co = certificate;
+	time_t compare = time(NULL) + offset;
 
-	if (!co)
-		return(FALSE);
-
-	/* TBD */
-	(void) offset;
-	return(FALSE);
+	return(co &&
+	       (X509_cmp_time(X509_get_notAfter(co->decoded),
+			      &compare) > 0));
 }
 
 guint sipe_cert_crypto_expires(gpointer certificate)
 {
-	/* TBD */
-	(void) certificate;
-	return(0);
+	struct certificate_openssl *co = certificate;
+	BIO *mem;
+	long length;
+	gchar *string;
+	struct tm tm;
+	time_t notAfter;
+	time_t now = time(NULL);
+
+	if (!co)
+		return(0);
+
+	/*
+	 * I can't believe this, but it's true...
+	 *
+	 * OpenSSL doesn't have a public API to convert an ASN1_TIME
+	 * to seconds since epoch :-(
+	 *
+	 * Print ASN1_TIME to a memory buffer
+	 */
+	mem = BIO_new(BIO_s_mem());
+	if (!mem)
+		return(0);
+	ASN1_TIME_print(mem, X509_get_notAfter(co->decoded));
+	length = BIO_get_mem_data(mem, &string);
+	string[length] = '\0';
+	SIPE_DEBUG_INFO("sipe_cert_crypto_expires: ASN.1 TIME notAfter %s", string);
+
+	/* Parse "Nov 28 02:05:07 2013 GMT" from memory buffer */
+	memset(&tm, 0, sizeof(struct tm));
+	string = strptime(string, "%b %d %T %Y", &tm);
+	BIO_free(mem);
+
+	/* Parsing failed */
+	if (!string)
+		return(0);
+
+	/* strptime() assumes local timezone */
+	notAfter = mktime(&tm) - timezone;
+
+	/* Set to 1 to debug time zone issues */
+#if 0
+	{
+		#define BUFLEN 200
+		char buf[BUFLEN];
+		localtime_r(&now, &tm);
+		strftime(buf, BUFLEN, "%b %d %T %Y %Z", &tm);
+		SIPE_DEBUG_INFO("sipe_cert_crypto_expires: now                 %s", buf);
+		localtime_r(&notAfter, &tm);
+		strftime(buf, BUFLEN, "%b %d %T %Y %Z", &tm);
+		SIPE_DEBUG_INFO("sipe_cert_crypto_expires: parsed              %s", buf);
+	}
+#endif
+
+	return(notAfter < now ? 0 : notAfter - now);
 }
 
 gsize sipe_cert_crypto_raw_length(gpointer certificate)
