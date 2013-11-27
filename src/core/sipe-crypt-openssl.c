@@ -94,11 +94,11 @@ void sipe_crypt_rc4(const guchar *key, gsize key_length,
 }
 
 gboolean sipe_crypt_rsa_encrypt(gpointer public,
-				SIPE_UNUSED_PARAMETER gsize modulus_length,
+				gsize modulus_length,
 				const guchar *plaintext,
 				guchar *encrypted_text)
 {
-	return(RSA_public_encrypt(RSA_size(public),
+	return(RSA_public_encrypt(modulus_length,
 				  plaintext,
 				  encrypted_text,
 				  public,
@@ -107,11 +107,11 @@ gboolean sipe_crypt_rsa_encrypt(gpointer public,
 }
 
 gboolean sipe_crypt_rsa_decrypt(gpointer private,
-				SIPE_UNUSED_PARAMETER gsize modulus_length,
+				gsize modulus_length,
 				const guchar *encrypted_text,
 				guchar *plaintext)
 {
-	return(RSA_private_decrypt(RSA_size(private),
+	return(RSA_private_decrypt(modulus_length,
 				   encrypted_text,
 				   plaintext,
 				   private,

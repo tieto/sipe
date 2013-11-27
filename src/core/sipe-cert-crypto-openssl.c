@@ -161,7 +161,7 @@ gpointer sipe_cert_crypto_import(const guchar *raw,
 	}
 
 	co->key    = EVP_PKEY_get1_RSA(pkey);
-	co->length = EVP_PKEY_bits(pkey);
+	co->length = EVP_PKEY_size(pkey);
 	EVP_PKEY_free(pkey);
 
 	if (!co->key) {
