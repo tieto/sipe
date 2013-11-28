@@ -241,14 +241,11 @@ gboolean sipe_cert_crypto_valid(gpointer certificate,
 guint sipe_cert_crypto_expires(gpointer certificate)
 {
 	struct certificate_openssl *co = certificate;
-	BIO *mem;
-	long length;
-	gchar *string;
-	struct tm tm;
-	time_t notAfter;
-	time_t now = time(NULL);
+	guint min;
+	guint max;
 
-	if (!co)
+	/* make sure certificate hasn't expired already */
+	if (!sipe_cert_crypto_valid(co, 0))
 		return(0);
 
 	/*
@@ -257,43 +254,26 @@ guint sipe_cert_crypto_expires(gpointer certificate)
 	 * OpenSSL doesn't have a public API to convert an ASN1_TIME
 	 * to seconds since epoch :-(
 	 *
-	 * Print ASN1_TIME to a memory buffer
+	 * @TODO: latest OpenSSL API has ASN1_TIME_diff()
+	 *
+	 * <30000 seconds (~8 hours) seems to be the most common expiration
+	 * value. Run a bisect to determine the real expiration value.
 	 */
-	mem = BIO_new(BIO_s_mem());
-	if (!mem)
-		return(0);
-	ASN1_TIME_print(mem, X509_get_notAfter(co->decoded));
-	length = BIO_get_mem_data(mem, &string);
-	string[length] = '\0';
-	SIPE_DEBUG_INFO("sipe_cert_crypto_expires: ASN.1 TIME notAfter %s", string);
+	min = 0;
+	max = 30000;
+	while (1) {
+		guint offset = (max - min) / 2 + min;
 
-	/* Parse "Nov 28 02:05:07 2013 GMT" from memory buffer */
-	memset(&tm, 0, sizeof(struct tm));
-	string = strptime(string, "%b %d %T %Y", &tm);
-	BIO_free(mem);
-
-	/* Parsing failed */
-	if (!string)
-		return(0);
-
-	/* strptime() assumes local timezone */
-	notAfter = mktime(&tm) - timezone;
-
-	/* Set to 1 to debug time zone issues */
-#if 0
-	{
-		#define BUFLEN 200
-		char buf[BUFLEN];
-		localtime_r(&now, &tm);
-		strftime(buf, BUFLEN, "%b %d %T %Y %Z", &tm);
-		SIPE_DEBUG_INFO("sipe_cert_crypto_expires: now                 %s", buf);
-		localtime_r(&notAfter, &tm);
-		strftime(buf, BUFLEN, "%b %d %T %Y %Z", &tm);
-		SIPE_DEBUG_INFO("sipe_cert_crypto_expires: parsed              %s", buf);
+		if (offset == min) {
+			break;
+		} else if (sipe_cert_crypto_valid(co, offset)) {
+			min = offset;
+		} else {
+			max = offset;
+		}
 	}
-#endif
 
-	return(notAfter < now ? 0 : notAfter - now);
+	return(min);
 }
 
 gsize sipe_cert_crypto_raw_length(gpointer certificate)
