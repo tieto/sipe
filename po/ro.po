@@ -10,10 +10,10 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
-"Report-Msgid-Bugs-To: http://sourceforge.net/tracker/?group_id=194563&atid=949931\n"
+"Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-08-26 14:28+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2013-11-23 21:53+0000\n"
+"Last-Translator: Cristian Măgherușan-Stanciu <cristi.magherusan@gmail.com>\n"
 "Language-Team: Romanian (http://www.transifex.com/projects/p/pidgin-sipe/language/ro/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -606,7 +606,7 @@ msgstr "Utilizatorul %s a respins apelul"
 
 #: ../src/core/sipe-media.c:1185
 msgid "Unsupported media type"
-msgstr ""
+msgstr "Tip nesuportat"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe-notify.c:1059
