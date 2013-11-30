@@ -13,6 +13,10 @@ version 1.18.0 "XXXX" (2013-XX-XX)
 	  * remove special case handling; code is more straight-forward now
 	  * thanks to David Woodhouse and Simo Sorce for the GSSAPI information
 	- implement internal keepalive handling (Stefan Becker)
+	- implement crypto backend based on OpenSSL (Stefan Becker)
+	- adium: Xcode project files update (Michael Lamb)
+	- adium: replace NSS crypto backend with OpenSSL (Stefan Becker)
+	  * NOTE: please make sure to read the updated build instructions!
 
 version 1.17.2 "Bug Fixes II" (2013-11-30)
 	- Fixed #214: Typing notification does not always work (Stefan Becker)
