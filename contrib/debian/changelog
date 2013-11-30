@@ -1,3 +1,13 @@
+pidgin-sipe (1.17.2-1) unstable; urgency=low
+
+  * New upstream version 1.17.2 "Bug Fixes II" (2013-11-30)
+	- Fixed #214: Typing notification does not always work (Stefan Becker)
+	  * reverted one change which caused problems for some users
+	- Fixed #222: SIPE crashes when groupchat session expires (Stefan Becker)
+	- updated translations: Romanian (ro)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 30 Nov 2013 17:51:00 +0200
+
 pidgin-sipe (1.17.1-1) unstable; urgency=low
 
   * New upstream version 1.17.1 "Bug Fixes I" (2013-11-16)

@@ -1,7 +1,5 @@
-version 1.17.1 "Bug Fixes I" (2013-11-16)
-	- Fixed #215: Password not entity encoded in WSSE element (Stefan Becker)
+version 1.17.2 "Bug Fixes II" (2013-11-30)
 	- Fixed #214: Typing notification does not always work (Stefan Becker)
-	- accept alternatives for webticket timestamp/keydata (Stefan Becker)
-	- adium: add "don't publish calendar" to account UI (Stefan Becker)
-	- contrib: add SSL BEAST mitigation patch for Adium (Stefan Becker)
-	- updated translations: French (fr)
+	  * reverted one change which caused problems for some users
+	- Fixed #222: SIPE crashes when groupchat session expires (Stefan Becker)
+	- updated translations: Romanian (ro)
