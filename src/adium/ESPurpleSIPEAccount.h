@@ -23,7 +23,9 @@
 #define KEY_SIPE_DONT_PUBLISH           @"SIPE:Dont Publish"
 #define KEY_SIPE_AUTH_SCHEME            @"SIPE:Authentication Scheme"
 #define KEY_SIPE_AUTODISCOVER           @"SIPE:Autodiscover"
+#define KEY_SIPE_BEAST_DISABLE          @"SIPE:BEAST Disable"
 
+#define PURPLE_SSL_CDSA_BEAST_TLS_WORKAROUND "ssl_cdsa_beast_tls_workaround"
 
 // TODO: Remove when sipe_status_activity_to_token calls work
 #define SIPE_ACTIVITY_NUM_TYPES 17

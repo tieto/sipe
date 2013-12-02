@@ -133,6 +133,11 @@ extern void AILog(NSString *fmt, ...);
 	BOOL dontPublish = [[self preferenceForKey:KEY_SIPE_DONT_PUBLISH group:GROUP_ACCOUNT_STATUS] boolValue];
 	purple_account_set_bool(account, "dont-publish", dontPublish);
 
+    // Disable BEAST mitigations that apple added
+    BOOL beastDisable = [[self preferenceForKey:KEY_SIPE_BEAST_DISABLE group:GROUP_ACCOUNT_STATUS] boolValue];
+    purple_account_set_bool(account, PURPLE_SSL_CDSA_BEAST_TLS_WORKAROUND, beastDisable);
+
+    
     // Connection preferences
     id connType = [self preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS];
     if([connType isKindOfClass:[NSNumber class]])

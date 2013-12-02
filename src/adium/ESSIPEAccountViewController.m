@@ -62,6 +62,19 @@
                                   nil];
     [popup_connectionType selectItemWithTitle:[connTypeDict objectForKey:(connType ? connType : @"auto")]];
     
+    // Gotta define these here, because they're not yet in the 10.9 SDK.  :(
+#define NSAppKitVersionNumber10_8 1187
+#define NSAppKitVersionNumber10_8_5 1187.4
+#define NSAppKitVersionNumber10_9 1265
+    
+    // BEAST mitigation for Mavericks users
+    if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_8) {
+        // We are not running on Mavericks - Don't display BEAST mitigation configuration option
+        [checkbox_beastDisable setHidden:YES];
+    } else {
+        [checkbox_beastDisable setState:[[account preferenceForKey:KEY_SIPE_BEAST_DISABLE group:GROUP_ACCOUNT_STATUS] boolValue]];
+    }
+    
     NSString *authType = [account preferenceForKey:KEY_SIPE_AUTH_SCHEME group:GROUP_ACCOUNT_STATUS];
     NSDictionary *authTypeDict = [NSDictionary dictionaryWithObjectsAndKeys:
                                   @"NTLM",@"ntlm",
@@ -90,6 +103,9 @@
     
 	[account setPreference:[NSNumber numberWithBool:[checkbox_dontPublish state]]
                     forKey:KEY_SIPE_DONT_PUBLISH group:GROUP_ACCOUNT_STATUS];
+    
+    [account setPreference:[NSNumber numberWithBool:[checkbox_beastDisable state]]
+                    forKey:KEY_SIPE_BEAST_DISABLE group:GROUP_ACCOUNT_STATUS];
 
 	[account setPreference:
      ([[textField_userAgent stringValue] length] ? [textField_userAgent stringValue] : nil)
