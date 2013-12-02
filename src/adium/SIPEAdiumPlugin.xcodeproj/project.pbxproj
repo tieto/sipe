@@ -51,6 +51,9 @@
 		7B78055816DEC73400B844A6 /* ESSIPEAccountView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */; };
 		7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */; };
 		7B7805DA16DFF8D300B844A6 /* sip-sec-basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */; };
+		7BBE151C184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BBE151A184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h */; };
+		7BBE151D184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BBE151B184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m */; };
+		7BBE1529184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7BBE1527184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib */; };
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
 		B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB4F119D5155001CE037 /* purple-connection.c */; };
@@ -228,6 +231,9 @@
 		7BB8CB96183AA0BD004351FF /* Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
 		7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = SIPEAdiumPlugin.xcconfig; sourceTree = "<group>"; };
 		7BB8CBB3183AA600004351FF /* Adium.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Adium.xcodeproj; path = ../../../adium/Adium.xcodeproj; sourceTree = "<group>"; };
+		7BBE151A184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCPurpleSIPEJoinChatViewController.h; sourceTree = "<group>"; };
+		7BBE151B184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCPurpleSIPEJoinChatViewController.m; sourceTree = "<group>"; };
+		7BBE1528184D4BF50000FFC9 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/DCPurpleSIPEJoinChatView.xib; sourceTree = "<group>"; };
 		8D5B49B6048680CD000E48DA /* SIPEAdiumPlugin.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SIPEAdiumPlugin.AdiumLibpurplePlugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		B13FAB4F119D5155001CE037 /* purple-connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-connection.c"; sourceTree = "<group>"; };
@@ -328,6 +334,7 @@
 		089C167CFE841241C02AAC07 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				7BBE1527184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib */,
 				7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */,
 				7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */,
 				C9FDAEF4109ADF97004EEEAF /* sipe.png */,
@@ -340,6 +347,8 @@
 		08FB77AFFE84173DC02AAC07 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				7BBE151A184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h */,
+				7BBE151B184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m */,
 				C99F358D109AE68400E79CB2 /* ESPurpleSIPEAccount.h */,
 				C99F358E109AE68400E79CB2 /* ESPurpleSIPEAccount.m */,
 				C9488444109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.h */,
@@ -530,6 +539,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7BBE151C184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -676,6 +686,7 @@
 				8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */,
 				C9FDAEF6109ADF97004EEEAF /* sipe.png in Resources */,
 				7B50EFAB16DB326100F897D1 /* PurpleDefaultsSIPE.plist in Resources */,
+				7BBE1529184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib in Resources */,
 				7B78055816DEC73400B844A6 /* ESSIPEAccountView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -690,6 +701,7 @@
 				1CF2612C12C2E73F0045B6CC /* ESPurpleSIPEAccount.m in Sources */,
 				1CF2612D12C2E7420045B6CC /* ESSIPEService.m in Sources */,
 				1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */,
+				7BBE151D184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m in Sources */,
 				1CDEE46112C35DAD00790CAF /* ESSIPEAccountViewController.m in Sources */,
 				B82FA41B1847524B00AE581B /* sipe-cert-crypto-openssl.c in Sources */,
 				7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */,
@@ -798,6 +810,14 @@
 			);
 			name = InfoPlist.strings;
 			sourceTree = SOURCE_ROOT;
+		};
+		7BBE1527184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				7BBE1528184D4BF50000FFC9 /* English */,
+			);
+			name = DCPurpleSIPEJoinChatView.xib;
+			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */
 

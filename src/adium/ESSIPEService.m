@@ -12,6 +12,7 @@
 #import <Adium/AIStatusControllerProtocol.h>
 #import <AISharedAdium.h>
 
+#import "DCPurpleSIPEJoinChatViewController.h"
 #import "ESSIPEAccountViewController.h"
 #import "ESPurpleSIPEAccount.h"
 #import "ESSIPEService.h"
@@ -29,7 +30,11 @@
 }
 
 - (DCJoinChatViewController *)joinChatView{
-	return nil;
+	return [DCPurpleSIPEJoinChatViewController joinChatView];
+}
+
+- (BOOL)canCreateGroupChats{
+	return YES;
 }
 
 #pragma mark Service Description Metadata
@@ -58,9 +63,6 @@
 }
 - (AIServiceImportance)serviceImportance{
 	return AIServiceSecondary;
-}
-- (BOOL)canCreateGroupChats{
-	return NO;
 }
 
 // Some auth schemes may not need a password
