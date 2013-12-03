@@ -1,4 +1,6 @@
-version 1.18.0 "XXXX" (2013-XX-XX)
+version 1.18.0 "Adium, GSS-NTLMSSP & OpenSSL" (2013-XX-XX)
+	- Feature #69: Add UI support for (group) chats (Michael Lamb)
+	  * NOTE: Adium does not have an UI to fetch the room list
 	- Feature #64: Add support for GSS-NTLMSSP (Stefan Becker)
 	  * sip-sec-krb5.c module has been renamed to sip-sec-gssapi.c
 	  * if gssapi/gssapi_ntlmssp.h is detected then sip-sec-ntlm.c will
@@ -7,6 +9,9 @@ version 1.18.0 "XXXX" (2013-XX-XX)
 	          GSS-NTLMSSP by hand on his system, i.e. /etc/gss/mech
 	  * NOTE: GSSAPI SPNEGO support has been disabled for now, until the
 		  problems can be debugged (see commit 1503593)
+	- Fixed #216: SIPE stops working on Mavericks (Stefan Becker, Michael Lamb)
+	  * add an UI option to disable SSL BEAST mitigations
+	  * NOTE: patching Adium is required for this to work 
 	- cleanup for sip-sec Kerberos & SSPI modules (Stefan Becker)
 	  * replace old TGT hack with gss_acquire_cred_with_password()
 	  * clean up Kerberos detection in configure
