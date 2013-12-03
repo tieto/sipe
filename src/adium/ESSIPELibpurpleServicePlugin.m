@@ -23,8 +23,6 @@ extern void purple_init_sipe_plugin(void);
 
 - (void)loadLibpurplePlugin 
 {
-	purple_init_sipe_plugin();
-
     if(AIDebugLoggingIsEnabled()) {
         purple_debug_set_enabled(true);
         purple_debug_set_verbose(true);
@@ -34,8 +32,7 @@ extern void purple_init_sipe_plugin(void);
 
 - (void)installPlugin
 {
-	[super installPlugin];
-	
+	purple_init_sipe_plugin();
 	[ESSIPEService registerService];
 }
 

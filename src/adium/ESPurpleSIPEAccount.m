@@ -80,6 +80,18 @@
 	return "prpl-sipe";
 }
 
+- (const char *)purpleAccountName
+{
+    NSString *completeUserName = [NSString stringWithUTF8String:[super purpleAccountName]];
+    NSString *windowsLogin =[self preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
+    
+    if ( ![windowsLogin isEqualToString:@""] ) {
+        completeUserName = [NSString stringWithFormat:@"%@,%@", completeUserName, windowsLogin];
+    }
+    
+	return [completeUserName UTF8String];
+}
+
 - (NSString *)hostForPurple
 {
     NSString *server = [self preferenceForKey:KEY_SIPE_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
@@ -152,17 +164,6 @@
         purple_account_set_string(account,"server", "");
     } else {
         // NOP.  Superclass already set this via the [self hostForPurple] response.
-    }
-
-    NSString *winLogin  = [self preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
-    NSString *completeUserName = [NSString stringWithUTF8String:[self purpleAccountName]];
-
-    if (winLogin && [winLogin length]) {
-        // Configure the complete username ("user@domain.com,DOMAIN\user")
-        completeUserName = [NSString stringWithFormat:@"%@,%@",completeUserName, winLogin];
-        purple_account_set_username(account, [completeUserName UTF8String]);
-    } else {
-        purple_account_set_username(account, self.purpleAccountName);
     }
 
     NSString *thePassword = [self preferenceForKey:KEY_SIPE_PASSWORD group:GROUP_ACCOUNT_STATUS];
