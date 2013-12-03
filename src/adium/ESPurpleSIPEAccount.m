@@ -12,6 +12,7 @@
 #import <Adium/AIStatus.h>
 #import <Adium/AIStatusControllerProtocol.h>
 #import <AIUtilities/AIHostReachabilityMonitor.h>
+#import <ESDebugAILog.h>
 
 #import "ESPurpleSIPEAccount.h"
 #import "ESSIPEService.h"
@@ -19,9 +20,6 @@
 #include "sipe-core.h"
 #include "sipe-backend.h"
 #include "purple-private.h"
-
-// C Declarations
-extern void AILog(NSString *fmt, ...);
 
 @class AICoreComponentLoader;
 
@@ -156,7 +154,7 @@ extern void AILog(NSString *fmt, ...);
 
     // Email preferences
     NSString *emailURL = [self preferenceForKey:KEY_SIPE_EMAIL_URL group:GROUP_ACCOUNT_STATUS];
-    purple_account_set_string(account, "email_usr", (!emailURL.length) ?  [emailURL UTF8String] : "" );
+    purple_account_set_string(account, "email_url", (!emailURL.length) ?  [emailURL UTF8String] : "" );
 
     // TODO: Use account name (user@domain) as default for this
     NSString *email = [self preferenceForKey:KEY_SIPE_EMAIL group:GROUP_ACCOUNT_STATUS];

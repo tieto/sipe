@@ -44,13 +44,16 @@
 		1CF2612C12C2E73F0045B6CC /* ESPurpleSIPEAccount.m in Sources */ = {isa = PBXBuildFile; fileRef = C99F358E109AE68400E79CB2 /* ESPurpleSIPEAccount.m */; };
 		1CF2612D12C2E7420045B6CC /* ESSIPEService.m in Sources */ = {isa = PBXBuildFile; fileRef = C948843C109B2F8100ABFAF7 /* ESSIPEService.m */; };
 		1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = C9488445109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.m */; };
-		7B379594176A2DDF001A02FD /* sipe-http-request.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379591176A2DDF001A02FD /* sipe-http-request.c */; };
-		7B379595176A2DDF001A02FD /* sipe-http-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379592176A2DDF001A02FD /* sipe-http-transport.c */; };
-		7B379596176A2DDF001A02FD /* sipe-http.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379593176A2DDF001A02FD /* sipe-http.c */; };
+		5AAF284A184E4172007481FA /* sipe-cert-crypto-openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = B82FA4181847524B00AE581B /* sipe-cert-crypto-openssl.c */; };
+		5AAF284B184E4172007481FA /* sipe-crypt-openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */; };
+		5AAF284C184E4172007481FA /* sipe-digest-openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */; };
+		5AAF284D184E4172007481FA /* sipe-http-request.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379591176A2DDF001A02FD /* sipe-http-request.c */; };
+		5AAF284E184E4172007481FA /* sipe-http-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379592176A2DDF001A02FD /* sipe-http-transport.c */; };
+		5AAF284F184E4172007481FA /* sipe-http.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379593176A2DDF001A02FD /* sipe-http.c */; };
+		5AAF2850184E4172007481FA /* sip-sec-negotiate.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */; };
+		5AAF2851184E4172007481FA /* sip-sec-basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */; };
 		7B50EFAB16DB326100F897D1 /* PurpleDefaultsSIPE.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */; };
 		7B78055816DEC73400B844A6 /* ESSIPEAccountView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */; };
-		7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */; };
-		7B7805DA16DFF8D300B844A6 /* sip-sec-basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */; };
 		7BBE151C184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BBE151A184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h */; };
 		7BBE151D184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BBE151B184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m */; };
 		7BBE1529184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7BBE1527184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib */; };
@@ -91,9 +94,6 @@
 		B13FAC13119D585A001CE037 /* sipmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD7119D585A001CE037 /* sipmsg.c */; };
 		B13FAC15119D585A001CE037 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD9119D585A001CE037 /* uuid.c */; };
 		B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAC60119D721E001CE037 /* libxml2.dylib */; };
-		B82FA41B1847524B00AE581B /* sipe-cert-crypto-openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = B82FA4181847524B00AE581B /* sipe-cert-crypto-openssl.c */; };
-		B82FA41C1847524B00AE581B /* sipe-crypt-openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */; };
-		B82FA41D1847524B00AE581B /* sipe-digest-openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */; };
 		C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE7E109ADC54004EEEAF /* Kerberos.framework */; };
 		C9FDAEF6109ADF97004EEEAF /* sipe.png in Resources */ = {isa = PBXBuildFile; fileRef = C9FDAEF4109ADF97004EEEAF /* sipe.png */; };
 /* End PBXBuildFile section */
@@ -703,14 +703,6 @@
 				1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */,
 				7BBE151D184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m in Sources */,
 				1CDEE46112C35DAD00790CAF /* ESSIPEAccountViewController.m in Sources */,
-				B82FA41B1847524B00AE581B /* sipe-cert-crypto-openssl.c in Sources */,
-				7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */,
-				7B7805DA16DFF8D300B844A6 /* sip-sec-basic.c in Sources */,
-				7B379594176A2DDF001A02FD /* sipe-http-request.c in Sources */,
-				B82FA41C1847524B00AE581B /* sipe-crypt-openssl.c in Sources */,
-				B82FA41D1847524B00AE581B /* sipe-digest-openssl.c in Sources */,
-				7B379595176A2DDF001A02FD /* sipe-http-transport.c in Sources */,
-				7B379596176A2DDF001A02FD /* sipe-http.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -718,6 +710,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5AAF284A184E4172007481FA /* sipe-cert-crypto-openssl.c in Sources */,
+				5AAF284B184E4172007481FA /* sipe-crypt-openssl.c in Sources */,
+				5AAF284C184E4172007481FA /* sipe-digest-openssl.c in Sources */,
+				5AAF284D184E4172007481FA /* sipe-http-request.c in Sources */,
+				5AAF284E184E4172007481FA /* sipe-http-transport.c in Sources */,
+				5AAF284F184E4172007481FA /* sipe-http.c in Sources */,
+				5AAF2850184E4172007481FA /* sip-sec-negotiate.c in Sources */,
+				5AAF2851184E4172007481FA /* sip-sec-basic.c in Sources */,
 				B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */,
 				B13FAB61119D5155001CE037 /* purple-debug.c in Sources */,
 				B13FAB63119D5155001CE037 /* purple-dnsquery.c in Sources */,
