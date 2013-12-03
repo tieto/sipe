@@ -27,34 +27,9 @@
 
 #define PURPLE_SSL_CDSA_BEAST_TLS_WORKAROUND "ssl_cdsa_beast_tls_workaround"
 
-// TODO: Remove when sipe_status_activity_to_token calls work
-#define SIPE_ACTIVITY_NUM_TYPES 17
-static struct
-{
-	const gchar *status_id;
-	const gchar *desc;
-} const sipe_activity_map[SIPE_ACTIVITY_NUM_TYPES] = {
-    /* SIPE_ACTIVITY_UNSET       */ { "unset",                     NULL                            },
-    /* SIPE_ACTIVITY_AVAILABLE   */ { "available",                 NULL                            },
-    /* SIPE_ACTIVITY_ONLINE      */ { "online",                    NULL                            },
-    /* SIPE_ACTIVITY_INACTIVE    */ { "idle",                      N_("Inactive")                  },
-    /* SIPE_ACTIVITY_BUSY        */ { "busy",                      N_("Busy")                      },
-    /* SIPE_ACTIVITY_BUSYIDLE    */ { "busyidle",                  N_("Busy-Idle")                 },
-    /* SIPE_ACTIVITY_DND         */ { "do-not-disturb",            NULL                            },
-    /* SIPE_ACTIVITY_BRB         */ { "be-right-back",             N_("Be right back")             },
-    /* SIPE_ACTIVITY_AWAY        */ { "away",                      NULL                            },
-    /* SIPE_ACTIVITY_LUNCH       */ { "out-to-lunch",              N_("Out to lunch")              },
-    /* SIPE_ACTIVITY_INVISIBLE   */ { "invisible",                 NULL                            },
-    /* SIPE_ACTIVITY_OFFLINE     */ { "offline",                   NULL                            },
-    /* SIPE_ACTIVITY_ON_PHONE    */ { "on-the-phone",              N_("In a call")                 },
-    /* SIPE_ACTIVITY_IN_CONF     */ { "in-a-conference",           N_("In a conference")           },
-    /* SIPE_ACTIVITY_IN_MEETING  */ { "in-a-meeting",              N_("In a meeting")              },
-    /* SIPE_ACTIVITY_OOF         */ { "out-of-office",             N_("Out of office")             },
-    /* SIPE_ACTIVITY_URGENT_ONLY */ { "urgent-interruptions-only", N_("Urgent interruptions only") },
-};
-
 
 @interface ESPurpleSIPEAccount : CBPurpleAccount <AIAccount_Files> {
-
+    NSDictionary *adium_to_sipe_status;
+    NSDictionary *sipe_to_adium_status;
 }
 @end

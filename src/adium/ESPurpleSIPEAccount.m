@@ -25,6 +25,56 @@
 
 @implementation ESPurpleSIPEAccount
 
+- (void)initAccount
+{
+    [super initAccount];
+    
+    sipe_to_adium_status =
+    [[NSDictionary alloc] initWithObjectsAndKeys:
+     STATUS_NAME_AVAILABLE,         @"available",                 //SIPE_ACTIVITY_AVAILABLE
+     STATUS_NAME_AVAILABLE,         @"online",                    //SIPE_ACTIVITY_ONLINE
+     STATUS_NAME_AWAY,              @"idle",                      //SIPE_ACTIVITY_INACTIVE
+     STATUS_NAME_BUSY,              @"busy",                      //SIPE_ACTIVITY_BUSY
+     STATUS_NAME_BUSY,              @"busyidle",                  //SIPE_ACTIVITY_BUSYIDLE
+     STATUS_NAME_DND,               @"do-not-disturb",            //SIPE_ACTIVITY_DND
+     STATUS_NAME_BRB,               @"be-right-back",             //SIPE_ACTIVITY_BRB
+     STATUS_NAME_AWAY,              @"away",                      //SIPE_ACTIVITY_AWAY
+     STATUS_NAME_LUNCH,             @"out-to-lunch",              //SIPE_ACTIVITY_LUNCH
+     STATUS_NAME_INVISIBLE,         @"invisible",                 //SIPE_ACTIVITY_INVISIBLE
+     STATUS_NAME_OFFLINE,           @"offline",                   //SIPE_ACTIVITY_OFFLINE
+     STATUS_NAME_PHONE,             @"on-the-phone",              //SIPE_ACTIVITY_ON_PHONE
+     STATUS_NAME_NOT_AT_DESK,       @"in-a-conference",           //SIPE_ACTIVITY_IN_CONF
+     STATUS_NAME_NOT_AT_DESK,       @"in-a-meeting",              //SIPE_ACTIVITY_IN_MEETING
+     STATUS_NAME_NOT_IN_OFFICE,     @"out-of-office",             //SIPE_ACTIVITY_OOF
+     STATUS_NAME_AWAY_FRIENDS_ONLY, @"urgent-interruptions-only", //SIPE_ACTIVITY_URGENT_ONLY
+     nil
+     ];
+    
+    adium_to_sipe_status =
+    [[NSDictionary alloc] initWithObjectsAndKeys:
+     @"available",                 STATUS_NAME_AVAILABLE,         //SIPE_ACTIVITY_AVAILABLE
+     @"busy",                      STATUS_NAME_BUSY,              //SIPE_ACTIVITY_BUSY
+     @"do-not-disturb",            STATUS_NAME_DND,               //SIPE_ACTIVITY_DND
+     @"be-right-back",             STATUS_NAME_BRB,               //SIPE_ACTIVITY_BRB
+     @"away",                      STATUS_NAME_AWAY,              //SIPE_ACTIVITY_AWAY
+     @"out-to-lunch",              STATUS_NAME_LUNCH,             //SIPE_ACTIVITY_LUNCH
+     @"invisible",                 STATUS_NAME_INVISIBLE,         //SIPE_ACTIVITY_INVISIBLE
+     @"offline",                   STATUS_NAME_OFFLINE,           //SIPE_ACTIVITY_OFFLINE
+     @"on-the-phone",              STATUS_NAME_PHONE,             //SIPE_ACTIVITY_ON_PHONE
+     @"in-a-meeting",              STATUS_NAME_NOT_AT_DESK,       //SIPE_ACTIVITY_IN_MEETING
+     @"out-of-office",             STATUS_NAME_NOT_IN_OFFICE,     //SIPE_ACTIVITY_OOF
+     @"urgent-interruptions-only", STATUS_NAME_AWAY_FRIENDS_ONLY, //SIPE_ACTIVITY_URGENT_ONLY
+     nil
+     ];
+}
+
+- (void)dealloc
+{
+    [adium_to_sipe_status release];
+    [sipe_to_adium_status release];
+    [super dealloc];
+}
+
 - (const char*)protocolPlugin
 {
 	return "prpl-sipe";
@@ -210,58 +260,18 @@
     NSString *statusName = [super statusNameForPurpleBuddy:buddy];
     PurplePresence  *presence = purple_buddy_get_presence(buddy);
     PurpleStatus    *status = purple_presence_get_active_status(presence);
-    const char      *purpleStatusID = purple_status_get_id(status);
-
+    NSString        *purpleStatusID = [NSString stringWithUTF8String:purple_status_get_id(status)];
+    
     if (!purpleStatusID) return nil;
-
-    switch (sipe_purple_token_to_activity(purpleStatusID))
-    {
-        case SIPE_ACTIVITY_AVAILABLE:
-        case SIPE_ACTIVITY_ONLINE:
-            statusName = STATUS_NAME_AVAILABLE;
-            break;
-        case SIPE_ACTIVITY_AWAY:
-        case SIPE_ACTIVITY_INACTIVE:
-            statusName = STATUS_NAME_AWAY;
-            break;
-        case SIPE_ACTIVITY_BRB:
-            statusName = STATUS_NAME_BRB;
-            break;
-        case SIPE_ACTIVITY_BUSY:
-        case SIPE_ACTIVITY_BUSYIDLE:
-            statusName = STATUS_NAME_BUSY;
-            break;
-        case SIPE_ACTIVITY_DND:
-            statusName = STATUS_NAME_DND;
-            break;
-        case SIPE_ACTIVITY_LUNCH:
-            statusName = STATUS_NAME_LUNCH;
-            break;
-        case SIPE_ACTIVITY_INVISIBLE:
-            statusName = STATUS_NAME_INVISIBLE;
-            break;
-        case SIPE_ACTIVITY_OFFLINE:
-            statusName = STATUS_NAME_OFFLINE;
-            break;
-        case SIPE_ACTIVITY_ON_PHONE:
-            statusName = STATUS_NAME_PHONE;
-            break;
-        case SIPE_ACTIVITY_IN_CONF:
-        case SIPE_ACTIVITY_IN_MEETING:
-            statusName = STATUS_NAME_NOT_AT_DESK;
-            break;
-        case SIPE_ACTIVITY_OOF:
-            statusName = STATUS_NAME_NOT_IN_OFFICE;
-            break;
-        case SIPE_ACTIVITY_URGENT_ONLY:
-            statusName = STATUS_NAME_AWAY_FRIENDS_ONLY;
-            break;
-        default:
-            statusName = STATUS_NAME_OFFLINE;
+    
+    if (sipe_to_adium_status[purpleStatusID])
+        statusName = sipe_to_adium_status[purpleStatusID];
+    else {
+        AILog(@"(ESPurpleSIPEAccount) Unknown purpleStatusID in statusNameForPurpleBuddy: %@", purpleStatusID);
+        statusName = STATUS_NAME_OFFLINE;
     }
-
+    
     return statusName;
-
 }
 
 /*!
@@ -274,79 +284,14 @@
      NSString		*statusMessageString = [statusState statusMessageString];
 
      if (!statusMessageString) statusMessageString = @"";
-
-     // TODO: figure out why sipe_status_activity_to_token calls return junk, instead of a gchar*
-     switch (statusState.statusType) {
-         case AIAvailableStatusType:
-             statusID = sipe_activity_map[SIPE_ACTIVITY_AVAILABLE].status_id;
-             //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_AVAILABLE);
-             break;
-
-         case AIAwayStatusType:
-             if (([statusName isEqualToString:STATUS_NAME_AWAY]) ||
-                 ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_AWAY]] == NSOrderedSame))
-             {
-                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_AWAY);
-                 statusID = sipe_activity_map[SIPE_ACTIVITY_AWAY].status_id;
-             } else if (([statusName isEqualToString:STATUS_NAME_BRB]) ||
-                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BRB]] == NSOrderedSame))
-             {
-                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_BRB);
-                 statusID = sipe_activity_map[SIPE_ACTIVITY_BRB].status_id;
-             } else if (([statusName isEqualToString:STATUS_NAME_BUSY]) ||
-                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BUSY]] == NSOrderedSame))
-             {
-                 // TODO: Figure out how to determine if they should be "busy" or "busyidle"
-                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_BUSY);
-                 statusID = sipe_activity_map[SIPE_ACTIVITY_BUSY].status_id;
-             } else if (([statusName isEqualToString:STATUS_NAME_DND]) ||
-                      ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_DND]] == NSOrderedSame))
-             {
-                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_DND);
-                 statusID = sipe_activity_map[SIPE_ACTIVITY_DND].status_id;
-             } else if (([statusName isEqualToString:STATUS_NAME_LUNCH]) ||
-                      ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_LUNCH]] == NSOrderedSame))
-             {
-                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_LUNCH);
-                 statusID = sipe_activity_map[SIPE_ACTIVITY_LUNCH].status_id;
-             } else if (([statusName isEqualToString:STATUS_NAME_PHONE]) ||
-                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_PHONE]] == NSOrderedSame))
-             {
-                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE);
-                 statusID = sipe_activity_map[SIPE_ACTIVITY_ON_PHONE].status_id;
-             } else if (([statusName isEqualToString:STATUS_NAME_NOT_AT_DESK]) ||
-                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_NOT_AT_DESK]] == NSOrderedSame))
-             {
-                 // TODO: Figure out how to determine if they should be "In a meeting" or "In a conference"
-                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_IN_MEETING);
-                 statusID = sipe_activity_map[SIPE_ACTIVITY_IN_MEETING].status_id;
-             } else if (([statusName isEqualToString:STATUS_NAME_NOT_IN_OFFICE]) ||
-                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_NOT_IN_OFFICE]] == NSOrderedSame))
-             {
-                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_OOF);
-                 statusID = sipe_activity_map[SIPE_ACTIVITY_OOF].status_id;
-             } else if (([statusName isEqualToString:STATUS_NAME_AWAY_FRIENDS_ONLY]) ||
-                        ([statusMessageString caseInsensitiveCompare:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_AWAY_FRIENDS_ONLY]] == NSOrderedSame))
-             {
-                 //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_URGENT_ONLY);
-                 statusID = sipe_activity_map[SIPE_ACTIVITY_URGENT_ONLY].status_id;
-             }
-             break;
-         case AIInvisibleStatusType:
-             //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_INVISIBLE);
-             statusID = sipe_activity_map[SIPE_ACTIVITY_INVISIBLE].status_id;
-             break;
-
-         case AIOfflineStatusType:
-             //statusID = sipe_status_activity_to_token(SIPE_ACTIVITY_OFFLINE);
-             statusID = sipe_activity_map[SIPE_ACTIVITY_OFFLINE].status_id;
-             break;
+     
+     if ( adium_to_sipe_status[statusName] )
+         statusID = [adium_to_sipe_status[statusName] UTF8String];
+     else {
+         AILog(@"(ESPurpleSIPEAccount): Unknown statusName in purpleStatusIDForStatus: %@", statusName);
+         statusID = [super purpleStatusIDForStatus:statusState arguments:arguments];
      }
-
-
-     //If we didn't get a purple status type, request one from super
-     if (statusID == NULL) statusID = [super purpleStatusIDForStatus:statusState arguments:arguments];
-
+     
      return statusID;
  }
 

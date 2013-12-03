@@ -29,6 +29,8 @@
     
 	IBOutlet	NSPopUpButton	*popup_connectionType;
    	IBOutlet	NSPopUpButton	*popup_authenticationScheme;
+    
+    NSDictionary *sipe_key_to_gui;
 }
 
 
