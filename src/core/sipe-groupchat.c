@@ -383,19 +383,23 @@ static void groupchat_update_cb(struct sipe_core_private *sipe_private,
 				SIPE_UNUSED_PARAMETER gpointer data)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
-						     groupchat->session->with);
 
-	if (dialog)
-		sip_transport_update(sipe_private,
-				     dialog,
-				     groupchat_expired_session_response);
-	sipe_schedule_seconds(sipe_private,
-			      "<+groupchat-expires>",
-			      NULL,
-			      groupchat->expires,
-			      groupchat_update_cb,
-			      NULL);
+	if (groupchat->session) {
+		struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
+							     groupchat->session->with);
+
+		if (dialog) {
+			sip_transport_update(sipe_private,
+					     dialog,
+					     groupchat_expired_session_response);
+			sipe_schedule_seconds(sipe_private,
+					      "<+groupchat-expires>",
+					      NULL,
+					      groupchat->expires,
+					      groupchat_update_cb,
+					      NULL);
+		}
+	}
 }
 
 static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *sipe_private,
