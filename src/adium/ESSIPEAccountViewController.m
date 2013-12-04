@@ -26,19 +26,20 @@
     
     sipe_key_to_gui =
     [[NSDictionary alloc] initWithObjectsAndKeys:
-     textField_password,         KEY_SIPE_PASSWORD,
      textField_windowsLogin,     KEY_SIPE_WINDOWS_LOGIN,
-     checkBox_singleSignOn,      KEY_SIPE_SINGLE_SIGN_ON,
-     checkbox_dontPublish,       KEY_SIPE_DONT_PUBLISH,
+     textField_password,         KEY_SIPE_PASSWORD,
+     textField_server,           KEY_SIPE_CONNECT_HOST,
+     popup_connectionType,       KEY_SIPE_CONNECTION_TYPE,
+     popup_authenticationScheme, KEY_SIPE_AUTH_SCHEME,
      textField_userAgent,        KEY_SIPE_USER_AGENT,
+     checkBox_singleSignOn,      KEY_SIPE_SINGLE_SIGN_ON,
+     checkbox_beastDisable,      KEY_SIPE_BEAST_DISABLE,
+     textField_groupchatUser,    KEY_SIPE_GROUP_CHAT_PROXY,
      textField_emailURL,         KEY_SIPE_EMAIL_URL,
      textField_email,            KEY_SIPE_EMAIL,
      textField_emailLogin,       KEY_SIPE_EMAIL_LOGIN,
      textField_emailPassword,    KEY_SIPE_EMAIL_PASSWORD,
-     textField_groupchatUser,    KEY_SIPE_GROUP_CHAT_PROXY,
-     popup_connectionType,       KEY_SIPE_CONNECTION_TYPE,
-     popup_authenticationScheme, KEY_SIPE_AUTH_SCHEME,
-     checkbox_beastDisable,      KEY_SIPE_BEAST_DISABLE,
+     checkbox_dontPublish,       KEY_SIPE_DONT_PUBLISH,
      nil
      ];
     

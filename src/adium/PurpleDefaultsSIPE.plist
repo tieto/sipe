@@ -13,6 +13,6 @@
 	<key>SIPE:Connection Type</key>
 	<string>auto</string>
 	<key>Connect Host</key>
-	<string>autodetect</string>
+	<string>localhost</string>
 </dict>
 </plist>
