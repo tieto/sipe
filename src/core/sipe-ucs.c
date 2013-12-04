@@ -591,7 +591,11 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 			if (!(is_empty(address) || is_empty(key) || is_empty(change))) {
 				gchar *alias = sipe_xml_data(sipe_xml_child(persona_node,
 									    "DisplayName"));
-				gchar *uri = sip_uri_from_name(address);
+				/*
+				 * it seems to be undefined if ImAddress node
+				 * contains "sip:" prefix or not...
+				 */
+				gchar *uri = sip_uri(address);
 				struct sipe_buddy *buddy = sipe_buddy_add(sipe_private,
 									  uri,
 									  key,
