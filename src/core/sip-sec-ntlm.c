@@ -1752,6 +1752,17 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__ntlm: in use");
 
+	/*
+	 * If authentication was already completed, then this mean a new
+	 * authentication handshake has started on the existing connection.
+	 * We must throw away the old context, because we need a new one.
+	 */
+	if (context->flags & SIP_SEC_FLAG_COMMON_READY) {
+		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__ntlm: dropping old context");
+		context->flags &= ~SIP_SEC_FLAG_COMMON_READY;
+		context->flags |=  SIP_SEC_FLAG_NTLM_INITIAL;
+	}
+
 	if (context->flags & SIP_SEC_FLAG_NTLM_INITIAL) {
 		context->flags &= ~SIP_SEC_FLAG_NTLM_INITIAL;
 
