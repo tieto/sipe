@@ -24,14 +24,10 @@
  * Certificate routines implementation based on OpenSSL.
  */
 
-/* needed for strptime() */
-#define _XOPEN_SOURCE
-
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
 
-#include <string.h>
 #include <time.h>
 
 #include <glib.h>
