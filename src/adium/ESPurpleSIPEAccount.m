@@ -11,7 +11,6 @@
 #import <AIAdium.h>
 #import <Adium/AIStatus.h>
 #import <Adium/AIStatusControllerProtocol.h>
-#import <AIUtilities/AIHostReachabilityMonitor.h>
 #import <ESDebugAILog.h>
 
 #import "ESPurpleSIPEAccount.h"
@@ -118,19 +117,6 @@
      nil
      ];
     
-    
-    // If the default values are blank try the backup values
-    NSDictionary *backup =
-    [NSDictionary dictionaryWithObjectsAndKeys:
-     @"",                    KEY_SIPE_EMAIL,
-     KEY_SIPE_WINDOWS_LOGIN, KEY_SIPE_EMAIL_LOGIN,
-     KEY_SIPE_PASSWORD,      KEY_SIPE_EMAIL_PASSWORD,
-     nil
-     ];
-    
-    // Adium account UID
-    NSString *uid = [NSString stringWithUTF8String:[super purpleAccountName]];
-    
     for (NSString* key in keys_to_account) {
         NSString *prpl_key = [keys_to_account objectForKey:key];
         id value = [self preferenceForKey:key group:GROUP_ACCOUNT_STATUS];
@@ -144,14 +130,6 @@
                     // otherwise the DNS lookup will fail the reachability test
                     NSArray *server = [value componentsSeparatedByString:@":"];
                     [self setPreference:[server objectAtIndex:0] forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
-                }
-            }
-            
-            if ( [value isEqualToString:@""] && backup[key] ) {
-                if ([key isEqualToString:KEY_SIPE_EMAIL]) {
-                    value = [NSString stringWithFormat:@"%@", uid];
-                } else {
-                    value = [self preferenceForKey:backup[key] group:GROUP_ACCOUNT_STATUS];
                 }
             }
             
@@ -170,7 +148,7 @@
     
     // Adium doesn't honor our "optional" password on account creation and will prompt if the password field is left blank, so we must force it to think there is one, but only if there isn't already a password saved
     if ( [[self preferenceForKey:KEY_SIPE_SINGLE_SIGN_ON group:GROUP_ACCOUNT_STATUS] boolValue] &&
-        [[self preferenceForKey:KEY_SIPE_PASSWORD group:GROUP_ACCOUNT_STATUS] isEqualToString:@""])
+        [[self preferenceForKey:KEY_SIPE_PASSWORD group:GROUP_ACCOUNT_STATUS] isEqualToString:@""] )
     {
         [self setPasswordTemporarily:@"placeholder"];
     }
