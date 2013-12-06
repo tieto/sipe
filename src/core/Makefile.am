@@ -157,10 +157,14 @@ endif
 if SIP_SEC_GSSAPI
 libsipe_core_la_SOURCES += \
 	sip-sec-gssapi.h \
-	sip-sec-gssapi.c \
+	sip-sec-gssapi.c
+libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
+
+if !SIP_SEC_GSSAPI_ONLY
+libsipe_core_la_SOURCES += \
 	sip-sec-negotiate.h \
 	sip-sec-negotiate.c
-libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
+endif
 endif
 
 
