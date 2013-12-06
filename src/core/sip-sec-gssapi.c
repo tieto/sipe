@@ -112,7 +112,77 @@ static void sip_sec_gssapi_print_gss_error(char *func,
 }
 
 #if defined(HAVE_GSSAPI_PASSWORD_SUPPORT) || defined(HAVE_GSSAPI_ONLY)
+/* NOTE: releases "set" on error */
+static gboolean add_mech(gss_OID_set set,
+			 gss_OID mech,
+			 const gchar *name)
+{
+	OM_uint32 ret;
+	OM_uint32 minor;
+
+	ret = gss_add_oid_set_member(&minor, mech, &set);
+	if (GSS_ERROR(ret)) {
+		sip_sec_gssapi_print_gss_error("gss_add_oid_set_member", ret, minor);
+		SIPE_DEBUG_ERROR("add_mech: can't add %s to mech set (ret=%d)", name, (int)ret);
+		gss_release_oid_set(&minor, &set);
+		return(FALSE);
+	}
+	SIPE_DEBUG_INFO("add_mech: added %s to mech set", name);
+
+	return(TRUE);
+}
+
 static gss_OID_set create_mechs_set(guint type)
+{
+	OM_uint32 ret;
+	OM_uint32 minor;
+	gss_OID_set set = GSS_C_NO_OID_SET;
+	gss_OID mech_oid;
+	const gchar *name;
+
+	ret = gss_create_empty_oid_set(&minor, &set);
+	if (GSS_ERROR(ret)) {
+		sip_sec_gssapi_print_gss_error("gss_create_empty_oid_set", ret, minor);
+		SIPE_DEBUG_ERROR("create_mechs_set: can't create mech set (ret=%d)", (int)ret);
+		return(GSS_C_NO_OID_SET);
+	}
+
+#ifdef HAVE_GSSAPI_ONLY
+	switch (type) {
+	case SIPE_AUTHENTICATION_TYPE_NTLM:
+		mech_oid = (gss_OID) &gss_mech_ntlmssp;
+		name     = "NTLM";
+		break;
+
+	case SIPE_AUTHENTICATION_TYPE_KERBEROS:
+#else
+		(void) type; /* keep compiler happy */
+#endif
+		mech_oid = (gss_OID) gss_mech_krb5;
+		name     = "Kerberos";
+#ifdef HAVE_GSSAPI_ONLY
+		break;
+
+	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE:
+		mech_oid = (gss_OID) &gss_mech_spnego;
+		name     = "SPNEGO";
+		break;
+
+	default:
+		SIPE_DEBUG_ERROR("create_mechs_set: invoked with invalid type %d",
+				 type);
+		gss_release_oid_set(&minor, &set);
+		return(GSS_C_NO_OID_SET);
+		break;
+	}
+#endif
+
+	return(add_mech(set, mech_oid, name) ? set : GSS_C_NO_OID_SET);
+}
+#endif
+
+#ifdef HAVE_GSSAPI_ONLY
+static gss_OID_set create_neg_mechs_set(void)
 {
 	OM_uint32 ret;
 	OM_uint32 minor;
@@ -121,47 +191,15 @@ static gss_OID_set create_mechs_set(guint type)
 	ret = gss_create_empty_oid_set(&minor, &set);
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_create_empty_oid_set", ret, minor);
-		SIPE_DEBUG_ERROR("create_mech_set: can't create mech set (ret=%d)", (int)ret);
+		SIPE_DEBUG_ERROR("create_neg_mechs_set: can't create mech set (ret=%d)", (int)ret);
 		return(GSS_C_NO_OID_SET);
 	}
 
-#ifdef HAVE_GSSAPI_ONLY
-	if ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ||
-	    (type == SIPE_AUTHENTICATION_TYPE_KERBEROS)) {
-#else
-		(void) type; /* keep compiler happy */
-#endif
-		ret = gss_add_oid_set_member(&minor,
-					     (gss_OID) gss_mech_krb5,
-					     &set);
-		if (GSS_ERROR(ret)) {
-			sip_sec_gssapi_print_gss_error("gss_add_oid_set_member(krb5)", ret, minor);
-			SIPE_DEBUG_ERROR("create_mech_set: can't add Kerberos to mech set (ret=%d)", (int)ret);
-			gss_release_oid_set(&minor, &set);
-			return(GSS_C_NO_OID_SET);
-		}
-#ifdef HAVE_GSSAPI_ONLY
-	}
-
-	if ((type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) ||
-	    (type == SIPE_AUTHENTICATION_TYPE_NTLM)) {
-		ret = gss_add_oid_set_member(&minor,
-					     (gss_OID) &gss_mech_ntlmssp,
-					     &set);
-		if (GSS_ERROR(ret)) {
-			sip_sec_gssapi_print_gss_error("gss_add_oid_set_member(ntlmssp)", ret, minor);
-			SIPE_DEBUG_ERROR("create_mech_set: can't add NTLM to mech set (ret=%d)", (int)ret);
-			gss_release_oid_set(&minor, &set);
-			return(GSS_C_NO_OID_SET);
-		}
-	}
-#endif
-
-	return(set);
+	return((add_mech(set, (gss_OID)  gss_mech_krb5,    "Kerberos") &&
+		add_mech(set, (gss_OID) &gss_mech_ntlmssp, "NTLM")) ?
+	       set : GSS_C_NO_OID_SET);
 }
-#endif
 
-#ifdef HAVE_GSSAPI_ONLY
 static gboolean gssntlm_reset_mic_sequence(context_gssapi context)
 {
 	OM_uint32 ret;
@@ -311,16 +349,35 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 						     NULL,
 						     NULL);
 		gss_release_name(&minor_ignore, &user_name);
-		gss_release_oid_set(&minor, &mechs_set);
+		gss_release_oid_set(&minor_ignore, &mechs_set);
 
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_acquire_cred_with_password", ret, minor);
 			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to acquire credentials (ret=%d)", (int)ret);
 			return(FALSE);
-		} else {
-			((context_gssapi) context)->cred_gssapi = credentials;
-			return(TRUE);
 		}
+
+		((context_gssapi) context)->cred_gssapi = credentials;
+
+#ifdef HAVE_GSSAPI_ONLY
+		if (context->type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) {
+			mechs_set = create_neg_mechs_set();
+			if (mechs_set == GSS_C_NO_OID_SET)
+				return(FALSE);
+
+			ret = gss_set_neg_mechs(&minor,
+						credentials,
+						mechs_set);
+			gss_release_oid_set(&minor_ignore, &mechs_set);
+
+			if (GSS_ERROR(ret)) {
+				sip_sec_gssapi_print_gss_error("gss_set_neg_mechs", ret, minor);
+				SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to set negotiate mechanisms (ret=%d)", (int)ret);
+				return(FALSE);
+			}
+		}
+#endif
+
 #else
 		/*
 		 * non-SSO support requires gss_acquire_cred_with_password()
@@ -336,7 +393,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 #ifdef HAVE_GSSAPI_ONLY
 	else {
 		OM_uint32 ret;
-		OM_uint32 minor;
+		OM_uint32 minor, minor_ignore;
 		gss_OID_set mechs_set;
 		gss_cred_id_t credentials;
 
@@ -352,20 +409,36 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 				       &credentials,
 				       NULL,
 				       NULL);
-		gss_release_oid_set(&minor, &mechs_set);
+		gss_release_oid_set(&minor_ignore, &mechs_set);
 
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_acquire_cred", ret, minor);
 			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to acquire credentials (ret=%d)", (int)ret);
 			return(FALSE);
-		} else {
-			((context_gssapi) context)->cred_gssapi = credentials;
-			return(TRUE);
+		}
+
+		((context_gssapi) context)->cred_gssapi = credentials;
+
+		if (context->type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) {
+			mechs_set = create_neg_mechs_set();
+			if (mechs_set == GSS_C_NO_OID_SET)
+				return(FALSE);
+
+			ret = gss_set_neg_mechs(&minor,
+						credentials,
+						mechs_set);
+			gss_release_oid_set(&minor_ignore, &mechs_set);
+
+			if (GSS_ERROR(ret)) {
+				sip_sec_gssapi_print_gss_error("gss_set_neg_mechs", ret, minor);
+				SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to set negotiate mechanisms (ret=%d)", (int)ret);
+				return(FALSE);
+			}
 		}
 	}
-#else
-	return(TRUE);
 #endif
+
+	return(TRUE);
 }
 
 static gboolean
