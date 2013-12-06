@@ -528,10 +528,12 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 			g_strfreev(type_service);
 
 			name_oid = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
-			if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK)
+			if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK) {
 				mech_oid = (gss_OID) &gss_mech_ntlmssp;
-			else
+			} else {
 				mech_oid = (gss_OID) &gss_mech_spnego;
+				flags |= GSS_C_MUTUAL_FLAG;
+			}
 		}
 		break;
 
