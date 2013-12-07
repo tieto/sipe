@@ -614,11 +614,13 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		sip_sec_gssapi_print_gss_error("gss_init_sec_context", ret, minor);
 		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to initialize context (ret=%d)", (int)ret);
 
+#ifdef HAVE_GSSAPI_ONLY
 		/* Enable workaround for SPNEGO (see above) */
 		if (ret == GSS_S_DEFECTIVE_TOKEN) {
 			SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_init_sec_context__gssapi: enabling workaround for SPNEGO");
 			spnego_mutual_flag = TRUE;
 		}
+#endif
 
 		return(FALSE);
 	}
