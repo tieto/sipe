@@ -73,6 +73,30 @@ static const gss_OID_desc gss_mech_spnego = {
 	6,
 	"\x2b\x06\x01\x05\x05\x02"
 };
+
+/*
+ * The SPNEGO implementation on older Microsoft IIS servers sends a
+ * non-conformant final empty token that is not accepted by the SPNEGO
+ * implementation in older MIT KRB5 releases:
+ *
+ *  Base64-encoded DER: oRgwFqADCgEAoQsGCSqGSIb3EgECAqICBAA=
+ *
+ *  Decoded ASN.1:
+ *     0:d=0  hl=2 l=  24 cons: cont [ 1 ]
+ *     2:d=1  hl=2 l=  22 cons: SEQUENCE
+ *     4:d=2  hl=2 l=   3 cons: cont [ 0 ]
+ *     6:d=3  hl=2 l=   1 prim: ENUMERATED        :00
+ *     9:d=2  hl=2 l=  11 cons: cont [ 1 ]
+ *    11:d=3  hl=2 l=   9 prim: OBJECT            :1.2.840.113554.1.2.2
+ *    22:d=2  hl=2 l=   2 cons: cont [ 2 ]     | this empty element is not
+ *    24:d=3  hl=2 l=   0 prim: OCTET STRING   | correct according to spec
+ *
+ * We can circumvent this problem by setting GSS_C_MUTUAL_FLAG which causes
+ * the server to send a non-empty final token. We set the following flag to
+ * TRUE after the first time gss_init_sec_context() returns with a
+ * "defective token" error.
+ */
+static gboolean spnego_mutual_flag = FALSE;
 #endif
 
 #define SIP_SEC_FLAG_GSSAPI_SIP_NTLM           0x00010000
@@ -532,7 +556,8 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 				mech_oid = (gss_OID) &gss_mech_ntlmssp;
 			} else {
 				mech_oid = (gss_OID) &gss_mech_spnego;
-				flags |= GSS_C_MUTUAL_FLAG;
+				if (spnego_mutual_flag)
+					flags |= GSS_C_MUTUAL_FLAG;
 			}
 		}
 		break;
@@ -588,6 +613,13 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		gss_release_buffer(&minor_ignore, &output_token);
 		sip_sec_gssapi_print_gss_error("gss_init_sec_context", ret, minor);
 		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to initialize context (ret=%d)", (int)ret);
+
+		/* Enable workaround for SPNEGO (see above) */
+		if (ret == GSS_S_DEFECTIVE_TOKEN) {
+			SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_init_sec_context__gssapi: enabling workaround for SPNEGO");
+			spnego_mutual_flag = TRUE;
+		}
+
 		return(FALSE);
 	}
 
