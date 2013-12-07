@@ -278,6 +278,8 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 			     const gchar *username,
 			     const gchar *password)
 {
+	context_gssapi ctx = (context_gssapi) context;
+
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__gssapi: started");
 
 	/* this is the first time we are allowed to set private flags */
@@ -381,26 +383,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 			return(FALSE);
 		}
 
-		((context_gssapi) context)->cred_gssapi = credentials;
-
-#ifdef HAVE_GSSAPI_ONLY
-		if (context->type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) {
-			mechs_set = create_neg_mechs_set();
-			if (mechs_set == GSS_C_NO_OID_SET)
-				return(FALSE);
-
-			ret = gss_set_neg_mechs(&minor,
-						credentials,
-						mechs_set);
-			gss_release_oid_set(&minor_ignore, &mechs_set);
-
-			if (GSS_ERROR(ret)) {
-				sip_sec_gssapi_print_gss_error("gss_set_neg_mechs", ret, minor);
-				SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to set negotiate mechanisms (ret=%d)", (int)ret);
-				return(FALSE);
-			}
-		}
-#endif
+		ctx->cred_gssapi = credentials;
 
 #else
 		/*
@@ -410,6 +393,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 		(void) domain;   /* keep compiler happy */
 		(void) username; /* keep compiler happy */
 		(void) password; /* keep compiler happy */
+		(void) ctx;      /* keep compiler happy */
 		SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__gssapi: non-SSO mode not supported");
 		return(FALSE);
 #endif
@@ -441,23 +425,26 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 			return(FALSE);
 		}
 
-		((context_gssapi) context)->cred_gssapi = credentials;
+		ctx->cred_gssapi = credentials;
+	}
 
-		if (context->type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) {
-			mechs_set = create_neg_mechs_set();
-			if (mechs_set == GSS_C_NO_OID_SET)
-				return(FALSE);
+	if (context->type == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) {
+		OM_uint32 ret;
+		OM_uint32 minor, minor_ignore;
+		gss_OID_set mechs_set = create_neg_mechs_set();
 
-			ret = gss_set_neg_mechs(&minor,
-						credentials,
-						mechs_set);
-			gss_release_oid_set(&minor_ignore, &mechs_set);
+		if (mechs_set == GSS_C_NO_OID_SET)
+			return(FALSE);
 
-			if (GSS_ERROR(ret)) {
-				sip_sec_gssapi_print_gss_error("gss_set_neg_mechs", ret, minor);
-				SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to set negotiate mechanisms (ret=%d)", (int)ret);
-				return(FALSE);
-			}
+		ret = gss_set_neg_mechs(&minor,
+					ctx->cred_gssapi,
+					mechs_set);
+		gss_release_oid_set(&minor_ignore, &mechs_set);
+
+		if (GSS_ERROR(ret)) {
+			sip_sec_gssapi_print_gss_error("gss_set_neg_mechs", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to set negotiate mechanisms (ret=%d)", (int)ret);
+			return(FALSE);
 		}
 	}
 #endif
