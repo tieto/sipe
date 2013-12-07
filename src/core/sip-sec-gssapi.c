@@ -61,6 +61,7 @@ typedef struct _context_gssapi {
 	struct sip_sec_context common;
 	gss_cred_id_t cred_gssapi;
 	gss_ctx_id_t ctx_gssapi;
+	gss_name_t target_name;
 } *context_gssapi;
 
 #ifdef HAVE_GSSAPI_ONLY
@@ -462,13 +463,11 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 	OM_uint32 ret;
 	OM_uint32 minor, minor_ignore;
 	OM_uint32 expiry;
-	OM_uint32 flags = GSS_C_INTEG_FLAG;
-	gss_OID name_oid, mech_oid;
 	gss_buffer_desc input_token;
 	gss_buffer_desc output_token;
-	gss_name_t target_name;
 #ifdef HAVE_GSSAPI_ONLY
-	gchar *hostbased_service_name = NULL;
+	gss_OID mech_oid;
+	OM_uint32 flags = GSS_C_INTEG_FLAG;
 #endif
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: started");
@@ -484,68 +483,75 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		drop_gssapi_context(context);
 	}
 
+	/* Import service name to GSS */
+	if (ctx->target_name == GSS_C_NO_NAME) {
+		gchar *hostbased_service_name = NULL;
+		gchar **type_service = g_strsplit(service_name, "/", 2);
+
+		if (type_service[1]) {
+			gchar *type_lower = g_ascii_strdown(type_service[0], -1);
+			hostbased_service_name = g_strdup_printf("%s@%s",
+								 type_lower,
+								 type_service[1]);
+			g_free(type_lower);
+			input_token.value = (void *) hostbased_service_name;
+		} else {
+			input_token.value = (void *) service_name;
+		}
+		g_strfreev(type_service);
+
+		input_token.length = strlen(input_token.value) + 1;
+		ret = gss_import_name(&minor,
+				      &input_token,
+				      (gss_OID) GSS_C_NT_HOSTBASED_SERVICE,
+				      &(ctx->target_name));
+		g_free(hostbased_service_name);
+
+		if (GSS_ERROR(ret)) {
+			sip_sec_gssapi_print_gss_error("gss_import_name", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to construct target name (ret=%d)", (int)ret);
+			return(FALSE);
+		}
+	}
+
 #ifdef HAVE_GSSAPI_ONLY
 	switch(context->type) {
 	case SIPE_AUTHENTICATION_TYPE_NTLM:
-		name_oid          = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
-		mech_oid          = (gss_OID) &gss_mech_ntlmssp;
-		input_token.value = (void *)  service_name;
+		mech_oid = (gss_OID) &gss_mech_ntlmssp;
 		if (context->flags & SIP_SEC_FLAG_GSSAPI_SIP_NTLM)
 			flags |= GSS_C_DATAGRAM_FLAG;
 		break;
 
 	case SIPE_AUTHENTICATION_TYPE_KERBEROS:
-#endif
-		name_oid          = (gss_OID) GSS_KRB5_NT_PRINCIPAL_NAME;
-		mech_oid          = (gss_OID) gss_mech_krb5;
-		input_token.value = (void *)  service_name;
-#ifdef HAVE_GSSAPI_ONLY
+		mech_oid = (gss_OID) gss_mech_krb5;
 		break;
 
-	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE: {
-			gchar **type_service;
+	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE:
+		/*
+		 * Some servers do not accept SPNEGO for Negotiate.
+		 * If come back here with an existing security context
+		 * and NULL input token we will fall back to NTLM
+		 */
+		if (ctx->ctx_gssapi && (in_buff.value == NULL)) {
 
-			/*
-			 * Some servers do not accept SPNEGO for Negotiate.
-			 * If come back here with an existing security context
-			 * and NULL input token we will fall back to NTLM
-			 */
-			if (ctx->ctx_gssapi && (in_buff.value == NULL)) {
-
-				/* Only try this once */
-				if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK) {
-					SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_init_sec_context__gssapi: SPNEGO-to-NTLM fallback failed");
-					return(FALSE);
-				}
-
-				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: SPNEGO failed. Falling back to NTLM");
-				drop_gssapi_context(context);
-
-				context->flags |= SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK;
-			}
-
-			/* Convert to hostbased so NTLM fallback can work */
-			type_service = g_strsplit(service_name, "/", 2);
-			if (type_service[1]) {
-				gchar *type_lower = g_ascii_strdown(type_service[0], -1);
-				hostbased_service_name = g_strdup_printf("%s@%s",
-									 type_lower,
-									 type_service[1]);
-				g_free(type_lower);
-				input_token.value = (void *) hostbased_service_name;
-			} else {
-				input_token.value = (void *) service_name;
-			}
-			g_strfreev(type_service);
-
-			name_oid = (gss_OID) GSS_C_NT_HOSTBASED_SERVICE;
+			/* Only try this once */
 			if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK) {
-				mech_oid = (gss_OID) &gss_mech_ntlmssp;
-			} else {
-				mech_oid = (gss_OID) &gss_mech_spnego;
-				if (spnego_mutual_flag)
-					flags |= GSS_C_MUTUAL_FLAG;
+				SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_init_sec_context__gssapi: SPNEGO-to-NTLM fallback failed");
+				return(FALSE);
 			}
+
+			SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__gssapi: SPNEGO failed. Falling back to NTLM");
+			drop_gssapi_context(context);
+
+			context->flags |= SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK;
+		}
+
+		if (context->flags & SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK) {
+			mech_oid = (gss_OID) &gss_mech_ntlmssp;
+		} else {
+			mech_oid = (gss_OID) &gss_mech_spnego;
+			if (spnego_mutual_flag)
+				flags |= GSS_C_MUTUAL_FLAG;
 		}
 		break;
 
@@ -555,24 +561,6 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		return(FALSE);
 	}
 #endif
-
-	/* Import service name to GSS */
-	input_token.length = strlen(input_token.value) + 1;
-
-	ret = gss_import_name(&minor,
-			      &input_token,
-			      name_oid,
-			      &target_name);
-
-#ifdef HAVE_GSSAPI_ONLY
-	g_free(hostbased_service_name);
-#endif
-
-	if (GSS_ERROR(ret)) {
-		sip_sec_gssapi_print_gss_error("gss_import_name", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to construct target name (ret=%d)", (int)ret);
-		return(FALSE);
-	}
 
 	/* Create context */
 	input_token.length = in_buff.length;
@@ -584,9 +572,14 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 	ret = gss_init_sec_context(&minor,
 				   ctx->cred_gssapi,
 				   &(ctx->ctx_gssapi),
-				   target_name,
+				   ctx->target_name,
+#ifdef HAVE_GSSAPI_ONLY
 				   mech_oid,
 				   flags,
+#else
+				   (gss_OID) gss_mech_krb5,
+				   GSS_C_INTEG_FLAG,
+#endif
 				   GSS_C_INDEFINITE,
 				   GSS_C_NO_CHANNEL_BINDINGS,
 				   &input_token,
@@ -594,7 +587,6 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 				   &output_token,
 				   NULL,
 				   &expiry);
-	gss_release_name(&minor_ignore, &target_name);
 
 	if (GSS_ERROR(ret)) {
 		gss_release_buffer(&minor_ignore, &output_token);
@@ -725,6 +717,15 @@ sip_sec_destroy_sec_context__gssapi(SipSecContext context)
 		ctx->cred_gssapi = GSS_C_NO_CREDENTIAL;
 	}
 
+	if (ctx->target_name != GSS_C_NO_NAME) {
+		ret = gss_release_name(&minor, &(ctx->target_name));
+		if (GSS_ERROR(ret)) {
+			sip_sec_gssapi_print_gss_error("gss_release_name", ret, minor);
+			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__gssapi: failed to release name (ret=%d)", (int)ret);
+		}
+		ctx->target_name = GSS_C_NO_NAME;
+	}
+
 	g_free(context);
 }
 
@@ -773,6 +774,7 @@ sip_sec_create_context__gssapi(SIPE_UNUSED_PARAMETER guint type)
 
 	context->cred_gssapi = GSS_C_NO_CREDENTIAL;
 	context->ctx_gssapi  = GSS_C_NO_CONTEXT;
+	context->target_name = GSS_C_NO_NAME;
 
 	return((SipSecContext) context);
 }
