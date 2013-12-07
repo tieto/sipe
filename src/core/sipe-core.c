@@ -144,14 +144,14 @@ gchar *sipe_core_about(void)
 		"<b><font size=\"+1\">SIPE " SIPE_CORE_VERSION " </font></b><br/>"
 		"<br/>"
 		/* 1 */   "%s:<br/>"
-		"<li> - Microsoft Office 365</li><br/>"
-		"<li> - Microsoft Business Productivity Online Suite (BPOS)</li><br/>"
-		"<li> - Microsoft Lync Server</li><br/>"
-		"<li> - Microsoft Office Communications Server 2007 R2</li><br/>"
-		"<li> - Microsoft Office Communications Server 2007</li><br/>"
-		"<li> - Microsoft Live Communications Server 2005</li><br/>"
-		"<li> - Microsoft Live Communications Server 2003</li><br/>"
-		"<li> - Reuters Messaging</li><br/>"
+		" - Microsoft Office 365<br/>"
+		" - Microsoft Business Productivity Online Suite (BPOS)<br/>"
+		" - Microsoft Lync Server<br/>"
+		" - Microsoft Office Communications Server 2007 R2<br/>"
+		" - Microsoft Office Communications Server 2007<br/>"
+		" - Microsoft Live Communications Server 2005<br/>"
+		" - Microsoft Live Communications Server 2003<br/>"
+		" - Reuters Messaging<br/>"
 		"<br/>"
 		/* 2 */   "%s: <a href=\"" PACKAGE_URL "\">" PACKAGE_URL "</a><br/>"
 		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/p/sipe/discussion/688534/\">%s</a><br/>"
@@ -159,31 +159,18 @@ gchar *sipe_core_about(void)
 		/* 7 */   "%s: <a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.com</a><br/>"
 		/* 8 */   "%s: GPLv2+<br/>"
 		"<br/>"
-		/* 9 */  "%s:<br/>"
-		" - CERN<br/>"
-		" - Reuters Messaging network<br/>"
-		" - Deutsche Bank<br/>"
-		" - Merrill Lynch<br/>"
-		" - Wachovia<br/>"
-		" - Intel<br/>"
-		" - Nokia<br/>"
-		" - HP<br/>"
-		" - Symantec<br/>"
-		" - Accenture<br/>"
-		" - Capgemini<br/>"
-		" - Siemens<br/>"
-		" - Alcatel-Lucent<br/>"
-		" - BT<br/>"
-		"<br/>"
+		/* 9 (REMOVED) */
 		/* 10,11 */ "%s<a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.com</a>%s.<br/>"
 		"<br/>"
 		/* 12 */  "<b>%s:</b><br/>"
-		" - Anibal Avelar<br/>"
-		" - Gabriel Burt<br/>"
 		" - Stefan Becker<br/>"
-		" - pier11<br/>"
 		" - Jakub Adam<br/>"
-		" - Tomáš Hrabčík<br/>"
+		" - Jochen De Smet (Miranda port)<br/>"
+		" - Michael Lamb (Adium port)<br/>"
+		" - Anibal Avelar (retired)<br/>"
+		" - Gabriel Burt (retired)<br/>"
+		" - pier11 (retired)<br/>"
+		" - Tomáš Hrabčík (retired)<br/>"
 		"<br/>"
 		/* 13 */  "%s<br/>"
 		,
@@ -204,8 +191,7 @@ gchar *sipe_core_about(void)
 		_("Translations"),
 		/* About note, part 8/13: license type (label) */
 		_("License"),
-		/* About note, part 9/13: known users */
-		_("We support users in such organizations as"),
+		/* About note, part 9/13: (REMOVED) */
 		/* About note, part 10/13: translation request, text before Transifex.com URL */
 		/* append a space if text is not empty */
 		_("Please help us to translate SIPE to your native language here at "),
