@@ -23,6 +23,7 @@ The plugin has support for
 
     * Instant Messaging (IM)
     * Multiparty chat
+    * Group (Lync 2010) or Persistent (Lync 2013) chat
     * Enhanced presence
     * Calendar integration with Exchange 2007/2010
     * Contact details information - company, phones, web site, etc.
@@ -106,14 +107,45 @@ following packages
 
 	libtool
 	intltool
+
+	pkg-config
 	libglib2.0-dev
-	libglib2-devel
 	libxml2-dev
+	libgmime-2.4-dev  (optional)
+	libgmime-2.6-dev  (optional)
+
+	pkgconfig
+	libglib2-devel
 	libxml2-devel
+	gettext-devel
+	gmime-devel       (optional)
+
+You have to choose between NSS or OpenSSL for the crypto backend. You'll
+need one of the following packages
+
+	for NSS:
 	libnss3-dev
 	nss-devel
-        mozilla-nss-devel
-	gettext-devel
+	mozilla-nss-devel
+
+	for OpenSSL:
+	libssl-dev
+	openssl-devel
+
+If you want to enable Kerberos authentication support then you'll need one
+of the following packages
+
+	libkrb5-dev
+	krb5-devel
+
+If you want to enable Voice & Video features then you'll need some of the
+following packages
+
+	libnice-dev           (>= 0.1.0)
+	libgstreamer0.10-dev
+
+	libnice-devel         (>= 0.1.0)
+	gstreamer-devel
 
 Now you should be able to compile the source code with
 
