@@ -293,22 +293,6 @@ is_empty(const char *st)
 	return FALSE;
 }
 
-/** Returns newly allocated string. Must be g_free()'d */
-char *
-replace(const char *st,
-	const char *search,
-	const char *replace)
-{
-	char **tmp;
-	char *res;
-
-	if (!st) return NULL;
-
-	res = g_strjoinv(replace, tmp = g_strsplit(st, search, -1));
-	g_strfreev(tmp);
-	return res;
-}
-
 void sipe_utils_message_debug(const gchar *type,
 			      const gchar *header,
 			      const gchar *body,
@@ -326,11 +310,11 @@ void sipe_utils_message_debug(const gchar *type,
 		g_get_current_time(&currtime);
 		time_str = g_time_val_to_iso8601(&currtime);
 		g_string_append_printf(str, "\nMESSAGE START %s %s - %s\n", marker, type, time_str);
-		g_string_append(str, tmp = replace(header, "\r\n", "\n"));
+		g_string_append(str, tmp = sipe_utils_str_replace(header, "\r\n", "\n"));
 		g_free(tmp);
 		g_string_append(str, "\n");
 		if (body) {
-			g_string_append(str, tmp = replace(body, "\r\n", "\n"));
+			g_string_append(str, tmp = sipe_utils_str_replace(body, "\r\n", "\n"));
 			g_free(tmp);
 			g_string_append(str, "\n");
 		}

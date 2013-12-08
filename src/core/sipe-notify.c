@@ -305,7 +305,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	/* fix for Reuters environment on Linux */
 	if (data && strstr(data, "encoding=\"utf-16\"")) {
 		char *tmp_data;
-		tmp_data = replace(data, "encoding=\"utf-16\"", "encoding=\"utf-8\"");
+		tmp_data = sipe_utils_str_replace(data, "encoding=\"utf-16\"", "encoding=\"utf-8\"");
 		xn_presentity = sipe_xml_parse(tmp_data, strlen(tmp_data));
 		g_free(tmp_data);
 	} else {
