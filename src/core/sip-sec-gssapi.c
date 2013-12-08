@@ -148,7 +148,7 @@ static gboolean add_mech(gss_OID_set set,
 	ret = gss_add_oid_set_member(&minor, mech, &set);
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_add_oid_set_member", ret, minor);
-		SIPE_DEBUG_ERROR("add_mech: can't add %s to mech set (ret=%d)", name, (int)ret);
+		SIPE_DEBUG_ERROR("add_mech: can't add %s to mech set (ret=%u)", name, ret);
 		gss_release_oid_set(&minor, &set);
 		return(FALSE);
 	}
@@ -168,7 +168,7 @@ static gss_OID_set create_mechs_set(guint type)
 	ret = gss_create_empty_oid_set(&minor, &set);
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_create_empty_oid_set", ret, minor);
-		SIPE_DEBUG_ERROR("create_mechs_set: can't create mech set (ret=%d)", (int)ret);
+		SIPE_DEBUG_ERROR("create_mechs_set: can't create mech set (ret=%u)", ret);
 		return(GSS_C_NO_OID_SET);
 	}
 
@@ -194,7 +194,7 @@ static gss_OID_set create_mechs_set(guint type)
 		break;
 
 	default:
-		SIPE_DEBUG_ERROR("create_mechs_set: invoked with invalid type %d",
+		SIPE_DEBUG_ERROR("create_mechs_set: invoked with invalid type %u",
 				 type);
 		gss_release_oid_set(&minor, &set);
 		return(GSS_C_NO_OID_SET);
@@ -216,7 +216,7 @@ static gss_OID_set create_neg_mechs_set(void)
 	ret = gss_create_empty_oid_set(&minor, &set);
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_create_empty_oid_set", ret, minor);
-		SIPE_DEBUG_ERROR("create_neg_mechs_set: can't create mech set (ret=%d)", (int)ret);
+		SIPE_DEBUG_ERROR("create_neg_mechs_set: can't create mech set (ret=%u)", ret);
 		return(GSS_C_NO_OID_SET);
 	}
 
@@ -246,7 +246,7 @@ static gboolean gssntlm_reset_mic_sequence(context_gssapi context)
 					 &value);
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_set_sec_context_option", ret, minor);
-		SIPE_DEBUG_ERROR("gssntlm_reset_mic_sequence: failed to reset MIC sequence number (ret=%d)", (int)ret);
+		SIPE_DEBUG_ERROR("gssntlm_reset_mic_sequence: failed to reset MIC sequence number (ret=%u)", ret);
 		return(FALSE);
 	}
 
@@ -265,7 +265,7 @@ static void drop_gssapi_context(SipSecContext context)
 				     GSS_C_NO_BUFFER);
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_delete_sec_context", ret, minor);
-		SIPE_DEBUG_ERROR("drop_gssapi_context: failed to delete security context (ret=%d)", (int)ret);
+		SIPE_DEBUG_ERROR("drop_gssapi_context: failed to delete security context (ret=%u)", ret);
 	}
 	ctx->ctx_gssapi = GSS_C_NO_CONTEXT;
 	context->flags &= ~SIP_SEC_FLAG_COMMON_READY;
@@ -358,7 +358,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_import_name", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to construct user name (ret=%d)", (int)ret);
+			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to construct user name (ret=%u)", ret);
 			gss_release_oid_set(&minor, &mechs_set);
 			return(FALSE);
 		}
@@ -380,7 +380,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_acquire_cred_with_password", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to acquire credentials (ret=%d)", (int)ret);
+			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to acquire credentials (ret=%u)", ret);
 			return(FALSE);
 		}
 
@@ -422,7 +422,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_acquire_cred", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to acquire credentials (ret=%d)", (int)ret);
+			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to acquire credentials (ret=%u)", ret);
 			return(FALSE);
 		}
 
@@ -444,7 +444,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_set_neg_mechs", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to set negotiate mechanisms (ret=%d)", (int)ret);
+			SIPE_DEBUG_ERROR("sip_sec_acquire_cred__gssapi: failed to set negotiate mechanisms (ret=%u)", ret);
 			return(FALSE);
 		}
 	}
@@ -509,7 +509,7 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_import_name", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to construct target name (ret=%d)", (int)ret);
+			SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to construct target name (ret=%u)", ret);
 			return(FALSE);
 		}
 	}
@@ -556,7 +556,7 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		break;
 
 	default:
-		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: invoked for invalid type %d",
+		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: invoked for invalid type %u",
 				 context->type);
 		return(FALSE);
 	}
@@ -591,7 +591,7 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 	if (GSS_ERROR(ret)) {
 		gss_release_buffer(&minor_ignore, &output_token);
 		sip_sec_gssapi_print_gss_error("gss_init_sec_context", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to initialize context (ret=%d)", (int)ret);
+		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: failed to initialize context (ret=%u)", ret);
 
 #ifdef HAVE_GSSAPI_ONLY
 		/* Enable workaround for SPNEGO (see above) */
@@ -653,7 +653,7 @@ sip_sec_make_signature__gssapi(SipSecContext context,
 
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_get_mic", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_make_signature__gssapi: failed to make signature (ret=%d)", (int)ret);
+		SIPE_DEBUG_ERROR("sip_sec_make_signature__gssapi: failed to make signature (ret=%u)", ret);
 		return FALSE;
 	} else {
 		signature->length = output_token.length;
@@ -691,7 +691,7 @@ sip_sec_verify_signature__gssapi(SipSecContext context,
 
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_verify_mic", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_verify_signature__gssapi: failed to verify signature (ret=%d)", (int)ret);
+		SIPE_DEBUG_ERROR("sip_sec_verify_signature__gssapi: failed to verify signature (ret=%u)", ret);
 		return FALSE;
 	} else {
 		return TRUE;
@@ -712,7 +712,7 @@ sip_sec_destroy_sec_context__gssapi(SipSecContext context)
 		ret = gss_release_cred(&minor, &(ctx->cred_gssapi));
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_release_cred", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__gssapi: failed to release credentials (ret=%d)", (int)ret);
+			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__gssapi: failed to release credentials (ret=%u)", ret);
 		}
 		ctx->cred_gssapi = GSS_C_NO_CREDENTIAL;
 	}
@@ -721,7 +721,7 @@ sip_sec_destroy_sec_context__gssapi(SipSecContext context)
 		ret = gss_release_name(&minor, &(ctx->target_name));
 		if (GSS_ERROR(ret)) {
 			sip_sec_gssapi_print_gss_error("gss_release_name", ret, minor);
-			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__gssapi: failed to release name (ret=%d)", (int)ret);
+			SIPE_DEBUG_ERROR("sip_sec_destroy_sec_context__gssapi: failed to release name (ret=%u)", ret);
 		}
 		ctx->target_name = GSS_C_NO_NAME;
 	}
@@ -752,7 +752,7 @@ sip_sec_context_name__gssapi(SipSecContext context)
 		break;
 
 	default:
-		SIPE_DEBUG_ERROR("sip_sec_context_name__gssapi: invoked for invalid type %d",
+		SIPE_DEBUG_ERROR("sip_sec_context_name__gssapi: invoked for invalid type %u",
 				 context->type);
 		name = "";
 		break;
