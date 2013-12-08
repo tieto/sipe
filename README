@@ -1,7 +1,7 @@
 Introduction
 ============
 
-pidgin-sipe is a third-party plugin for the Pidgin/Adium/Miranda/Telepathy
+SIPE is a third-party plugin for the Pidgin/Adium/Miranda/Telepathy
 multi-protocol instant messaging clients/frameworks. It implements the
 extended version of SIP/SIMPLE used by various products:
 
@@ -22,17 +22,21 @@ Features
 The plugin has support for
 
     * Instant Messaging (IM)
-    * Multiparty chat
-    * Group (Lync 2010) or Persistent (Lync 2013) chat
+    * Multiparty chat (OCS 2005) or conference (OCS 2007+)
+    * Group chat (Lync 2010) or Persistent chat (Lync 2013) - [MS-XCCOSIP]
     * Enhanced presence
-    * Calendar integration with Exchange 2007/2010
-    * Contact details information - company, phones, web site, etc.
+    * Calendar integration with Exchange 2007+ (can be disabled)
+    * Contact details information - company, phones, photo, web site, etc.
+    * Unified Contact Store (Lync 2013) - [MS-OXWSCOS]
     * Contact search - [MS-PRES] and [MS-DLX] methods supported
-    * Encrypted file transfer
+    * Encrypted file transfer (old OCS2007 method only)
+    * Voice & Video calls (unencrypted only)
     * Call initiation through PBX
-    * NTLMv2, Kerberos & TLS-DSK authentication support
-    * TLS encryption support
-    * Translated to many languages
+    * NTLMv2, Kerberos & TLS-DSK authentication methods
+    * Single Sign-On (depends on OS and authentication method)
+    * Automatic SSL/TLS protection for SIP/HTTP connections
+    * Crypto implementation using NSS or OpenSSL
+    * Localization
 
 The plugin has backends for
 
@@ -40,6 +44,7 @@ The plugin has backends for
     * Adium (libpurple)
     * Miranda
     * Telepathy (under development)
+
 
 Advantages over Office Communicator products
 ============================================
@@ -60,14 +65,38 @@ Advantages over Office Communicator products
 Support
 =======
 
-The Pidgin project does not support third-party plugins! If you have problems
-with this plugin then please check out the support forums:
+The Pidgin or Adium projects do not support third-party plugins! Please do
+not ask questions about SIPE in their forums or report SIPE problems to their
+bug trackers.
+
+If you set up your Office Communicator/Lync account with SIPE for the first
+time then please make sure to read this page:
+
+    https://sourceforge.net/p/sipe/wiki/How%20to%20setup%20an%20account/
+
+If you encounter problems then please make sure to check out the Frequently
+Asked Question page:
+
+    https://sourceforge.net/p/sipe/wiki/faq/
+
+If you still have problems then please check the support forum if another
+user encountered the same problem and maybe solved it already:
 
     http://sourceforge.net/p/sipe/discussion/
 
-Bugs should be reported here:
+If you think that you have found a bug in SIPE then please report it to the
+SIPE bug tracker:
 
     https://sourceforge.net/p/sipe/bugs/
+
+The SIPE project kindly requests that you do not ignore the instructions that
+appear at the head of the "Create Ticket" page. These instructions are there
+for a reason and if you ignore them then you will only cause unnecessary work
+for the project and yourself. Please do not report missing features as bugs.
+
+New or missing features can be requested here:
+
+    https://sourceforge.net/p/sipe/feature-requests/
 
 
 Localization
@@ -78,8 +107,7 @@ translate SIPE to your native language at Transifex:
 
     https://www.transifex.com/projects/p/pidgin-sipe/r/mob/
 
-The service offers a convenient web editor and automatic submission to the
-repository.
+The service offers a convenient web editor.
 
 
 Installing from a distribution repository
@@ -94,10 +122,26 @@ your OS.
 Do It Yourself I: compiling against "pidgin" package
 ====================================================
 
+NOTE: for instructions how to setup a build environment on Windows to
+      compile the Windows Pidgin plugin, please read:
+
+	https://developer.pidgin.im/wiki/BuildingWinPidgin
+
+NOTE: for instructions how to cross-compile the Windows Pidgin plugin on
+      Linux, please read:
+
+	contrib/mingw-cross-compile/README.txt
+
+NOTE: for instructions how to compile the SIPEAdiumPlugin on Mac OS X,
+      please read:
+
+	src/adium/README.adium
+
+
 If you already have installed the "pidgin" package from your distribution
-repository and want compile pidgin-sipe from source code yourself, then you
-need to install the necessary headers first. Depending on your distribution
-you'll need to install one of the following packages
+repository and want compile SIPE from source code yourself, then you need to
+install the necessary headers first. Depending on your distribution you'll
+need to install one of the following packages
 
 	libpurple-dev
 	libpurple-devel
@@ -138,6 +182,12 @@ of the following packages
 	libkrb5-dev
 	krb5-devel
 
+If you additionally want to disable the internal NTLM implementation and
+authenticate with NTLM via GSSAPI then you'll need one of the following
+packages
+
+	gssntlmssp-devel
+
 If you want to enable Voice & Video features then you'll need some of the
 following packages
 
@@ -153,7 +203,7 @@ Now you should be able to compile the source code with
 	make
 
 If you get errors then you are missing some required package. After
-successful compilation you can install pidgin-sipe with:
+successful compilation you can install SIPE with:
 
 	su -c "make install"
 
