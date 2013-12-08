@@ -556,7 +556,7 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 		break;
 
 	default:
-		SIPE_DEBUG_ERROR("sip_sec_gssapi_initialize_context invoked for invalid type %d",
+		SIPE_DEBUG_ERROR("sip_sec_init_sec_context__gssapi: invoked for invalid type %d",
 				 context->type);
 		return(FALSE);
 	}
@@ -691,7 +691,7 @@ sip_sec_verify_signature__gssapi(SipSecContext context,
 
 	if (GSS_ERROR(ret)) {
 		sip_sec_gssapi_print_gss_error("gss_verify_mic", ret, minor);
-		SIPE_DEBUG_ERROR("sip_sec_verify_signature__gssapi: failed to make signature (ret=%d)", (int)ret);
+		SIPE_DEBUG_ERROR("sip_sec_verify_signature__gssapi: failed to verify signature (ret=%d)", (int)ret);
 		return FALSE;
 	} else {
 		return TRUE;
@@ -732,12 +732,16 @@ sip_sec_destroy_sec_context__gssapi(SipSecContext context)
 static const gchar *
 sip_sec_context_name__gssapi(SipSecContext context)
 {
-	const gchar *name = "Kerberos";
-
 #ifdef HAVE_GSSAPI_ONLY
+	const gchar *name;
+
 	switch(context->type) {
 	case SIPE_AUTHENTICATION_TYPE_NTLM:
 		name = "NTLM";
+		break;
+
+	case SIPE_AUTHENTICATION_TYPE_KERBEROS:
+		name = "Kerberos";
 		break;
 
 	case SIPE_AUTHENTICATION_TYPE_NEGOTIATE:
@@ -748,15 +752,18 @@ sip_sec_context_name__gssapi(SipSecContext context)
 		break;
 
 	default:
-#endif
-		name = "Kerberos";
-#ifdef HAVE_GSSAPI_ONLY
+		SIPE_DEBUG_ERROR("sip_sec_context_name__gssapi: invoked for invalid type %d",
+				 context->type);
+		name = "";
 		break;
 	}
+
+	return(name);
+
 #else
 	(void) context; /* keep compiler happy */
+	return("Kerberos");
 #endif
-	return(name);
 }
 
 SipSecContext
