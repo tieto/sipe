@@ -485,21 +485,11 @@ sip_sec_init_sec_context__gssapi(SipSecContext context,
 
 	/* Import service name to GSS */
 	if (ctx->target_name == GSS_C_NO_NAME) {
-		gchar *hostbased_service_name = NULL;
-		gchar **type_service = g_strsplit(service_name, "/", 2);
+		gchar *hostbased_service_name = sipe_utils_str_replace(service_name,
+								       "/",
+								       "@");
 
-		if (type_service[1]) {
-			gchar *type_lower = g_ascii_strdown(type_service[0], -1);
-			hostbased_service_name = g_strdup_printf("%s@%s",
-								 type_lower,
-								 type_service[1]);
-			g_free(type_lower);
-			input_token.value = (void *) hostbased_service_name;
-		} else {
-			input_token.value = (void *) service_name;
-		}
-		g_strfreev(type_service);
-
+		input_token.value = (void *) hostbased_service_name;
 		input_token.length = strlen(input_token.value) + 1;
 		ret = gss_import_name(&minor,
 				      &input_token,
