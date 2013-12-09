@@ -10,7 +10,7 @@ version 1.18.0 "Adium, GSS-NTLMSSP & OpenSSL" (2013-XX-XX)
 	- Fixed #227: Adium client doesn't save email option settings (Harris P. Kauffman)
 	- Fixed #216: SIPE stops working on Mavericks (Stefan Becker, Michael Lamb)
 	  * add an UI option to disable SSL BEAST mitigations
-	  * NOTE: patching Adium is required for this to work
+	  * NOTE: requires Adium 1.5.10
 	- Fixed #197: Account stays in connecting stage (Harris P. Kauffman)
 	- cleanup for sip-sec Kerberos & SSPI modules (Stefan Becker)
 	  * replace old TGT hack with gss_acquire_cred_with_password()
