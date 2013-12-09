@@ -7,6 +7,7 @@ version 1.18.0 "Adium, GSS-NTLMSSP & OpenSSL" (2013-XX-XX)
 	    be disabled and NTLM will be handled by sip-sec-gssapi.c instead
 	  * NOTE: at the time of this writing the user has to set up
 	          GSS-NTLMSSP by hand on his system, i.e. /etc/gss/mech
+	- Fixed #227: Adium client doesn't save email option settings (Harris P. Kauffman)
 	- Fixed #216: SIPE stops working on Mavericks (Stefan Becker, Michael Lamb)
 	  * add an UI option to disable SSL BEAST mitigations
 	  * NOTE: patching Adium is required for this to work
