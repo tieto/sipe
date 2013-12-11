@@ -1,17 +1,23 @@
 -------------------------------------------------------------------
-Wed Dec 11 19:19:00 UTC 2013 - chemobejk@gmail.com
+Wed Dec 11 13:30:00 UTC 2013 - chemobejk@gmail.com
 
 - Update to version 1.17.3
 
 -------------------------------------------------------------------
-Sat Nov 30 15:52:00 UTC 2013 - chemobejk@gmail.com
+Sun Dec  8 10:13:31 UTC 2013 - zaitor@opensuse.org
 
-- Update to version 1.17.2
-
--------------------------------------------------------------------
-Sat Nov 16 14:22:00 UTC 2013 - chemobejk@gmail.com
-
-- Update to version 1.17.1
+- Update to version 1.17.2:
+  + Fixed sf#214: Typing notification does not always work.
+  + Reverted one change which caused problems for some users.
+  + Fixed sf#222: SIPE crashes when groupchat session expires.
+  + Updated translations.
+- Changes from version 1.17.1:
+  + Fixed sf#215: Password not entity encoded in WSSE element.
+  + Fixed sf#214: Typing notification does not always work.
+  + Accept alternatives for webticket timestamp/keydata.
+  + Adium: add "don't publish calendar" to account UI.
+  + Contrib: add SSL BEAST mitigation patch for Adium.
+  + Updated translations.
 
 -------------------------------------------------------------------
 Sun Sep 22 03:06:20 UTC 2013 - zaitor@opensuse.org
