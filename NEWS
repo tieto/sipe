@@ -1,5 +1,4 @@
-version 1.17.2 "Bug Fixes II" (2013-11-30)
-	- Fixed #214: Typing notification does not always work (Stefan Becker)
-	  * reverted one change which caused problems for some users
+version 1.17.3 "Bug Fixes III" (2013-12-11)
+	- Fixed #225: HTTP re-authentication with NTLM fails (Stefan Becker)
 	- Fixed #222: SIPE crashes when groupchat session expires (Stefan Becker)
-	- updated translations: Romanian (ro)
+	- fix UCS Persona key extraction (Stefan Becker)

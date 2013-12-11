@@ -1,3 +1,12 @@
+pidgin-sipe (1.17.3-1) unstable; urgency=low
+
+  * New upstream version 1.17.3 "Bug Fixes III" (2013-12-11)
+	- Fixed #225: HTTP re-authentication with NTLM fails (Stefan Becker)
+	- Fixed #222: SIPE crashes when groupchat session expires (Stefan Becker)
+	- fix UCS Persona key extraction (Stefan Becker)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Wed, 11 Dec 2013 21:18:00 +0200
+
 pidgin-sipe (1.17.2-1) unstable; urgency=low
 
   * New upstream version 1.17.2 "Bug Fixes II" (2013-11-30)
