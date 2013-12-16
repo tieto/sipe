@@ -65,7 +65,8 @@ void sipe_backend_ft_error(struct sipe_file_transfer *ft,
 {
 	PurpleXfer *xfer = FT_TO_PURPLE_XFER;
  	purple_xfer_error(purple_xfer_get_type(xfer),
-			  xfer->account, xfer->who,
+			  purple_xfer_get_account(xfer),
+			  xfer->who,
 			  errmsg);
 }
 
@@ -286,8 +287,12 @@ sipe_backend_ft_start(struct sipe_file_transfer *ft, struct sipe_backend_fd *fd,
 		 * If we want to send file with Sender-Connect = TRUE negotiated,
 		 * we have to open the connection ourselves and pass the file
 		 * descriptor to purple_xfer_start. */
-		purple_proxy_connect(NULL, FT_TO_PURPLE_XFER->account, ip, port,
-				     connect_cb, ft);
+		purple_proxy_connect(NULL,
+				     purple_xfer_get_account(FT_TO_PURPLE_XFER),
+				     ip,
+				     port,
+				     connect_cb,
+				     ft);
 		return;
 	}
 
