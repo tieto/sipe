@@ -59,7 +59,11 @@ void sipe_backend_connection_error(struct sipe_core_public *sipe_public,
 
 gboolean sipe_backend_connection_is_disconnecting(struct sipe_core_public *sipe_public)
 {
-	return sipe_public->backend_private->account->disconnecting;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	return(purple_account_is_disconnecting(sipe_public->backend_private->account));
+#else
+	return(sipe_public->backend_private->account->disconnecting);
+#endif
 }
 
 gboolean sipe_backend_connection_is_valid(struct sipe_core_public *sipe_public)
