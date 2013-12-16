@@ -66,7 +66,7 @@ void sipe_backend_ft_error(struct sipe_file_transfer *ft,
 	PurpleXfer *xfer = FT_TO_PURPLE_XFER;
  	purple_xfer_error(purple_xfer_get_type(xfer),
 			  purple_xfer_get_account(xfer),
-			  xfer->who,
+			  purple_xfer_get_remote_user(xfer),
 			  errmsg);
 }
 
@@ -193,7 +193,7 @@ ft_outgoing_init(PurpleXfer *xfer)
 	sipe_core_ft_outgoing_init(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
 				   purple_xfer_get_filename(xfer),
 				   purple_xfer_get_size(xfer),
-				   xfer->who);
+				   purple_xfer_get_remote_user(xfer));
 }
 
 static void
