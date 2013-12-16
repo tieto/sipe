@@ -57,6 +57,7 @@
 #else
 #define PURPLE_XFER_DATA                  xfer->data
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_account_get_connection(xfer->account)->proto_data)
+#define purple_xfer_get_fd(xfer)          xfer->fd
 #endif
 #define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) PURPLE_XFER_DATA)
 
@@ -94,7 +95,9 @@ gssize sipe_backend_ft_read(struct sipe_file_transfer *ft,
 			    guchar *data,
 			    gsize size)
 {
-	gssize bytes_read = read(FT_TO_PURPLE_XFER->fd, data, size);
+	gssize bytes_read = read(purple_xfer_get_fd(FT_TO_PURPLE_XFER),
+				 data,
+				 size);
 	if (bytes_read == 0) {
 		/* Sender canceled transfer before it was finished */
 		return -2;
@@ -111,7 +114,9 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 			     const guchar *data,
 			     gsize size)
 {
-	gssize bytes_written = write(FT_TO_PURPLE_XFER->fd, data, size);
+	gssize bytes_written = write(purple_xfer_get_fd(FT_TO_PURPLE_XFER),
+				     data,
+				     size);
 	if (bytes_written == -1) {
 		if (errno == EAGAIN)
 			return 0;
@@ -200,11 +205,11 @@ static void
 tftp_outgoing_start(PurpleXfer *xfer)
 {
 	/* Set socket to non-blocking mode */
-	int flags = fcntl(xfer->fd, F_GETFL, 0);
+	int flags = fcntl(purple_xfer_get_fd(xfer), F_GETFL, 0);
 	if (flags == -1)
 		flags = 0;
 	/* @TODO: ignoring potential error return - how to handle? */
-	(void) fcntl(xfer->fd, F_SETFL, flags | O_NONBLOCK);
+	(void) fcntl(purple_xfer_get_fd(xfer), F_SETFL, flags | O_NONBLOCK);
 
 	sipe_core_tftp_outgoing_start(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
 				      xfer->size);
