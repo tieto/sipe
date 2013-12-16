@@ -241,7 +241,7 @@ tftp_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 	gssize bytes_written = sipe_core_tftp_write(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
 						    buffer, size);
 
-	if ((xfer->bytes_remaining - bytes_written) == 0)
+	if ((purple_xfer_get_bytes_remaining(xfer) - bytes_written) == 0)
 		purple_xfer_set_completed(xfer, TRUE);
 
 	return bytes_written;
