@@ -137,7 +137,7 @@ void sipe_purple_transport_close_all(struct sipe_backend_private *purple_private
 
 /* Convenience macros */
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) account->gc->proto_data)
-#define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) buddy->account->gc->proto_data)
+#define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_buddy_get_account(buddy)->gc->proto_data)
 #define PURPLE_GC_TO_SIPE_CORE_PUBLIC      ((struct sipe_core_public *) gc->proto_data)
 
 /*

@@ -547,7 +547,7 @@ static void sipe_purple_buddy_access_level_help_cb(PurpleBuddy *buddy,
 	 * Translators: replace with URL to localized page
 	 * If it doesn't exist copy the original URL
 	 */
-	purple_notify_uri(buddy->account->gc,
+	purple_notify_uri(purple_buddy_get_account(buddy)->gc,
 			  _("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
 }
 
@@ -580,12 +580,13 @@ static void sipe_purple_ask_access_domain_cb(PurpleConnection *gc,
 static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 						SIPE_UNUSED_PARAMETER gpointer parameter)
 {
-	PurpleConnection *gc = purple_account_get_connection(buddy->account);
+	PurpleAccount *account = purple_buddy_get_account(buddy);
+	PurpleConnection *gc = purple_account_get_connection(account);
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *g;
 	PurpleRequestField *f;
 #if PURPLE_VERSION_CHECK(3,0,0)
-	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_account(buddy->account);
+	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_account(account);
 #endif
 
 	fields = purple_request_fields_new();
@@ -629,7 +630,7 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 			      cpar, gc);
 	purple_request_cpar_unref(cpar);
 #else
-			      buddy->account, NULL, NULL, gc);
+			      account, NULL, NULL, gc);
 #endif
 }
 
@@ -703,7 +704,7 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 	SIPE_DEBUG_INFO("sipe_purple_buddy_copy_to_cb: copying %s to %s",
 			purple_buddy_get_name(buddy), group_name);
 
-	clone = purple_find_buddy_in_group(buddy->account,
+	clone = purple_find_buddy_in_group(purple_buddy_get_account(buddy),
 					   purple_buddy_get_name(buddy),
 					   group);
 	if (!clone) {
@@ -731,7 +732,7 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 							  TRUE);
 
 			/* update UI */
-			purple_prpl_got_user_status(clone->account,
+			purple_prpl_got_user_status(purple_buddy_get_account(clone),
 						    purple_buddy_get_name(clone),
 						    tmp,
 						    NULL);
@@ -757,7 +758,7 @@ static GList *sipe_purple_copy_to_menu(GList *menu,
 
 		if ((g_node->type != PURPLE_BLIST_GROUP_NODE) ||
 		    (group == gr_parent)                      ||
-		    purple_find_buddy_in_group(buddy->account,
+		    purple_find_buddy_in_group(purple_buddy_get_account(buddy),
 					       purple_buddy_get_name(buddy),
 					       group))
 			continue;
