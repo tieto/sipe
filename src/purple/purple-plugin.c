@@ -55,7 +55,6 @@
 #include "plugin.h"
 #include "request.h"
 #include "status.h"
-#include "version.h"
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -366,7 +365,11 @@ static void connect_to_core(PurpleConnection *gc,
 	if (get_dont_publish_flag(account))
 		SIPE_CORE_FLAG_SET(DONT_PUBLISH);
 
+#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
+	purple_connection_set_protocol_data(gc, sipe_public);
+#else
 	gc->proto_data = sipe_public;
+#endif
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
 		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
 	purple_connection_set_display_name(gc, sipe_public->sip_name);
@@ -471,7 +474,11 @@ static void sipe_purple_close(PurpleConnection *gc)
 			g_hash_table_destroy(purple_private->roomlist_map);
 		sipe_purple_chat_destroy_rejoin(purple_private);
 		g_free(purple_private);
+#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
+		purple_connection_set_protocol_data(gc, NULL);
+#else
 		gc->proto_data = NULL;
+#endif
 	}
 }
 

@@ -33,7 +33,6 @@
 #include "blist.h"
 #include "conversation.h"
 #include "server.h"
-#include "version.h"
 /* for ENOTCONN */
 #ifdef _WIN32
 #include "win32/win32dep.h"
@@ -134,7 +133,7 @@
 	(PURPLE_CONV_CHAT(((PurpleConversation *)s)))
 
 #if PURPLE_VERSION_CHECK(3,0,0)
-#define PURPLE_CONV_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) purple_conversation_get_connection(conv)->proto_data)
+#define PURPLE_CONV_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_conversation_get_connection(conv)))
 #else
 #define PURPLE_CONV_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) conv->account->gc->proto_data)
 #endif

@@ -30,7 +30,6 @@
 #include "notify.h"
 #include "privacy.h"
 #include "request.h"
-#include "version.h"
 
 #include "sipe-common.h"
 #include "sipe-backend.h"

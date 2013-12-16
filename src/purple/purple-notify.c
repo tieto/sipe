@@ -26,7 +26,6 @@
 
 #include "conversation.h"
 #include "notify.h"
-#include "version.h"
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
