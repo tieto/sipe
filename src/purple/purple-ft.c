@@ -58,6 +58,8 @@
 #define PURPLE_XFER_DATA                  xfer->data
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_account_get_connection(xfer->account)->proto_data)
 #define purple_xfer_get_fd(xfer)          xfer->fd
+#define purple_xfer_get_watcher(xfer)     xfer->watcher
+#define purple_xfer_set_watcher(xfer, w)  xfer->watcher = w
 #endif
 #define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) PURPLE_XFER_DATA)
 
@@ -142,9 +144,9 @@ ft_free_xfer_struct(PurpleXfer *xfer)
 	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
 
 	if (ft) {
-		if (xfer->watcher) {
-			purple_input_remove(xfer->watcher);
-			xfer->watcher = 0;
+		if (purple_xfer_get_watcher(xfer)) {
+			purple_input_remove(purple_xfer_get_watcher(xfer));
+			purple_xfer_set_watcher(xfer, 0);
 		}
 		sipe_core_ft_deallocate(ft);
 		PURPLE_XFER_DATA = NULL;
