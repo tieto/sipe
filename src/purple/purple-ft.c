@@ -50,18 +50,18 @@
 
 #include "purple-private.h"
 
-#define FT_TO_PURPLE_XFER                 ((PurpleXfer *) ft->backend_private)
+#define FT_TO_PURPLE_XFER                      ((PurpleXfer *) ft->backend_private)
 #if PURPLE_VERSION_CHECK(3,0,0)
-#define PURPLE_XFER_DATA                  purple_xfer_get_protocol_data(xfer)
-#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(purple_xfer_get_account(xfer))))
+#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(purple_xfer_get_account(xfer))))
 #else
-#define PURPLE_XFER_DATA                  xfer->data
-#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_account_get_connection(xfer->account)->proto_data)
-#define purple_xfer_get_fd(xfer)          xfer->fd
-#define purple_xfer_get_watcher(xfer)     xfer->watcher
-#define purple_xfer_set_watcher(xfer, w)  xfer->watcher = w
+#define purple_xfer_get_protocol_data(xfer)    xfer->data
+#define purple_xfer_set_protocol_data(xfer, d) xfer->data = d
+#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_account_get_connection(xfer->account)->proto_data)
+#define purple_xfer_get_fd(xfer)               xfer->fd
+#define purple_xfer_get_watcher(xfer)          xfer->watcher
+#define purple_xfer_set_watcher(xfer, w)       xfer->watcher = w
 #endif
-#define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) PURPLE_XFER_DATA)
+#define PURPLE_XFER_TO_SIPE_FILE_TRANSFER      ((struct sipe_file_transfer *) purple_xfer_get_protocol_data(xfer))
 
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
 			   const char *errmsg)
@@ -154,7 +154,7 @@ ft_free_xfer_struct(PurpleXfer *xfer)
 			purple_xfer_set_watcher(xfer, 0);
 		}
 		sipe_core_ft_deallocate(ft);
-		PURPLE_XFER_DATA = NULL;
+		purple_xfer_set_protocol_data(xfer, NULL);
 	}
 }
 
@@ -268,7 +268,7 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 
 	if (xfer) {
 		ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
-		PURPLE_XFER_DATA = ft;
+		purple_xfer_set_protocol_data(xfer, ft);
 
 		purple_xfer_set_filename(xfer, file_name);
 		purple_xfer_set_size(xfer, file_size);
@@ -350,7 +350,7 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 			struct sipe_file_transfer *ft = sipe_core_ft_allocate(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 
 			ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
-			PURPLE_XFER_DATA = ft;
+			purple_xfer_set_protocol_data(xfer, ft);
 
 			purple_xfer_set_init_fnc(xfer, ft_outgoing_init);
 			purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
