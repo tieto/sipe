@@ -190,7 +190,7 @@ tftp_incoming_stop(PurpleXfer *xfer)
 		/* We're done with this transfer */
 		ft_free_xfer_struct(xfer);
 	} else {
-		unlink(xfer->local_filename);
+		unlink(purple_xfer_get_local_filename(xfer));
 	}
 }
 
