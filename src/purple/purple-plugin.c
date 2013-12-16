@@ -371,13 +371,22 @@ static void connect_to_core(PurpleConnection *gc,
 	if (get_dont_publish_flag(account))
 		SIPE_CORE_FLAG_SET(DONT_PUBLISH);
 
-#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(3,0,0)
 	purple_connection_set_protocol_data(gc, sipe_public);
+	purple_connection_set_flags(gc,
+				    purple_connection_get_flags(gc) |
+				    PURPLE_CONNECTION_FLAG_HTML |
+				    PURPLE_CONNECTION_FLAG_FORMATTING_WBFO |
+				    PURPLE_CONNECTION_FLAG_NO_BGCOLOR |
+				    PURPLE_CONNECTION_FLAG_NO_FONTSIZE |
+				    PURPLE_CONNECTION_FLAG_NO_URLDESC |
+				    PURPLE_CONNECTION_FLAG_ALLOW_CUSTOM_SMILEY);
+
 #else
 	gc->proto_data = sipe_public;
-#endif
 	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
 		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
+#endif
 	purple_connection_set_display_name(gc, sipe_public->sip_name);
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
