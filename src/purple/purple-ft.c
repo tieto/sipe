@@ -180,7 +180,7 @@ static void
 tftp_incoming_start(PurpleXfer *xfer)
 {
 	sipe_core_tftp_incoming_start(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
-				      xfer->size);
+				      purple_xfer_get_size(xfer));
 }
 
 static void
@@ -223,7 +223,7 @@ tftp_outgoing_start(PurpleXfer *xfer)
 	(void) fcntl(purple_xfer_get_fd(xfer), F_SETFL, flags | O_NONBLOCK);
 
 	sipe_core_tftp_outgoing_start(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
-				      xfer->size);
+				      purple_xfer_get_size(xfer));
 }
 
 static void
