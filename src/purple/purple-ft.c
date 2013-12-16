@@ -52,16 +52,13 @@
 
 #define PURPLE_XFER                       ((PurpleXfer *) ft->backend_private)
 #if PURPLE_VERSION_CHECK(3,0,0)
-#define PURPLE_XFER_DATA                  xfer->proto_data
+#define PURPLE_XFER_DATA                  purple_xfer_get_protocol_data(xfer)
+#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(purple_xfer_get_account(xfer))))
 #else
 #define PURPLE_XFER_DATA                  xfer->data
-#endif
-#define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) PURPLE_XFER_DATA)
-#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
-#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(xfer->account)))
-#else
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_account_get_connection(xfer->account)->proto_data)
 #endif
+#define PURPLE_XFER_TO_SIPE_FILE_TRANSFER ((struct sipe_file_transfer *) PURPLE_XFER_DATA)
 
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
 			   const char *errmsg)
