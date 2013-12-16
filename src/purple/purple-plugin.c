@@ -542,7 +542,9 @@ static void sipe_purple_group_rename(PurpleConnection *gc,
 				     PurpleGroup *group,
 				     SIPE_UNUSED_PARAMETER GList *moved_buddies)
 {
-	sipe_core_group_rename(PURPLE_GC_TO_SIPE_CORE_PUBLIC, old_name, group->name);
+	sipe_core_group_rename(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			       old_name,
+			       purple_group_get_name(group));
 }
 
 static void sipe_purple_convo_closed(PurpleConnection *gc,
@@ -553,7 +555,8 @@ static void sipe_purple_convo_closed(PurpleConnection *gc,
 
 static void sipe_purple_group_remove(PurpleConnection *gc, PurpleGroup *group)
 {
-	sipe_core_group_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC, group->name);
+	sipe_core_group_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			       purple_group_get_name(group));
 }
 
 #if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)

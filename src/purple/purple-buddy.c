@@ -142,7 +142,7 @@ gchar *sipe_backend_buddy_get_local_alias(SIPE_UNUSED_PARAMETER struct sipe_core
 gchar* sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					 const sipe_backend_buddy who)
 {
-	return g_strdup(purple_buddy_get_group((PurpleBuddy*)who)->name);
+	return g_strdup(purple_group_get_name(purple_buddy_get_group((PurpleBuddy*)who)));
 }
 
 guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
@@ -426,7 +426,7 @@ void sipe_purple_add_buddy(PurpleConnection *gc,
 {
 	SIPE_DEBUG_INFO("sipe_purple_add_buddy[CB]: buddy:%s group:%s",
 			buddy ? purple_buddy_get_name(buddy) : "",
-			group ? group->name : "");
+			group ? purple_group_get_name(group) : "");
 
 	/* libpurple can call us with undefined buddy or group */
 	if (buddy && group) {
@@ -444,7 +444,7 @@ void sipe_purple_add_buddy(PurpleConnection *gc,
 
 			sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 					    purple_buddy_get_name(buddy),
-					    group->name);
+					    purple_group_get_name(group));
 		} else {
 			SIPE_DEBUG_ERROR_NOFORMAT("sipe_purple_add_buddy[CB]: buddy name is invalid for URI");
 			purple_blist_remove_buddy(buddy);
@@ -465,12 +465,12 @@ void sipe_purple_remove_buddy(PurpleConnection *gc,
 {
 	SIPE_DEBUG_INFO("sipe_purple_remove_buddy[CB]: buddy: '%s' group: '%s'",
 			buddy ? purple_buddy_get_name(buddy) : "",
-			group ? group->name : "");
+			group ? purple_group_get_name(group) : "");
 	if (!buddy) return;
 
 	sipe_core_buddy_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 			       purple_buddy_get_name(buddy),
-			       group ? group->name : NULL);
+			       group ? purple_group_get_name(group) : NULL);
 }
 
 void sipe_purple_group_buddy(PurpleConnection *gc,
@@ -710,7 +710,7 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 		clone = sipe_backend_buddy_add(sipe_public,
 					       purple_buddy_get_name(buddy),
 					       buddy->alias,
-					       group->name);
+					       purple_group_get_name(group));
 		if (clone) {
 			const gchar *tmp;
 			const gchar *key;
@@ -741,7 +741,7 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 	if (clone && group)
 		sipe_core_buddy_add(sipe_public,
 				    purple_buddy_get_name(clone),
-				    group->name);
+				    purple_group_get_name(group));
 }
 
 static GList *sipe_purple_copy_to_menu(GList *menu,
@@ -764,7 +764,8 @@ static GList *sipe_purple_copy_to_menu(GList *menu,
 
 		act = purple_menu_action_new(purple_group_get_name(group),
 					     PURPLE_CALLBACK(sipe_purple_buddy_copy_to_cb),
-					     group->name, NULL);
+					     (gpointer) purple_group_get_name(group),
+					     NULL);
 		menu_groups = g_list_prepend(menu_groups, act);
 	}
 
