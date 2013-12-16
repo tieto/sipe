@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-13 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -118,7 +118,7 @@ void sipe_purple_set_status(PurpleAccount *account,
 	if (!purple_status_is_active(status))
 		return;
 
-	if (account->gc) {
+	if (purple_account_get_connection(account)) {
 		const gchar *status_id = purple_status_get_id(status);
 		const gchar *note      = purple_status_get_attr_string(status,
 								       SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE);

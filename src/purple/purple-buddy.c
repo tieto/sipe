@@ -547,7 +547,7 @@ static void sipe_purple_buddy_access_level_help_cb(PurpleBuddy *buddy,
 	 * Translators: replace with URL to localized page
 	 * If it doesn't exist copy the original URL
 	 */
-	purple_notify_uri(purple_buddy_get_account(buddy)->gc,
+	purple_notify_uri(purple_account_get_connection(purple_buddy_get_account(buddy)),
 			  _("https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"));
 }
 
