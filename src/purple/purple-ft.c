@@ -50,7 +50,7 @@
 
 #include "purple-private.h"
 
-#define PURPLE_XFER                       ((PurpleXfer *) ft->backend_private)
+#define FT_TO_PURPLE_XFER                 ((PurpleXfer *) ft->backend_private)
 #if PURPLE_VERSION_CHECK(3,0,0)
 #define PURPLE_XFER_DATA                  purple_xfer_get_protocol_data(xfer)
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(purple_xfer_get_account(xfer))))
@@ -63,7 +63,7 @@
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
 			   const char *errmsg)
 {
-	PurpleXfer *xfer = PURPLE_XFER;
+	PurpleXfer *xfer = FT_TO_PURPLE_XFER;
  	purple_xfer_error(purple_xfer_get_type(xfer),
 			  xfer->account, xfer->who,
 			  errmsg);
@@ -76,7 +76,7 @@ const gchar *sipe_backend_ft_get_error(SIPE_UNUSED_PARAMETER struct sipe_file_tr
 
 void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 {
-	PurpleXfer *xfer = PURPLE_XFER;
+	PurpleXfer *xfer = FT_TO_PURPLE_XFER;
 	PurpleXferStatusType status = purple_xfer_get_status(xfer);
 
 	// If file transfer is not finished, cancel it
@@ -93,7 +93,7 @@ gssize sipe_backend_ft_read(struct sipe_file_transfer *ft,
 			    guchar *data,
 			    gsize size)
 {
-	gssize bytes_read = read(PURPLE_XFER->fd, data, size);
+	gssize bytes_read = read(FT_TO_PURPLE_XFER->fd, data, size);
 	if (bytes_read == 0) {
 		/* Sender canceled transfer before it was finished */
 		return -2;
@@ -110,7 +110,7 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 			     const guchar *data,
 			     gsize size)
 {
-	gssize bytes_written = write(PURPLE_XFER->fd, data, size);
+	gssize bytes_written = write(FT_TO_PURPLE_XFER->fd, data, size);
 	if (bytes_written == -1) {
 		if (errno == EAGAIN)
 			return 0;
@@ -122,12 +122,12 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft)
 {
-	purple_xfer_cancel_local(PURPLE_XFER);
+	purple_xfer_cancel_local(FT_TO_PURPLE_XFER);
 }
 
 void sipe_backend_ft_cancel_remote(struct sipe_file_transfer *ft)
 {
-	purple_xfer_cancel_remote(PURPLE_XFER);
+	purple_xfer_cancel_remote(FT_TO_PURPLE_XFER);
 }
 
 static void
@@ -270,11 +270,11 @@ connect_cb(gpointer data, gint fd, SIPE_UNUSED_PARAMETER const gchar *error_mess
 	struct sipe_file_transfer *ft = data;
 
 	if (fd < 0) {
-		purple_xfer_cancel_local(PURPLE_XFER);
+		purple_xfer_cancel_local(FT_TO_PURPLE_XFER);
 		return;
 	}
 
-	purple_xfer_start(PURPLE_XFER, fd, NULL, 0);
+	purple_xfer_start(FT_TO_PURPLE_XFER, fd, NULL, 0);
 }
 
 void
@@ -286,12 +286,12 @@ sipe_backend_ft_start(struct sipe_file_transfer *ft, struct sipe_backend_fd *fd,
 		 * If we want to send file with Sender-Connect = TRUE negotiated,
 		 * we have to open the connection ourselves and pass the file
 		 * descriptor to purple_xfer_start. */
-		purple_proxy_connect(NULL, PURPLE_XFER->account, ip, port,
+		purple_proxy_connect(NULL, FT_TO_PURPLE_XFER->account, ip, port,
 				     connect_cb, ft);
 		return;
 	}
 
-	purple_xfer_start(PURPLE_XFER, fd ? fd->fd : -1, ip, port);
+	purple_xfer_start(FT_TO_PURPLE_XFER, fd ? fd->fd : -1, ip, port);
 }
 
 void sipe_purple_ft_send_file(PurpleConnection *gc,
@@ -338,7 +338,7 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 gboolean
 sipe_backend_ft_is_incoming(struct sipe_file_transfer *ft)
 {
-	return purple_xfer_get_type(PURPLE_XFER) == PURPLE_XFER_RECEIVE;
+	return purple_xfer_get_type(FT_TO_PURPLE_XFER) == PURPLE_XFER_RECEIVE;
 }
 
 /*
