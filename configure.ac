@@ -333,44 +333,8 @@ AS_IF([test "x$enable_purple" != xno],
 		 PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion purple | cut -d. -f 1`
 		 AC_SUBST(PURPLE_MAJOR_VERSION)
 
-		 dnl let user now if he has a 32- and 64-bit header conflict...
-		 AC_MSG_CHECKING([for 32- and 64-bit header conflicts])
 		 ac_save_CFLAGS=$CFLAGS
 		 CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
-		 AC_COMPILE_IFELSE(
-			[AC_LANG_PROGRAM([[
-#include <unistd.h>
-#include <glib.h>
-#include <cipher.h>
-#include <version.h>
-
-/* Compile some code that has caused trouble in the past */
-static void testfunc(unsigned long len)
-{
-  PurpleCipherContext *rc4 = NULL;
-  guchar *plaintext = NULL;
-  gsize plaintext_length = 0;
-  guchar *encrypted_text = NULL;
-  gsize dummy = 0;
-  purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(len));
-  purple_cipher_context_encrypt(rc4, plaintext, plaintext_length,
-                                encrypted_text,
-#if PURPLE_VERSION_CHECK(3,0,0)
-                                dummy);
-#else
-                                &dummy);
-#endif
-}
-					]],
-					[[testfunc(16);]])],
-			[AC_MSG_RESULT(none)],
-			[AC_MSG_FAILURE([conflicts found.
-
-Check that you have the correct glib/libpurple headers installed for
-your architecture or set GLIB_CFLAGS/PURPLE_CFLAGS to override the
-system defaults.
-])
-			])
 
 		 dnl on windows
 		 dnl test program needs to be in the same location as libpurple
