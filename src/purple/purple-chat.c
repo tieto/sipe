@@ -30,7 +30,6 @@
 
 #include <glib.h>
 
-#include "blist.h"
 #include "conversation.h"
 #include "server.h"
 /* for ENOTCONN */
@@ -38,6 +37,13 @@
 #include "win32/win32dep.h"
 #else
 #include <errno.h>
+#endif
+
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "buddylist.h"
+#else
+#include "blist.h"
 #endif
 
 #include "sipe-common.h"

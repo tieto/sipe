@@ -35,12 +35,18 @@
 
 #include "sipe-common.h"
 
-#include "circbuffer.h"
 #include "connection.h"
 #include "eventloop.h"
 #include "network.h"
 #include "proxy.h"
 #include "sslconn.h"
+
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "circularbuffer.h"
+#else
+#include "circbuffer.h"
+#endif
 
 #ifdef _WIN32
 /* wrappers for write() & friends for socket handling */

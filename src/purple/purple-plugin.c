@@ -44,7 +44,6 @@
 #endif
 
 #include "accountopt.h"
-#include "blist.h"
 #include "connection.h"
 #include "core.h"
 #include "dnssrv.h"
@@ -55,6 +54,13 @@
 #include "plugin.h"
 #include "request.h"
 #include "status.h"
+
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "buddylist.h"
+#else
+#include "blist.h"
+#endif
 
 #include "sipe-backend.h"
 #include "sipe-core.h"

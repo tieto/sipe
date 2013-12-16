@@ -26,10 +26,16 @@
 
 #include <glib.h>
 
-#include "blist.h"
 #include "notify.h"
-#include "privacy.h"
 #include "request.h"
+
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "buddylist.h"
+#else
+#include "blist.h"
+#include "privacy.h"
+#endif
 
 #include "sipe-common.h"
 #include "sipe-backend.h"

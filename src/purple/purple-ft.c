@@ -32,7 +32,12 @@
 
 #include <glib.h>
 
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "xfer.h"
+#else
 #include "ft.h"
+#endif
 
 #ifdef _WIN32
 /* wrappers for write() & friends for socket handling */
