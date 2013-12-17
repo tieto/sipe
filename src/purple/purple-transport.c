@@ -70,7 +70,11 @@ struct sipe_transport_purple {
 	transport_error_cb *error;
 	PurpleSslConnection *gsc;
 	PurpleProxyConnectData *proxy;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	PurpleCircularBuffer *transmit_buffer;
+#else
 	PurpleCircBuffer *transmit_buffer;
+#endif
 	guint transmit_handler;
 	guint receive_handler;
 	int socket;
@@ -241,7 +245,11 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 	transport->connected        = setup->connected;
 	transport->input            = setup->input;
 	transport->error            = setup->error;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	transport->transmit_buffer  = purple_circular_buffer_new(0);
+#else
 	transport->transmit_buffer  = purple_circ_buffer_new(0);
+#endif
 	transport->is_valid         = TRUE;
 
 	purple_private->transports = g_slist_prepend(purple_private->transports,
@@ -323,7 +331,11 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 		purple_input_remove(transport->receive_handler);
 
 	if (transport->transmit_buffer)
+#if PURPLE_VERSION_CHECK(3,0,0)
+		g_object_unref(transport->transmit_buffer);
+#else
 		purple_circ_buffer_destroy(transport->transmit_buffer);
+#endif
 	g_free(transport->public.buffer);
 
 	/* defer deletion of transport data structure to idle callback */
@@ -344,14 +356,26 @@ static gboolean transport_write(struct sipe_transport_purple *transport)
 {
 	gsize max_write;
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+	max_write = purple_circular_buffer_get_max_read(transport->transmit_buffer);
+#else
 	max_write = purple_circ_buffer_get_max_read(transport->transmit_buffer);
+#endif
 	if (max_write > 0) {
 		gssize written = transport->gsc ?
 			(gssize) purple_ssl_write(transport->gsc,
+#if PURPLE_VERSION_CHECK(3,0,0)
+						  purple_circular_buffer_get_output(transport->transmit_buffer),
+#else
 						  transport->transmit_buffer->outptr,
+#endif
 						  max_write) :
 			write(transport->socket,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      purple_circular_buffer_get_output(transport->transmit_buffer),
+#else
 			      transport->transmit_buffer->outptr,
+#endif
 			      max_write);
 
 		if (written < 0 && errno == EAGAIN) {
@@ -363,7 +387,11 @@ static gboolean transport_write(struct sipe_transport_purple *transport)
 			return FALSE;
 		}
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+		purple_circular_buffer_mark_read(transport->transmit_buffer,
+#else
 		purple_circ_buffer_mark_read(transport->transmit_buffer,
+#endif
 					     written);
 
 	} else {
@@ -392,7 +420,11 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
 
 	/* add packet to circular buffer */
+#if PURPLE_VERSION_CHECK(3,0,0)
+	purple_circular_buffer_append(transport->transmit_buffer,
+#else
 	purple_circ_buffer_append(transport->transmit_buffer,
+#endif
 				  buffer, strlen(buffer));
 
 	/* initiate transmission */
@@ -408,7 +440,12 @@ void sipe_backend_transport_flush(struct sipe_transport_connection *conn)
 {
 	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
 
-	while (   purple_circ_buffer_get_max_read(transport->transmit_buffer)
+	while (
+#if PURPLE_VERSION_CHECK(3,0,0)
+		purple_circular_buffer_get_max_read(transport->transmit_buffer)
+#else
+		purple_circ_buffer_get_max_read(transport->transmit_buffer)
+#endif
 	       && transport_write(transport));
 }
 
