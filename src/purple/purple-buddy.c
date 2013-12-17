@@ -31,10 +31,25 @@
 
 #include "version.h"
 #if PURPLE_VERSION_CHECK(3,0,0)
+#include "account.h"
 #include "buddylist.h"
 #else
 #include "blist.h"
 #include "privacy.h"
+#define purple_account_privacy_check(a, n)             purple_privacy_check(a, n)
+#define purple_account_privacy_deny_add(a, n, l)       purple_privacy_deny_add(a, n, l)
+#define purple_account_privacy_deny_remove(a, n, l)    purple_privacy_deny_remove(a, n, l)
+#define purple_blist_find_buddies(a, n)                purple_find_buddies(a, n)
+#define purple_blist_find_buddy(a, n)                  purple_find_buddy(a, n)
+#define purple_blist_find_buddy_in_group(a, n, g)      purple_find_buddy_in_group(a, n, g)
+#define purple_blist_find_group(n)                     purple_find_group(n)
+#define purple_buddy_set_local_alias(b, n)             purple_blist_alias_buddy(b, n)
+#define purple_buddy_set_server_alias(b, n)            purple_blist_server_alias_buddy(b, n)
+#define purple_buddy_set_name(b, n)                    purple_blist_rename_buddy(b, n)
+#define purple_group_set_name(g, n)                    purple_blist_rename_group(g, n)
+#define purple_notify_user_info_add_pair_html(i, k, v) purple_notify_user_info_add_pair(i, k, v)
+#define PURPLE_IS_BUDDY(b)                             PURPLE_BLIST_NODE_IS_BUDDY(b)
+#define PURPLE_IS_GROUP(b)                             PURPLE_BLIST_NODE_IS_GROUP(b)
 #endif
 
 #include "sipe-common.h"
@@ -86,16 +101,16 @@ sipe_backend_buddy sipe_backend_buddy_find(struct sipe_core_public *sipe_public,
 
 	if (group_name)
 	{
-		purple_group = purple_find_group(group_name);
+		purple_group = purple_blist_find_group(group_name);
 		if (!purple_group)
 			return NULL;
 
-		return purple_find_buddy_in_group(purple_private->account,
-						  buddy_name,
-						  purple_group);
+		return purple_blist_find_buddy_in_group(purple_private->account,
+							buddy_name,
+							purple_group);
 	} else {
-		return purple_find_buddy(purple_private->account,
-					 buddy_name);
+		return purple_blist_find_buddy(purple_private->account,
+					       buddy_name);
 	}
 }
 
@@ -111,7 +126,7 @@ GSList* sipe_backend_buddy_find_all(struct sipe_core_public *sipe_public,
 		return NULL;
 	}
 
-	return purple_find_buddies(purple_private->account, buddy_name);
+	return purple_blist_find_buddies(purple_private->account, buddy_name);
 }
 
 gchar* sipe_backend_buddy_get_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -136,12 +151,12 @@ gchar *sipe_backend_buddy_get_local_alias(SIPE_UNUSED_PARAMETER struct sipe_core
 					  const sipe_backend_buddy who)
 {
 	return g_strdup(
-#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
-		purple_buddy_get_local_buddy_alias
+#if PURPLE_VERSION_CHECK(2,6,0)
+		purple_buddy_get_local_buddy_alias(who)
 #else
-		purple_buddy_get_local_alias
+		purple_buddy_get_local_alias(who)
 #endif
-		(who));
+		);
 }
 
 gchar* sipe_backend_buddy_get_group_name(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -154,7 +169,7 @@ guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
 				    const gchar *uri)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	PurpleBuddy *pbuddy = purple_find_buddy(purple_private->account, uri);
+	PurpleBuddy *pbuddy = purple_blist_find_buddy(purple_private->account, uri);
 	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
 	const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
 	return(sipe_purple_token_to_activity(purple_status_get_id(pstatus)));
@@ -164,14 +179,14 @@ void sipe_backend_buddy_set_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public 
 				  const sipe_backend_buddy who,
 				  const gchar *alias)
 {
-	purple_blist_alias_buddy(who, alias);
+	purple_buddy_set_local_alias(who, alias);
 }
 
 void sipe_backend_buddy_set_server_alias(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 					 const sipe_backend_buddy who,
 					 const gchar *alias)
 {
-	purple_blist_server_alias_buddy(who, alias);
+	purple_buddy_set_server_alias(who, alias);
 }
 
 gchar* sipe_backend_buddy_get_string(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -212,7 +227,7 @@ sipe_backend_buddy sipe_backend_buddy_add(struct sipe_core_public *sipe_public,
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleBuddy *b;
-	PurpleGroup *purple_group = purple_find_group(groupname);
+	PurpleGroup *purple_group = purple_blist_find_group(groupname);
 
 	if (!purple_group)
 		return NULL;
@@ -270,7 +285,7 @@ gboolean sipe_backend_buddy_is_blocked(struct sipe_core_public *sipe_public,
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
-	return !purple_privacy_check(purple_private->account, who);
+	return(!purple_account_privacy_check(purple_private->account, who));
 }
 
 void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
@@ -280,9 +295,9 @@ void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
 	if (blocked) {
-		purple_privacy_deny_add(purple_private->account, who, TRUE);
+		purple_account_privacy_deny_add(purple_private->account, who, TRUE);
 	} else {
-		purple_privacy_deny_remove(purple_private->account, who, TRUE);
+		purple_account_privacy_deny_remove(purple_private->account, who, TRUE);
 	}
 
 	/* stupid workaround to make pidgin re-render screen to reflect our changes */
@@ -339,7 +354,7 @@ const gchar *sipe_backend_buddy_get_photo_hash(struct sipe_core_public *sipe_pub
 gboolean sipe_backend_buddy_group_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				      const gchar *group_name)
 {
-	PurpleGroup * purple_group = purple_find_group(group_name);
+	PurpleGroup * purple_group = purple_blist_find_group(group_name);
 	if (!purple_group) {
 		purple_group = purple_group_new(group_name);
 		purple_blist_add_group(purple_group, NULL);
@@ -352,16 +367,16 @@ gboolean sipe_backend_buddy_group_rename(SIPE_UNUSED_PARAMETER struct sipe_core_
 					 const gchar *old_name,
 					 const gchar *new_name)
 {
-	PurpleGroup *purple_group = purple_find_group(old_name);
+	PurpleGroup *purple_group = purple_blist_find_group(old_name);
 	if (purple_group)
-		purple_blist_rename_group(purple_group, new_name);
+		purple_group_set_name(purple_group, new_name);
 	return(purple_group != NULL);
 }
 
 void sipe_backend_buddy_group_remove(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 				     const gchar *group_name)
 {
-	PurpleGroup *purple_group = purple_find_group(group_name);
+	PurpleGroup *purple_group = purple_blist_find_group(group_name);
 	if (purple_group)
 		purple_blist_remove_group(purple_group);
 }
@@ -377,14 +392,9 @@ void sipe_backend_buddy_info_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *
 				 const gchar *value)
 {
 	if (info) {
-#if PURPLE_VERSION_CHECK(3,0,0)
-		purple_notify_user_info_add_pair_html
-#else
-		purple_notify_user_info_add_pair
-#endif
-			((PurpleNotifyUserInfo *) info,
-			 buddy_info_description(key),
-			 value);
+		purple_notify_user_info_add_pair_html((PurpleNotifyUserInfo *) info,
+						      buddy_info_description(key),
+						      value);
 	}
 }
 
@@ -413,12 +423,9 @@ void sipe_backend_buddy_tooltip_add(SIPE_UNUSED_PARAMETER struct sipe_core_publi
 				    const gchar *description,
 				    const gchar *value)
 {
-#if PURPLE_VERSION_CHECK(3,0,0)
-	purple_notify_user_info_add_pair_html
-#else
-	purple_notify_user_info_add_pair
-#endif
-		((PurpleNotifyUserInfo *) tooltip, description, value);
+	purple_notify_user_info_add_pair_html((PurpleNotifyUserInfo *) tooltip,
+					      description,
+					      value);
 }
 
 void sipe_purple_add_buddy(PurpleConnection *gc,
@@ -444,7 +451,7 @@ void sipe_purple_add_buddy(PurpleConnection *gc,
 		g_free(buddy_name);
 
 		if (uri) {
-			purple_blist_rename_buddy(buddy, uri);
+			purple_buddy_set_name(buddy, uri);
 			g_free(uri);
 
 			sipe_core_buddy_add(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
@@ -701,21 +708,25 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 	PurpleGroup *group;
 	PurpleBuddy *clone;
 
-	g_return_if_fail(PURPLE_BLIST_NODE_IS_BUDDY(node));
+	g_return_if_fail(PURPLE_IS_BUDDY(node));
 
 	sipe_public = PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC;
-	group       = purple_find_group(group_name);
+	group       = purple_blist_find_group(group_name);
 
 	SIPE_DEBUG_INFO("sipe_purple_buddy_copy_to_cb: copying %s to %s",
 			purple_buddy_get_name(buddy), group_name);
 
-	clone = purple_find_buddy_in_group(purple_buddy_get_account(buddy),
-					   purple_buddy_get_name(buddy),
-					   group);
+	clone = purple_blist_find_buddy_in_group(purple_buddy_get_account(buddy),
+						 purple_buddy_get_name(buddy),
+						 group);
 	if (!clone) {
 		clone = sipe_backend_buddy_add(sipe_public,
 					       purple_buddy_get_name(buddy),
+#if PURPLE_VERSION_CHECK(3,0,0)
+					       purple_buddy_get_local_alias(buddy),
+#else
 					       buddy->alias,
+#endif
 					       purple_group_get_name(group));
 		if (clone) {
 			const gchar *tmp;
@@ -723,7 +734,7 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 			const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
 
 			tmp = purple_buddy_get_server_alias(buddy);
-			if (tmp) purple_blist_server_alias_buddy(clone, tmp);
+			if (tmp) purple_buddy_set_server_alias(clone, tmp);
 
 			key = buddy_info_property(SIPE_BUDDY_INFO_EMAIL);
 			tmp = purple_blist_node_get_string(&buddy->node, key);
@@ -761,11 +772,11 @@ static GList *sipe_purple_copy_to_menu(GList *menu,
 		PurpleGroup *group = (PurpleGroup *)g_node;
 		PurpleMenuAction *act;
 
-		if ((g_node->type != PURPLE_BLIST_GROUP_NODE) ||
-		    (group == gr_parent)                      ||
-		    purple_find_buddy_in_group(purple_buddy_get_account(buddy),
-					       purple_buddy_get_name(buddy),
-					       group))
+		if ((PURPLE_IS_GROUP(g_node)) ||
+		    (group == gr_parent)      ||
+		    purple_blist_find_buddy_in_group(purple_buddy_get_account(buddy),
+						     purple_buddy_get_name(buddy),
+						     group))
 			continue;
 
 		act = purple_menu_action_new(purple_group_get_name(group),
