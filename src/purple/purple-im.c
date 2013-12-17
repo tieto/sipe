@@ -66,7 +66,7 @@ void sipe_backend_im_topic(struct sipe_core_public *sipe_public,
 	 * message would be lost.
 	 */
 #if PURPLE_VERSION_CHECK(3,0,0)
-		conv = (PurpleConversation *) purple_conversations_find_im_with_account(
+	conv = (PurpleConversation *) purple_conversations_find_im_with_account(
 #else
 	conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY,
 #endif
