@@ -32,7 +32,12 @@
 void sipe_backend_connection_completed(struct sipe_core_public *sipe_public)
 {
 	purple_connection_set_state(sipe_public->backend_private->gc,
-				    PURPLE_CONNECTED);
+#if PURPLE_VERSION_CHECK(3,0,0)
+				    PURPLE_CONNECTION_CONNECTED
+#else
+				    PURPLE_CONNECTED
+#endif
+		);
 }
 
 static const guint map[SIPE_CONNECTION_ERROR_LAST] = {
