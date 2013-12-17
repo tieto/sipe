@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,6 +29,11 @@
 #include <glib.h>
 
 #include "server.h"
+
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "conversations.h"
+#endif
 
 #include "purple-private.h"
 
@@ -60,11 +65,19 @@ void sipe_backend_im_topic(struct sipe_core_public *sipe_public,
 	 * Ensure we have an open conversation with the buddy, otherwise
 	 * message would be lost.
 	 */
+#if PURPLE_VERSION_CHECK(3,0,0)
+		conv = (PurpleConversation *) purple_conversations_find_im_with_account(
+#else
 	conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY,
+#endif
 						     with,
 						     account);
 	if (!conv)
+#if PURPLE_VERSION_CHECK(3,0,0)
+		conv = (PurpleConversation *) purple_im_conversation_new(
+#else
 		conv = purple_conversation_new(PURPLE_CONV_TYPE_IM,
+#endif
 					       account,
 					       with);
 
