@@ -58,6 +58,7 @@
 #include "version.h"
 #if PURPLE_VERSION_CHECK(3,0,0)
 #include "buddylist.h"
+#define PURPLE_TYPE_STRING G_TYPE_STRING
 #else
 #include "blist.h"
 #endif
@@ -249,9 +250,20 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 static GList *sipe_purple_blist_node_menu(PurpleBlistNode *node)
 {
-	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
+#if PURPLE_VERSION_CHECK(3,0,0)
+	if (PURPLE_IS_BUDDY(node))
+#else
+	if (PURPLE_BLIST_NODE_IS_BUDDY(node))
+#endif
+	{
 		return sipe_purple_buddy_menu((PurpleBuddy *) node);
-	} else if(PURPLE_BLIST_NODE_IS_CHAT(node)) {
+	} else
+#if PURPLE_VERSION_CHECK(3,0,0)
+	if (PURPLE_IS_CHAT(node))
+#else
+	if (PURPLE_BLIST_NODE_IS_CHAT(node))
+#endif
+	{
 		return sipe_purple_chat_menu((PurpleChat *)node);
 	} else {
 		return NULL;
@@ -508,9 +520,20 @@ static int sipe_purple_send_im(PurpleConnection *gc,
 
 static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 					    const char *who,
-					    PurpleTypingState state)
+#if PURPLE_VERSION_CHECK(3,0,0)
+					    PurpleIMTypingState state
+#else
+					    PurpleTypingState state
+#endif
+	)
 {
-	gboolean typing = (state == PURPLE_TYPING);
+	gboolean typing = (state ==
+#if PURPLE_VERSION_CHECK(3,0,0)
+			   PURPLE_IM_TYPING
+#else
+			   PURPLE_TYPING
+#endif
+		);
 
 	/* only enable this debug output while testing
 	   SIPE_DEBUG_INFO("sipe_purple_send_typing: '%s' state %d", who, state); */
@@ -528,7 +551,13 @@ static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 	 *
 	 * Work around this by filtering out PURPLE_NOT_TYPING events.
 	 */
-	if (state != PURPLE_NOT_TYPING)
+	if (state !=
+#if PURPLE_VERSION_CHECK(3,0,0)
+	    PURPLE_IM_NOT_TYPING
+#else
+	    PURPLE_NOT_TYPING
+#endif
+		)
 		sipe_core_user_feedback_typing(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 					       who,
 					       typing);
