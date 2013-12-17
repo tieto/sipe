@@ -86,7 +86,11 @@ const gchar *sipe_backend_ft_get_error(SIPE_UNUSED_PARAMETER struct sipe_file_tr
 void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 {
 	PurpleXfer *xfer = FT_TO_PURPLE_XFER;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	PurpleXferStatus status = purple_xfer_get_status(xfer);
+#else
 	PurpleXferStatusType status = purple_xfer_get_status(xfer);
+#endif
 
 	// If file transfer is not finished, cancel it
 	if (   status != PURPLE_XFER_STATUS_DONE
