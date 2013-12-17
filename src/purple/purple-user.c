@@ -37,7 +37,13 @@ void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	serv_got_typing(purple_private->gc, from,
-			SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
+			SIPE_TYPING_RECV_TIMEOUT,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			PURPLE_IM_TYPING
+#else
+			PURPLE_TYPING
+#endif
+		);
 }
 
 void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,
