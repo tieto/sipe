@@ -35,8 +35,20 @@
 #include "version.h"
 #if PURPLE_VERSION_CHECK(3,0,0)
 #include "xfer.h"
+#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(purple_xfer_get_account(xfer))))
 #else
 #include "ft.h"
+#define PurpleXferStatus                       PurpleXferStatusType
+#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_account_get_connection(xfer->account)->proto_data)
+#define PURPLE_XFER_TYPE_RECEIVE               PURPLE_XFER_RECEIVE
+#define PURPLE_XFER_TYPE_SEND                  PURPLE_XFER_SEND
+#define purple_xfer_get_fd(xfer)               xfer->fd
+#define purple_xfer_get_protocol_data(xfer)    xfer->data
+#define purple_xfer_get_status(xfer)           purple_xfer_get_status(xfer)
+#define purple_xfer_get_xfer_type(xfer)        purple_xfer_get_type(xfer)
+#define purple_xfer_get_watcher(xfer)          xfer->watcher
+#define purple_xfer_set_protocol_data(xfer, d) xfer->data = d
+#define purple_xfer_set_watcher(xfer, w)       xfer->watcher = w
 #endif
 
 #ifdef _WIN32
@@ -51,28 +63,13 @@
 #include "purple-private.h"
 
 #define FT_TO_PURPLE_XFER                      ((PurpleXfer *) ft->backend_private)
-#if PURPLE_VERSION_CHECK(3,0,0)
-#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(purple_xfer_get_account(xfer))))
-#else
-#define purple_xfer_get_protocol_data(xfer)    xfer->data
-#define purple_xfer_set_protocol_data(xfer, d) xfer->data = d
-#define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_account_get_connection(xfer->account)->proto_data)
-#define purple_xfer_get_fd(xfer)               xfer->fd
-#define purple_xfer_get_watcher(xfer)          xfer->watcher
-#define purple_xfer_set_watcher(xfer, w)       xfer->watcher = w
-#endif
 #define PURPLE_XFER_TO_SIPE_FILE_TRANSFER      ((struct sipe_file_transfer *) purple_xfer_get_protocol_data(xfer))
 
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
 			   const char *errmsg)
 {
 	PurpleXfer *xfer = FT_TO_PURPLE_XFER;
-	purple_xfer_error(
-#if PURPLE_VERSION_CHECK(3,0,0)
-			  purple_xfer_get_xfer_type(xfer),
-#else
-			  purple_xfer_get_type(xfer),
-#endif
+	purple_xfer_error(purple_xfer_get_xfer_type(xfer),
 			  purple_xfer_get_account(xfer),
 			  purple_xfer_get_remote_user(xfer),
 			  errmsg);
@@ -86,11 +83,7 @@ const gchar *sipe_backend_ft_get_error(SIPE_UNUSED_PARAMETER struct sipe_file_tr
 void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 {
 	PurpleXfer *xfer = FT_TO_PURPLE_XFER;
-#if PURPLE_VERSION_CHECK(3,0,0)
 	PurpleXferStatus status = purple_xfer_get_status(xfer);
-#else
-	PurpleXferStatusType status = purple_xfer_get_status(xfer);
-#endif
 
 	// If file transfer is not finished, cancel it
 	if (   status != PURPLE_XFER_STATUS_DONE
@@ -165,11 +158,7 @@ ft_free_xfer_struct(PurpleXfer *xfer)
 static void
 ft_request_denied(PurpleXfer *xfer)
 {
-#if PURPLE_VERSION_CHECK(3,0,0)
 	if (purple_xfer_get_xfer_type(xfer) == PURPLE_XFER_TYPE_RECEIVE)
-#else
-	if (purple_xfer_get_type(xfer)      == PURPLE_XFER_RECEIVE)
-#endif
 		sipe_core_ft_cancel(PURPLE_XFER_TO_SIPE_FILE_TRANSFER);
 	ft_free_xfer_struct(xfer);
 }
@@ -263,11 +252,7 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 	PurpleXfer *xfer;
 
 	xfer = purple_xfer_new(purple_private->account,
-#if PURPLE_VERSION_CHECK(3,0,0)
 			       PURPLE_XFER_TYPE_RECEIVE,
-#else
-			       PURPLE_XFER_RECEIVE,
-#endif
 			       who);
 
 	if (xfer) {
@@ -343,11 +328,7 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 
 	if (PURPLE_CONNECTION_IS_VALID(gc)) {
 		xfer = purple_xfer_new(purple_connection_get_account(gc),
-#if PURPLE_VERSION_CHECK(3,0,0)
 				       PURPLE_XFER_TYPE_SEND,
-#else
-				       PURPLE_XFER_SEND,
-#endif
 				       who);
 
 		if (xfer) {
@@ -372,11 +353,7 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 gboolean
 sipe_backend_ft_is_incoming(struct sipe_file_transfer *ft)
 {
-#if PURPLE_VERSION_CHECK(3,0,0)
 	return(purple_xfer_get_xfer_type(FT_TO_PURPLE_XFER) == PURPLE_XFER_TYPE_RECEIVE);
-#else
-	return(purple_xfer_get_type(FT_TO_PURPLE_XFER)      == PURPLE_XFER_RECEIVE);
-#endif
 }
 
 /*

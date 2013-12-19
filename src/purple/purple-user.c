@@ -27,6 +27,11 @@
 
 #include "purple-private.h"
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+#else
+#define PURPLE_IM_TYPING PURPLE_TYPING
+#endif
+
 #include "sipe-backend.h"
 #include "sipe-core.h"
 
@@ -38,12 +43,7 @@ void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	serv_got_typing(purple_private->gc, from,
 			SIPE_TYPING_RECV_TIMEOUT,
-#if PURPLE_VERSION_CHECK(3,0,0)
-			PURPLE_IM_TYPING
-#else
-			PURPLE_TYPING
-#endif
-		);
+			PURPLE_IM_TYPING);
 }
 
 void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,

@@ -61,6 +61,22 @@
 #define PURPLE_TYPE_STRING G_TYPE_STRING
 #else
 #include "blist.h"
+#define PurpleIMTypingState                           PurpleTypingState
+#define PURPLE_CONNECTION_FLAG_ALLOW_CUSTOM_SMILEY    PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY
+#define PURPLE_CONNECTION_FLAG_FORMATTING_WBFO        PURPLE_CONNECTION_FORMATTING_WBFO
+#define PURPLE_CONNECTION_FLAG_HTML                   PURPLE_CONNECTION_HTML
+#define PURPLE_CONNECTION_FLAG_NO_BGCOLOR             PURPLE_CONNECTION_NO_BGCOLOR
+#define PURPLE_CONNECTION_FLAG_NO_FONTSIZE            PURPLE_CONNECTION_NO_FONTSIZE
+#define PURPLE_CONNECTION_FLAG_NO_URLDESC             PURPLE_CONNECTION_NO_URLDESC
+#define PURPLE_IS_BUDDY(n)                            PURPLE_BLIST_NODE_IS_BUDDY(n)
+#define PURPLE_IS_CHAT(n)                             PURPLE_BLIST_NODE_IS_CHAT(n)
+#define PURPLE_IM_TYPING                              PURPLE_TYPING
+#define PURPLE_IM_NOT_TYPING                          PURPLE_NOT_TYPING
+#define purple_account_option_string_set_masked(o, f) purple_account_option_set_masked(o, f)
+#define purple_connection_error(g, e, m)              purple_connection_error_reason(g, e, m)
+#define purple_connection_get_flags(gc)               0
+#define purple_connection_set_protocol_data(gc, p)    gc->proto_data = p
+#define purple_connection_set_flags(gc, f)            gc->flags |= f
 #endif
 
 #include "sipe-backend.h"
@@ -250,19 +266,11 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 static GList *sipe_purple_blist_node_menu(PurpleBlistNode *node)
 {
-#if PURPLE_VERSION_CHECK(3,0,0)
 	if (PURPLE_IS_BUDDY(node))
-#else
-	if (PURPLE_BLIST_NODE_IS_BUDDY(node))
-#endif
 	{
 		return sipe_purple_buddy_menu((PurpleBuddy *) node);
 	} else
-#if PURPLE_VERSION_CHECK(3,0,0)
 	if (PURPLE_IS_CHAT(node))
-#else
-	if (PURPLE_BLIST_NODE_IS_CHAT(node))
-#endif
 	{
 		return sipe_purple_chat_menu((PurpleChat *)node);
 	} else {
@@ -361,14 +369,9 @@ static void connect_to_core(PurpleConnection *gc,
 	g_strfreev(username_split);
 
 	if (!sipe_public) {
-#if PURPLE_VERSION_CHECK(3,0,0)
-		purple_connection_error(
-#else
-		purple_connection_error_reason(
-#endif
-					       gc,
-					       PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
-					       errmsg);
+		purple_connection_error(gc,
+					PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
+					errmsg);
 		return;
 	}
 
@@ -383,7 +386,6 @@ static void connect_to_core(PurpleConnection *gc,
 	if (get_dont_publish_flag(account))
 		SIPE_CORE_FLAG_SET(DONT_PUBLISH);
 
-#if PURPLE_VERSION_CHECK(3,0,0)
 	purple_connection_set_protocol_data(gc, sipe_public);
 	purple_connection_set_flags(gc,
 				    purple_connection_get_flags(gc) |
@@ -393,12 +395,6 @@ static void connect_to_core(PurpleConnection *gc,
 				    PURPLE_CONNECTION_FLAG_NO_FONTSIZE |
 				    PURPLE_CONNECTION_FLAG_NO_URLDESC |
 				    PURPLE_CONNECTION_FLAG_ALLOW_CUSTOM_SMILEY);
-
-#else
-	gc->proto_data = sipe_public;
-	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
-		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
-#endif
 	purple_connection_set_display_name(gc, sipe_public->sip_name);
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
@@ -425,12 +421,7 @@ static void password_required_cb(PurpleConnection *gc,
         if (!PURPLE_CONNECTION_IS_VALID(gc))
                 return;
 
-#if PURPLE_VERSION_CHECK(3,0,0)
-	purple_connection_error(
-#else
-	purple_connection_error_reason(
-#endif
-				gc,
+	purple_connection_error(gc,
 				PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 				_("Password required"));
 }
@@ -501,11 +492,7 @@ static void sipe_purple_close(PurpleConnection *gc)
 			g_hash_table_destroy(purple_private->roomlist_map);
 		sipe_purple_chat_destroy_rejoin(purple_private);
 		g_free(purple_private);
-#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 		purple_connection_set_protocol_data(gc, NULL);
-#else
-		gc->proto_data = NULL;
-#endif
 	}
 }
 
@@ -520,20 +507,9 @@ static int sipe_purple_send_im(PurpleConnection *gc,
 
 static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 					    const char *who,
-#if PURPLE_VERSION_CHECK(3,0,0)
-					    PurpleIMTypingState state
-#else
-					    PurpleTypingState state
-#endif
-	)
+					    PurpleIMTypingState state)
 {
-	gboolean typing = (state ==
-#if PURPLE_VERSION_CHECK(3,0,0)
-			   PURPLE_IM_TYPING
-#else
-			   PURPLE_TYPING
-#endif
-		);
+	gboolean typing = (state == PURPLE_IM_TYPING);
 
 	/* only enable this debug output while testing
 	   SIPE_DEBUG_INFO("sipe_purple_send_typing: '%s' state %d", who, state); */
@@ -551,13 +527,7 @@ static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 	 *
 	 * Work around this by filtering out PURPLE_NOT_TYPING events.
 	 */
-	if (state !=
-#if PURPLE_VERSION_CHECK(3,0,0)
-	    PURPLE_IM_NOT_TYPING
-#else
-	    PURPLE_NOT_TYPING
-#endif
-		)
+	if (state != PURPLE_IM_NOT_TYPING)
 		sipe_core_user_feedback_typing(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 					       who,
 					       typing);
@@ -1205,12 +1175,7 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
-#if PURPLE_VERSION_CHECK(3,0,0)
-	purple_account_option_string_set_masked(
-#else
-	purple_account_option_set_masked(
-#endif
-					 option, TRUE);
+	purple_account_option_string_set_masked(option, TRUE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/** Example (federated domain): company.com      (i.e. ocschat@company.com)
