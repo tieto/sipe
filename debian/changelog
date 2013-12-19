@@ -14,6 +14,7 @@ pidgin-sipe (1.17.3-1) UNRELEASED; urgency=medium
         - updated translations: French (fr)
   * Document in d/README.source where the upstream sources are taken from.
   * Updated d/watch.
+  * Bump Standards-Version to 3.9.5.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 19 Dec 2013 17:03:53 +0100
 
