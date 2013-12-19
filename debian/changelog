@@ -1,3 +1,20 @@
+pidgin-sipe (1.17.3-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+        - Fixed #225: HTTP re-authentication with NTLM fails
+        - Fixed #222: SIPE crashes when groupchat session expires
+        - fix UCS Persona key extraction
+        - Fixed #214: Typing notification does not always work
+        - Fixed #222: SIPE crashes when groupchat session expires
+        - updated translations: Romanian (ro)
+        - Fixed #215: Password not entity encoded in WSSE element
+        - Fixed #214: Typing notification does not always work
+        - accept alternatives for webticket timestamp/keydata
+        - adium: add "don't publish calendar" to account UI
+        - updated translations: French (fr)
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 19 Dec 2013 17:03:53 +0100
+
 pidgin-sipe (1.17.0-1) unstable; urgency=low
 
   * New upstream release.
