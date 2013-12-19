@@ -106,7 +106,8 @@ void sip_transport_subscribe(struct sipe_core_private *sipe_private,
 			     struct sip_dialog *dialog,
 			     TransCallback callback);
 void sip_transport_update(struct sipe_core_private *sipe_private,
-			  struct sip_dialog *dialog);
+			  struct sip_dialog *dialog,
+			  TransCallback callback);
 
 /* Misc. SIP transport stuff */
 guint sip_transport_port(struct sipe_core_private *sipe_private);

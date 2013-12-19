@@ -873,9 +873,17 @@ void sip_transport_subscribe(struct sipe_core_private *sipe_private,
 }
 
 void sip_transport_update(struct sipe_core_private *sipe_private,
-			  struct sip_dialog *dialog)
+			  struct sip_dialog *dialog,
+			  TransCallback callback)
 {
-	sip_transport_simple_request(sipe_private, "UPDATE", dialog);
+	sip_transport_request(sipe_private,
+			      "UPDATE",
+			      dialog->with,
+			      dialog->with,
+			      NULL,
+			      NULL,
+			      dialog,
+			      callback);
 }
 
 static const gchar *get_auth_header(struct sipe_core_private *sipe_private,

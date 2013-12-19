@@ -857,7 +857,7 @@ void process_incoming_info_conversation(struct sipe_core_private *sipe_private,
 {
 	sipe_xml *xml = sipe_xml_parse(msg->body, msg->bodylen);
 	const gchar *from = NULL;
-	const gchar *subject = NULL;
+	gchar *subject = NULL;
 
 
 	if (!xml)
@@ -881,6 +881,7 @@ void process_incoming_info_conversation(struct sipe_core_private *sipe_private,
 			sipe_im_topic(sipe_private, session, subject);
 	}
 
+	g_free(subject);
 	sipe_xml_free(xml);
 
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);

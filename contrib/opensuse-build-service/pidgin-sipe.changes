@@ -1,7 +1,34 @@
 -------------------------------------------------------------------
-Sat Sep 21 13:34:00 UTC 2013 - chemobejk@gmail.com
+Wed Dec 11 19:19:00 UTC 2013 - chemobejk@gmail.com
 
-- Update to version 1.17.0
+- Update to version 1.17.3
+
+-------------------------------------------------------------------
+Sat Nov 30 15:52:00 UTC 2013 - chemobejk@gmail.com
+
+- Update to version 1.17.2
+
+-------------------------------------------------------------------
+Sat Nov 16 14:22:00 UTC 2013 - chemobejk@gmail.com
+
+- Update to version 1.17.1
+
+-------------------------------------------------------------------
+Sun Sep 22 03:06:20 UTC 2013 - zaitor@opensuse.org
+
+- Update to version 1.17.0:
+  + Feature sf#62: Support for Lync 2013 Unified Contact Store.
+  + Feature sf#59: Support for Lync 2013 Persistent Chats
+  + Fixed sf#211: Status "away" or "busy" incorrectly mapped to
+    "Invisible".
+  + Fixed sf#209: group chat doesn't like HTML.
+  + Fixed sf#200: OCS archiving system blocks audio/video
+    connection.
+  + Fixed sf#187: Duplicate messages in group chat.
+  + Fixed sf#184: Duplicate users showing in Group Chat.
+  + Fix EWS autodiscover for Office 365.
+  + Add support for group chat history.
+  + Add support for buddy photos on Lync 2013.
 
 -------------------------------------------------------------------
 Tue Jul 16 19:06:23 UTC 2013 - zaitor@opensuse.org
