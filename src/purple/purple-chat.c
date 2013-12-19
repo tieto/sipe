@@ -54,6 +54,7 @@
 #define purple_chat_conversation_remove_user(c, n, s)    purple_conv_chat_remove_user(c, n, s)
 #define purple_chat_conversation_set_nick(c, n)          purple_conv_chat_set_nick(c, n)
 #define purple_chat_conversation_set_topic(c, n, s)      purple_conv_chat_set_topic(c, n, s)
+#define purple_chat_get_components(chat)                 chat->components
 #define purple_conversations_find_chat(g, n)             purple_find_chat(g, n)
 #define purple_conversations_get_chats                   purple_get_chats
 #define purple_conversation_get_connection(c)            purple_conversation_get_gc(c)
@@ -154,8 +155,13 @@
 
 static struct sipe_chat_session *sipe_purple_chat_get_session(PurpleConversation *conv)
 {
-	return purple_conversation_get_data(conv,
-					    SIPE_PURPLE_KEY_CHAT_SESSION);
+	return(
+#if PURPLE_VERSION_CHECK(3,0,0)
+		g_object_get_data(G_OBJECT(conv),
+#else
+		purple_conversation_get_data(conv,
+#endif
+				  SIPE_PURPLE_KEY_CHAT_SESSION));
 }
 
 static struct sipe_chat_session *sipe_purple_chat_find(PurpleConnection *gc,
@@ -254,7 +260,7 @@ static void sipe_purple_chat_menu_join_call_cb(SIPE_UNUSED_PARAMETER PurpleChat 
 GList *
 sipe_purple_chat_menu(PurpleChat *chat)
 {
-	PurpleConversation *conv = g_hash_table_lookup(chat->components,
+	PurpleConversation *conv = g_hash_table_lookup(purple_chat_get_components(chat),
 						       SIPE_PURPLE_COMPONENT_KEY_CONVERSATION);
 	GList *menu = NULL;
 
@@ -348,7 +354,11 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 		serv_got_joined_chat(purple_private->gc,
 				     sipe_purple_chat_id(purple_private->gc),
 				     title);
+#if PURPLE_VERSION_CHECK(3,0,0)
+	g_object_set_data(G_OBJECT(conv),
+#else
 	purple_conversation_set_data(conv,
+#endif
 				     SIPE_PURPLE_KEY_CHAT_SESSION,
 				     session);
 	purple_chat_conversation_set_nick(PURPLE_CONV_CHAT(conv), nick);
