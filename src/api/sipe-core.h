@@ -460,7 +460,8 @@ void sipe_core_im_close(struct sipe_core_public *sipe_public,
 
 /* user */
 void sipe_core_user_feedback_typing(struct sipe_core_public *sipe_public,
-				    const gchar *to);
+				    const gchar *to,
+				    gboolean typing);
 
 void sipe_core_user_ask_cb(gpointer key, gboolean accepted);
 

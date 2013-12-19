@@ -483,12 +483,12 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 				      gpointer callback_data)
 {
 	/* Only cleartext passwords seem to be accepted... */
-	gchar *wsse_security = g_strdup_printf("<wsse:UsernameToken>"
-					       " <wsse:Username>%s</wsse:Username>"
-					       " <wsse:Password>%s</wsse:Password>"
-					       "</wsse:UsernameToken>",
-					       authuser,
-					       sipe_private->password ? sipe_private->password : "");
+	gchar *wsse_security = g_markup_printf_escaped("<wsse:UsernameToken>"
+						       " <wsse:Username>%s</wsse:Username>"
+						       " <wsse:Password>%s</wsse:Password>"
+						       "</wsse:UsernameToken>",
+						       authuser,
+						       sipe_private->password ? sipe_private->password : "");
 
 	gboolean ret = request_passport(sipe_private,
 					session,

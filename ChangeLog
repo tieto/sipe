@@ -1,3 +1,22 @@
+version 1.17.3 "Bug Fixes III" (2013-12-11)
+	- Fixed #225: HTTP re-authentication with NTLM fails (Stefan Becker)
+	- Fixed #222: SIPE crashes when groupchat session expires (Stefan Becker)
+	- fix UCS Persona key extraction (Stefan Becker)
+
+version 1.17.2 "Bug Fixes II" (2013-11-30)
+	- Fixed #214: Typing notification does not always work (Stefan Becker)
+	  * reverted one change which caused problems for some users
+	- Fixed #222: SIPE crashes when groupchat session expires (Stefan Becker)
+	- updated translations: Romanian (ro)
+
+version 1.17.1 "Bug Fixes I" (2013-11-16)
+	- Fixed #215: Password not entity encoded in WSSE element (Stefan Becker)
+	- Fixed #214: Typing notification does not always work (Stefan Becker)
+	- accept alternatives for webticket timestamp/keydata (Stefan Becker)
+	- adium: add "don't publish calendar" to account UI (Stefan Becker)
+	- contrib: add SSL BEAST mitigation patch for Adium (Stefan Becker)
+	- updated translations: French (fr)
+
 version 1.17.0 "Lync 2013" (2013-09-21)
 	- Feature #62: Support for Lync 2013 Unified Contact Store (Stefan Becker)
 	- Feature #59: Support for Lync 2013 Persistent Chats (Stefan Becker)

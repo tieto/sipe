@@ -564,6 +564,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	dialog = sipe_dialog_add(session);
 	dialog->with = g_strdup(from);
 	dialog->callid = g_strdup(session->callid);
+	dialog->is_established = TRUE;
 	sipe_dialog_parse(dialog, msg, FALSE);
 
 	if (is_multiparty && !was_multiparty) {

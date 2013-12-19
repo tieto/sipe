@@ -32,6 +32,9 @@ po/POTFILES
 po/stamp-it
 *.gmo
 src/*/*.o
+src/adium/SIPEAdiumPlugin.xcodeproj/project.pbxproj-e
+src/adium/SIPEAdiumPlugin.xcodeproj/project.xcworkspace/
+src/adium/SIPEAdiumPlugin.xcodeproj/xcuserdata/
 src/core/*_tests
 src/core/sipe_ntlm_analyzer
 src/core/sipe_tls_tester

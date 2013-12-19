@@ -106,7 +106,7 @@
     <ClCompile>
       <Optimization>Full</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(ProjectDir)/src/api;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;PACKAGE_NAME="pidgin-sipe";PACKAGE_VERSION="1.17.0";PACKAGE_URL="http://sipe.sourceforge.net/";PACKAGE_BUGREPORT="https://sourceforge.net/p/sipe/bugs/";SIPE_VERSION="1.17.0";_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS;MIRANDA;HAVE_LIBKRB5;HAVE_SSPI;SECURITY_WIN32;SIPE_TRANSLATIONS_URL="https://www.transifex.com/projects/p/pidgin-sipe/r/mob/";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;PACKAGE_NAME="pidgin-sipe";PACKAGE_VERSION="1.17.3";PACKAGE_URL="http://sipe.sourceforge.net/";PACKAGE_BUGREPORT="https://sourceforge.net/p/sipe/bugs/";SIPE_VERSION="1.17.3";_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS;MIRANDA;HAVE_LIBKRB5;HAVE_SSPI;SECURITY_WIN32;SIPE_TRANSLATIONS_URL="https://www.transifex.com/projects/p/pidgin-sipe/r/mob/";%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -122,7 +122,7 @@
     <ClCompile>
       <Optimization>Disabled</Optimization>
       <AdditionalIncludeDirectories>$(SolutionDir)/../include;$(ProjectDir)/src/core;$(ProjectDir)/src/api;$(ProjectDir)/src/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;PACKAGE_NAME="pidgin-sipe";PACKAGE_VERSION="1.17.0";PACKAGE_URL="http://sipe.sourceforge.net/";SIPE_TRANSLATIONS_URL="https://www.transifex.com/projects/p/pidgin-sipe/r/mob/";PACKAGE_BUGREPORT="https://sourceforge.net/p/sipe/bugs/";SIPE_VERSION="1.17.0";_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS;MIRANDA;HAVE_LIBKRB5;SECURITY_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;PACKAGE_NAME="pidgin-sipe";PACKAGE_VERSION="1.17.3";PACKAGE_URL="http://sipe.sourceforge.net/";SIPE_TRANSLATIONS_URL="https://www.transifex.com/projects/p/pidgin-sipe/r/mob/";PACKAGE_BUGREPORT="https://sourceforge.net/p/sipe/bugs/";SIPE_VERSION="1.17.3";_CRT_SECURE_NO_WARNINGS;HAVE_NSS;HAVE_GMIME;HAVE_VV;ENABLE_NLS;MIRANDA;HAVE_LIBKRB5;SECURITY_WIN32;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>

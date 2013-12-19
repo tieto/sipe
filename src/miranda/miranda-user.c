@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-13 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,13 +103,16 @@ int sipe_miranda_UserIsTyping( SIPPROTO *pr, HANDLE hContact, int type )
 		switch (type) {
 			case PROTOTYPE_SELFTYPING_ON:
 				LOCK;
-				sipe_core_user_feedback_typing(pr->sip, name);
+				sipe_core_user_feedback_typing(pr->sip, name, TRUE);
 				UNLOCK;
 				g_free(name);
 				return 0;
 
 			case PROTOTYPE_SELFTYPING_OFF:
 				/* Not supported anymore? */
+				LOCK;
+				sipe_core_user_feedback_typing(pr->sip, name, FALSE);
+				UNLOCK;
 				g_free(name);
 				return 0;
 		}

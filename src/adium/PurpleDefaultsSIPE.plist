@@ -4,6 +4,8 @@
 <dict>
 	<key>SIPE:Single Sign On</key>
 	<false/>
+	<key>SIPE:Dont Publish</key>
+	<false/>
 	<key>SIPE:Connection Type</key>
 	<string>auto</string>
 	<key>Connect Host</key>

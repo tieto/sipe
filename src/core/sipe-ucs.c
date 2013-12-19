@@ -308,23 +308,35 @@ static void ucs_extract_keys(const sipe_xml *persona_node,
 {
 	const sipe_xml *attr_node;
 
-	/* extract Exchange key - not sure if this is correct */
+	/*
+	 * extract Exchange key - play the guessing game :-(
+	 *
+	 * We can't use the "DisplayName" node, because the text is localized.
+	 *
+	 * Assume that IsQuickContact == "true" and IsHidden == "false" means
+	 * this Attribution node contains the information for the Lync contact.
+	 */
 	for (attr_node = sipe_xml_child(persona_node,
 					"Attributions/Attribution");
 	     attr_node;
 	     attr_node = sipe_xml_twin(attr_node)) {
 		const sipe_xml *id_node = sipe_xml_child(attr_node,
 							 "SourceId");
-		gchar *type = sipe_xml_data(sipe_xml_child(attr_node,
-							   "DisplayName"));
+		gchar *hidden = sipe_xml_data(sipe_xml_child(attr_node,
+							     "IsHidden"));
+		gchar *quick = sipe_xml_data(sipe_xml_child(attr_node,
+							    "IsQuickContact"));
 		if (id_node &&
-		    sipe_strequal(type, "Lync Contacts")) {
+		    sipe_strcase_equal(hidden, "false") &&
+		    sipe_strcase_equal(quick,  "true")) {
 			*key = sipe_xml_attribute(id_node, "Id");
 			*change = sipe_xml_attribute(id_node, "ChangeKey");
-			g_free(type);
+			g_free(quick);
+			g_free(hidden);
 			break;
 		}
-		g_free(type);
+		g_free(quick);
+		g_free(hidden);
 	}
 }
 
@@ -579,7 +591,11 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 			if (!(is_empty(address) || is_empty(key) || is_empty(change))) {
 				gchar *alias = sipe_xml_data(sipe_xml_child(persona_node,
 									    "DisplayName"));
-				gchar *uri = sip_uri_from_name(address);
+				/*
+				 * it seems to be undefined if ImAddress node
+				 * contains "sip:" prefix or not...
+				 */
+				gchar *uri = sip_uri(address);
 				struct sipe_buddy *buddy = sipe_buddy_add(sipe_private,
 									  uri,
 									  key,
