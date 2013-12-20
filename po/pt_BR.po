@@ -6,14 +6,15 @@
 # 
 # Translators:
 # Anibal Avelar <debianmx@gmail.com>, 2011, 2012
+# Raul Liota da Rosa <raul.liota@gmail.com>, 2013
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-11-20 12:30+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2013-12-12 19:26+0000\n"
+"Last-Translator: Raul Liota da Rosa <raul.liota@gmail.com>\n"
 "Language-Team: Portuguese (Brazil) (http://www.transifex.com/projects/p/pidgin-sipe/language/pt_BR/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -194,7 +195,7 @@ msgstr "Busca contato falhou"
 
 #: ../src/core/sipe-buddy.c:1307
 msgid "Invalid contact search query"
-msgstr ""
+msgstr "Consulta inválida de pesquisa de contato"
 
 #: ../src/core/sipe-buddy.c:1987
 #, c-format
