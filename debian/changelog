@@ -1,4 +1,4 @@
-pidgin-sipe (1.17.3-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.17.3-1) unstable; urgency=medium
 
   * New upstream release.
         - Fixed #225: HTTP re-authentication with NTLM fails
@@ -16,7 +16,7 @@ pidgin-sipe (1.17.3-1) UNRELEASED; urgency=medium
   * Updated d/watch.
   * Bump Standards-Version to 3.9.5.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 19 Dec 2013 17:03:53 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Sat, 21 Dec 2013 10:50:26 +0100
 
 pidgin-sipe (1.17.0-1) unstable; urgency=low
 
