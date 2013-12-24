@@ -187,13 +187,21 @@ tftp_incoming_stop(PurpleXfer *xfer)
 	}
 }
 
-static gssize
-tftp_read(guchar **buffer, PurpleXfer *xfer)
+static gssize tftp_read(guchar **buffer,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			size_t buffer_size,
+#endif
+			PurpleXfer *xfer)
 {
 	return sipe_core_tftp_read(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
 				   buffer,
 				   purple_xfer_get_bytes_remaining(xfer),
-				   xfer->current_buffer_size);
+#if PURPLE_VERSION_CHECK(3,0,0)
+				   buffer_size
+#else
+				   xfer->current_buffer_size
+#endif
+		);
 }
 
 static void
