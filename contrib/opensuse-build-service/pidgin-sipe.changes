@@ -1,7 +1,10 @@
 -------------------------------------------------------------------
-Wed Dec 11 13:30:00 UTC 2013 - chemobejk@gmail.com
+Mon Dec 23 21:02:50 UTC 2013 - dimstar@opensuse.org
 
-- Update to version 1.17.3
+- Update to version 1.17.3:
+  + Fixed sf#222: SIPE crashes when groupchat session expires.
+  + Fixed sf#225: HTTP re-authentication with NTLM fails.
+  + Fix UCS Persona key extraction.
 
 -------------------------------------------------------------------
 Sun Dec  8 10:13:31 UTC 2013 - zaitor@opensuse.org
