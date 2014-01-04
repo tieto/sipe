@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -46,7 +46,7 @@ struct sipe_ews_autodiscover {
 	struct sipe_ews_autodiscover_data *data;
 	struct sipe_http_request *request;
 	GSList *callbacks;
-	const gchar *domain;
+	gchar *email;
 	const gchar * const *method;
 	gboolean retry;
 	gboolean completed;
@@ -177,14 +177,15 @@ static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private
 		sea->method = methods;
 
 	if (*sea->method) {
-		gchar *url = g_strdup_printf(*sea->method, sea->domain);
+		gchar *url = g_strdup_printf(*sea->method,
+					     strstr(sea->email, "@") + 1);
 		gchar *body = g_strdup_printf("<Autodiscover xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/outlook/requestschema/2006\">"
 					      " <Request>"
 					      "  <EMailAddress>%s</EMailAddress>"
 					      "  <AcceptableResponseSchema>http://schemas.microsoft.com/exchange/autodiscover/outlook/responseschema/2006a</AcceptableResponseSchema>"
 					      " </Request>"
 					      "</Autodiscover>",
-					      sipe_private->email);
+					      sea->email);
 
 		SIPE_DEBUG_INFO("sipe_ews_autodiscover_request: trying '%s'", url);
 
@@ -235,7 +236,8 @@ void sipe_ews_autodiscover_init(struct sipe_core_private *sipe_private)
 {
 	struct sipe_ews_autodiscover *sea = g_new0(struct sipe_ews_autodiscover, 1);
 
-	sea->domain = strstr(sipe_private->email, "@") + 1;
+	sea->email = g_strdup(sipe_private->email);
+
 	sipe_private->ews_autodiscover = sea;
 }
 
@@ -252,6 +254,7 @@ void sipe_ews_autodiscover_free(struct sipe_core_private *sipe_private)
 		g_free((gchar *)ews_data->oof_url);
 		g_free(ews_data);
 	}
+	g_free(sea->email);
 	g_free(sea);
 }
 
