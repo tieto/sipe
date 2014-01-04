@@ -722,9 +722,15 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 	/* initialize private fields */
 	conn->is_disconnecting = FALSE;
 
-	/* account & login are required fields */
+	/* account is required field */
 	conn->account = g_strdup(tp_asv_get_string(params, "account"));
-	conn->login   = g_strdup(tp_asv_get_string(params, "login"));
+
+	/* if login is not specified, account value will be used in connect_to_core */
+	value = tp_asv_get_string(params, "login");
+	if (value && strlen(value))
+		conn->login = g_strdup(value);
+	else
+		conn->login = NULL;
 
 	/* password */
 	value = tp_asv_get_string(params, "password");
