@@ -22,7 +22,10 @@
  *
  * Specification references:
  *
- *   - [MS-OXDSCLI]: http://msdn.microsoft.com/en-us/library/cc463896.aspx
+ *   - POX: plain old XML autodiscover
+ *   - [MS-OXDSCLI]:     http://msdn.microsoft.com/en-us/library/cc463896.aspx
+ *   - POX autodiscover: http://msdn.microsoft.com/en-us/library/office/aa581522.aspx
+ *   - POX redirect:     http://msdn.microsoft.com/en-us/library/office/dn467392.aspx
  */
 
 #include <string.h>
@@ -69,6 +72,8 @@ static void sipe_ews_autodiscover_complete(struct sipe_core_private *sipe_privat
 	sea->completed = TRUE;
 }
 
+static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private,
+					  gboolean next_method);
 static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 					const gchar *body)
 {
@@ -76,22 +81,29 @@ static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 	struct sipe_ews_autodiscover_data *ews_data = sea->data =
 		g_new0(struct sipe_ews_autodiscover_data, 1);
 	sipe_xml *xml = sipe_xml_parse(body, strlen(body));
-	const sipe_xml *node;
-	gchar *tmp;
+	const sipe_xml *account = sipe_xml_child(xml, "Response/Account");
+	gboolean complete = TRUE;
 
-	/* Autodiscover/Response/User/LegacyDN (requires trimming) */
-	tmp = sipe_xml_data(sipe_xml_child(xml, "Response/User/LegacyDN"));
-	if (tmp)
-		ews_data->legacy_dn = g_strstrip(tmp);
+	/* valid POX autodiscover response? */
+	if (account) {
+		const sipe_xml *node = sipe_xml_child(account, "Protocol");
 
-	/* Autodiscover/Response/Account/Protocol */
-	for (node = sipe_xml_child(xml, "Response/Account/Protocol");
-	     node;
-	     node = sipe_xml_twin(node)) {
-		gchar *type = sipe_xml_data(sipe_xml_child(node, "Type"));
+		/* valid settings? */
+		if (node) {
 
-		if (sipe_strequal("EXCH", type)) {
-			g_free(type);
+			/* Autodiscover/Response/User/LegacyDN (requires trimming) */
+			gchar *tmp = sipe_xml_data(sipe_xml_child(xml,
+								  "Response/User/LegacyDN"));
+			if (tmp)
+				ews_data->legacy_dn = g_strstrip(tmp);
+
+			/* extract settings */
+			for (; node; node = sipe_xml_twin(node)) {
+				gchar *type = sipe_xml_data(sipe_xml_child(node,
+									   "Type"));
+
+				if (sipe_strequal("EXCH", type)) {
+					g_free(type);
 
 #define _URL(name, field) \
 			{ \
@@ -100,24 +112,48 @@ static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 						ews_data->field ? ews_data->field : "<NOT FOUND>"); \
 			}
 
-			_URL(ASUrl,  as_url);
-			_URL(EwsUrl, ews_url);
-			_URL(OABUrl, oab_url);
-			_URL(OOFUrl, oof_url);
+					_URL(ASUrl,  as_url);
+					_URL(EwsUrl, ews_url);
+					_URL(OABUrl, oab_url);
+					_URL(OOFUrl, oof_url);
 #undef _URL
 
-			break;
+					break;
 
+				}
+				g_free(type);
+			}
+
+		} else {
+			/*
+			 * POX autodiscover redirect email address?
+			 * Make sure email address contains a "@" character.
+			 */
+			gchar *tmp = sipe_xml_data(sipe_xml_child(account,
+								  "RedirectAddr"));
+			if (tmp && strchr(tmp, '@')) {
+				g_free(sea->email);
+				sea->email = tmp;
+				tmp = NULL; /* sea takes ownership */
+
+				SIPE_DEBUG_INFO("sipe_ews_autodiscover_parse: restarting with email address '%s'",
+						sea->email);
+
+				/* restart process with new email address */
+				sea->method = NULL;
+				complete    = FALSE;
+				sipe_ews_autodiscover_request(sipe_private,
+							      TRUE);
+			}
+			g_free(tmp);
 		}
-		g_free(type);
 	}
 	sipe_xml_free(xml);
 
-	sipe_ews_autodiscover_complete(sipe_private, ews_data);
+	if (complete)
+		sipe_ews_autodiscover_complete(sipe_private, ews_data);
 }
 
-static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private,
-					  gboolean next_method);
 static void sipe_ews_autodiscover_response(struct sipe_core_private *sipe_private,
 					   guint status,
 					   SIPE_UNUSED_PARAMETER GSList *headers,
