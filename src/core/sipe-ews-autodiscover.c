@@ -194,6 +194,40 @@ static void sipe_ews_autodiscover_response(struct sipe_core_private *sipe_privat
 	}
 }
 
+static gboolean sipe_ews_autodiscover_url(struct sipe_core_private *sipe_private,
+					  const gchar *url)
+{
+	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
+	gchar *body = g_strdup_printf("<Autodiscover xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/outlook/requestschema/2006\">"
+				      " <Request>"
+				      "  <EMailAddress>%s</EMailAddress>"
+				      "  <AcceptableResponseSchema>http://schemas.microsoft.com/exchange/autodiscover/outlook/responseschema/2006a</AcceptableResponseSchema>"
+				      " </Request>"
+				      "</Autodiscover>",
+				      sea->email);
+
+	SIPE_DEBUG_INFO("sipe_ews_autodiscover_url: trying '%s'", url);
+
+	sea->request = sipe_http_request_post(sipe_private,
+					      url,
+					      NULL,
+					      body,
+					      "text/xml",
+					      sipe_ews_autodiscover_response,
+					      sea);
+	g_free(body);
+
+	if (sea->request) {
+		sipe_core_email_authentication(sipe_private,
+					       sea->request);
+		sipe_http_request_allow_redirect(sea->request);
+		sipe_http_request_ready(sea->request);
+		return(TRUE);
+	}
+
+	return(FALSE);
+}
+
 static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private,
 					  gboolean next_method)
 {
@@ -215,33 +249,11 @@ static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private
 	if (*sea->method) {
 		gchar *url = g_strdup_printf(*sea->method,
 					     strstr(sea->email, "@") + 1);
-		gchar *body = g_strdup_printf("<Autodiscover xmlns=\"http://schemas.microsoft.com/exchange/autodiscover/outlook/requestschema/2006\">"
-					      " <Request>"
-					      "  <EMailAddress>%s</EMailAddress>"
-					      "  <AcceptableResponseSchema>http://schemas.microsoft.com/exchange/autodiscover/outlook/responseschema/2006a</AcceptableResponseSchema>"
-					      " </Request>"
-					      "</Autodiscover>",
-					      sea->email);
 
-		SIPE_DEBUG_INFO("sipe_ews_autodiscover_request: trying '%s'", url);
-
-		sea->request = sipe_http_request_post(sipe_private,
-						      url,
-						      NULL,
-						      body,
-						      "text/xml",
-						      sipe_ews_autodiscover_response,
-						      sea);
-		g_free(body);
-		g_free(url);
-
-		if (sea->request) {
-			sipe_core_email_authentication(sipe_private,
-						       sea->request);
-			sipe_http_request_allow_redirect(sea->request);
-			sipe_http_request_ready(sea->request);
-		} else
+		if (!sipe_ews_autodiscover_url(sipe_private, url))
 			sipe_ews_autodiscover_request(sipe_private, TRUE);
+
+		g_free(url);
 
 	} else {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_autodiscover_request: no more methods to try!");
