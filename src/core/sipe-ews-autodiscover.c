@@ -75,6 +75,8 @@ static void sipe_ews_autodiscover_complete(struct sipe_core_private *sipe_privat
 
 static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private,
 					  gboolean next_method);
+static gboolean sipe_ews_autodiscover_url(struct sipe_core_private *sipe_private,
+					  const gchar *url);
 static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 					const gchar *body)
 {
@@ -87,10 +89,10 @@ static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 
 	/* valid POX autodiscover response? */
 	if (account) {
-		const sipe_xml *node = sipe_xml_child(account, "Protocol");
+		const sipe_xml *node;
 
-		/* valid settings? */
-		if (node) {
+		/* POX autodiscover settings? */
+		if ((node = sipe_xml_child(account, "Protocol")) != NULL) {
 
 			/* Autodiscover/Response/User/LegacyDN (requires trimming) */
 			gchar *tmp = sipe_xml_data(sipe_xml_child(xml,
@@ -125,19 +127,20 @@ static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 				g_free(type);
 			}
 
-		} else {
+		/* POX autodiscover redirect to new email address? */
+		} else if ((node = sipe_xml_child(account, "RedirectAddr")) != NULL) {
+			gchar *addr = sipe_xml_data(node);
+
 			/*
-			 * POX autodiscover redirect email address?
-			 * Make sure email address contains a "@" character.
-			 * Make sure email address is different from current one.
+			 * Sanity checks for new email address:
+			 *  - must contain a "@" character
+			 *  - must be different from current address
 			 */
-			gchar *tmp = sipe_xml_data(sipe_xml_child(account,
-								  "RedirectAddr"));
-			if (tmp && strchr(tmp, '@') &&
-			    !sipe_strequal(sea->email, tmp)) {
+			if (addr && strchr(addr, '@') &&
+			    !sipe_strequal(sea->email, addr)) {
 				g_free(sea->email);
-				sea->email = tmp;
-				tmp = NULL; /* sea takes ownership */
+				sea->email = addr;
+				addr = NULL; /* sea takes ownership */
 
 				SIPE_DEBUG_INFO("sipe_ews_autodiscover_parse: restarting with email address '%s'",
 						sea->email);
@@ -148,7 +151,23 @@ static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 				sipe_ews_autodiscover_request(sipe_private,
 							      TRUE);
 			}
-			g_free(tmp);
+			g_free(addr);
+
+		/* POX autodiscover redirect to new URL? */
+		} else if ((node = sipe_xml_child(account, "RedirectUrl")) != NULL) {
+			gchar *url = sipe_xml_data(node);
+
+			if (!is_empty(url)) {
+				SIPE_DEBUG_INFO("sipe_ews_autodiscover_parse: redirected to URL '%s'",
+						url);
+				complete = !sipe_ews_autodiscover_url(sipe_private,
+								      url);
+			}
+			g_free(url);
+
+		/* ignore all other POX autodiscover responses */
+		} else {
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_ews_autodiscover_parse: unknown response detected");
 		}
 	}
 	sipe_xml_free(xml);
