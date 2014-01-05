@@ -38,6 +38,7 @@
 #include "sipe-core-private.h"
 #include "sipe-ews-autodiscover.h"
 #include "sipe-http.h"
+#include "sipe-utils.h"
 #include "sipe-xml.h"
 
 struct sipe_ews_autodiscover_cb {
@@ -128,10 +129,12 @@ static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 			/*
 			 * POX autodiscover redirect email address?
 			 * Make sure email address contains a "@" character.
+			 * Make sure email address is different from current one.
 			 */
 			gchar *tmp = sipe_xml_data(sipe_xml_child(account,
 								  "RedirectAddr"));
-			if (tmp && strchr(tmp, '@')) {
+			if (tmp && strchr(tmp, '@') &&
+			    !sipe_strequal(sea->email, tmp)) {
 				g_free(sea->email);
 				sea->email = tmp;
 				tmp = NULL; /* sea takes ownership */
