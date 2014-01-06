@@ -1,3 +1,33 @@
+pidgin-sipe (1.18.0-1) unstable; urgency=low
+
+  * New upstream version 1.18.0 "Adium, GSS-NTLMSSP & OpenSSL" (2014-01-XX)
+	- Feature #71: Add support for EWS Autodiscover redirection (Stefan Becker)
+	- Feature #69: Add UI support for (group) chats (Michael Lamb)
+	  * NOTE: Adium does not have an UI to fetch the room list
+	- Feature #64: Add support for GSS-NTLMSSP (Stefan Becker)
+	  * sip-sec-krb5.c module has been renamed to sip-sec-gssapi.c
+	  * if gssapi/gssapi_ntlmssp.h is detected then sip-sec-ntlm.c will
+	    be disabled and NTLM will be handled by sip-sec-gssapi.c instead
+	  * NOTE: at the time of this writing the user has to set up
+	          GSS-NTLMSSP by hand on his system, i.e. /etc/gss/mech
+	- Fixed #227: Adium client doesn't save email option settings (Harris P. Kauffman)
+	- Fixed #216: SIPE stops working on Mavericks (Stefan Becker, Michael Lamb)
+	  * add an UI option to disable SSL BEAST mitigations
+	  * NOTE: requires Adium 1.5.10
+	- Fixed #197: Account stays in connecting stage (Harris P. Kauffman)
+	- cleanup for sip-sec Kerberos & SSPI modules (Stefan Becker)
+	  * replace old TGT hack with gss_acquire_cred_with_password()
+	  * clean up Kerberos detection in configure
+	  * remove special case handling; code is more straight-forward now
+	  * thanks to David Woodhouse and Simo Sorce for the GSSAPI information
+	- implement internal keepalive handling (Stefan Becker)
+	- implement crypto backend based on OpenSSL (Stefan Becker)
+	- adium: Xcode project files update (Michael Lamb)
+	- adium: replace NSS crypto backend with OpenSSL (Stefan Becker)
+	  * NOTE: please make sure to read the updated build instructions!
+
+ -- Stefan Becker <chemobejk@gmail.com>  Mon, 06 Jan 2014 13:35:00 +0200
+
 pidgin-sipe (1.17.3-1) unstable; urgency=low
 
   * New upstream version 1.17.3 "Bug Fixes III" (2013-12-11)

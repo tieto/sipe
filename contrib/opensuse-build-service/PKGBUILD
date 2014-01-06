@@ -1,7 +1,7 @@
 # Maintainer: SIPE Project <http://sipe.sourceforge.net/>
 
 pkgname=pidgin-sipe
-pkgver=1.17.3
+pkgver=1.18.0
 pkgrel=1
 pkgdesc="Libpurple protocol plugin to connect to MS Office Communicator"
 arch=(i686 x86_64)
