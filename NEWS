@@ -1,4 +1,4 @@
-version 1.18.0 "Adium, GSS-NTLMSSP & OpenSSL" (2014-01-XX)
+version 1.18.0 "Adium, GSS-NTLMSSP & OpenSSL" (2014-01-11)
 	- Feature #71: Add support for EWS Autodiscover redirection (Stefan Becker)
 	- Feature #69: Add UI support for (group) chats (Michael Lamb)
 	  * NOTE: Adium does not have an UI to fetch the room list

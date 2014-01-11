@@ -1,6 +1,6 @@
 pidgin-sipe (1.18.0-1) unstable; urgency=low
 
-  * New upstream version 1.18.0 "Adium, GSS-NTLMSSP & OpenSSL" (2014-01-XX)
+  * New upstream version 1.18.0 "Adium, GSS-NTLMSSP & OpenSSL" (2014-01-11)
 	- Feature #71: Add support for EWS Autodiscover redirection (Stefan Becker)
 	- Feature #69: Add UI support for (group) chats (Michael Lamb)
 	  * NOTE: Adium does not have an UI to fetch the room list
@@ -26,7 +26,7 @@ pidgin-sipe (1.18.0-1) unstable; urgency=low
 	- adium: replace NSS crypto backend with OpenSSL (Stefan Becker)
 	  * NOTE: please make sure to read the updated build instructions!
 
- -- Stefan Becker <chemobejk@gmail.com>  Mon, 06 Jan 2014 13:35:00 +0200
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 11 Jan 2014 16:10:00 +0200
 
 pidgin-sipe (1.17.3-1) unstable; urgency=low
 
