@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -819,7 +819,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 
 		SIPE_DEBUG_INFO("sipe_purple_find_contact_cb: %s = '%s'", id, value ? value : "");
 
-		if (value) {
+		if (value && strlen(value)) {
 			if (strcmp(id, "given") == 0) {
 				given_name = value;
 			} else if (strcmp(id, "surname") == 0) {
