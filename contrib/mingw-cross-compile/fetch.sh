@@ -11,7 +11,7 @@
 # Check these page for latest MinGW/Pidgin URLs if you get fetch errors!
 #
 # update Pidgin version here
-export PIDGIN_VERSION=2.10.7
+export PIDGIN_VERSION=2.10.8
 
 # must be absolute path
 export PIDGIN_DEV_ROOT=$(pwd -P)/build-${PIDGIN_VERSION}
@@ -56,7 +56,7 @@ wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/libxml2_2.9.
 wget -nv https://developer.pidgin.im/static/win32/tcl-8.4.5.tar.gz
 wget -nv https://developer.pidgin.im/static/win32/gtkspell-2.0.16.tar.bz2
 wget -nv https://developer.pidgin.im/static/win32/enchant_1.6.0_win32.zip
-wget -nv https://developer.pidgin.im/static/win32/nss-3.13.6-nspr-4.9.2.tar.gz
+wget -nv https://developer.pidgin.im/static/win32/nss-3.15.4-nspr-4.10.2.tar.gz
 wget -nv https://developer.pidgin.im/static/win32/silc-toolkit-1.1.10.tar.gz
 wget -nv https://developer.pidgin.im/static/win32/meanwhile-1.0.2_daa3-win32.zip
 wget -nv https://developer.pidgin.im/static/win32/cyrus-sasl-2.1.25.tar.gz
@@ -77,7 +77,7 @@ cd ${DEV_DIR}
 tar xzf ${SOURCES_DIR}/tcl-8.4.5.tar.gz
 tar xjf ${SOURCES_DIR}/gtkspell-2.0.16.tar.bz2
 # Doesn't seem to be compressed, despite the name...
-tar xf  ${SOURCES_DIR}/nss-3.13.6-nspr-4.9.2.tar.gz
+tar xf  ${SOURCES_DIR}/nss-3.15.4-nspr-4.10.2.tar.gz
 tar xzf ${SOURCES_DIR}/silc-toolkit-1.1.10.tar.gz
 tar xzf ${SOURCES_DIR}/cyrus-sasl-2.1.25.tar.gz
 

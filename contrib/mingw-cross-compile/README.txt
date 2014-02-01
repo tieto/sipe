@@ -61,12 +61,6 @@ Build
 
  - copy/unpack pidgin-sipe source code tree into into current directory
 
- - [for Fedora only] run
-
-      sed -i s/-mno-cygwin// libpurple/win32/global.mak
-
-   (current Fedora MinGW cross-compiler doesn't like -mno-cygwin)
-
  - run
 
      cp pidgin-sipe-<...REPLACE PIDGIN-SIPE VERSION HERE...>/contrib/mingw-cross-compile/local.mak .
