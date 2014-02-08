@@ -1,7 +1,31 @@
 -------------------------------------------------------------------
-Sat Jan 11 14:11:00 UTC 2014 - chemobejk@gmail.com
+Mon Jan 20 12:49:36 UTC 2014 - zaitor@opensuse.org
 
 - Update to version 1.18.0:
+  + sf#71: Add support for EWS Autodiscover redirection.
+  + sf#69: Add UI support for (group) chats. NOTE: Adium does not
+    have an UI to fetch the room list.
+  + sf#64: Add support for GSS-NTLMSSP.
+  + sip-sec-krb5.c module has been renamed to sip-sec-gssapi.c if
+    gssapi/gssapi_ntlmssp.h is detected then sip-sec-ntlm.c will be
+    disabled and NTLM will be handled by sip-sec-gssapi.c instead.
+    NOTE: at the time of this writing the user has to set up
+    GSS-NTLMSSP by hand on his system, i.e. /etc/gss/mech.
+  + Fixed sf#227: Adium client doesn't save email option settings.
+  + Fixed sf#216: SIPE stops working on Mavericks.
+  + Add an UI option to disable SSL BEAST mitigations NOTE:
+    requires Adium 1.5.10.
+  + Fixed sf#197: Account stays in connecting stage.
+  + Cleanup for sip-sec Kerberos & SSPI modules.
+  + Replace old TGT hack with gss_acquire_cred_with_password().
+  + Clean up Kerberos detection in configure.
+  + Remove special case handling; code is more straight-forward
+    now.
+  + Implement internal keepalive handling.
+  + Implement crypto backend based on OpenSSL.
+  + adium:
+    - Xcode project files update.
+    - Replace NSS crypto backend with OpenSSL.
 
 -------------------------------------------------------------------
 Mon Dec 23 21:02:50 UTC 2013 - dimstar@opensuse.org
