@@ -5,14 +5,15 @@
 # 
 # 
 # Translators:
+# osfans <kyle_wang@asus.com>, 2014
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2014-01-06 09:46+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2014-02-12 05:55+0000\n"
+"Last-Translator: osfans <kyle_wang@asus.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/projects/p/pidgin-sipe/language/zh_CN/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -27,11 +28,11 @@ msgstr "到服务器的认证失败"
 #: ../src/core/sip-transport.c:255
 #, c-format
 msgid "Can't request certificate from %s"
-msgstr ""
+msgstr "无法从 %s 请求证书"
 
 #: ../src/core/sip-transport.c:265
 msgid "No URI for certificate provisioning service provided"
-msgstr ""
+msgstr "未提供证书置备服务的URI"
 
 #: ../src/core/sip-transport.c:1211
 msgid "Authentication failed"
@@ -111,7 +112,7 @@ msgstr " （与您的查询越匹配）"
 
 #: ../src/core/sipe-buddy.c:1058 ../src/core/sipe-buddy.c:1195
 msgid "No contacts found"
-msgstr ""
+msgstr "未找到联系人"
 
 #: ../src/core/sipe-buddy.c:1070 ../src/core/sipe-buddy.c:1208
 msgid "Unable to display the search results"
@@ -119,11 +120,11 @@ msgstr "无法显示搜索结果"
 
 #: ../src/core/sipe-buddy.c:1173 ../src/core/sipe-buddy.c:1185
 msgid "Contact search failed"
-msgstr ""
+msgstr "联系人搜索失败"
 
 #: ../src/core/sipe-buddy.c:1307
 msgid "Invalid contact search query"
-msgstr ""
+msgstr "无效的联系人搜索请求"
 
 #: ../src/core/sipe-buddy.c:1987
 #, c-format
@@ -146,11 +147,11 @@ msgstr "新建聊天"
 
 #: ../src/core/sipe-buddy.c:2043
 msgid "Work"
-msgstr ""
+msgstr "工作"
 
 #: ../src/core/sipe-buddy.c:2050
 msgid "Mobile"
-msgstr ""
+msgstr "手机"
 
 #: ../src/core/sipe-buddy.c:2058
 msgid "Home"
@@ -158,11 +159,11 @@ msgstr "主页"
 
 #: ../src/core/sipe-buddy.c:2066
 msgid "Other"
-msgstr ""
+msgstr "其他"
 
 #: ../src/core/sipe-buddy.c:2074
 msgid "Custom1"
-msgstr ""
+msgstr "自定义 1"
 
 #: ../src/core/sipe-buddy.c:2084
 msgid "Send email..."
@@ -226,12 +227,12 @@ msgstr "%1$s。%3$.2d:%4$.2d 为 %2$s"
 #: ../src/core/sipe-certificate.c:233 ../src/core/sipe-certificate.c:277
 #, c-format
 msgid "Certificate request to %s failed"
-msgstr ""
+msgstr "向 %s 请求证书失败"
 
 #: ../src/core/sipe-certificate.c:284
 #, c-format
 msgid "Web ticket request to %s failed"
-msgstr ""
+msgstr "向 %s 请求票据凭证失败"
 
 #. Generate next ID
 #: ../src/core/sipe-chat.c:231
@@ -241,32 +242,32 @@ msgstr "聊天 #%d"
 
 #: ../src/core/sipe-conf.c:248 ../src/core/sipe-conf.c:370
 msgid "Failed to join the conference"
-msgstr ""
+msgstr "加入会议失败"
 
 #: ../src/core/sipe-conf.c:367
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
-msgstr ""
+msgstr "“%s”不是合法的会议URI"
 
 #: ../src/core/sipe-conf.c:898
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
-msgstr ""
+msgstr "\n\n因本客户端编译时未加入语音通话支持，如果您接受，您将只能通过即时消息会话与其他与会者进行联系。"
 
 #: ../src/core/sipe-conf.c:906
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
-msgstr ""
+msgstr "%s 想邀请您加入电话会议 %s"
 
 #: ../src/core/sipe-conf.c:920
 msgid "Accept"
-msgstr ""
+msgstr "接受"
 
 #: ../src/core/sipe-conf.c:921
 msgid "Decline"
-msgstr ""
+msgstr "拒绝"
 
 #: ../src/core/sipe-conf.c:1135
 msgid ""
@@ -294,12 +295,12 @@ msgstr "实现用于多个产品的 SIP/SIMPLE 扩展版本的第三方插件"
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:181
 msgid "Home Page"
-msgstr ""
+msgstr "主页"
 
 #. About note, part 3/13: support forum URL (label)
 #: ../src/core/sipe-core.c:183
 msgid "Support"
-msgstr ""
+msgstr "支持"
 
 #. About note, part 4/13: support forum name (hyperlink text)
 #: ../src/core/sipe-core.c:185
@@ -350,7 +351,7 @@ msgstr "作者"
 #. "Localization for <language name> (<language code>): <name>"
 #: ../src/core/sipe-core.c:207
 msgid "Original texts in English (en): SIPE developers"
-msgstr "中文化 (zh_CN): 神州散人"
+msgstr "中文化 (zh_CN): 神州散人，Kyle Wang"
 
 #: ../src/core/sipe-core.c:227
 msgid "SIP Exchange user name contains invalid characters"
@@ -367,7 +368,7 @@ msgstr "用户名必须是有效的 SIP URI\n例如：user@company.com"
 
 #: ../src/core/sipe-core.c:241
 msgid "Login and password are required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "未启用单点登录时，必须输入帐号与密码"
 
 #: ../src/core/sipe-core.c:251
 msgid ""
@@ -454,24 +455,24 @@ msgid ""
 "\t%s\n"
 "\n"
 "Please update your Account."
-msgstr ""
+msgstr "群组聊天代理设置错误：\n\n\t%s\n\n请更新您的帐号"
 
 #: ../src/core/sipe-groupchat.c:332
 msgid "Couldn't find Group Chat server!"
-msgstr ""
+msgstr "未找到群组聊天服务器！"
 
 #: ../src/core/sipe-groupchat.c:506
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
-msgstr ""
+msgstr "此消息没有被发送到聊天室“%s”"
 
 #: ../src/core/sipe-groupchat.c:604
 msgid "Error retrieving room list"
-msgstr ""
+msgstr "获取聊天室列表发生错误"
 
 #: ../src/core/sipe-groupchat.c:708
 msgid "Error joining chat room"
-msgstr ""
+msgstr "加入聊天室时发生错误"
 
 #. generate one error and remove all unprocessed messages
 #: ../src/core/sipe-im.c:197
@@ -509,11 +510,11 @@ msgstr "创建视频流错误"
 
 #: ../src/core/sipe-media.c:905
 msgid "Invalid phone number"
-msgstr ""
+msgstr "无效的电话号码"
 
 #: ../src/core/sipe-media.c:915
 msgid "Audio Test Service is not available."
-msgstr ""
+msgstr "音频测试服务不可用。"
 
 #: ../src/core/sipe-media.c:1166
 msgid "User unavailable"
@@ -540,7 +541,7 @@ msgstr "用户 %s 拒绝了通话"
 
 #: ../src/core/sipe-media.c:1185
 msgid "Unsupported media type"
-msgstr ""
+msgstr "不支持的媒体类型"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe-notify.c:1059
@@ -624,7 +625,6 @@ msgstr "访问组"
 
 #. * This has nothing to do with Availability numbers, like 3500 (online).
 #. * Just a mapping of Communicator Activities to tokens/translations
-#. 
 #. @TODO: NULL means "default translation from Pidgin"?
 #. *        What about other backends?
 #. SIPE_ACTIVITY_UNSET
@@ -818,36 +818,36 @@ msgstr "解锁"
 
 #: ../src/purple/purple-chat.c:294
 msgid "Join conference call"
-msgstr ""
+msgstr "加入电话会议"
 
 #: ../src/purple/purple-groupchat.c:53
 msgid "_URI:"
-msgstr ""
+msgstr "_URI:"
 
 #: ../src/purple/purple-groupchat.c:157
 msgid "Users"
-msgstr ""
+msgstr "用户"
 
 #: ../src/purple/purple-groupchat.c:160
 msgid "Invite"
-msgstr ""
+msgstr "邀请"
 
 #: ../src/purple/purple-groupchat.c:163
 msgid "Private"
-msgstr ""
+msgstr "私人"
 
 #: ../src/purple/purple-groupchat.c:166
 msgid "Log"
-msgstr ""
+msgstr "日志"
 
 #: ../src/purple/purple-groupchat.c:169
 msgid "Description"
-msgstr ""
+msgstr "描述"
 
 #: ../src/purple/purple-im.c:84
 #, c-format
 msgid "Conversation subject: %s"
-msgstr ""
+msgstr "会话主题：%s"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
@@ -861,7 +861,7 @@ msgstr "正在连接"
 
 #: ../src/purple/purple-plugin.c:426
 msgid "Password required"
-msgstr ""
+msgstr "需要提供密码"
 
 #: ../src/purple/purple-plugin.c:589
 msgid "user@company.com"
@@ -904,27 +904,27 @@ msgstr "取消(_C)"
 
 #: ../src/purple/purple-plugin.c:938
 msgid "Phone number"
-msgstr ""
+msgstr "电话号码"
 
 #: ../src/purple/purple-plugin.c:942 ../src/purple/purple-plugin.c:943
 msgid "Call a phone number"
-msgstr ""
+msgstr "拨打电话号码"
 
 #: ../src/purple/purple-plugin.c:946
 msgid "_Call"
-msgstr ""
+msgstr "打电话(_C)"
 
 #: ../src/purple/purple-plugin.c:977
 msgid "Meeting location"
-msgstr ""
+msgstr "会议地点"
 
 #: ../src/purple/purple-plugin.c:981
 msgid "Join conference"
-msgstr ""
+msgstr "加入会议"
 
 #: ../src/purple/purple-plugin.c:982
 msgid "Join scheduled conference"
-msgstr ""
+msgstr "加入预定会议"
 
 #: ../src/purple/purple-plugin.c:983
 msgid ""
@@ -935,15 +935,15 @@ msgid ""
 "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
-msgstr ""
+msgstr "输入您收到的邀请中的会议地点字符串。\n\n合法的地址可能为\nmeet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nconf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n或者\nhttps://meet.company.com/someone/abcdef1234"
 
 #: ../src/purple/purple-plugin.c:991
 msgid "_Join"
-msgstr ""
+msgstr "加入(_J)"
 
 #: ../src/purple/purple-plugin.c:1008 ../src/purple/purple-plugin.c:1022
 msgid "Publishing of calendar information has been disabled"
-msgstr ""
+msgstr "已禁用发布日历信息"
 
 #: ../src/purple/purple-plugin.c:1035
 msgid "About SIPE plugin..."
@@ -955,15 +955,15 @@ msgstr "联系人搜索..."
 
 #: ../src/purple/purple-plugin.c:1042
 msgid "Call a phone number..."
-msgstr ""
+msgstr "拨打电话号码..."
 
 #: ../src/purple/purple-plugin.c:1045
 msgid "Test call"
-msgstr ""
+msgstr "测试呼叫"
 
 #: ../src/purple/purple-plugin.c:1049
 msgid "Join scheduled conference..."
-msgstr ""
+msgstr "加入预定会议..."
 
 #: ../src/purple/purple-plugin.c:1052
 msgid "Republish Calendar"
@@ -979,7 +979,6 @@ msgstr "复位状态"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#. 
 #: ../src/purple/purple-plugin.c:1113
 msgid ""
 "Login\n"
@@ -1019,19 +1018,19 @@ msgstr "用户代理"
 
 #: ../src/purple/purple-plugin.c:1132
 msgid "Authentication scheme"
-msgstr ""
+msgstr "认证方案"
 
 #: ../src/purple/purple-plugin.c:1133
 msgid "NTLM"
-msgstr ""
+msgstr "NTLM"
 
 #: ../src/purple/purple-plugin.c:1135
 msgid "Kerberos"
-msgstr ""
+msgstr "Kerberos"
 
 #: ../src/purple/purple-plugin.c:1137
 msgid "TLS-DSK"
-msgstr ""
+msgstr "TLS-DSK"
 
 #. * When the user selects Single Sign-On then SIPE will ignore the
 #. * settings for "login name" and "password". Instead it will use the
@@ -1045,17 +1044,15 @@ msgstr ""
 #. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
 #. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
 #. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
-#. 
 #: ../src/purple/purple-plugin.c:1155
 msgid "Use Single Sign-On"
 msgstr "使用单点登录"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#. 
 #: ../src/purple/purple-plugin.c:1162
 msgid "Don't publish my calendar information"
-msgstr ""
+msgstr "不发布我的日历信息"
 
 #: ../src/purple/purple-plugin.c:1165
 msgid ""
@@ -1071,7 +1068,6 @@ msgstr "电子邮件地址\n(如果与用户名不同)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#. 
 #: ../src/purple/purple-plugin.c:1174
 msgid ""
 "Email login\n"
@@ -1086,13 +1082,12 @@ msgstr "电子邮件密码\n(如果与密码不同)"
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#. 
 #: ../src/purple/purple-plugin.c:1184
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
 "(leave empty to determine from Username)"
-msgstr ""
+msgstr "群组聊天代理\ncompany.com 或 user@company.com\n(留空表示根据用户名决定)"
 
 #: ../src/purple/purple-search.c:57
 msgid "User name"
