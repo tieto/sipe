@@ -286,6 +286,21 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 			return(failed);
 		}
 
+		if (conn_public->cached_authorization) {
+			/*
+			 * The "Basic" scheme doesn't have any state.
+			 *
+			 * If we enter here then we have already tried "Basic"
+			 * authentication once for this request and it was
+			 * rejected by the server. As all future requests will
+			 * also be rejected, we need to abort here in order to
+			 * prevent an endless request/401/request/... loop.
+			 */
+			SIPE_DEBUG_INFO("sipe_http_request_response_unauthorized: Basic authentication has failed for host '%s', please check user name and password!",
+					conn_public->host);
+			return(failed);
+		}
+
 	} else {
 #if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 #define DEBUG_STRING ", NTLM and Negotiate"
