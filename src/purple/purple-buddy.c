@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -313,10 +313,29 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   guint activity)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleBuddy *buddy = NULL;
+	PurpleStatus *status = NULL;
+	const gchar *tmp = NULL;
 
-	purple_prpl_got_user_status(purple_private->account, who,
-				    sipe_purple_activity_to_token(activity),
-				    NULL);
+	buddy = purple_blist_find_buddy(purple_private->account, who);
+	if (buddy)
+		status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
+
+	if (status)
+		tmp = sipe_core_buddy_status(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+                                      purple_buddy_get_name(buddy),
+                                      sipe_purple_token_to_activity(purple_status_get_id(status)),
+                                      purple_status_get_name(status));
+
+	if (tmp)
+		purple_prpl_got_user_status(purple_private->account, who,
+					    sipe_purple_activity_to_token(activity),
+					    SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
+					    NULL);
+	else
+		purple_prpl_got_user_status(purple_private->account, who,
+					    sipe_purple_activity_to_token(activity),
+					    NULL);
 }
 
 gboolean sipe_backend_uses_photo(void)
@@ -751,6 +770,7 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 			purple_prpl_got_user_status(purple_buddy_get_account(clone),
 						    purple_buddy_get_name(clone),
 						    tmp,
+						    SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
 						    NULL);
 		}
 	}
