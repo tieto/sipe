@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-13 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -769,7 +769,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
-		sipe_media_call_free(call_private);
+		sipe_media_hangup(call_private);
 		sipe_backend_media_relays_free(backend_media_relays);
 		return;
 	}
@@ -782,7 +782,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating video stream"));
-		sipe_media_call_free(call_private);
+		sipe_media_hangup(call_private);
 		sipe_backend_media_relays_free(backend_media_relays);
 		return;
 	}
@@ -850,7 +850,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
-		sipe_media_call_free(sipe_private->media_call);
+		sipe_media_hangup(sipe_private->media_call);
 		sipe_private->media_call = NULL;
 	}
 

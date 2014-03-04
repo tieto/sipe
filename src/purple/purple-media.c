@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,7 +61,6 @@
 #include "media-gst.h"
 
 struct sipe_backend_media {
-	struct sipe_media_call *call;
 	PurpleMedia *m;
 	GSList *streams;
 	/**
@@ -240,11 +239,10 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 	PurpleMediaManager *manager = purple_media_manager_get();
 	GstElement *pipeline;
 
-	media->call = call;
-	media->m    = purple_media_manager_create_media(manager,
-							purple_private->account,
-							"fsrtpconference",
-							participant, initiator);
+	media->m = purple_media_manager_create_media(manager,
+						     purple_private->account,
+						     "fsrtpconference",
+						     participant, initiator);
 
 	g_signal_connect(G_OBJECT(media->m), "candidates-prepared",
 			 G_CALLBACK(on_candidates_prepared_cb), call);
@@ -272,24 +270,6 @@ sipe_backend_media_free(struct sipe_backend_media *media)
 {
 	if (media) {
 		GSList *stream = media->streams;
-		PurpleMediaManager *manager = purple_media_manager_get();
-
-		g_signal_handlers_disconnect_by_func(G_OBJECT(media->m),
-						     G_CALLBACK(on_candidates_prepared_cb),
-						     media->call);
-		g_signal_handlers_disconnect_by_func(G_OBJECT(media->m),
-						     G_CALLBACK(on_codecs_changed_cb),
-						     media->call);
-		g_signal_handlers_disconnect_by_func(G_OBJECT(media->m),
-						     G_CALLBACK(on_stream_info_cb),
-						     media->call);
-		g_signal_handlers_disconnect_by_func(G_OBJECT(media->m),
-						     G_CALLBACK(on_error_cb),
-						     media->call);
-		g_signal_handlers_disconnect_by_func(G_OBJECT(media->m),
-						     G_CALLBACK(on_state_changed_cb),
-						     media->call);
-		purple_media_manager_remove_media(manager, media->m);
 
 		for (; stream; stream = g_slist_delete_link(stream, stream))
 			backend_stream_free(stream->data);
