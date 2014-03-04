@@ -53,6 +53,10 @@ BuildRequires:  gettext-devel
 %if 0%{?_with_vv:1}
 BuildRequires:  libpurple-devel >= 2.8.0
 BuildRequires:  libnice-devel >= 0.1.0
+%if 0%{?fedora} >= 20
+# Dependency required when gstreamer support is split into two packages
+Requires:       libnice-gstreamer
+%endif
 BuildRequires:  gstreamer-devel
 %endif
 # Use "--without telepathy" to disable telepathy
@@ -258,6 +262,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Mar 04 2014 J. D. User <jduser@noreply.com> 1.18.0-*git*
+- F20+ require libnice-gstreamer for correct operation
+
 * Sat Jan 11 2014 J. D. User <jduser@noreply.com> 1.18.0
 - update to 1.18.0
 
