@@ -1824,8 +1824,9 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 {
         if (sipe_backend_uses_photo()) {
 
-		/* Lync 2013 or newer: use UCS */
-		if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013)) {
+		/* Lync 2013 or newer: use UCS if contacts are migrated */
+		if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) &&
+		    sipe_ucs_is_migrated(sipe_private)) {
 
 			sipe_ucs_get_photo(sipe_private, uri);
 
