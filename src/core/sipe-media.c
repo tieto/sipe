@@ -810,6 +810,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	struct sipe_backend_media_relays *backend_media_relays;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
+	SipeIceVersion ice_version;
 	gchar **parts;
 	gchar *av_uri;
 
@@ -824,8 +825,11 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	av_uri = g_strjoinv("app:conf:audio-video:", parts);
 	g_strfreev(parts);
 
+	ice_version = SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) ? SIPE_ICE_RFC_5245 :
+							    SIPE_ICE_DRAFT_6;
+
 	sipe_private->media_call = sipe_media_call_new(sipe_private, av_uri,
-						       TRUE, SIPE_ICE_DRAFT_6);
+						       TRUE, ice_version);
 
 	session = sipe_session_add_call(sipe_private, av_uri);
 	dialog = sipe_dialog_add(session);
