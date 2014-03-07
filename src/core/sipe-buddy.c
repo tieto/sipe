@@ -521,6 +521,9 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 	struct sipe_buddy *sbuddy;
 	const char *activity_str;
 
+	gchar *tmp = NULL;
+	gchar *status = NULL;
+
 	if (!sipe_public) return NULL; /* happens on pidgin exit */
 
 	sbuddy = sipe_buddy_find_by_uri(SIPE_CORE_PRIVATE, uri);
@@ -530,15 +533,31 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 		(activity == SIPE_ACTIVITY_BUSY) || (activity == SIPE_ACTIVITY_BRB) ?
 		status_text : NULL;
 
-	if (activity_str && sbuddy->note) {
-		return g_strdup_printf("%s - <i>%s</i>", activity_str, sbuddy->note);
-	} else if (activity_str) {
-		return g_strdup(activity_str);
-	} else if (sbuddy->note) {
-		return g_strdup_printf("<i>%s</i>", sbuddy->note);
-	} else {
-		return NULL;
+	if (activity_str) {
+		status = g_strdup(activity_str);
+   	}
+
+	if (sbuddy->is_mobile) {
+		if (status) {
+			tmp = status;
+			status = g_strdup_printf("%s - %s", status, "Mobile");
+			g_free(tmp);
+		} else {
+			status = g_strdup("Mobile");
+		}
 	}
+
+	if (sbuddy->note) {
+		if (status) {
+			tmp = status;
+			status = g_strdup_printf("%s - %s", status, sbuddy->note);
+			g_free(tmp);
+		} else {
+			status = g_strdup(sbuddy->note);
+		}
+	}
+
+	return status;
 }
 
 gchar *sipe_buddy_get_alias(struct sipe_core_private *sipe_private,
