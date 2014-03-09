@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -519,45 +519,30 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *status_text)
 {
 	struct sipe_buddy *sbuddy;
-	const char *activity_str;
-
-	gchar *tmp = NULL;
-	gchar *status = NULL;
+	GString *status;
 
 	if (!sipe_public) return NULL; /* happens on pidgin exit */
 
 	sbuddy = sipe_buddy_find_by_uri(SIPE_CORE_PRIVATE, uri);
 	if (!sbuddy) return NULL;
 
-	activity_str = sbuddy->activity ? sbuddy->activity :
-		(activity == SIPE_ACTIVITY_BUSY) || (activity == SIPE_ACTIVITY_BRB) ?
-		status_text : NULL;
-
-	if (activity_str) {
-		status = g_strdup(activity_str);
-   	}
+	status = g_string_new(sbuddy->activity ? sbuddy->activity :
+			      (activity == SIPE_ACTIVITY_BUSY) || (activity == SIPE_ACTIVITY_BRB) ?
+			      status_text : NULL);
 
 	if (sbuddy->is_mobile) {
-		if (status) {
-			tmp = status;
-			status = g_strdup_printf("%s - %s", status, "Mobile");
-			g_free(tmp);
-		} else {
-			status = g_strdup("Mobile");
-		}
+		if (status->len)
+			g_string_append(status, " - ");
+		g_string_append(status, _("Mobile"));
 	}
 
 	if (sbuddy->note) {
-		if (status) {
-			tmp = status;
-			status = g_strdup_printf("%s - %s", status, sbuddy->note);
-			g_free(tmp);
-		} else {
-			status = g_strdup(sbuddy->note);
-		}
+		if (status->len)
+			g_string_append(status, " - ");
+		g_string_append(status, sbuddy->note);
 	}
 
-	return status;
+	return(g_string_free(status, FALSE));
 }
 
 gchar *sipe_buddy_get_alias(struct sipe_core_private *sipe_private,
