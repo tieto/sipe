@@ -792,8 +792,8 @@ static GList *sipe_purple_copy_to_menu(GList *menu,
 		PurpleGroup *group = (PurpleGroup *)g_node;
 		PurpleMenuAction *act;
 
-		if ((PURPLE_IS_GROUP(g_node)) ||
-		    (group == gr_parent)      ||
+		if ((!PURPLE_IS_GROUP(g_node)) ||
+		    (group == gr_parent)       ||
 		    purple_blist_find_buddy_in_group(purple_buddy_get_account(buddy),
 						     purple_buddy_get_name(buddy),
 						     group))
