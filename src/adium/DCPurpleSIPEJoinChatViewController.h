@@ -14,11 +14,7 @@
 
 @interface DCPurpleSIPEJoinChatViewController : DCJoinChatViewController {
     
-	IBOutlet		NSTextField		*textField_roomName;
-	IBOutlet		NSTextField		*textField_handle;
-	
-	IBOutlet		NSTextField					*textField_inviteMessage;
-	IBOutlet		AICompletingTextField		*textField_inviteUsers;
+	IBOutlet		NSTextField		*textField_URI;
 }
 
 @end

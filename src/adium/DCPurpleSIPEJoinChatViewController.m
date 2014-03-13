@@ -15,13 +15,7 @@
 
 - (id)init
 {
-	if ((self = [super init]))
-	{
-		[textField_inviteUsers setDragDelegate:self];
-		[textField_inviteUsers registerForDraggedTypes:[NSArray arrayWithObjects:@"AIListObject", @"AIListObjectUniqueIDs", nil]];
-	}
-	
-	return self;
+	return [super init];
 }
 
 - (void)configureForAccount:(AIAccount *)inAccount
@@ -31,34 +25,24 @@
 		[(DCJoinChatWindowController *)delegate setJoinChatEnabled:YES];
 }
 
-
-
 - (void)joinChatWithAccount:(AIAccount *)inAccount
 {
+    NSString *uri = [textField_URI stringValue];
+    NSMutableDictionary *chatCreationInfo;
  
- NSString		*room = [textField_roomName stringValue];
- NSString		*handle = [textField_handle stringValue];
- NSString		*invitemsg = [textField_inviteMessage stringValue];
- NSMutableDictionary	*chatCreationInfo;
+    if (uri && [uri length]) {
+        chatCreationInfo = [NSMutableDictionary dictionaryWithObjectsAndKeys:
+                            uri, @"uri",
+                            nil];
  
-  if (![handle length]) handle = nil;
- 
- chatCreationInfo = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-                     room, @"room",
-                     nil];
- 
- if (handle) {
-     [chatCreationInfo setObject:handle
-                          forKey:@"handle"];
- }
- 
- 
- [self doJoinChatWithName:[NSString stringWithFormat:@"%@",room]
-                onAccount:inAccount
-         chatCreationInfo:chatCreationInfo
-         invitingContacts:[self contactsFromNamesSeparatedByCommas:[textField_inviteUsers stringValue] onAccount:inAccount]
-    withInvitationMessage:(([invitemsg length]) ? invitemsg : nil)];
- 
+        [self doJoinChatWithName:[NSString stringWithFormat:@"%@",uri]
+                       onAccount:inAccount
+                chatCreationInfo:chatCreationInfo
+                invitingContacts:nil
+           withInvitationMessage:nil];
+    } else {
+        NSLog(@"Error: No URI specified.");
+    }
 }
 
 - (NSString *)nibName
