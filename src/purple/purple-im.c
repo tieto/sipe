@@ -33,6 +33,8 @@
 #include "version.h"
 #if PURPLE_VERSION_CHECK(3,0,0)
 #include "conversations.h"
+#else
+#define purple_serv_got_im(c, w, m, f, t)	serv_got_im(c, w, m, f, t)
 #endif
 
 #include "purple-private.h"
@@ -46,7 +48,7 @@ void sipe_backend_im_message(struct sipe_core_public *sipe_public,
 			     const gchar *html)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	serv_got_im(purple_private->gc,
+	purple_serv_got_im(purple_private->gc,
 		    from,
 		    html,
 		    0,
