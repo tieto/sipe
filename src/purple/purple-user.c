@@ -22,8 +22,8 @@
 
 #include <glib.h>
 
-#include "request.h"
 #include "server.h"
+#include "request.h"
 
 #include "purple-private.h"
 
