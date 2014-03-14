@@ -352,6 +352,7 @@ AS_IF([test "x$enable_purple" != xno],
 #include <sslconn.h>
 						]],
 						[[
+	purple_prefs_init();
 	purple_plugins_init();
 	purple_plugins_probe(G_MODULE_SUFFIX);
 	purple_ssl_init();
