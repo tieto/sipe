@@ -616,9 +616,6 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *g;
 	PurpleRequestField *f;
-#if PURPLE_VERSION_CHECK(3,0,0)
-	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_account(account);
-#endif
 
 	fields = purple_request_fields_new();
 
@@ -658,11 +655,11 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 			      _("Add"), G_CALLBACK(sipe_purple_ask_access_domain_cb),
 			      _("Cancel"), NULL,
 #if PURPLE_VERSION_CHECK(3,0,0)
-			      cpar, gc);
-	purple_request_cpar_unref(cpar);
+			      purple_request_cpar_from_account(account),
 #else
-			      account, NULL, NULL, gc);
+			      account, NULL, NULL,
 #endif
+			      gc);
 }
 
 typedef void (*buddy_menu_callback)(PurpleBuddy *buddy,

@@ -851,9 +851,6 @@ static void sipe_purple_show_find_contact(PurplePluginAction *action)
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *group;
 	PurpleRequestField *field;
-#if PURPLE_VERSION_CHECK(3,0,0)
-	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_connection(gc);
-#endif
 
 	fields = purple_request_fields_new();
 	group = purple_request_field_group_new(NULL);
@@ -878,11 +875,11 @@ static void sipe_purple_show_find_contact(PurplePluginAction *action)
 			      _("_Search"), G_CALLBACK(sipe_purple_find_contact_cb),
 			      _("_Cancel"), NULL,
 #if PURPLE_VERSION_CHECK(3,0,0)
-			      cpar, gc);
-	purple_request_cpar_unref(cpar);
+			      purple_request_cpar_from_connection(gc),
 #else
-			      purple_connection_get_account(gc), NULL, NULL, gc);
+			      purple_connection_get_account(gc), NULL, NULL,
 #endif
+			      gc);
 }
 
 static void sipe_purple_join_conference_cb(PurpleConnection *gc,
@@ -927,9 +924,6 @@ static void sipe_purple_phone_call(PurplePluginAction *action)
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *group;
 	PurpleRequestField *field;
-#if PURPLE_VERSION_CHECK(3,0,0)
-	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_connection(gc);
-#endif
 
 	fields = purple_request_fields_new();
 	group = purple_request_field_group_new(NULL);
@@ -946,11 +940,11 @@ static void sipe_purple_phone_call(PurplePluginAction *action)
 			      _("_Call"), G_CALLBACK(sipe_purple_phone_call_cb),
 			      _("_Cancel"), NULL,
 #if PURPLE_VERSION_CHECK(3,0,0)
-			      cpar, gc);
-	purple_request_cpar_unref(cpar);
+			      purple_request_cpar_from_connection(gc),
 #else
-			      purple_connection_get_account(gc), NULL, NULL, gc);
+			      purple_connection_get_account(gc), NULL, NULL,
 #endif
+			      gc);
 }
 
 static void sipe_purple_test_call(PurplePluginAction *action)
@@ -966,9 +960,6 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *group;
 	PurpleRequestField *field;
-#if PURPLE_VERSION_CHECK(3,0,0)
-	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_connection(gc);
-#endif
 
 	fields = purple_request_fields_new();
 	group = purple_request_field_group_new(NULL);
@@ -991,11 +982,11 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 			      _("_Join"), G_CALLBACK(sipe_purple_join_conference_cb),
 			      _("_Cancel"), NULL,
 #if PURPLE_VERSION_CHECK(3,0,0)
-			      cpar, gc);
-	purple_request_cpar_unref(cpar);
+			      purple_request_cpar_from_connection(gc),
 #else
-			      purple_connection_get_account(gc), NULL, NULL, gc);
+			      purple_connection_get_account(gc), NULL, NULL,
 #endif
+			      gc);
 }
 
 static void sipe_purple_republish_calendar(PurplePluginAction *action)
