@@ -328,9 +328,14 @@ AC_ARG_ENABLE([purple],
 	[enable_purple=yes])
 with_purple_vv=no
 AS_IF([test "x$enable_purple" != xno],
-	[PKG_CHECK_MODULES(PURPLE, [purple >= 2.4.0],
+	AS_IF([test "x$enable_purple" == "xyes" -o "x$enable_purple" == "x2"],
+		   [purple_pkgconfig=purple; gstreamer_pkgconfig=gstreamer-0.10],
+		  [test "x$enable_purple" == "x3"],
+		   [purple_pkgconfig=purple-3; gstreamer_pkgconfig=gstreamer-1.0])
+
+	[PKG_CHECK_MODULES(PURPLE, [$purple_pkgconfig >= 2.4.0],
 		[dnl unfortunately PURPLE_MAJOR_VERSION is not exported by purple.m4
-		 PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion purple | cut -d. -f 1`
+		 PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion $purple_pkgconfig | cut -d. -f 1`
 		 AC_SUBST(PURPLE_MAJOR_VERSION)
 
 		 ac_save_CFLAGS=$CFLAGS
@@ -378,8 +383,8 @@ AS_IF([test "x$enable_purple" != xno],
 				[AC_MSG_RESULT(ok)
 				 PKG_CHECK_MODULES(NICE, [nice >= 0.1.0],
 					dnl sipe-media.c uses g_slist_free_full()
-					[PKG_CHECK_MODULES(_SIPE_MEDIA_RECHECK_PLEASE_IGNORE, [purple >= 2.8.0],
-						[PKG_CHECK_MODULES(GSTREAMER, [gstreamer-0.10],
+					[PKG_CHECK_MODULES(_SIPE_MEDIA_RECHECK_PLEASE_IGNORE, [$purple_pkgconfig >= 2.8.0],
+						[PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
 							[with_purple_vv=yes],
 							[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
 						[AC_MSG_NOTICE(libpurple >= 2.8.0 required: disabling purple voice and video support)])],
