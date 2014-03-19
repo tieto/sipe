@@ -29,7 +29,7 @@ AS_IF([test "x"SIPE_GIT_COMMIT != x],
 ])
 
 dnl setup automake and require recent enough version
-AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-define tar-ustar])
+AM_INIT_AUTOMAKE([1.9 dist-bzip2 dist-xz no-define tar-ustar])
 
 AC_CANONICAL_HOST
 
