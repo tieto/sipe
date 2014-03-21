@@ -6,15 +6,16 @@
 # 
 # Translators:
 # Anibal Avelar <debianmx@gmail.com>, 2012
-# Bruno Martins <brunomomartins@gmail.com>, 2012
+# Bruno Martins <inactive+skorzen@transifex.com>, 2012
+# Bruno Queiros <bqueiros@gmail.com>, 2014
 # Filipe Boleto <fboleto@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2014-01-06 09:46+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2014-03-20 14:50+0000\n"
+"Last-Translator: Bruno Queiros <bqueiros@gmail.com>\n"
 "Language-Team: Portuguese (http://www.transifex.com/projects/p/pidgin-sipe/language/pt/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -126,7 +127,7 @@ msgstr "Busca contato falhou"
 
 #: ../src/core/sipe-buddy.c:1307
 msgid "Invalid contact search query"
-msgstr ""
+msgstr "Comando de procura de contacto inválido"
 
 #: ../src/core/sipe-buddy.c:1987
 #, c-format
@@ -249,7 +250,7 @@ msgstr "Falhou a entrada na conferência"
 #: ../src/core/sipe-conf.c:367
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
-msgstr ""
+msgstr "\"%s\" não é um URI de conferência válido"
 
 #: ../src/core/sipe-conf.c:898
 msgid ""
@@ -370,7 +371,7 @@ msgstr "Nome do utilizador deve ser um URI SIP\nExemplo: user@company.com"
 
 #: ../src/core/sipe-core.c:241
 msgid "Login and password are required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Login e palavra-chave são necessárias quando o Single Sign-On não está ativo"
 
 #: ../src/core/sipe-core.c:251
 msgid ""
@@ -512,11 +513,11 @@ msgstr "Erro ao criar fluxo de vídeo"
 
 #: ../src/core/sipe-media.c:905
 msgid "Invalid phone number"
-msgstr ""
+msgstr "Número de telefone inválido"
 
 #: ../src/core/sipe-media.c:915
 msgid "Audio Test Service is not available."
-msgstr ""
+msgstr "Serviço de Testes de Áudio não está disponível."
 
 #: ../src/core/sipe-media.c:1166
 msgid "User unavailable"
@@ -543,7 +544,7 @@ msgstr "Utilizador %s rejeitou a chamada"
 
 #: ../src/core/sipe-media.c:1185
 msgid "Unsupported media type"
-msgstr ""
+msgstr "Tipo de média não suportado"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe-notify.c:1059
@@ -627,7 +628,6 @@ msgstr "Grupos de acesso "
 
 #. * This has nothing to do with Availability numbers, like 3500 (online).
 #. * Just a mapping of Communicator Activities to tokens/translations
-#. 
 #. @TODO: NULL means "default translation from Pidgin"?
 #. *        What about other backends?
 #. SIPE_ACTIVITY_UNSET
@@ -864,7 +864,7 @@ msgstr "A ligar"
 
 #: ../src/purple/purple-plugin.c:426
 msgid "Password required"
-msgstr ""
+msgstr "Palavra-chave necessária"
 
 #: ../src/purple/purple-plugin.c:589
 msgid "user@company.com"
@@ -907,15 +907,15 @@ msgstr "_Cancelar"
 
 #: ../src/purple/purple-plugin.c:938
 msgid "Phone number"
-msgstr ""
+msgstr "Número de telefone"
 
 #: ../src/purple/purple-plugin.c:942 ../src/purple/purple-plugin.c:943
 msgid "Call a phone number"
-msgstr ""
+msgstr "Chamar um número de telefone"
 
 #: ../src/purple/purple-plugin.c:946
 msgid "_Call"
-msgstr ""
+msgstr "_Chamar"
 
 #: ../src/purple/purple-plugin.c:977
 msgid "Meeting location"
@@ -938,7 +938,7 @@ msgid ""
 "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
-msgstr ""
+msgstr "Introduza a frase da localização da reunião que recebeu no convite.\n\nUma localização válida será algo como\nmeet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nconf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nou\nhttps://meet.company.com/someone/abcdef1234"
 
 #: ../src/purple/purple-plugin.c:991
 msgid "_Join"
@@ -946,7 +946,7 @@ msgstr "_Entrar"
 
 #: ../src/purple/purple-plugin.c:1008 ../src/purple/purple-plugin.c:1022
 msgid "Publishing of calendar information has been disabled"
-msgstr ""
+msgstr "A publicação da informação do calendário foi desativada"
 
 #: ../src/purple/purple-plugin.c:1035
 msgid "About SIPE plugin..."
@@ -958,11 +958,11 @@ msgstr "Pesquisar contacto..."
 
 #: ../src/purple/purple-plugin.c:1042
 msgid "Call a phone number..."
-msgstr ""
+msgstr "Chamar um número de telefone..."
 
 #: ../src/purple/purple-plugin.c:1045
 msgid "Test call"
-msgstr ""
+msgstr "Chamada de teste"
 
 #: ../src/purple/purple-plugin.c:1049
 msgid "Join scheduled conference..."
@@ -982,7 +982,6 @@ msgstr "Redefinir o estado"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#. 
 #: ../src/purple/purple-plugin.c:1113
 msgid ""
 "Login\n"
@@ -1048,17 +1047,15 @@ msgstr "TLS-DSK"
 #. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
 #. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
 #. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
-#. 
 #: ../src/purple/purple-plugin.c:1155
 msgid "Use Single Sign-On"
 msgstr "Utilizar Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#. 
 #: ../src/purple/purple-plugin.c:1162
 msgid "Don't publish my calendar information"
-msgstr ""
+msgstr "Não publicar a minha informação de calendário"
 
 #: ../src/purple/purple-plugin.c:1165
 msgid ""
@@ -1074,7 +1071,6 @@ msgstr "Endereço de email\n (se for diferente do nome do utilizador)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#. 
 #: ../src/purple/purple-plugin.c:1174
 msgid ""
 "Email login\n"
@@ -1089,7 +1085,6 @@ msgstr "Password de e-mail\n(se diferente da Password)"
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#. 
 #: ../src/purple/purple-plugin.c:1184
 msgid ""
 "Group Chat Proxy\n"
