@@ -422,7 +422,7 @@ sipe_conf_create(struct sipe_core_private *sipe_private,
 		SIPE_SEND_CONF_ADD_USER,
 		session->focus_dialog->with,
 		self,
-		session->request_id++,
+		sipe_private->cccp_request_id++,
 		session->focus_dialog->with,
 		self,
 		session->focus_dialog->endpoint_GUID);
@@ -475,7 +475,7 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 		SIPE_SEND_CONF_MODIFY_USER_ROLES,
 		session->focus_dialog->with,
 		self,
-		session->request_id++,
+		sipe_private->cccp_request_id++,
 		session->focus_dialog->with,
 		who);
 	g_free(self);
@@ -552,7 +552,7 @@ sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
 		SIPE_SEND_CONF_MODIFY_CONF_LOCK,
 		session->focus_dialog->with,
 		self,
-		session->request_id++,
+		sipe_private->cccp_request_id++,
 		session->focus_dialog->with,
 		locked ? "true" : "false");
 	g_free(self);
@@ -590,7 +590,7 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		SIPE_SEND_CONF_DELETE_USER,
 		session->focus_dialog->with,
 		self,
-		session->request_id++,
+		sipe_private->cccp_request_id++,
 		session->focus_dialog->with,
 		who);
 	g_free(self);
@@ -762,7 +762,7 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 		SIPE_SEND_CONF_ADD,
 		sipe_private->focus_factory_uri,
 		self,
-		rand(),
+		sipe_private->cccp_request_id++,
 		conference_id,
 		expiry_time);
 	g_free(self);

@@ -166,6 +166,9 @@ struct sipe_core_private {
 
 	/* Addressbook server URI */
 	gchar *addressbook_uri;
+
+	/* [MS-CONFPRO] CCCP request ID counter */
+	guint cccp_request_id;
 };
 
 /**
