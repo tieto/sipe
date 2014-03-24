@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
@@ -387,7 +387,7 @@ void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
 	}
 
 	parts = g_strsplit(header, ",", 0);
-	
+
 	for (p = parts; *p; p++) {
 		gchar *uri = sipmsg_find_part_of_header(*p, "<", ">", NULL);
 		if (!uri)
@@ -872,6 +872,29 @@ sipe_parse_html(const char *html, char **attributes, char **message)
 	g_return_if_fail(attributes != NULL);
 	g_return_if_fail(message    != NULL);
 
+#define _HTML_UNESCAPE \
+	if (!g_ascii_strncasecmp(c, "&lt;", 4)) { \
+		msg[retcount++] = '<'; \
+		c += 4; \
+	} else if (!g_ascii_strncasecmp(c, "&gt;", 4)) { \
+		msg[retcount++] = '>'; \
+		c += 4; \
+	} else if (!g_ascii_strncasecmp(c, "&nbsp;", 6)) { \
+		msg[retcount++] = ' '; \
+		c += 6; \
+	} else if (!g_ascii_strncasecmp(c, "&quot;", 6)) { \
+		msg[retcount++] = '"'; \
+		c += 6; \
+	} else if (!g_ascii_strncasecmp(c, "&amp;", 5)) { \
+		msg[retcount++] = '&'; \
+		c += 5; \
+	} else if (!g_ascii_strncasecmp(c, "&apos;", 6)) { \
+		msg[retcount++] = '\''; \
+		c += 6; \
+	} else { \
+		msg[retcount++] = *c++; \
+	}
+
 	len = strlen(html);
 	msg = g_malloc0(len + 1);
 
@@ -933,7 +956,10 @@ sipe_parse_html(const char *html, char **attributes, char **message)
 					c += 7;
 
 				while ((*c != '\0') && g_ascii_strncasecmp(c, "\">", 2))
-					msg[retcount++] = *c++;
+					if (*c == '&') {
+						_HTML_UNESCAPE;
+					} else
+						msg[retcount++] = *c++;
 
 				if (*c != '\0')
 					c += 2;
@@ -1046,38 +1072,7 @@ sipe_parse_html(const char *html, char **attributes, char **message)
 		}
 		else if (*c == '&')
 		{
-			if (!g_ascii_strncasecmp(c, "&lt;", 4))
-			{
-				msg[retcount++] = '<';
-				c += 4;
-			}
-			else if (!g_ascii_strncasecmp(c, "&gt;", 4))
-			{
-				msg[retcount++] = '>';
-				c += 4;
-			}
-			else if (!g_ascii_strncasecmp(c, "&nbsp;", 6))
-			{
-				msg[retcount++] = ' ';
-				c += 6;
-			}
-			else if (!g_ascii_strncasecmp(c, "&quot;", 6))
-			{
-				msg[retcount++] = '"';
-				c += 6;
-			}
-			else if (!g_ascii_strncasecmp(c, "&amp;", 5))
-			{
-				msg[retcount++] = '&';
-				c += 5;
-			}
-			else if (!g_ascii_strncasecmp(c, "&apos;", 6))
-			{
-				msg[retcount++] = '\'';
-				c += 6;
-			}
-			else
-				msg[retcount++] = *c++;
+			_HTML_UNESCAPE;
 		}
 		else
 			msg[retcount++] = *c++;
@@ -1092,6 +1087,8 @@ sipe_parse_html(const char *html, char **attributes, char **message)
 	*message = msg;
 
 	g_free(fontface);
+
+#undef _HTML_UNESCAPE
 }
 // End of TEMP
 

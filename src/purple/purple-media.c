@@ -696,6 +696,8 @@ sipe_backend_get_local_codecs(struct sipe_backend_media *media,
 	 * Communicator rejects such SDP message and does not support the codec
 	 * anyway.
 	 *
+	 * Lync 2013 client hates Opus codec as well.
+	 *
 	 * For some yet unknown reason, A/V conferencing server does not accept
 	 * voice stream sent by SIPE when SIREN codec is in use. Nevertheless,
 	 * we are able to decode incoming SIREN from server and with MSOC
@@ -708,6 +710,7 @@ sipe_backend_get_local_codecs(struct sipe_backend_media *media,
 		gchar *encoding_name = purple_media_codec_get_encoding_name(codec);
 
 		if (sipe_strequal(encoding_name,"THEORA") ||
+		    sipe_strequal(encoding_name,"X-GST-OPUS-DRAFT-SPITTKA-00") ||
 		    (is_conference && sipe_strequal(encoding_name,"SIREN"))) {
 			GList *tmp;
 			g_object_unref(codec);

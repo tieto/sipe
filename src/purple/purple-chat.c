@@ -58,6 +58,8 @@
 #define purple_conversations_find_chat(g, n)             purple_find_chat(g, n)
 #define purple_conversations_get_chats                   purple_get_chats
 #define purple_conversation_get_connection(c)            purple_conversation_get_gc(c)
+#define purple_serv_got_chat_in(c, i, w, f, m, t)        serv_got_chat_in(c, i, w, f, m, t)
+#define purple_serv_got_joined_chat(c, i, n)             serv_got_joined_chat(c, i, n)
 #define BACKEND_SESSION_TO_PURPLE_CONV_CHAT(s)           (PURPLE_CONV_CHAT(((PurpleConversation *)s)))
 #define PURPLE_CHAT_USER_NONE                            PURPLE_CBFLAGS_NONE
 #define PURPLE_CONV_TO_SIPE_CORE_PUBLIC                  ((struct sipe_core_public *) conv->account->gc->proto_data)
@@ -351,9 +353,9 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 #else
 	PurpleConversation *conv =
 #endif
-		serv_got_joined_chat(purple_private->gc,
-				     sipe_purple_chat_id(purple_private->gc),
-				     title);
+		purple_serv_got_joined_chat(purple_private->gc,
+					    sipe_purple_chat_id(purple_private->gc),
+					    title);
 #if PURPLE_VERSION_CHECK(3,0,0)
 	g_object_set_data(G_OBJECT(conv),
 #else
@@ -400,12 +402,12 @@ void sipe_backend_chat_message(struct sipe_core_public *sipe_public,
 			       const gchar *html)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	serv_got_chat_in(purple_private->gc,
-			 purple_chat_conversation_get_id(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session)),
-			 from,
-			 PURPLE_MESSAGE_RECV,
-			 html,
-			 when ? when : time(NULL));
+	purple_serv_got_chat_in(purple_private->gc,
+				purple_chat_conversation_get_id(BACKEND_SESSION_TO_PURPLE_CONV_CHAT(backend_session)),
+				from,
+				PURPLE_MESSAGE_RECV,
+				html,
+				when ? when : time(NULL));
 }
 
 void sipe_backend_chat_operator(struct sipe_backend_chat_session *backend_session,
@@ -441,9 +443,9 @@ void sipe_backend_chat_rejoin(struct sipe_core_public *sipe_public,
 	 * As the chat is marked as "left", serv_got_joined_chat() will
 	 * do a "rejoin cleanup" and return the same conversation.
 	 */
-	new = serv_got_joined_chat(purple_private->gc,
-				   purple_chat_conversation_get_id(chat),
-				   title);
+	new = purple_serv_got_joined_chat(purple_private->gc,
+					  purple_chat_conversation_get_id(chat),
+					  title);
 	SIPE_DEBUG_INFO("sipe_backend_chat_rejoin: old %p (%p) == new %p (%p)",
 			backend_session, chat,
 			new, PURPLE_CONV_CHAT(new));

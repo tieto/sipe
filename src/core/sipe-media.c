@@ -935,9 +935,21 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 	gboolean has_new_media = FALSE;
 	GSList *i;
 
-	if (call_private && !is_media_session_msg(call_private, msg)) {
-		sip_transport_response(sipe_private, msg, 486, "Busy Here", NULL);
-		return;
+	if (call_private) {
+		char *self;
+
+		if (!is_media_session_msg(call_private, msg)) {
+			sip_transport_response(sipe_private, msg, 486, "Busy Here", NULL);
+			return;
+		}
+
+		self = sip_uri_self(sipe_private);
+		if (sipe_strequal(call_private->with, self)) {
+			g_free(self);
+			sip_transport_response(sipe_private, msg, 488, "Not Acceptable Here", NULL);
+			return;
+		}
+		g_free(self);
 	}
 
 	smsg = sdpmsg_parse_msg(msg->body);
