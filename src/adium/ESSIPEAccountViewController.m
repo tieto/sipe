@@ -61,9 +61,9 @@
 {
     [super configureForAccount:inAccount];
 
-    // BEAST mitigation for Mavericks users
-    if (floor(NSAppKitVersionNumber) <= NSAppKitVersionNumber10_8) {
-        // We are not running on Mavericks - Don't display BEAST mitigation configuration option
+    // BEAST mitigation for Mavericks and 10.8.5 users (with Security Update 2014-001)
+    if (NSAppKitVersionNumber < NSAppKitVersionNumber10_8_5) {
+        // We are not running on an OS with BEAST mitigations - Don't display this as a configuration option
         [checkbox_beastDisable setHidden:YES];
     }
     

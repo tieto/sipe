@@ -124,7 +124,9 @@
         if ([value isKindOfClass:[NSString class]]) {
             if ([key isEqualToString:KEY_SIPE_CONNECT_HOST]) {
                 if ([value isEqualToString:@""]) {
-                    [self setPreference:@"localhost" forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+                    // An empty sipe_connect_host means we're autodetecting the server
+                    // So we set this to our own hostname, so that the reachability test has a *network* address (i.e. non-loopback) to check connectivity against.
+                    [self setPreference:[[NSHost currentHost] localizedName] forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
                 } else {
                     // If the user entered server:port only give the server portion to adium
                     // otherwise the DNS lookup will fail the reachability test
