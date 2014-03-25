@@ -66,29 +66,6 @@
 #endif
 
 /**
- * AddUser request to Focus.
- * Params:
- * focus_URI, from, request_id, focus_URI, from, endpoint_GUID
- */
-#define SIPE_SEND_CONF_ADD_USER \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<addUser>"\
-		"<conferenceKeys confEntity=\"%s\"/>"\
-		"<ci:user xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" entity=\"%s\">"\
-			"<ci:roles>"\
-				"<ci:entry>attendee</ci:entry>"\
-			"</ci:roles>"\
-			"<ci:endpoint entity=\"{%s}\" xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\"/>"\
-		"</ci:user>"\
-	"</addUser>"\
-"</request>"
-
-/**
  * ModifyUserRoles request to Focus. Makes user a leader.
  * @param focus_uri (%s)
  * @param from (%s)
@@ -393,6 +370,22 @@ sipe_conf_create(struct sipe_core_private *sipe_private,
 		 struct sipe_chat_session *chat_session,
 		 const gchar *focus_uri)
 {
+	/* addUser request to the focus.
+	 *
+	 * focus_URI, from, endpoint_GUID
+	 */
+	const gchar CCCP_ADD_USER[] =
+		"<addUser>"
+			"<conferenceKeys confEntity=\"%s\"/>"
+			"<ci:user xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" entity=\"%s\">"
+				"<ci:roles>"
+					"<ci:entry>attendee</ci:entry>"
+				"</ci:roles>"
+				"<ci:endpoint entity=\"{%s}\" "
+					      "xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\"/>"
+			"</ci:user>"
+		"</addUser>";
+
 	gchar *hdr;
 	gchar *contact;
 	gchar *body;
@@ -416,17 +409,11 @@ sipe_conf_create(struct sipe_core_private *sipe_private,
 		contact);
 	g_free(contact);
 
-	/* @TODO put request_id to queue to further compare with incoming one */
-	/* focus_URI, from, request_id, focus_URI, from, endpoint_GUID */
 	self = sip_uri_self(sipe_private);
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_ADD_USER,
-		session->focus_dialog->with,
-		self,
-		sipe_private->cccp_request_id++,
-		session->focus_dialog->with,
-		self,
-		session->focus_dialog->endpoint_GUID);
+	body = cccp_request(sipe_private, session->focus_dialog->with,
+			    CCCP_ADD_USER,
+			    session->focus_dialog->with, self,
+			    session->focus_dialog->endpoint_GUID);
 
 	session->focus_dialog->outgoing_invite =
 		sip_transport_invite(sipe_private,
