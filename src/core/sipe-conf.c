@@ -66,29 +66,6 @@
 #endif
 
 /**
- * ModifyUserRoles request to Focus. Makes user a leader.
- * @param focus_uri (%s)
- * @param from (%s)
- * @param request_id (%d)
- * @param focus_uri (%s)
- * @param who (%s)
- */
-#define SIPE_SEND_CONF_MODIFY_USER_ROLES \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<modifyUserRoles>"\
-		"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"\
-		"<user-roles xmlns=\"urn:ietf:params:xml:ns:conference-info\">"\
-			"<entry>presenter</entry>"\
-		"</user-roles>"\
-	"</modifyUserRoles>"\
-"</request>"
-
-/**
  * ModifyConferenceLock request to Focus. Locks/unlocks conference.
  * @param focus_uri (%s)
  * @param from (%s)
@@ -445,9 +422,21 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 			   struct sip_session *session,
 			   const gchar* who)
 {
+	/* modifyUserRoles request to the focus. Makes user a leader.
+	 *
+	 * focus_uri (%s)
+	 * who (%s)
+	 */
+	const gchar CCCP_MODIFY_USER_ROLES[] =
+		"<modifyUserRoles>"
+			"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"
+			"<user-roles xmlns=\"urn:ietf:params:xml:ns:conference-info\">"
+				"<entry>presenter</entry>"
+			"</user-roles>"
+		"</modifyUserRoles>";
+
 	gchar *hdr;
 	gchar *body;
-	gchar *self;
 
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_conf_modify_user_role: no dialog with focus, exiting.");
@@ -457,16 +446,9 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 	hdr = g_strdup(
 		"Content-Type: application/cccp+xml\r\n");
 
-	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(sipe_private);
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_MODIFY_USER_ROLES,
-		session->focus_dialog->with,
-		self,
-		sipe_private->cccp_request_id++,
-		session->focus_dialog->with,
-		who);
-	g_free(self);
+	body = cccp_request(sipe_private, session->focus_dialog->with,
+			    CCCP_MODIFY_USER_ROLES,
+			    session->focus_dialog->with, who);
 
 	sip_transport_info(sipe_private,
 			   hdr,
