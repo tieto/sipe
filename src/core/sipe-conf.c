@@ -71,27 +71,6 @@
  * @param from (%s)
  * @param request_id (%d)
  * @param focus_uri (%s)
- * @param locked (%s) "true" or "false" values applicable
- */
-#define SIPE_SEND_CONF_MODIFY_CONF_LOCK \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<modifyConferenceLock>"\
-		"<conferenceKeys confEntity=\"%s\"/>"\
-		"<locked>%s</locked>"\
-	"</modifyConferenceLock>"\
-"</request>"
-
-/**
- * ModifyConferenceLock request to Focus. Locks/unlocks conference.
- * @param focus_uri (%s)
- * @param from (%s)
- * @param request_id (%d)
- * @param focus_uri (%s)
  * @param who (%s)
  */
 #define SIPE_SEND_CONF_DELETE_USER \
@@ -499,10 +478,20 @@ sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
 			   struct sipe_chat_session *chat_session,
 			   const gboolean locked)
 {
+	/* modifyConferenceLock request to the focus. Locks/unlocks conference.
+	 *
+	 * focus_uri (%s)
+	 * locked (%s) "true" or "false" values applicable
+	 */
+	const gchar CCCP_MODIFY_CONFERENCE_LOCK[] =
+		"<modifyConferenceLock>"
+			"<conferenceKeys confEntity=\"%s\"/>"
+			"<locked>%s</locked>"
+		"</modifyConferenceLock>";
+
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *hdr;
 	gchar *body;
-	gchar *self;
 
 	struct sip_session *session = sipe_session_find_chat(sipe_private,
 							     chat_session);
@@ -516,16 +505,10 @@ sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
 	hdr = g_strdup(
 		"Content-Type: application/cccp+xml\r\n");
 
-	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(sipe_private);
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_MODIFY_CONF_LOCK,
-		session->focus_dialog->with,
-		self,
-		sipe_private->cccp_request_id++,
-		session->focus_dialog->with,
-		locked ? "true" : "false");
-	g_free(self);
+	body = cccp_request(sipe_private, session->focus_dialog->with,
+			    CCCP_MODIFY_CONFERENCE_LOCK,
+			    session->focus_dialog->with,
+			    locked ? "true" : "false");
 
 	sip_transport_info(sipe_private,
 			   hdr,
