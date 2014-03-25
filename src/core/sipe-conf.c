@@ -198,6 +198,39 @@
 	"</im>"\
 "</Conferencing>"
 
+static gchar *
+cccp_request(struct sipe_core_private *sipe_private, const gchar *with,
+	     const gchar *body, ...)
+{
+	va_list args;
+	gchar *self = sip_uri_self(sipe_private);
+	/* TODO: put request_id to queue to further compare with incoming one */
+	gchar *request = g_strdup_printf(
+			"<?xml version=\"1.0\"?>"
+				"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" "
+				"xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "
+				"C3PVersion=\"1\" "
+				"to=\"%s\" "
+				"from=\"%s\" "
+				"requestId=\"%d\">"
+				"%s"
+			"</request>",
+			with,
+			self,
+			sipe_private->cccp_request_id++,
+			body);
+	gchar *result;
+	g_free(self);
+
+	va_start(args, body);
+	result = g_strdup_vprintf(request, args);
+	va_end(args);
+
+	g_free(request);
+
+	return result;
+}
+
 /**
  * Generates random GUID.
  * This method is borrowed from pidgin's msnutils.c
