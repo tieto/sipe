@@ -66,38 +66,6 @@
 #endif
 
 /**
- * Add Conference request to FocusFactory.
- * @param focus_factory_uri (%s) Ex.: sip:bob7@boston.local;gruu;opaque=app:conf:focusfactory
- * @param from		    (%s) Ex.: sip:bob7@boston.local
- * @param request_id	    (%d) Ex.: 1094520
- * @param conference_id	    (%s) Ex.: 8386E6AEAAA41E4AA6627BA76D43B6D1
- * @param expiry_time	    (%s) Ex.: 2009-07-13T17:57:09Z , Default duration: 7 hours
- */
-#define SIPE_SEND_CONF_ADD \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" "\
-	"xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<addConference>"\
-		"<ci:conference-info xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" entity=\"\" xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\">"\
-			"<ci:conference-description>"\
-				"<ci:subject/>"\
-				"<msci:conference-id>%s</msci:conference-id>"\
-				"<msci:expiry-time>%s</msci:expiry-time>"\
-				"<msci:admission-policy>openAuthenticated</msci:admission-policy>"\
-			"</ci:conference-description>"\
-			"<msci:conference-view>"\
-				"<msci:entity-view entity=\"chat\"/>"\
-				ENTITY_VIEW_AUDIO_VIDEO \
-			"</msci:conference-view>"\
-		"</ci:conference-info>"\
-	"</addConference>"\
-"</request>"
-
-/**
  * AddUser request to Focus.
  * Params:
  * focus_URI, from, request_id, focus_URI, from, endpoint_GUID
@@ -773,12 +741,34 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	gchar *conference_id;
 	gchar *contact;
 	gchar *body;
-	gchar *self;
 	struct transaction *trans;
 	struct sip_dialog *dialog = NULL;
 	time_t expiry = time(NULL) + 7*60*60; /* 7 hours */
 	char *expiry_time;
 	struct transaction_payload *payload;
+
+	/* addConference request to the focus factory.
+	 *
+	 * conference_id	(%s) Ex.: 8386E6AEAAA41E4AA6627BA76D43B6D1
+	 * expiry_time		(%s) Ex.: 2009-07-13T17:57:09Z
+	 */
+	const gchar CCCP_ADD_CONFERENCE[] =
+		"<addConference>"
+			"<ci:conference-info xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" "
+					     "entity=\"\" "
+					     "xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\">"
+				"<ci:conference-description>"
+					"<ci:subject/>"
+					"<msci:conference-id>%s</msci:conference-id>"
+					"<msci:expiry-time>%s</msci:expiry-time>"
+					"<msci:admission-policy>openAuthenticated</msci:admission-policy>"
+				"</ci:conference-description>"
+				"<msci:conference-view>"
+					"<msci:entity-view entity=\"chat\"/>"
+					ENTITY_VIEW_AUDIO_VIDEO
+				"</msci:conference-view>"
+			"</ci:conference-info>"
+		"</addConference>";
 
 	contact = get_contact(sipe_private);
 	hdr = g_strdup_printf(
@@ -789,16 +779,10 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	g_free(contact);
 
 	expiry_time = sipe_utils_time_to_str(expiry);
-	self = sip_uri_self(sipe_private);
 	conference_id = genconfid();
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_ADD,
-		sipe_private->focus_factory_uri,
-		self,
-		sipe_private->cccp_request_id++,
-		conference_id,
-		expiry_time);
-	g_free(self);
+	body = cccp_request(sipe_private, sipe_private->focus_factory_uri,
+			    CCCP_ADD_CONFERENCE,
+			    conference_id, expiry_time);
 	g_free(conference_id);
 	g_free(expiry_time);
 
