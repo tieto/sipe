@@ -59,12 +59,6 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
-#ifdef HAVE_VV
-#define ENTITY_VIEW_AUDIO_VIDEO "<msci:entity-view entity=\"audio-video\"/>"
-#else
-#define ENTITY_VIEW_AUDIO_VIDEO
-#endif
-
 /**
  * Invite counterparty to join conference.
  * @param focus_uri (%s)
@@ -174,6 +168,14 @@ sipe_conf_get_capabilities(struct sipe_core_private *sipe_private)
 		     NULL,
 		     process_conf_get_capabilities,
 		     "<getConferencingCapabilities />");
+}
+
+gboolean
+sipe_conf_supports_mcu_type(struct sipe_core_private *sipe_private,
+			    const gchar *type)
+{
+	return g_slist_find_custom(sipe_private->conf_mcu_types, type,
+				   sipe_strcompare) != NULL;
 }
 
 /**
@@ -690,6 +692,7 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	 *
 	 * conference_id	(%s) Ex.: 8386E6AEAAA41E4AA6627BA76D43B6D1
 	 * expiry_time		(%s) Ex.: 2009-07-13T17:57:09Z
+	 * conference_view	(%s) Ex.: <msci:entity-view entity="chat"/>
 	 */
 	const gchar CCCP_ADD_CONFERENCE[] =
 		"<addConference>"
@@ -702,21 +705,38 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 					"<msci:expiry-time>%s</msci:expiry-time>"
 					"<msci:admission-policy>openAuthenticated</msci:admission-policy>"
 				"</ci:conference-description>"
-				"<msci:conference-view>"
-					"<msci:entity-view entity=\"chat\"/>"
-					ENTITY_VIEW_AUDIO_VIDEO
-				"</msci:conference-view>"
+				"<msci:conference-view>%s</msci:conference-view>"
 			"</ci:conference-info>"
 		"</addConference>";
+
+	const gchar *DESIRED_MCU_TYPES[] = {
+		"chat",
+#ifdef HAVE_VV
+		"audio-video",
+#endif
+		NULL
+	};
+
+	GString *conference_view = g_string_new("");
+	const gchar **type;
+
+	for (type = DESIRED_MCU_TYPES; *type; ++type ) {
+		if (sipe_conf_supports_mcu_type(sipe_private, *type)) {
+			g_string_append(conference_view, "<msci:entity-view entity=\"");
+			g_string_append(conference_view, *type);
+			g_string_append(conference_view, "\"/>");
+		}
+	}
 
 	expiry_time = sipe_utils_time_to_str(expiry);
 	conference_id = genconfid();
 	trans = cccp_request(sipe_private, "SERVICE", sipe_private->focus_factory_uri,
 			     NULL, process_conf_add_response,
 			     CCCP_ADD_CONFERENCE,
-			     conference_id, expiry_time);
+			     conference_id, expiry_time, conference_view->str);
 	g_free(conference_id);
 	g_free(expiry_time);
+	g_string_free(conference_view, TRUE);
 
 	payload = g_new0(struct transaction_payload, 1);
 	payload->destroy = g_free;

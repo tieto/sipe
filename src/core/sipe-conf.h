@@ -34,6 +34,13 @@ void
 sipe_conf_get_capabilities(struct sipe_core_private *sipe_private);
 
 /**
+ * Checks whether given Multipoint Control Unit type is supported by the server.
+ */
+gboolean
+sipe_conf_supports_mcu_type(struct sipe_core_private *sipe_private,
+			    const gchar *type);
+
+/**
  * Creates conference.
  */
 void
