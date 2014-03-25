@@ -66,26 +66,6 @@
 #endif
 
 /**
- * ModifyConferenceLock request to Focus. Locks/unlocks conference.
- * @param focus_uri (%s)
- * @param from (%s)
- * @param request_id (%d)
- * @param focus_uri (%s)
- * @param who (%s)
- */
-#define SIPE_SEND_CONF_DELETE_USER \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<deleteUser>"\
-		"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"\
-	"</deleteUser>"\
-"</request>"
-
-/**
  * Invite counterparty to join conference.
  * @param focus_uri (%s)
  * @param subject (%s) of conference
@@ -525,9 +505,18 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		      struct sip_session *session,
 		      const gchar* who)
 {
+	/* deleteUser request to the focus. Removes a user from the conference.
+	 *
+	 * focus_uri (%s)
+	 * who (%s)
+	 */
+	const gchar CCCP_DELETE_USER[] =
+		"<deleteUser>"
+			"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"
+		"</deleteUser>";
+
 	gchar *hdr;
 	gchar *body;
-	gchar *self;
 
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_conf_delete_user: no dialog with focus, exiting.");
@@ -537,16 +526,9 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 	hdr = g_strdup(
 		"Content-Type: application/cccp+xml\r\n");
 
-	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(sipe_private);
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_DELETE_USER,
-		session->focus_dialog->with,
-		self,
-		sipe_private->cccp_request_id++,
-		session->focus_dialog->with,
-		who);
-	g_free(self);
+	body = cccp_request(sipe_private, session->focus_dialog->with,
+			    CCCP_DELETE_USER,
+			    session->focus_dialog->with, who);
 
 	sip_transport_info(sipe_private,
 			   hdr,
