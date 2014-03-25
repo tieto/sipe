@@ -112,6 +112,62 @@ cccp_request(struct sipe_core_private *sipe_private, const gchar *with,
 	return result;
 }
 
+static gboolean
+process_conf_get_capabilities(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+			      struct sipmsg *msg,
+			      SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	if (msg->response >= 400) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_conf_get_capabilities: "
+				"getConferencingCapabilities failed.");
+		return FALSE;
+	}
+	if (msg->response == 200) {
+		sipe_xml *xn_response = sipe_xml_parse(msg->body, msg->bodylen);
+
+		if (sipe_strequal("success", sipe_xml_attribute(xn_response, "code"))) {
+			const sipe_xml *node = sipe_xml_child(xn_response, "getConferencingCapabilities/mcu-types/mcuType");
+			for (;node; node = sipe_xml_twin(node)) {
+				sipe_private->conf_mcu_types =
+						g_slist_append(sipe_private->conf_mcu_types,
+							       sipe_xml_data(node));
+			}
+		}
+
+		sipe_xml_free(xn_response);
+	}
+
+	return TRUE;
+}
+
+void
+sipe_conf_get_capabilities(struct sipe_core_private *sipe_private)
+{
+	gchar *hdr;
+	gchar *body;
+
+	gchar *contact = get_contact(sipe_private);
+
+	hdr = g_strdup_printf(
+		"Supported: ms-sender\r\n"
+		"Contact: %s\r\n"
+		"Content-Type: application/cccp+xml\r\n",
+		contact);
+	g_free(contact);
+
+	body = cccp_request(sipe_private, sipe_private->focus_factory_uri,
+			    "<getConferencingCapabilities />");
+
+	sip_transport_service(sipe_private,
+			      sipe_private->focus_factory_uri,
+			      hdr,
+			      body,
+			      process_conf_get_capabilities);
+
+	g_free(hdr);
+	g_free(body);
+}
+
 /**
  * Generates random GUID.
  * This method is borrowed from pidgin's msnutils.c

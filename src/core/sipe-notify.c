@@ -171,6 +171,12 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 		sipe_buddy_refresh_photos(sipe_private);
 	}
 
+	if (sipe_private->focus_factory_uri) {
+		/* Fill the list of conferencing capabilities enabled on
+		 * the server. */
+		sipe_conf_get_capabilities(sipe_private);
+	}
+
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
 		/* persistentChatPool_uri has been set at this point */
 		sipe_groupchat_init(sipe_private);

@@ -432,6 +432,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->persistentChatPool_uri);
 	g_free(sipe_private->addressbook_uri);
 	g_free(sipe_private->dlx_uri);
+	sipe_utils_slist_free_full(sipe_private->conf_mcu_types, g_free);
 	g_free(sipe_private);
 }
 
