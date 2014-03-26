@@ -100,6 +100,19 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 	}
 }
 
+static gint
+candidate_sort_cb(struct sdpcandidate *c1, struct sdpcandidate *c2)
+{
+	int cmp = sipe_strcompare(c1->foundation, c2->foundation);
+	if (cmp == 0) {
+		cmp = sipe_strcompare(c1->username, c2->username);
+		if (cmp == 0)
+			cmp = c1->component - c2->component;
+	}
+
+	return cmp;
+}
+
 static GSList *
 backend_candidates_to_sdpcandidate(GList *candidates)
 {
@@ -122,7 +135,8 @@ backend_candidates_to_sdpcandidate(GList *candidates)
 		c->username = sipe_backend_candidate_get_username(candidate);
 		c->password = sipe_backend_candidate_get_password(candidate);
 
-		result = g_slist_append(result, c);
+		result = g_slist_insert_sorted(result, c,
+					       (GCompareFunc)candidate_sort_cb);
 	}
 
 	return result;

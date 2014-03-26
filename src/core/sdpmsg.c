@@ -414,28 +414,12 @@ base64_unpad(const gchar *str)
 	return result;
 }
 
-static gint
-candidate_sort_cb(struct sdpcandidate *c1, struct sdpcandidate *c2)
-{
-	int cmp = sipe_strcompare(c1->foundation, c2->foundation);
-	if (cmp == 0) {
-		cmp = sipe_strcompare(c1->username, c2->username);
-		if (cmp == 0)
-			cmp = c1->component - c2->component;
-	}
-
-	return cmp;
-}
-
 static gchar *
 candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 {
 	GString *result = g_string_new("");
 	GSList *i;
 	GSList *processed_tcp_candidates = NULL;
-
-	candidates = g_slist_copy(candidates);
-	candidates = g_slist_sort(candidates, (GCompareFunc)candidate_sort_cb);
 
 	for (i = candidates; i; i = i->next) {
 		struct sdpcandidate *c = i->data;
@@ -555,7 +539,6 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 		}
 	}
 
-	g_slist_free(candidates);
 	g_slist_free(processed_tcp_candidates);
 
 	return g_string_free(result, FALSE);
@@ -565,9 +548,6 @@ static gchar *
 remote_candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 {
 	GString *result = g_string_new("");
-
-	candidates = g_slist_copy(candidates);
-	candidates = g_slist_sort(candidates, (GCompareFunc)candidate_sort_cb);
 
 	if (candidates) {
 		if (ice_version == SIPE_ICE_RFC_5245) {
@@ -587,8 +567,6 @@ remote_candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 					       c->username);
 		}
 	}
-
-	g_slist_free(candidates);
 
 	return g_string_free(result, FALSE);
 }
