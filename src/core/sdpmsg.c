@@ -732,7 +732,7 @@ sdpcandidate_free(struct sdpcandidate *candidate)
 	}
 }
 
-static void
+void
 sdpcodec_free(struct sdpcodec *codec)
 {
 	if (codec) {

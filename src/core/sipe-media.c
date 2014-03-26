@@ -172,6 +172,13 @@ get_stream_ip_and_ports(GSList *candidates,
 	}
 }
 
+static gint
+sdpcodec_compare(gconstpointer a, gconstpointer b)
+{
+	return ((const struct sdpcodec *)a)->id -
+	       ((const struct sdpcodec *)b)->id;
+}
+
 static struct sdpmedia *
 backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 			   struct sipe_backend_stream *backend_stream)
@@ -221,7 +228,13 @@ backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 			c->parameters = g_slist_append(c->parameters, copy);
 		}
 
-		media->codecs = g_slist_append(media->codecs, c);
+		/* Buggy(?) codecs may report non-unique id (a.k.a. payload
+		 * type) that must not appear in SDP messages we send. Thus,
+		 * let's ignore any codec having the same id as one we already
+		 * have in the converted list. */
+		media->codecs = sipe_utils_slist_insert_unique_sorted(
+				media->codecs, c, sdpcodec_compare,
+				(GDestroyNotify)sdpcodec_free);
 	}
 
 	sipe_media_codec_list_free(codecs);
