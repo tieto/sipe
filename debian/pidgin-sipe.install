@@ -1,6 +1,6 @@
 debian/extra/pidgin usr/bin
 debian/extra/pidgin-sipe etc/default
 
-usr/lib/*/purple-2/libsipe.so usr/lib/purple-2
+usr/lib/*/purple-3/libsipe.so usr/lib/purple-3
 usr/share/locale/*
 usr/share/pixmaps/*
