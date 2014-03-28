@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple --disable-telepathy --enable-openssl=no
+DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple=3 --disable-telepathy --enable-openssl=no
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
