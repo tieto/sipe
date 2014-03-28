@@ -37,6 +37,7 @@
 #include "sipe-backend.h"
 #include "sdpmsg.h"
 #include "sipe-chat.h"
+#include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
@@ -840,6 +841,12 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	SipeIceVersion ice_version;
 	gchar **parts;
 	gchar *av_uri;
+
+	if (!sipe_conf_supports_mcu_type(sipe_private, "audio-video")) {
+		sipe_backend_notify_error(sipe_public, _("Join conference call"),
+				_("Conference calls are not supported on this server."));
+		return;
+	}
 
 	session = sipe_session_find_chat(sipe_private, chat_session);
 
