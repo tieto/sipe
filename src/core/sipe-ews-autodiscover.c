@@ -24,6 +24,8 @@
  *
  *   - POX: plain old XML autodiscover
  *   - [MS-OXDSCLI]:     http://msdn.microsoft.com/en-us/library/cc463896.aspx
+ *   - Autdiscover for Exchange:
+ *                       http://msdn.microsoft.com/en-us/library/office/jj900169.aspx
  *   - POX autodiscover: http://msdn.microsoft.com/en-us/library/office/aa581522.aspx
  *   - POX redirect:     http://msdn.microsoft.com/en-us/library/office/dn467392.aspx
  */
@@ -46,12 +48,17 @@ struct sipe_ews_autodiscover_cb {
 	gpointer cb_data;
 };
 
+struct autodiscover_method {
+	const gchar *template;
+	gboolean redirect;
+};
+
 struct sipe_ews_autodiscover {
 	struct sipe_ews_autodiscover_data *data;
 	struct sipe_http_request *request;
 	GSList *callbacks;
 	gchar *email;
-	const gchar * const *method;
+	const struct autodiscover_method *method;
 	gboolean retry;
 	gboolean completed;
 };
@@ -250,15 +257,63 @@ static gboolean sipe_ews_autodiscover_url(struct sipe_core_private *sipe_private
 	return(FALSE);
 }
 
+static void sipe_ews_autodiscover_redirect_response(struct sipe_core_private *sipe_private,
+						    guint status,
+						    GSList *headers,
+						    SIPE_UNUSED_PARAMETER const gchar *body,
+						    gpointer data)
+{
+	struct sipe_ews_autodiscover *sea = data;
+	gboolean failed = TRUE;
+
+	sea->request = NULL;
+
+	/* Start attempt with URL from redirect (3xx) response */
+	if ((status >= SIPE_HTTP_STATUS_REDIRECTION) &&
+	    (status <  SIPE_HTTP_STATUS_CLIENT_ERROR)) {
+		const gchar *location = sipe_utils_nameval_find_instance(headers,
+									 "Location",
+									 0);
+		if (location)
+			failed = !sipe_ews_autodiscover_url(sipe_private,
+							    location);
+	}
+
+	if (failed)
+		sipe_ews_autodiscover_request(sipe_private, TRUE);
+}
+
+static gboolean sipe_ews_autodiscover_redirect(struct sipe_core_private *sipe_private,
+					       const gchar *url)
+{
+	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
+
+	SIPE_DEBUG_INFO("sipe_ews_autodiscover_redirect: trying '%s'", url);
+
+	sea->request = sipe_http_request_get(sipe_private,
+					     url,
+					     NULL,
+					     sipe_ews_autodiscover_redirect_response,
+					     sea);
+
+	if (sea->request) {
+		sipe_http_request_ready(sea->request);
+		return(TRUE);
+	}
+
+	return(FALSE);
+}
+
 static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private,
 					  gboolean next_method)
 {
 	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
-	static const gchar * const methods[] = {
-		"https://Autodiscover.%s/Autodiscover/Autodiscover.xml",
-		"http://Autodiscover.%s/Autodiscover/Autodiscover.xml",
-		"https://%s/Autodiscover/Autodiscover.xml",
-		NULL
+	static const struct autodiscover_method const methods[] = {
+		{ "https://Autodiscover.%s/Autodiscover/Autodiscover.xml", FALSE },
+		{ "http://Autodiscover.%s/Autodiscover/Autodiscover.xml",  TRUE  },
+		{ "http://Autodiscover.%s/Autodiscover/Autodiscover.xml",  FALSE },
+		{ "https://%s/Autodiscover/Autodiscover.xml",              FALSE },
+		{ NULL,                                                    FALSE },
 	};
 
 	sea->retry = next_method;
@@ -268,11 +323,13 @@ static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private
 	} else
 		sea->method = methods;
 
-	if (*sea->method) {
-		gchar *url = g_strdup_printf(*sea->method,
+	if (sea->method->template) {
+		gchar *url = g_strdup_printf(sea->method->template,
 					     strstr(sea->email, "@") + 1);
 
-		if (!sipe_ews_autodiscover_url(sipe_private, url))
+		if (!(sea->method->redirect ?
+		      sipe_ews_autodiscover_redirect(sipe_private, url) :
+		      sipe_ews_autodiscover_url(sipe_private, url)))
 			sipe_ews_autodiscover_request(sipe_private, TRUE);
 
 		g_free(url);
