@@ -1,3 +1,21 @@
+pidgin-sipe (1.18.1-1) unstable; urgency=low
+
+  * New upstream version 1.18.1 "Bug Fixes I" (2013-04-XX)
+	- Fixed #238: False "not delivered" in conference (Stefan Becker)
+	- Fixed #237: HTML escaping not removed from URL (Stefan Becker)
+	- Fixed #210: Conference call ends with error message (Jakub Adam)
+	- fix endless loop with failed HTTP Basic authentication (Stefan Becker)
+	- fix crash when gstreamer nice plugin is missing (Stefan Becker, Jakub Adam)
+	- fix EWS autodiscover for some Office 365 users (Stefan Becker)
+	- purple: fix missing "Copy to" in buddy menu (Stefan Becker)
+	- purple/adium: ignore empty search values (Stefan Becker)
+	- adium: fix group chat UI (Stefan Becker)
+	- adium: implement BEAST mitigations for 10.8.5 (Michael Lamb)
+	- add indication when user is connected from a mobile device (Harris Kauffman)
+	- updated translations: Chinese (zh_CN), Portuguese (pt)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Thu, 03 Apr 2014 19:42:00 +0300
+
 pidgin-sipe (1.18.0-1) unstable; urgency=low
 
   * New upstream version 1.18.0 "Adium, GSS-NTLMSSP & OpenSSL" (2014-01-11)

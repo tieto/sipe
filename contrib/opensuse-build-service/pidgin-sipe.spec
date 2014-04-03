@@ -142,7 +142,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.18.0
+Version:        1.18.1
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -547,6 +547,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* DDD MMM DD 2014 J. D. User <jduser@noreply.com> 1.18.1
+- update to 1.18.1
+
 * Sat Mar 04 2014 J. D. User <jduser@noreply.com> 1.18.0-*git*
 - F20+/openSUSE 12.2+ require libnice gstreamer-0.10 plugin
 

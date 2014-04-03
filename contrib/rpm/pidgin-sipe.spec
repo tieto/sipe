@@ -25,7 +25,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.18.0
+Version:        1.18.1
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -266,6 +266,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* DDD MMM DD 2014 J. D. User <jduser@noreply.com> 1.18.1
+- update to 1.18.1
+
 * Sat Mar 08 2014 J. D. User <jduser@noreply.com> 1.18.0-*git*
 - New Fedora packaging guidelines suggest to use pkgconfig() for BRs
 
