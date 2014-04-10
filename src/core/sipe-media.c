@@ -759,21 +759,43 @@ void sipe_media_hangup(struct sipe_media_call_private *call_private)
 	}
 }
 
+static struct sipe_backend_stream *
+sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
+		      const gchar *with, SipeMediaType type,
+		      SipeIceVersion ice_version, gboolean initiator)
+{
+	struct sipe_backend_stream *stream;
+	struct sipe_backend_media_relays *backend_media_relays;
+	struct sipe_backend_media *backend_media;
+
+	backend_media_relays = sipe_backend_media_relays_convert(
+						sipe_private->media_relays,
+						sipe_private->media_relay_username,
+						sipe_private->media_relay_password);
+
+	backend_media = sipe_private->media_call->public.backend_private;
+	stream = sipe_backend_media_add_stream(backend_media, id, with, type,
+					       ice_version, initiator,
+					       backend_media_relays);
+
+	sipe_backend_media_relays_free(backend_media_relays);
+
+	return stream;
+}
+
 static void
 sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 			 const char *with, SipeIceVersion ice_version,
 			 gboolean with_video)
 {
-	struct sipe_media_call_private *call_private;
-	struct sipe_backend_media *backend_media;
-	struct sipe_backend_media_relays *backend_media_relays;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 
 	if (sipe_private->media_call)
 		return;
 
-	call_private = sipe_media_call_new(sipe_private, with, TRUE, ice_version);
+	sipe_private->media_call = sipe_media_call_new(sipe_private, with, TRUE,
+						       ice_version);
 
 	session = sipe_session_add_call(sipe_private, with);
 	dialog = sipe_dialog_add(session);
@@ -781,43 +803,28 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 	dialog->with = g_strdup(session->with);
 	dialog->ourtag = gentag();
 
-	call_private->with = g_strdup(session->with);
+	sipe_private->media_call->with = g_strdup(session->with);
 
-	backend_media = call_private->public.backend_private;
-
-	backend_media_relays =
-		sipe_backend_media_relays_convert(sipe_private->media_relays,
-						  sipe_private->media_relay_username,
-						  sipe_private->media_relay_password);
-
-	if (!sipe_backend_media_add_stream(backend_media,
-					   "audio", with, SIPE_MEDIA_AUDIO,
-					   call_private->ice_version, TRUE,
-					   backend_media_relays)) {
+	if (!sipe_media_stream_add(sipe_private, "audio", with, SIPE_MEDIA_AUDIO,
+				   sipe_private->media_call->ice_version,
+				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
-		sipe_media_hangup(call_private);
-		sipe_backend_media_relays_free(backend_media_relays);
+		sipe_media_hangup(sipe_private->media_call);
 		return;
 	}
 
-	if (   with_video
-	    && !sipe_backend_media_add_stream(backend_media,
-			    	    	      "video", with, SIPE_MEDIA_VIDEO,
-			    	    	      call_private->ice_version, TRUE,
-			    	    	      backend_media_relays)) {
+	if (with_video &&
+	    !sipe_media_stream_add(sipe_private, "video", with, SIPE_MEDIA_VIDEO,
+				   sipe_private->media_call->ice_version,
+				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating video stream"));
-		sipe_media_hangup(call_private);
-		sipe_backend_media_relays_free(backend_media_relays);
+		sipe_media_hangup(sipe_private->media_call);
 		return;
 	}
-
-	sipe_private->media_call = call_private;
-
-	sipe_backend_media_relays_free(backend_media_relays);
 
 	// Processing continues in stream_initialized_cb
 }
@@ -835,7 +842,6 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_backend_media_relays *backend_media_relays;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	SipeIceVersion ice_version;
@@ -875,24 +881,16 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 
 	sipe_private->media_call->with = g_strdup(session->with);
 
-	backend_media_relays =
-		sipe_backend_media_relays_convert(sipe_private->media_relays,
-						  sipe_private->media_relay_username,
-						  sipe_private->media_relay_password);
-
-	if (!sipe_backend_media_add_stream(sipe_private->media_call->public.backend_private,
-					   "audio", dialog->with,
-					   SIPE_MEDIA_AUDIO,
-					   sipe_private->media_call->ice_version,
-					   TRUE, backend_media_relays)) {
+	if (!sipe_media_stream_add(sipe_private, "audio", dialog->with,
+				   SIPE_MEDIA_AUDIO,
+				   sipe_private->media_call->ice_version,
+				   TRUE)) {
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
 		sipe_media_hangup(sipe_private->media_call);
 		sipe_private->media_call = NULL;
 	}
-
-	sipe_backend_media_relays_free(backend_media_relays);
 
 	// Processing continues in stream_initialized_cb
 }
@@ -964,7 +962,6 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 {
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sipe_backend_media *backend_media;
-	struct sipe_backend_media_relays *backend_media_relays = NULL;
 	struct sdpmsg *smsg;
 	gboolean has_new_media = FALSE;
 	GSList *i;
@@ -1013,12 +1010,6 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		sipmsg_free(call_private->invitation);
 	call_private->invitation = sipmsg_copy(msg);
 
-	if (smsg->media)
-		backend_media_relays = sipe_backend_media_relays_convert(
-						sipe_private->media_relays,
-						sipe_private->media_relay_username,
-						sipe_private->media_relay_password);
-
 	// Create any new media streams
 	for (i = smsg->media; i; i = i->next) {
 		struct sdpmedia *media = i->data;
@@ -1037,17 +1028,12 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 				continue;
 
 			with = parse_from(sipmsg_find_header(msg, "From"));
-			sipe_backend_media_add_stream(backend_media, id, with,
-						      type,
-						      smsg->ice_version,
-						      FALSE,
-						      backend_media_relays);
+			sipe_media_stream_add(sipe_private, id, with, type,
+					      smsg->ice_version, FALSE);
 			has_new_media = TRUE;
 			g_free(with);
 		}
 	}
-
-	sipe_backend_media_relays_free(backend_media_relays);
 
 	if (has_new_media) {
 		sdpmsg_free(call_private->smsg);
