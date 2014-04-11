@@ -452,8 +452,8 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 				case SIPE_CANDIDATE_TYPE_RELAY:
 					type = "relay";
 					related = g_strdup_printf("raddr %s rport %d ",
-								  c->ip,
-								  c->port);
+								  c->base_ip,
+								  c->base_port);
 					break;
 				case SIPE_CANDIDATE_TYPE_SRFLX:
 					type = "srflx";
