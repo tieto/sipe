@@ -1,6 +1,6 @@
 pidgin-sipe (1.18.1-1) unstable; urgency=low
 
-  * New upstream version 1.18.1 "Bug Fixes I" (2013-04-XX)
+  * New upstream version 1.18.1 "Bug Fixes I" (2014-04-12)
 	- Fixed #238: False "not delivered" in conference (Stefan Becker)
 	- Fixed #237: HTML escaping not removed from URL (Stefan Becker)
 	- Fixed #210: Conference call ends with error message (Jakub Adam)
@@ -14,7 +14,7 @@ pidgin-sipe (1.18.1-1) unstable; urgency=low
 	- add indication when user is connected from a mobile device (Harris Kauffman)
 	- updated translations: Chinese (zh_CN), Portuguese (pt)
 
- -- Stefan Becker <chemobejk@gmail.com>  Thu, 03 Apr 2014 19:42:00 +0300
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 12 Apr 2014 17:54:00 +0300
 
 pidgin-sipe (1.18.0-1) unstable; urgency=low
 

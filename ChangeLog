@@ -1,4 +1,4 @@
-version 1.18.1 "Bug Fixes I" (2013-04-XX)
+version 1.18.1 "Bug Fixes I" (2014-04-12)
 	- Fixed #238: False "not delivered" in conference (Stefan Becker)
 	- Fixed #237: HTML escaping not removed from URL (Stefan Becker)
 	- Fixed #210: Conference call ends with error message (Jakub Adam)
