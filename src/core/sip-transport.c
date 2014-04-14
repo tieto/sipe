@@ -109,6 +109,9 @@ struct sip_transport {
 	guint cseq;
 	guint register_attempt;
 
+	guint keepalive_timeout;
+	time_t last_message;
+
 	gboolean processing_input;   /* whether full header received */
 	gboolean auth_incomplete;    /* whether authentication not completed */
 	gboolean reregister_set;     /* whether reregister timer set */
@@ -513,6 +516,51 @@ static const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_priv
 	return(transport->user_agent);
 }
 
+/*
+ * NOTE: Do *NOT* call sipe_backend_transport_message(...) directly!
+ *
+ * All SIP messages must pass through this function in order to update
+ * the timestamp for keepalive tracking.
+ */
+static void send_sip_message(struct sip_transport *transport,
+			     const gchar *string)
+{
+	sipe_utils_message_debug("SIP", string, NULL, TRUE);
+	transport->last_message = time(NULL);
+	sipe_backend_transport_message(transport->connection, string);
+}
+
+static void start_keepalive_timer(struct sipe_core_private *sipe_private,
+				  guint seconds);
+static void keepalive_timeout(struct sipe_core_private *sipe_private,
+			      SIPE_UNUSED_PARAMETER gpointer data)
+{
+	struct sip_transport *transport = sipe_private->transport;
+	if (transport) {
+		guint since_last = time(NULL) - transport->last_message;
+		guint restart    = transport->keepalive_timeout;
+		if (since_last >= restart) {
+			SIPE_DEBUG_INFO("keepalive_timeout: expired %d", restart);
+			send_sip_message(transport, "\r\n\r\n");
+		} else {
+			/* timeout not reached since last message -> reschedule */
+			restart -= since_last;
+		}
+		start_keepalive_timer(sipe_private, restart);
+	}
+}
+
+static void start_keepalive_timer(struct sipe_core_private *sipe_private,
+				  guint seconds)
+{
+	sipe_schedule_seconds(sipe_private,
+			      "<+keepalive-timeout>",
+			      NULL,
+			      seconds,
+			      keepalive_timeout,
+			      NULL);
+}
+
 void sip_transport_response(struct sipe_core_private *sipe_private,
 			    struct sipmsg *msg,
 			    guint code,
@@ -559,8 +607,7 @@ void sip_transport_response(struct sipe_core_private *sipe_private,
 		tmp = g_slist_next(tmp);
 	}
 	g_string_append_printf(outstr, "\r\n%s", body ? body : "");
-	sipe_utils_message_debug("SIP", outstr->str, NULL, TRUE);
-	sipe_backend_transport_message(sipe_private->transport->connection, outstr->str);
+	send_sip_message(sipe_private->transport, outstr->str);
 	g_string_free(outstr, TRUE);
 }
 
@@ -750,8 +797,7 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 			SIPE_DEBUG_INFO("SIP transactions count:%d after addition", g_slist_length(transport->transactions));
 		}
 
-		sipe_utils_message_debug("SIP", buf, NULL, TRUE);
-		sipe_backend_transport_message(transport->connection, buf);
+		send_sip_message(transport, buf);
 		g_free(buf);
 	}
 
@@ -992,25 +1038,25 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				}
 
 				if (!transport->reauthenticate_set) {
-					gchar *action_name = g_strdup_printf("<%s>", "+reauthentication");
 					guint reauth_timeout = transport->registrar.expires;
 
 					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
 
 					/* Does authentication scheme provide valid expiration time? */
-					if (reauth_timeout <= (5 * 60)) {
+					if (reauth_timeout == 0) {
 						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: no expiration time - using default of 8 hours");
 						reauth_timeout = 8 * 60 * 60;
 					}
 
 					/* schedule reauthentication 5 minutes before expiration */
+					if (reauth_timeout > 5 * 60)
+						reauth_timeout -= 5 * 60;
 					sipe_schedule_seconds(sipe_private,
-							      action_name,
+							      "<+reauthentication>",
 							      NULL,
-							      reauth_timeout - 5 * 60,
+							      reauth_timeout,
 							      do_reauthenticate_cb,
 							      NULL);
-					g_free(action_name);
 					transport->reauthenticate_set = TRUE;
 				}
 
@@ -1091,9 +1137,9 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				timeout = sipmsg_find_part_of_header(sipmsg_find_header(msg, "ms-keep-alive"),
 								     "timeout=", ";", NULL);
 				if (timeout != NULL) {
-					sscanf(timeout, "%u", &sipe_private->public.keepalive_timeout);
+					sscanf(timeout, "%u", &transport->keepalive_timeout);
 					SIPE_DEBUG_INFO("process_register_response: server determined keep alive timeout is %u seconds",
-							sipe_private->public.keepalive_timeout);
+							transport->keepalive_timeout);
 					g_free(timeout);
 				}
 
@@ -1353,6 +1399,8 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 	sipe_private->service_data = NULL;
 	sipe_private->address_data = NULL;
 
+	sipe_schedule_cancel(sipe_private, "<+keepalive-timeout>");
+
 	if (sipe_private->dns_query)
 		sipe_backend_dns_query_cancel(sipe_private->dns_query);
 
@@ -1448,8 +1496,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 
 					/* Resend request */
 					resend = sipmsg_to_string(trans->msg);
-					sipe_utils_message_debug("SIP", resend, NULL, TRUE);
-					sipe_backend_transport_message(sipe_private->transport->connection, resend);
+					send_sip_message(sipe_private->transport, resend);
 					g_free(resend);
 
 					/* Transaction not yet completed */
@@ -1497,8 +1544,7 @@ static void process_input_message(struct sipe_core_private *sipe_private,
 
 							/* resend request with proxy authentication */
 							resend = sipmsg_to_string(trans->msg);
-							sipe_utils_message_debug("SIP", resend, NULL, TRUE);
-							sipe_backend_transport_message(sipe_private->transport->connection, resend);
+							send_sip_message(sipe_private->transport, resend);
 							g_free(resend);
 
 							/* Transaction not yet completed */
@@ -1650,8 +1696,19 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 static void sip_transport_connected(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
+	struct sip_transport *transport = sipe_private->transport;
+
 	sipe_private->service_data = NULL;
 	sipe_private->address_data = NULL;
+
+	/*
+	 * Initial keepalive timeout during REGISTER phase
+	 *
+	 * NOTE: 60 seconds is a guess. Needs more testing!
+	 */
+	transport->keepalive_timeout = 60;
+	start_keepalive_timer(sipe_private, transport->keepalive_timeout);
+
 	do_register(sipe_private, FALSE);
 }
 
@@ -1923,15 +1980,6 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 		sipe_private->transport_type = transport;
 		resolve_next_service(sipe_private, services[transport]);
 	}
-}
-
-void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public)
-{
-	SIPE_DEBUG_INFO("sending keep alive %d",
-			sipe_public->keepalive_timeout);
-	sipe_utils_message_debug("SIP", "", NULL, TRUE);
-	sipe_backend_transport_message(SIPE_CORE_PRIVATE->transport->connection,
-				       "\r\n\r\n");
 }
 
 const gchar *sipe_core_transport_sip_server_name(struct sipe_core_public *sipe_public)

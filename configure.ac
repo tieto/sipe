@@ -29,7 +29,7 @@ AS_IF([test "x"SIPE_GIT_COMMIT != x],
 ])
 
 dnl setup automake and require recent enough version
-AM_INIT_AUTOMAKE([1.9 dist-bzip2 no-define tar-ustar])
+AM_INIT_AUTOMAKE([1.9 dist-bzip2 dist-xz no-define tar-ustar])
 
 AC_CANONICAL_HOST
 
@@ -77,7 +77,7 @@ export PKG_CONFIG_PATH
 dnl debug mode
 AC_ARG_ENABLE(debug,
 	[AS_HELP_STRING([--enable-debug],
-			[compile with debugging support [default=no]])],
+			[compile with debugging support @<:@default=no@:>@])],
 	[],
 	[enable_debug=no])
 
@@ -89,7 +89,7 @@ dnl quality check mode
 dnl For people who are interested in finding bugs and not hiding them
 AC_ARG_ENABLE(quality-check,
 	[AS_HELP_STRING([--enable-quality-check],
-			[compile with compiler checks enabled [default=yes]])],
+			[compile with compiler checks enabled @<:@default=yes@:>@])],
 	[],
 	[enable_quality_check=yes])
 
@@ -157,24 +157,54 @@ AS_IF([test "x$with_krb5" = xno], [], dnl disabled by user
 		 KRB5_LDFLAGS=""
 
 		 dnl same as AC_CHECK_LIB()
-		 LIBS="$LIBS `krb5-config --libs gssapi 2>/dev/null`"
-		 AC_DEFINE(HAVE_LIBKRB5, 1, [Define to 1 if you have the `krb5' library (-lkrb5)])],
+		 LIBS="$LIBS `krb5-config --libs gssapi 2>/dev/null`"],
 		[AC_MSG_RESULT(no)
 		 with_krb5=no])],
       [                               dnl path specified by user
 	KRB5_CFLAGS="-I${with_krb5}/include"
 	KRB5_LDFLAGS="-L${with_krb5}/lib"
-	ac_save_LDFLAGS="$LDLAGS"
-	LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
-	AC_CHECK_LIB(krb5, krb5_rd_req,          [],
-		[AC_CHECK_LIB(krb5, krb5_rd_req, [],
-			[AC_ERROR(Kerberos 5 libraries not found)])])
-	AC_CHECK_LIB(gssapi_krb5, gss_krb5_export_lucid_sec_context, [],
-			[AC_ERROR(GSSAPI Kerberos 5 libraries not found)])
-	LDFLAGS="$ac_save_LDFLAGS"])
-AM_CONDITIONAL(SIP_SEC_KRB5, [test "x$with_krb5" != xno])
+      ])
+AS_IF([test "x$with_krb5" != xno],
+      [ac_save_CFLAGS="$CFLAGS"
+       ac_save_LDFLAGS="$LDLAGS"
+       CFLAGS="$CFLAGS $KRB5_CFLAGS"
+       LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
+       AC_CHECK_HEADERS([gssapi/gssapi.h gssapi/gssapi_krb5.h],
+			[],
+			[AC_ERROR([GSSAPI headers not found])])
+       AC_CHECK_FUNC([gss_init_sec_context],
+		     [],
+		     [AC_ERROR([GSSAPI libraries not found])])
+
+       dnl older GSSAPI releases don't have gss_acquire_cred_with_passwd()
+       AC_CHECK_HEADER([gssapi/gssapi_ext.h],
+		       [AC_CHECK_FUNC([gss_acquire_cred_with_password],
+				      [AC_DEFINE(HAVE_GSSAPI_PASSWORD_SUPPORT, 1, [Define to 1 if gssapi has gss_acquire_cred_with_passwd()])],
+				      [AC_MSG_NOTICE([gss_acquire_cred_with_passwd() required: disabling GSSAPI non-SSO support])])],
+		       [AC_MSG_NOTICE([gssapi/gssapi_ext.h required: disabling GSSAPI non-SSO support])])
+
+       CFLAGS="$ac_save_CFLAGS"
+       LDFLAGS="$ac_save_LDFLAGS"
+      ])
+
+AM_CONDITIONAL(SIP_SEC_GSSAPI, [test "x$with_krb5" != xno])
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
+
+AC_ARG_ENABLE(gssapi_only,
+	[AS_HELP_STRING([--enable-gssapi-only],
+			[disable all internal authentication code and only use
+                         GSSAPI for authentication @<:@default=yes@:>@])],
+	[],
+        dnl requires Kerberos which provides GSSAPI
+	[enable_gssapi_only=$with_krb5])
+AS_IF([test "x$enable_gssapi_only" != xno],
+	[AC_CHECK_HEADER([gssapi/gssapi_ntlmssp.h],
+		       [AC_DEFINE(HAVE_GSSAPI_ONLY, 1, [Define to 1 to enable GSSAPI-only mode])],
+		       [AC_MSG_NOTICE([gssapi/gssapi_ntlm.h required: falling back to internal authentication implementation])
+                        enable_gssapi_only=no])
+        ])
+AM_CONDITIONAL(SIP_SEC_GSSAPI_ONLY, [test "x$enable_gssapi_only" != xno])
 
 dnl check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
@@ -193,15 +223,43 @@ AS_IF([test "x$ac_have_gmime" = xyes],
 	[AC_DEFINE(HAVE_GMIME, 1, [Define if gmime should be used in sipe.])])
 
 dnl check for NSS
-PKG_CHECK_MODULES(NSS, [nss],
+AC_ARG_ENABLE(nss,
+	[AS_HELP_STRING([--enable-nss],
+			[use NSS as crypto backend @<:@default=yes@:>@])],
 	[],
-	[PKG_CHECK_MODULES(NSS, [mozilla-nss],
+	[enable_nss=yes])
+AS_IF([test "x$enable_nss" != xno],
+	[PKG_CHECK_MODULES(NSS, [nss],
 		[],
-		[PKG_CHECK_MODULES(NSS, [microb-engine-nss],
+		[PKG_CHECK_MODULES(NSS, [mozilla-nss],
 			[],
-			[AC_ERROR([nss, mozilla-nss or microb-engine-nss package is required])])
+			[PKG_CHECK_MODULES(NSS, [microb-engine-nss],
+				[],
+				[enable_nss=no])
+			])
+		])
 	])
-])
+
+dnl check for OpenSSL
+AC_ARG_ENABLE(openssl,
+	[AS_HELP_STRING([--enable-openssl],
+			[use OpenSSL as crypto backend @<:@default=yes@:>@])],
+	[],
+	[enable_openssl=yes])
+AS_IF([test "x$enable_openssl" != xno],
+	[PKG_CHECK_MODULES(OPENSSL, [libcrypto],
+		   [],
+		   [enable_openssl=no])
+	])
+AS_IF(
+	[test "x$enable_nss" != xno],
+		[ dnl NSS has priority over OpenSSL
+		  enable_openssl=no
+		  AC_MSG_NOTICE([using NSS as crypto backend.])],
+	[test "x$enable_openssl" != xno],
+		[AC_MSG_NOTICE([using OpenSSL as crypto backend.])],
+	[AC_ERROR([nss, mozilla-nss, microb-engine-nss or libcrypto package is required])])
+AM_CONDITIONAL(SIPE_OPENSSL, [test "x$enable_openssl" != xno])
 
 dnl check for libxml2
 PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
@@ -275,44 +333,8 @@ AS_IF([test "x$enable_purple" != xno],
 		 PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion purple | cut -d. -f 1`
 		 AC_SUBST(PURPLE_MAJOR_VERSION)
 
-		 dnl let user now if he has a 32- and 64-bit header conflict...
-		 AC_MSG_CHECKING([for 32- and 64-bit header conflicts])
 		 ac_save_CFLAGS=$CFLAGS
 		 CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
-		 AC_COMPILE_IFELSE(
-			[AC_LANG_PROGRAM([[
-#include <unistd.h>
-#include <glib.h>
-#include <cipher.h>
-#include <version.h>
-
-/* Compile some code that has caused trouble in the past */
-static void testfunc(unsigned long len)
-{
-  PurpleCipherContext *rc4 = NULL;
-  guchar *plaintext = NULL;
-  gsize plaintext_length = 0;
-  guchar *encrypted_text = NULL;
-  gsize dummy = 0;
-  purple_cipher_context_set_option(rc4, "key_len", GUINT_TO_POINTER(len));
-  purple_cipher_context_encrypt(rc4, plaintext, plaintext_length,
-                                encrypted_text,
-#if PURPLE_VERSION_CHECK(3,0,0)
-                                dummy);
-#else
-                                &dummy);
-#endif
-}
-					]],
-					[[testfunc(16);]])],
-			[AC_MSG_RESULT(none)],
-			[AC_MSG_FAILURE([conflicts found.
-
-Check that you have the correct glib/libpurple headers installed for
-your architecture or set GLIB_CFLAGS/PURPLE_CFLAGS to override the
-system defaults.
-])
-			])
 
 		 dnl on windows
 		 dnl test program needs to be in the same location as libpurple
@@ -330,6 +352,7 @@ system defaults.
 #include <sslconn.h>
 						]],
 						[[
+	purple_prefs_init();
 	purple_plugins_init();
 	purple_plugins_probe(G_MODULE_SUFFIX);
 	purple_ssl_init();
@@ -496,6 +519,10 @@ AS_IF([test "x$with_krb5" = xno],
 	[AS_ECHO("Build with Kerberos 5 support")
 	 AS_ECHO("KRB5_CFLAGS    : $KRB5_CFLAGS")
 	 AS_ECHO("KRB5_LDFLAGS   : $KRB5_LDFLAGS")])
+AS_ECHO()
+AS_IF([test "x$enable_gssapi_only" = xno],
+	[AS_ECHO("Using internal authentication implementation")],
+	[AS_ECHO("Using only GSSAPI for authentication")])
 AS_ECHO()
 AS_IF([test "x$enable_debug" = xno],
 	[AS_ECHO("Debugging not enabled")],

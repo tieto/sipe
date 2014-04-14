@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,7 +44,6 @@
 #endif
 
 #include "accountopt.h"
-#include "blist.h"
 #include "connection.h"
 #include "core.h"
 #include "dnssrv.h"
@@ -55,13 +54,30 @@
 #include "plugin.h"
 #include "request.h"
 #include "status.h"
-/*
- * NOTE: Currently PURPLE_VERSION_CHECK(2,y,z) returns FALSE for libpurple >= 3.0.0.
- *       See also <http://developer.pidgin.im/ticket/14551>
- *
- * As a workaround an additional PURPLE_VERSION_CHECK(3,0,0) needs to be added.
- */
+
 #include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "buddylist.h"
+#define PURPLE_TYPE_STRING G_TYPE_STRING
+#else
+#include "blist.h"
+#define PurpleIMTypingState                           PurpleTypingState
+#define PURPLE_CONNECTION_FLAG_ALLOW_CUSTOM_SMILEY    PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY
+#define PURPLE_CONNECTION_FLAG_FORMATTING_WBFO        PURPLE_CONNECTION_FORMATTING_WBFO
+#define PURPLE_CONNECTION_FLAG_HTML                   PURPLE_CONNECTION_HTML
+#define PURPLE_CONNECTION_FLAG_NO_BGCOLOR             PURPLE_CONNECTION_NO_BGCOLOR
+#define PURPLE_CONNECTION_FLAG_NO_FONTSIZE            PURPLE_CONNECTION_NO_FONTSIZE
+#define PURPLE_CONNECTION_FLAG_NO_URLDESC             PURPLE_CONNECTION_NO_URLDESC
+#define PURPLE_IS_BUDDY(n)                            PURPLE_BLIST_NODE_IS_BUDDY(n)
+#define PURPLE_IS_CHAT(n)                             PURPLE_BLIST_NODE_IS_CHAT(n)
+#define PURPLE_IM_TYPING                              PURPLE_TYPING
+#define PURPLE_IM_NOT_TYPING                          PURPLE_NOT_TYPING
+#define purple_account_option_string_set_masked(o, f) purple_account_option_set_masked(o, f)
+#define purple_connection_error(g, e, m)              purple_connection_error_reason(g, e, m)
+#define purple_connection_get_flags(gc)               0
+#define purple_connection_set_protocol_data(gc, p)    gc->proto_data = p
+#define purple_connection_set_flags(gc, f)            gc->flags |= f
+#endif
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -81,7 +97,7 @@
  *  - is Single Sign-On supported, and
  *  - is Kerberos supported
  */
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 #define PURPLE_SIPE_SSO_AND_KERBEROS 1
 #else
 #define PURPLE_SIPE_SSO_AND_KERBEROS 0
@@ -155,7 +171,7 @@ static gchar *sipe_purple_status_text(PurpleBuddy *buddy)
 {
 	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
 	return sipe_core_buddy_status(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
-				      buddy->name,
+				      purple_buddy_get_name(buddy),
 				      sipe_purple_token_to_activity(purple_status_get_id(status)),
 				      purple_status_get_name(status));
 }
@@ -166,7 +182,7 @@ static void sipe_purple_tooltip_text(PurpleBuddy *buddy,
 {
 	const PurplePresence *presence = purple_buddy_get_presence(buddy);
 	sipe_core_buddy_tooltip_info(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
-				     buddy->name,
+				     purple_buddy_get_name(buddy),
 				     purple_status_get_name(purple_presence_get_active_status(presence)),
 				     purple_presence_is_online(presence),
 				     (struct sipe_backend_buddy_tooltip *) user_info);
@@ -250,9 +266,12 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 
 static GList *sipe_purple_blist_node_menu(PurpleBlistNode *node)
 {
-	if(PURPLE_BLIST_NODE_IS_BUDDY(node)) {
+	if (PURPLE_IS_BUDDY(node))
+	{
 		return sipe_purple_buddy_menu((PurpleBuddy *) node);
-	} else if(PURPLE_BLIST_NODE_IS_CHAT(node)) {
+	} else
+	if (PURPLE_IS_CHAT(node))
+	{
 		return sipe_purple_chat_menu((PurpleChat *)node);
 	} else {
 		return NULL;
@@ -350,14 +369,9 @@ static void connect_to_core(PurpleConnection *gc,
 	g_strfreev(username_split);
 
 	if (!sipe_public) {
-#if PURPLE_VERSION_CHECK(3,0,0)
-		purple_connection_error(
-#else
-		purple_connection_error_reason(
-#endif
-					       gc,
-					       PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
-					       errmsg);
+		purple_connection_error(gc,
+					PURPLE_CONNECTION_ERROR_INVALID_USERNAME,
+					errmsg);
 		return;
 	}
 
@@ -372,9 +386,15 @@ static void connect_to_core(PurpleConnection *gc,
 	if (get_dont_publish_flag(account))
 		SIPE_CORE_FLAG_SET(DONT_PUBLISH);
 
-	gc->proto_data = sipe_public;
-	gc->flags |= PURPLE_CONNECTION_HTML | PURPLE_CONNECTION_FORMATTING_WBFO | PURPLE_CONNECTION_NO_BGCOLOR |
-		PURPLE_CONNECTION_NO_FONTSIZE | PURPLE_CONNECTION_NO_URLDESC | PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY;
+	purple_connection_set_protocol_data(gc, sipe_public);
+	purple_connection_set_flags(gc,
+				    purple_connection_get_flags(gc) |
+				    PURPLE_CONNECTION_FLAG_HTML |
+				    PURPLE_CONNECTION_FLAG_FORMATTING_WBFO |
+				    PURPLE_CONNECTION_FLAG_NO_BGCOLOR |
+				    PURPLE_CONNECTION_FLAG_NO_FONTSIZE |
+				    PURPLE_CONNECTION_FLAG_NO_URLDESC |
+				    PURPLE_CONNECTION_FLAG_ALLOW_CUSTOM_SMILEY);
 	purple_connection_set_display_name(gc, sipe_public->sip_name);
 	purple_connection_update_progress(gc, _("Connecting"), 1, 2);
 
@@ -401,12 +421,7 @@ static void password_required_cb(PurpleConnection *gc,
         if (!PURPLE_CONNECTION_IS_VALID(gc))
                 return;
 
-#if PURPLE_VERSION_CHECK(3,0,0)
-	purple_connection_error(
-#else
-	purple_connection_error_reason(
-#endif
-				gc,
+	purple_connection_error(gc,
 				PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 				_("Password required"));
 }
@@ -477,7 +492,7 @@ static void sipe_purple_close(PurpleConnection *gc)
 			g_hash_table_destroy(purple_private->roomlist_map);
 		sipe_purple_chat_destroy_rejoin(purple_private);
 		g_free(purple_private);
-		gc->proto_data = NULL;
+		purple_connection_set_protocol_data(gc, NULL);
 	}
 }
 
@@ -492,9 +507,9 @@ static int sipe_purple_send_im(PurpleConnection *gc,
 
 static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 					    const char *who,
-					    PurpleTypingState state)
+					    PurpleIMTypingState state)
 {
-	gboolean typing = (state == PURPLE_TYPING);
+	gboolean typing = (state == PURPLE_IM_TYPING);
 
 	/* only enable this debug output while testing
 	   SIPE_DEBUG_INFO("sipe_purple_send_typing: '%s' state %d", who, state); */
@@ -512,7 +527,7 @@ static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 	 *
 	 * Work around this by filtering out PURPLE_NOT_TYPING events.
 	 */
-	if (state != PURPLE_NOT_TYPING)
+	if (state != PURPLE_IM_NOT_TYPING)
 		sipe_core_user_feedback_typing(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 					       who,
 					       typing);
@@ -537,21 +552,6 @@ static void sipe_purple_add_deny(PurpleConnection *gc, const char *name)
 	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, FALSE);
 }
 
-static void sipe_purple_keep_alive(PurpleConnection *gc)
-{
-	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
-	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	time_t now = time(NULL);
-
-	if ((sipe_public->keepalive_timeout > 0) &&
-	    ((guint) (now - purple_private->last_keepalive) >= sipe_public->keepalive_timeout) &&
-	    ((guint) (now - gc->last_received) >= sipe_public->keepalive_timeout)
-		) {
-		sipe_core_transport_sip_keepalive(sipe_public);
-		purple_private->last_keepalive = now;
-	}
-}
-
 static void sipe_purple_alias_buddy(PurpleConnection *gc, const char *name,
 				    const char *alias)
 {
@@ -563,7 +563,9 @@ static void sipe_purple_group_rename(PurpleConnection *gc,
 				     PurpleGroup *group,
 				     SIPE_UNUSED_PARAMETER GList *moved_buddies)
 {
-	sipe_core_group_rename(PURPLE_GC_TO_SIPE_CORE_PUBLIC, old_name, group->name);
+	sipe_core_group_rename(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			       old_name,
+			       purple_group_get_name(group));
 }
 
 static void sipe_purple_convo_closed(PurpleConnection *gc,
@@ -574,7 +576,8 @@ static void sipe_purple_convo_closed(PurpleConnection *gc,
 
 static void sipe_purple_group_remove(PurpleConnection *gc, PurpleGroup *group)
 {
-	sipe_core_group_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC, group->name);
+	sipe_core_group_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			       purple_group_get_name(group));
 }
 
 #if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)
@@ -678,7 +681,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	sipe_purple_chat_leave,			/* chat_leave */
 	NULL,					/* chat_whisper */
 	sipe_purple_chat_send,			/* chat_send */
-	sipe_purple_keep_alive,			/* keepalive */
+	NULL,					/* keepalive */
 	NULL,					/* register_user */
 	NULL,					/* get_cb_info */	// deprecated
 #if !PURPLE_VERSION_CHECK(3,0,0)
@@ -732,6 +735,8 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 #if PURPLE_VERSION_CHECK(2,8,0)
 	NULL,					/* add_buddy_with_invite */
 	NULL,					/* add_buddies_with_invite */
+#elif PURPLE_VERSION_CHECK(3,0,0)
+	NULL,					/* get_max_message_size */
 #endif
 #endif
 #endif
@@ -814,7 +819,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 
 		SIPE_DEBUG_INFO("sipe_purple_find_contact_cb: %s = '%s'", id, value ? value : "");
 
-		if (value) {
+		if (value && strlen(value)) {
 			if (strcmp(id, "given") == 0) {
 				given_name = value;
 			} else if (strcmp(id, "surname") == 0) {
@@ -863,13 +868,18 @@ static void sipe_purple_show_find_contact(PurplePluginAction *action)
 	purple_request_field_group_add_field(group, field);
 
 	purple_request_fields(gc,
-		_("Search"),
-		_("Search for a contact"),
-		_("Enter the information for the person you wish to find. Empty fields will be ignored."),
-		fields,
-		_("_Search"), G_CALLBACK(sipe_purple_find_contact_cb),
-		_("_Cancel"), NULL,
-		purple_connection_get_account(gc), NULL, NULL, gc);
+			      _("Search"),
+			      _("Search for a contact"),
+			      _("Enter the information for the person you wish to find. Empty fields will be ignored."),
+			      fields,
+			      _("_Search"), G_CALLBACK(sipe_purple_find_contact_cb),
+			      _("_Cancel"), NULL,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      purple_request_cpar_from_connection(gc),
+#else
+			      purple_connection_get_account(gc), NULL, NULL,
+#endif
+			      gc);
 }
 
 static void sipe_purple_join_conference_cb(PurpleConnection *gc,
@@ -923,13 +933,18 @@ static void sipe_purple_phone_call(PurplePluginAction *action)
 	purple_request_field_group_add_field(group, field);
 
 	purple_request_fields(gc,
-		_("Call a phone number"),
-		_("Call a phone number"),
-		NULL,
-		fields,
-		_("_Call"), G_CALLBACK(sipe_purple_phone_call_cb),
-		_("_Cancel"), NULL,
-		purple_connection_get_account(gc), NULL, NULL, gc);
+			      _("Call a phone number"),
+			      _("Call a phone number"),
+			      NULL,
+			      fields,
+			      _("_Call"), G_CALLBACK(sipe_purple_phone_call_cb),
+			      _("_Cancel"), NULL,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      purple_request_cpar_from_connection(gc),
+#else
+			      purple_connection_get_account(gc), NULL, NULL,
+#endif
+			      gc);
 }
 
 static void sipe_purple_test_call(PurplePluginAction *action)
@@ -954,19 +969,24 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 	purple_request_field_group_add_field(group, field);
 
 	purple_request_fields(gc,
-		_("Join conference"),
-		_("Join scheduled conference"),
-		_("Enter meeting location string you received in the invitation.\n"
-		  "\n"
-		  "Valid location will be something like\n"
-		  "meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
-		  "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
-		  "or\n"
-		  "https://meet.company.com/someone/abcdef1234"),
-		fields,
-		_("_Join"), G_CALLBACK(sipe_purple_join_conference_cb),
-		_("_Cancel"), NULL,
-		purple_connection_get_account(gc), NULL, NULL, gc);
+			      _("Join conference"),
+			      _("Join scheduled conference"),
+			      _("Enter meeting location string you received in the invitation.\n"
+				"\n"
+				"Valid location will be something like\n"
+				"meet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+				"conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
+				"or\n"
+				"https://meet.company.com/someone/abcdef1234"),
+			      fields,
+			      _("_Join"), G_CALLBACK(sipe_purple_join_conference_cb),
+			      _("_Cancel"), NULL,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      purple_request_cpar_from_connection(gc),
+#else
+			      purple_connection_get_account(gc), NULL, NULL,
+#endif
+			      gc);
 }
 
 static void sipe_purple_republish_calendar(PurplePluginAction *action)
@@ -1146,12 +1166,7 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
-#if PURPLE_VERSION_CHECK(3,0,0)
-	purple_account_option_string_set_masked(
-#else
-	purple_account_option_set_masked(
-#endif
-					 option, TRUE);
+	purple_account_option_string_set_masked(option, TRUE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	/** Example (federated domain): company.com      (i.e. ocschat@company.com)

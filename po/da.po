@@ -5,13 +5,14 @@
 # 
 # 
 # Translators:
+# Joe Hansen <joedalton2@yahoo.dk>, 2013
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2013-11-20 12:30+0000\n"
+"PO-Revision-Date: 2014-01-06 09:46+0000\n"
 "Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: Danish (http://www.transifex.com/projects/p/pidgin-sipe/language/da/)\n"
 "MIME-Version: 1.0\n"
@@ -20,153 +21,84 @@ msgstr ""
 "Language: da\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#. SIPE_ACTIVITY_UNSET
-#. SIPE_ACTIVITY_AVAILABLE
-#. SIPE_ACTIVITY_ONLINE
-#. SIPE_ACTIVITY_INACTIVE
-#. 
-#. * This has nothing to do with Availability numbers, like 3500 (online).
-#. * Just a mapping of Communicator Activities to tokens/translations
-#. 
-#. @TODO: NULL means "default translation from Pidgin"?
-#. *        What about other backends?
-#. SIPE_ACTIVITY_UNSET
-#. SIPE_ACTIVITY_AVAILABLE
-#. SIPE_ACTIVITY_ONLINE
-#. SIPE_ACTIVITY_INACTIVE
-#: ../src/adium/ESPurpleSIPEAccount.h:37 ../src/core/sipe-status.c:60
-msgid "Inactive"
-msgstr ""
-
-#. SIPE_ACTIVITY_BUSY
-#: ../src/adium/ESPurpleSIPEAccount.h:38 ../src/core/sipe-cal.c:906
-#: ../src/core/sipe-status.c:61
-msgid "Busy"
-msgstr "Optaget"
-
-#. SIPE_ACTIVITY_BUSYIDLE
-#: ../src/adium/ESPurpleSIPEAccount.h:39 ../src/core/sipe-status.c:62
-msgid "Busy-Idle"
-msgstr ""
-
-#. SIPE_ACTIVITY_DND
-#. SIPE_ACTIVITY_BRB
-#: ../src/adium/ESPurpleSIPEAccount.h:41 ../src/core/sipe-status.c:64
-msgid "Be right back"
-msgstr ""
-
-#. SIPE_ACTIVITY_AWAY
-#. SIPE_ACTIVITY_LUNCH
-#: ../src/adium/ESPurpleSIPEAccount.h:43 ../src/core/sipe-status.c:66
-msgid "Out to lunch"
-msgstr ""
-
-#. SIPE_ACTIVITY_INVISIBLE
-#. SIPE_ACTIVITY_OFFLINE
-#. SIPE_ACTIVITY_ON_PHONE
-#: ../src/adium/ESPurpleSIPEAccount.h:46 ../src/core/sipe-status.c:69
-msgid "In a call"
-msgstr ""
-
-#. SIPE_ACTIVITY_IN_CONF
-#: ../src/adium/ESPurpleSIPEAccount.h:47 ../src/core/sipe-status.c:70
-msgid "In a conference"
-msgstr ""
-
-#. SIPE_ACTIVITY_IN_MEETING
-#: ../src/adium/ESPurpleSIPEAccount.h:48 ../src/core/sipe-status.c:71
-msgid "In a meeting"
-msgstr "I møde"
-
-#. SIPE_ACTIVITY_OOF
-#: ../src/adium/ESPurpleSIPEAccount.h:49 ../src/core/sipe-cal.c:907
-#: ../src/core/sipe-status.c:72
-msgid "Out of office"
-msgstr ""
-
-#. SIPE_ACTIVITY_URGENT_ONLY
-#: ../src/adium/ESPurpleSIPEAccount.h:50 ../src/core/sipe-status.c:73
-msgid "Urgent interruptions only"
-msgstr ""
-
-#: ../src/core/sip-transport.c:232 ../src/core/sip-transport.c:294
+#: ../src/core/sip-transport.c:235 ../src/core/sip-transport.c:297
 msgid "Failed to authenticate to server"
-msgstr ""
+msgstr "Kunne ikke godkende til serveren"
 
-#: ../src/core/sip-transport.c:252
+#: ../src/core/sip-transport.c:255
 #, c-format
 msgid "Can't request certificate from %s"
-msgstr ""
+msgstr "Kan ikke anmode om certifikat fra %s"
 
-#: ../src/core/sip-transport.c:262
+#: ../src/core/sip-transport.c:265
 msgid "No URI for certificate provisioning service provided"
-msgstr ""
+msgstr "Ingen URI for certifikatprovisioningtjeneste tilbudt"
 
-#: ../src/core/sip-transport.c:1157
+#: ../src/core/sip-transport.c:1211
 msgid "Authentication failed"
-msgstr ""
+msgstr "Godkendelse mislykkedes"
 
-#: ../src/core/sip-transport.c:1165
+#: ../src/core/sip-transport.c:1219
 msgid "Incompatible authentication scheme chosen"
-msgstr ""
+msgstr "Inkompatibelt godkendelsesskema valgt"
 
-#: ../src/core/sip-transport.c:1182 ../src/core/sipe-notify.c:1067
+#: ../src/core/sip-transport.c:1236 ../src/core/sipe-notify.c:1067
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Du er blevet afvist af serveren: %s"
 
-#: ../src/core/sip-transport.c:1183 ../src/core/sip-transport.c:1199
-#: ../src/core/sip-transport.c:1223 ../src/core/sip-transport.c:1247
+#: ../src/core/sip-transport.c:1237 ../src/core/sip-transport.c:1253
+#: ../src/core/sip-transport.c:1277 ../src/core/sip-transport.c:1301
 #: ../src/core/sipe-conf.c:249 ../src/core/sipe-notify.c:1067
 msgid "no reason given"
 msgstr "ingen årsag angivet"
 
-#: ../src/core/sip-transport.c:1198
+#: ../src/core/sip-transport.c:1252
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr ""
+msgstr "Ikke fundt: %s. Kontakt venligst din administrator"
 
-#: ../src/core/sip-transport.c:1200
+#: ../src/core/sip-transport.c:1254
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr ""
+msgstr "SIP er enten ikke aktiveret for destinations-URI'en eller den findes ikke"
 
-#: ../src/core/sip-transport.c:1223 ../src/core/sip-transport.c:1247
+#: ../src/core/sip-transport.c:1277 ../src/core/sip-transport.c:1301
 #, c-format
 msgid "Service unavailable: %s"
-msgstr "Service ikke tilgængelig: %s"
+msgstr "Tjenesten er ikke tilgængelig: %s"
 
-#: ../src/core/sip-transport.c:1609
+#: ../src/core/sip-transport.c:1663
 msgid "Invalid message signature received"
 msgstr "Ugyldig meddelelsessignatur modtaget"
 
 #: ../src/core/sipe-buddy.c:819
 msgid "Status"
-msgstr ""
+msgstr "Status"
 
 #: ../src/core/sipe-buddy.c:822
 msgid "Calendar"
-msgstr ""
+msgstr "Kalender"
 
 #: ../src/core/sipe-buddy.c:827
 msgid "Meeting in"
-msgstr ""
+msgstr "Møde i"
 
 #: ../src/core/sipe-buddy.c:831
 msgid "Meeting about"
-msgstr ""
+msgstr "Møde om"
 
 #: ../src/core/sipe-buddy.c:836
 msgid "Out of office note"
-msgstr ""
+msgstr "Væk fra kontoret-note"
 
 #: ../src/core/sipe-buddy.c:836
 msgid "Note"
-msgstr ""
+msgstr "Note"
 
 #: ../src/core/sipe-buddy.c:841 ../src/core/sipe-buddy.c:2095
-#: ../src/purple/purple-buddy.c:583
+#: ../src/purple/purple-buddy.c:615
 msgid "Access level"
-msgstr ""
+msgstr "Adgangsniveau"
 
 #: ../src/core/sipe-buddy.c:1025
 #, c-format
@@ -181,294 +113,300 @@ msgstr " (mere stemte med din forespørgsel)"
 
 #: ../src/core/sipe-buddy.c:1058 ../src/core/sipe-buddy.c:1195
 msgid "No contacts found"
-msgstr ""
+msgstr "Ingen kontakter fundet"
 
 #: ../src/core/sipe-buddy.c:1070 ../src/core/sipe-buddy.c:1208
 msgid "Unable to display the search results"
-msgstr ""
+msgstr "Kunne ikke vise søgeresultaterne"
 
 #: ../src/core/sipe-buddy.c:1173 ../src/core/sipe-buddy.c:1185
 msgid "Contact search failed"
-msgstr ""
+msgstr "Kontaktsøgning mislykkedes"
 
 #: ../src/core/sipe-buddy.c:1307
 msgid "Invalid contact search query"
-msgstr ""
+msgstr "Ugyldig kontaktsøgningsforespørgsel"
 
 #: ../src/core/sipe-buddy.c:1987
 #, c-format
 msgid "Make leader of '%s'"
-msgstr ""
+msgstr "Gør »%s« til leder"
 
 #: ../src/core/sipe-buddy.c:2000
 #, c-format
 msgid "Remove from '%s'"
-msgstr ""
+msgstr "Fjern fra »%s«"
 
 #: ../src/core/sipe-buddy.c:2014
 #, c-format
 msgid "Invite to '%s'"
-msgstr ""
+msgstr "Inviter til »%s"
 
 #: ../src/core/sipe-buddy.c:2030
 msgid "New chat"
-msgstr ""
+msgstr "Ny snak (chat)"
 
 #: ../src/core/sipe-buddy.c:2043
 msgid "Work"
-msgstr ""
+msgstr "Arbejde"
 
 #: ../src/core/sipe-buddy.c:2050
 msgid "Mobile"
-msgstr ""
+msgstr "Mobil"
 
 #: ../src/core/sipe-buddy.c:2058
 msgid "Home"
-msgstr ""
+msgstr "Hjem"
 
 #: ../src/core/sipe-buddy.c:2066
 msgid "Other"
-msgstr ""
+msgstr "Andet"
 
 #: ../src/core/sipe-buddy.c:2074
 msgid "Custom1"
-msgstr ""
+msgstr "Tilpasset1"
 
 #: ../src/core/sipe-buddy.c:2084
 msgid "Send email..."
-msgstr ""
+msgstr "Send e-post ..."
 
 #: ../src/core/sipe-cal.c:904
 msgid "Free"
-msgstr ""
+msgstr "Fri"
 
 #: ../src/core/sipe-cal.c:905
 msgid "Tentative"
-msgstr ""
+msgstr "Foreløbig"
+
+#. SIPE_ACTIVITY_BUSY
+#: ../src/core/sipe-cal.c:906 ../src/core/sipe-status.c:61
+msgid "Busy"
+msgstr "Optaget"
+
+#. SIPE_ACTIVITY_OOF
+#: ../src/core/sipe-cal.c:907 ../src/core/sipe-status.c:72
+msgid "Out of office"
+msgstr "Væk fra kontoret"
 
 #: ../src/core/sipe-cal.c:908
 msgid "No data"
-msgstr ""
+msgstr "Ingen data"
 
 #: ../src/core/sipe-cal.c:1016 ../src/core/sipe-cal.c:1043
 #, c-format
 msgid "Currently %s"
-msgstr ""
+msgstr "I øjeblikket %s"
 
 #: ../src/core/sipe-cal.c:1022
 msgid "Outside of working hours for next 8 hours"
-msgstr ""
+msgstr "Uden for arbejdstid de næste 8 timer"
 
 #: ../src/core/sipe-cal.c:1024
 #, c-format
 msgid "%s for next 8 hours"
-msgstr ""
+msgstr "%s for de næste 8 timer"
 
 #: ../src/core/sipe-cal.c:1033
 msgid "Not working"
-msgstr ""
+msgstr "Arbejder ikke"
 
 #: ../src/core/sipe-cal.c:1037
 #, c-format
 msgid "%s until %.2d:%.2d"
-msgstr ""
+msgstr "%s indtil %.2d:%.2d"
 
 #: ../src/core/sipe-cal.c:1045
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
-msgstr ""
+msgstr "%s. Uden for arbejdstid kl. %.2d:%.2d"
 
 #: ../src/core/sipe-cal.c:1050
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
-msgstr ""
+msgstr "%s. %s kl. %.2d:%.2d"
 
 #: ../src/core/sipe-certificate.c:233 ../src/core/sipe-certificate.c:277
 #, c-format
 msgid "Certificate request to %s failed"
-msgstr ""
+msgstr "Certifikatforespørgsel til %s mislykkedes"
 
 #: ../src/core/sipe-certificate.c:284
 #, c-format
 msgid "Web ticket request to %s failed"
-msgstr ""
+msgstr "Netbilletforespørgsel til %s mislykkedes"
 
 #. Generate next ID
 #: ../src/core/sipe-chat.c:231
 #, c-format
 msgid "Chat #%d"
-msgstr ""
+msgstr "Snak #%d"
 
 #: ../src/core/sipe-conf.c:248 ../src/core/sipe-conf.c:370
 msgid "Failed to join the conference"
-msgstr ""
+msgstr "Kunne ikke slutte til konferencen"
 
 #: ../src/core/sipe-conf.c:367
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
-msgstr ""
+msgstr "»%s« er ikke en gyldig konference-URI"
 
 #: ../src/core/sipe-conf.c:898
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
-msgstr ""
+msgstr "\n\nDa denne klient ikke blev kompileret med understøttelse af stemmekald (voice call), vil du kun kunne kontakte de andre deltagere via IM-session, såfremt du accepterer dette."
 
 #: ../src/core/sipe-conf.c:906
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
-msgstr ""
+msgstr "%s ønsker at invitere dig til konferencekald%s"
 
 #: ../src/core/sipe-conf.c:920
 msgid "Accept"
-msgstr ""
+msgstr "Accepter"
 
 #: ../src/core/sipe-conf.c:921
 msgid "Decline"
-msgstr ""
+msgstr "Afvis"
 
 #: ../src/core/sipe-conf.c:1135
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
-msgstr ""
+msgstr "Denne konference er ikke længere låst. Yderligere deltagere kan nu slutte sig til."
 
 #: ../src/core/sipe-conf.c:1139
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
-msgstr ""
+msgstr "Denne konference er låst. Ingen andre kan slutte sig til konferencen mens den er låst."
 
 #: ../src/core/sipe-conf.c:1172
 msgid "You have been disconnected from this conference."
-msgstr ""
+msgstr "Du er blevet frakoblet fra denne konference."
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
-#: ../src/core/sipe-core.c:192
+#: ../src/core/sipe-core.c:179
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
-msgstr ""
+msgstr "Et tredjepartudvidelsesmodul der implementerer en udvidet version af SIP/SIMPLe brug af diverse produkter"
 
 #. About note, part 2/13: home page URL (label)
-#: ../src/core/sipe-core.c:194
+#: ../src/core/sipe-core.c:181
 msgid "Home Page"
-msgstr ""
+msgstr "Hjemmeside"
 
 #. About note, part 3/13: support forum URL (label)
-#: ../src/core/sipe-core.c:196
+#: ../src/core/sipe-core.c:183
 msgid "Support"
-msgstr ""
+msgstr "Hjælp"
 
 #. About note, part 4/13: support forum name (hyperlink text)
-#: ../src/core/sipe-core.c:198
+#: ../src/core/sipe-core.c:185
 msgid "Help Forum"
-msgstr ""
+msgstr "Hjælpeforum"
 
 #. About note, part 5/13: bug tracker URL (label)
-#: ../src/core/sipe-core.c:200
+#: ../src/core/sipe-core.c:187
 msgid "Report Problems"
-msgstr ""
+msgstr "Rapporter problemer"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
-#: ../src/core/sipe-core.c:202
+#: ../src/core/sipe-core.c:189
 msgid "Bug Tracker"
-msgstr ""
+msgstr "Fejlrapporter"
 
 #. About note, part 7/13: translation service URL (label)
-#: ../src/core/sipe-core.c:204
+#: ../src/core/sipe-core.c:191
 msgid "Translations"
-msgstr ""
+msgstr "Oversættelser"
 
 #. About note, part 8/13: license type (label)
-#: ../src/core/sipe-core.c:206
+#: ../src/core/sipe-core.c:193
 msgid "License"
-msgstr ""
+msgstr "Licens"
 
-#. About note, part 9/13: known users
-#: ../src/core/sipe-core.c:208
-msgid "We support users in such organizations as"
-msgstr ""
-
+#. About note, part 9/13: (REMOVED)
 #. About note, part 10/13: translation request, text before Transifex.com URL
 #. append a space if text is not empty
-#: ../src/core/sipe-core.c:211
+#: ../src/core/sipe-core.c:197
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr ""
+msgstr "Hjælp os venligst med at oversætte SIPE til dit sprog via"
 
 #. About note, part 11/13: translation request, text after Transifex.com URL
 #. start with a space if text is not empty
-#: ../src/core/sipe-core.c:214
+#: ../src/core/sipe-core.c:200
 msgid " using convenient web interface"
-msgstr ""
+msgstr "bruger praktisk netgrænseflade"
 
 #. About note, part 12/13: author list (header)
-#: ../src/core/sipe-core.c:216
+#: ../src/core/sipe-core.c:202
 msgid "Authors"
-msgstr ""
+msgstr "Forfattere"
 
 #. About note, part 13/13: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe-core.c:221
+#: ../src/core/sipe-core.c:207
 msgid "Original texts in English (en): SIPE developers"
-msgstr ""
+msgstr "Oprindelige tekster på engelsk (en): SIPE-udviklere"
 
-#: ../src/core/sipe-core.c:241
+#: ../src/core/sipe-core.c:227
 msgid "SIP Exchange user name contains invalid characters"
-msgstr ""
+msgstr "SIP Exchange-brugernavn indeholder ugyldige tegn"
 
-#: ../src/core/sipe-core.c:249 ../src/purple/purple-buddy.c:452
+#: ../src/core/sipe-core.c:235 ../src/purple/purple-buddy.c:464
 #: ../src/telepathy/telepathy-protocol.c:89
 #: ../src/telepathy/telepathy-protocol.c:191
 #, c-format
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
-msgstr ""
+msgstr "Brugernavn skal være en gyldig SIP URI\nEksempel: bruger@firma.com"
 
-#: ../src/core/sipe-core.c:255
+#: ../src/core/sipe-core.c:241
 msgid "Login and password are required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Logind og adgangskode er krævet når Single Sign-On ikke er aktiveret"
 
-#: ../src/core/sipe-core.c:265
+#: ../src/core/sipe-core.c:251
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
-msgstr ""
+msgstr "E-postadresse skal være gyldig hvis angivet\nEksempel: bruger@firma.com"
+
+#: ../src/core/sipe-core.c:260
+msgid "SIP Exchange user name contains whitespace"
+msgstr "SIP Exchange-brugernavn indeholder mellemrum"
 
 #: ../src/core/sipe-core.c:274
-msgid "SIP Exchange user name contains whitespace"
-msgstr ""
-
-#: ../src/core/sipe-core.c:288
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
 "Example: https://domino.corp.com/maildatabase.nsf"
-msgstr ""
+msgstr "E-posttjenestens adresse skal være gyldig hvis angivet\nEksempel: https://exchange.corp.com/EWS/Exchange.asmx\nEksempel: https://domino.corp.com/maildatabase.nsf"
 
 #. Translators: (!) should be as in localized Lotus Notes to be able to
 #. extract meeting location
 #: ../src/core/sipe-domino.c:260 ../src/core/sipe-domino.c:261
 msgid "Location:"
-msgstr ""
+msgstr "Sted:"
 
 #: ../src/core/sipe-ft.c:222 ../src/core/sipe-ft-tftp.c:108
 #: ../src/core/sipe-ft-tftp.c:388 ../src/core/sipe-ft-tftp.c:417
 #: ../src/core/sipe-ft-tftp.c:476
 msgid "Socket read failed"
-msgstr ""
+msgstr "Sokkellæsning mislykkedes"
 
 #: ../src/core/sipe-ft.c:359
 msgid "Received encryption key has wrong size."
-msgstr ""
+msgstr "Modtaget krypteringsnøgler har forkert størrelse."
 
 #: ../src/core/sipe-ft.c:374
 msgid "Received hash key has wrong size."
-msgstr ""
+msgstr "Modtaget hash-nøgle har forkert størrelse."
 
 #: ../src/core/sipe-ft.c:394
 msgid "Could not create listen socket"
@@ -477,38 +415,38 @@ msgstr "Kunne ikke oprette lyttende sokkel"
 #: ../src/core/sipe-ft-tftp.c:114 ../src/core/sipe-ft-tftp.c:520
 #: ../src/core/sipe-ft-tftp.c:529
 msgid "Socket write failed"
-msgstr ""
+msgstr "Sokkelskrivning mislykkedes"
 
 #: ../src/core/sipe-ft-tftp.c:207
 msgid "File size is different from the advertised value."
-msgstr ""
+msgstr "Fuld størrelse er anderledes end den annoncerede værdi."
 
 #: ../src/core/sipe-ft-tftp.c:246
 msgid "Received MAC is corrupted"
-msgstr ""
+msgstr "Modtaget MAC er ødelagt"
 
 #: ../src/core/sipe-ft-tftp.c:257
 msgid "Received file is corrupted"
-msgstr ""
+msgstr "Modtaget fil er ødelagt"
 
 #: ../src/core/sipe-ft-tftp.c:284
 msgid "File transfer initialization failed."
-msgstr ""
+msgstr "Initialisering af filoverførsel mislykkedes."
 
 #: ../src/core/sipe-ft-tftp.c:315
 msgid "File transfer authentication failed."
-msgstr ""
+msgstr "Godkendelse for filoverførsel mislykkedes."
 
 #: ../src/core/sipe-ft-tftp.c:409 ../src/core/sipe-ft-tftp.c:427
 #: ../src/core/sipe-ft-tftp.c:490
 msgid "Out of memory"
-msgstr ""
+msgstr "Ikke nok hukommelse"
 
 #: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1081
 #: ../src/core/sipe-notify.c:1108 ../src/core/sipe-notify.c:1212
-#: ../src/purple/purple-search.c:110
+#: ../src/purple/purple-search.c:125
 msgid "Other Contacts"
-msgstr ""
+msgstr "Andre kontakter"
 
 #: ../src/core/sipe-groupchat.c:329
 #, c-format
@@ -518,169 +456,225 @@ msgid ""
 "\t%s\n"
 "\n"
 "Please update your Account."
-msgstr ""
+msgstr "Group Chat Proxy-indstilling er forkert:\n\n\t%s\n\nOpdater venligst din konto."
 
 #: ../src/core/sipe-groupchat.c:332
 msgid "Couldn't find Group Chat server!"
-msgstr ""
+msgstr "Kunne ikke finde Group Chat-server!"
 
-#: ../src/core/sipe-groupchat.c:478
+#: ../src/core/sipe-groupchat.c:506
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
-msgstr ""
+msgstr "Denne besked blev ikke leveret til snakkerum (chat) »%s«"
 
-#: ../src/core/sipe-groupchat.c:554
+#: ../src/core/sipe-groupchat.c:604
 msgid "Error retrieving room list"
-msgstr ""
+msgstr "Fejl ved indhentelse af rumliste"
 
-#: ../src/core/sipe-groupchat.c:658
+#: ../src/core/sipe-groupchat.c:708
 msgid "Error joining chat room"
-msgstr ""
+msgstr "Kunne ikke slutte til snakkerum (chat)"
 
 #. generate one error and remove all unprocessed messages
 #: ../src/core/sipe-im.c:197
 #, c-format
 msgid "Failed to invite %s"
-msgstr ""
+msgstr "Kunne ikke invitere %s"
 
-#: ../src/core/sipe-incoming.c:748
+#: ../src/core/sipe-incoming.c:749
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
-msgstr ""
+msgstr "Modtog en besked med ukendt indhold fra %s"
 
 #: ../src/core/sipe-media.c:574 ../src/core/sipe-media.c:904
 #: ../src/core/sipe-media.c:914 ../src/core/sipe-media.c:1201
 #: ../src/core/sipe-media.c:1213
 msgid "Unable to establish a call"
-msgstr ""
+msgstr "Kunne ikke etablere et opkald"
 
 #: ../src/core/sipe-media.c:575 ../src/core/sipe-media.c:1202
 msgid "Encryption settings of peer are incompatible with ours."
-msgstr ""
+msgstr "Krypteringsindstillinger for modpart er ikke kompatible med vores."
 
 #: ../src/core/sipe-media.c:770 ../src/core/sipe-media.c:783
 #: ../src/core/sipe-media.c:851 ../src/core/sipe-media.c:1212
 msgid "Error occured"
-msgstr ""
+msgstr "Der opstod en fejl"
 
 #: ../src/core/sipe-media.c:771 ../src/core/sipe-media.c:852
 msgid "Error creating audio stream"
-msgstr ""
+msgstr "Fejl under oprettelse af lydstrøm"
 
 #: ../src/core/sipe-media.c:784
 msgid "Error creating video stream"
-msgstr ""
+msgstr "Fejl ved oprettelse af videostrøm"
 
 #: ../src/core/sipe-media.c:905
 msgid "Invalid phone number"
-msgstr ""
+msgstr "Ugyldigt telefonnummer"
 
 #: ../src/core/sipe-media.c:915
 msgid "Audio Test Service is not available."
-msgstr ""
+msgstr "Audio Test Service er ikke tilgængelig."
 
 #: ../src/core/sipe-media.c:1166
 msgid "User unavailable"
-msgstr ""
+msgstr "Bruger utilgængelig"
 
 #: ../src/core/sipe-media.c:1169
 #, c-format
 msgid "%s does not want to be disturbed"
-msgstr ""
+msgstr "%s ønsker ikke at blive forstyrret"
 
 #: ../src/core/sipe-media.c:1171
 #, c-format
 msgid "User %s is not available"
-msgstr ""
+msgstr "Bruger %s er ikke tilgængelig"
 
 #: ../src/core/sipe-media.c:1176
 msgid "Call rejected"
-msgstr ""
+msgstr "Kald afvist"
 
 #: ../src/core/sipe-media.c:1177
 #, c-format
 msgid "User %s rejected call"
-msgstr ""
+msgstr "Bruger %s afviste kald"
 
 #: ../src/core/sipe-media.c:1185
 msgid "Unsupported media type"
-msgstr ""
+msgstr "Medietype er ikke understøttet"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe-notify.c:1059
 msgid "you are already signed in at another location"
-msgstr ""
+msgstr "du er allerede indregistreret på et andet sted"
 
 #: ../src/core/sipe-notify.c:1061
 msgid "user disabled"
-msgstr ""
+msgstr "bruger deaktiveret"
 
 #: ../src/core/sipe-notify.c:1063
 msgid "user moved"
-msgstr ""
+msgstr "bruger flyttet"
 
-#: ../src/core/sipe-ocs2007.c:458 ../src/purple/purple-buddy.c:589
+#: ../src/core/sipe-ocs2007.c:458 ../src/purple/purple-buddy.c:622
+#: ../src/purple/purple-buddy.c:629
 msgid "Blocked"
-msgstr ""
+msgstr "Blokeret"
 
-#: ../src/core/sipe-ocs2007.c:459 ../src/purple/purple-buddy.c:585
+#: ../src/core/sipe-ocs2007.c:459 ../src/purple/purple-buddy.c:618
+#: ../src/purple/purple-buddy.c:625
 msgid "Personal"
-msgstr ""
+msgstr "Personlig"
 
 #. index 0
-#: ../src/core/sipe-ocs2007.c:460 ../src/purple/purple-buddy.c:586
+#: ../src/core/sipe-ocs2007.c:460 ../src/purple/purple-buddy.c:619
+#: ../src/purple/purple-buddy.c:626
 msgid "Team"
-msgstr ""
+msgstr "Hold"
 
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
-#: ../src/core/sipe-ocs2007.c:461 ../src/purple/purple-buddy.c:55
-#: ../src/purple/purple-buddy.c:587 ../src/purple/purple-plugin.c:844
-#: ../src/purple/purple-search.c:58
+#: ../src/core/sipe-ocs2007.c:461 ../src/purple/purple-buddy.c:75
+#: ../src/purple/purple-buddy.c:620 ../src/purple/purple-buddy.c:627
+#: ../src/purple/purple-plugin.c:868 ../src/purple/purple-search.c:63
 msgid "Company"
 msgstr "Firma"
 
-#: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:588
+#: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:621
+#: ../src/purple/purple-buddy.c:628
 msgid "Public"
-msgstr ""
+msgstr "Offentlig"
 
 #: ../src/core/sipe-ocs2007.c:464
 msgid "Unknown"
-msgstr ""
+msgstr "Ukendt"
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe-ocs2007.c:2539
 msgid "Unspecify"
-msgstr ""
+msgstr "Fjern specifikation"
 
 #: ../src/core/sipe-ocs2007.c:2558
 msgid "People in my company"
-msgstr ""
+msgstr "Folk i mit firma"
 
 #: ../src/core/sipe-ocs2007.c:2568
 msgid "People in domains connected with my company"
-msgstr ""
+msgstr "Folk i domæner forbundet med mit firma"
 
 #: ../src/core/sipe-ocs2007.c:2577
 msgid "People in public domains"
-msgstr ""
+msgstr "Folk i offentlige domæner"
 
 #: ../src/core/sipe-ocs2007.c:2587
 #, c-format
 msgid "People at %s"
-msgstr ""
+msgstr "Folk i %s"
 
 #: ../src/core/sipe-ocs2007.c:2612
 msgid "Add new domain..."
-msgstr ""
+msgstr "Tilføj et nyt domæne ..."
 
 #: ../src/core/sipe-ocs2007.c:2641
 msgid "Online help..."
-msgstr ""
+msgstr "Hjælp på nettet ..."
 
 #: ../src/core/sipe-ocs2007.c:2649
 msgid "Access groups"
-msgstr ""
+msgstr "Tilgå grupper"
+
+#. * This has nothing to do with Availability numbers, like 3500 (online).
+#. * Just a mapping of Communicator Activities to tokens/translations
+#. 
+#. @TODO: NULL means "default translation from Pidgin"?
+#. *        What about other backends?
+#. SIPE_ACTIVITY_UNSET
+#. SIPE_ACTIVITY_AVAILABLE
+#. SIPE_ACTIVITY_ONLINE
+#. SIPE_ACTIVITY_INACTIVE
+#: ../src/core/sipe-status.c:60
+msgid "Inactive"
+msgstr "Inaktiv"
+
+#. SIPE_ACTIVITY_BUSYIDLE
+#: ../src/core/sipe-status.c:62
+msgid "Busy-Idle"
+msgstr "Optaget-ledig"
+
+#. SIPE_ACTIVITY_DND
+#. SIPE_ACTIVITY_BRB
+#: ../src/core/sipe-status.c:64
+msgid "Be right back"
+msgstr "Er snart tilbage"
+
+#. SIPE_ACTIVITY_AWAY
+#. SIPE_ACTIVITY_LUNCH
+#: ../src/core/sipe-status.c:66
+msgid "Out to lunch"
+msgstr "Væk til frokost"
+
+#. SIPE_ACTIVITY_INVISIBLE
+#. SIPE_ACTIVITY_OFFLINE
+#. SIPE_ACTIVITY_ON_PHONE
+#: ../src/core/sipe-status.c:69
+msgid "In a call"
+msgstr "Optaget på telefonen"
+
+#. SIPE_ACTIVITY_IN_CONF
+#: ../src/core/sipe-status.c:70
+msgid "In a conference"
+msgstr "Til konference"
+
+#. SIPE_ACTIVITY_IN_MEETING
+#: ../src/core/sipe-status.c:71
+msgid "In a meeting"
+msgstr "I møde"
+
+#. SIPE_ACTIVITY_URGENT_ONLY
+#: ../src/core/sipe-status.c:73
+msgid "Urgent interruptions only"
+msgstr "Kun vigtige afbrydelser"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -689,13 +683,13 @@ msgstr ""
 msgid ""
 "Your message or invitation was not delivered, possibly because it contains a"
 " hyperlink or other content that the system administrator has blocked."
-msgstr ""
+msgstr "Din besked eller invitation blev ikke leveret, muligvis fordi den indeholder et hyperlink eller andet indhold som systemadministratoren har blokeret."
 
 #: ../src/core/sipe-user.c:82
 #, c-format
 msgid ""
 "This message was not delivered to %s because the service is not available"
-msgstr ""
+msgstr "Denne besked blev ikke leveret til %s, da tjenesten ikke er tilgængelig"
 
 #. Busy Here
 #: ../src/core/sipe-user.c:84
@@ -703,7 +697,7 @@ msgstr ""
 msgid ""
 "This message was not delivered to %s because one or more recipients do not "
 "want to be disturbed"
-msgstr ""
+msgstr "Denne besked blev ikke leveret til %s da en eller flere modtager ikke ønskede at blive afbrudt"
 
 #. Unsupported media type
 #: ../src/core/sipe-user.c:86
@@ -711,61 +705,61 @@ msgstr ""
 msgid ""
 "This message was not delivered to %s because one or more recipients don't "
 "support this type of message"
-msgstr ""
+msgstr "Denne besked blev ikke leveret til %s da en eller flere af modtagerne ikke understøtter denne beskedtype"
 
 #: ../src/core/sipe-user.c:88
 #, c-format
 msgid ""
 "This message was not delivered to %s because one or more recipients are "
 "offline"
-msgstr ""
+msgstr "Denne besked blev ikke leveret til %s da en eller flere modtagere er frakoblede"
 
 #. SIPE_BUDDY_INFO_DISPLAY_NAME
-#: ../src/purple/purple-buddy.c:46
+#: ../src/purple/purple-buddy.c:66
 msgid "Display name"
-msgstr ""
+msgstr "Vist navn"
 
 #. SIPE_BUDDY_INFO_JOB_TITLE
-#: ../src/purple/purple-buddy.c:47
+#: ../src/purple/purple-buddy.c:67
 msgid "Job title"
-msgstr ""
+msgstr "Stilling"
 
 #. SIPE_BUDDY_INFO_CITY
-#: ../src/purple/purple-buddy.c:48
+#: ../src/purple/purple-buddy.c:68
 msgid "City"
-msgstr ""
+msgstr "By"
 
 #. SIPE_BUDDY_INFO_STATE
-#: ../src/purple/purple-buddy.c:49
+#: ../src/purple/purple-buddy.c:69
 msgid "State"
-msgstr ""
+msgstr "Stat"
 
 #. SIPE_BUDDY_INFO_OFFICE
-#: ../src/purple/purple-buddy.c:50
+#: ../src/purple/purple-buddy.c:70
 msgid "Office"
-msgstr ""
+msgstr "Kontor"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
-#: ../src/purple/purple-buddy.c:52 ../src/purple/purple-plugin.c:846
-#: ../src/purple/purple-search.c:61
+#: ../src/purple/purple-buddy.c:72 ../src/purple/purple-plugin.c:870
+#: ../src/purple/purple-search.c:66
 msgid "Country"
 msgstr "Land"
 
 #. SIPE_BUDDY_INFO_WORK_PHONE
-#: ../src/purple/purple-buddy.c:53
+#: ../src/purple/purple-buddy.c:73
 msgid "Business phone"
-msgstr ""
+msgstr "Forretningstelefon"
 
 #. SIPE_BUDDY_INFO_EMAIL
-#: ../src/purple/purple-buddy.c:56
+#: ../src/purple/purple-buddy.c:76
 msgid "Email address"
-msgstr ""
+msgstr "E-postadresse"
 
 #. SIPE_BUDDY_INFO_SITE
-#: ../src/purple/purple-buddy.c:57
+#: ../src/purple/purple-buddy.c:77
 msgid "Site"
-msgstr ""
+msgstr "Side"
 
 #. SIPE_BUDDY_INFO_ZIPCODE
 #. SIPE_BUDDY_INFO_STREET
@@ -778,163 +772,163 @@ msgstr ""
 #. SIPE_BUDDY_INFO_CUSTOM1_PHONE
 #. SIPE_BUDDY_INFO_CUSTOM1_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_ALIAS
-#: ../src/purple/purple-buddy.c:68
+#: ../src/purple/purple-buddy.c:88
 msgid "Alias"
-msgstr ""
+msgstr "Alias"
 
 #. SIPE_BUDDY_INFO_DEVICE
-#: ../src/purple/purple-buddy.c:69
+#: ../src/purple/purple-buddy.c:89
 msgid "Device"
-msgstr ""
+msgstr "Enhed"
 
-#: ../src/purple/purple-buddy.c:239 ../src/purple/purple-buddy.c:257
+#: ../src/purple/purple-buddy.c:259 ../src/purple/purple-buddy.c:277
 msgid "you"
-msgstr ""
+msgstr "dig"
 
-#: ../src/purple/purple-buddy.c:544
+#: ../src/purple/purple-buddy.c:563
 msgid ""
 "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
-msgstr ""
+msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
-#: ../src/purple/purple-buddy.c:576
+#: ../src/purple/purple-buddy.c:608
 msgid "Domain"
-msgstr ""
+msgstr "Domæne"
 
-#: ../src/purple/purple-buddy.c:596 ../src/purple/purple-buddy.c:597
+#: ../src/purple/purple-buddy.c:637 ../src/purple/purple-buddy.c:638
 msgid "Add new domain"
-msgstr ""
+msgstr "Tilføj nyt domæne"
 
-#: ../src/purple/purple-buddy.c:598
+#: ../src/purple/purple-buddy.c:639
 msgid "Add"
-msgstr ""
+msgstr "Tilføj"
 
-#: ../src/purple/purple-buddy.c:599
+#: ../src/purple/purple-buddy.c:640
 msgid "Cancel"
-msgstr ""
+msgstr "Afbryd"
 
-#: ../src/purple/purple-buddy.c:738
+#: ../src/purple/purple-buddy.c:791
 msgid "Copy to"
-msgstr ""
+msgstr "Kopier til"
 
-#: ../src/purple/purple-chat.c:262
+#: ../src/purple/purple-chat.c:275
 msgid "Lock"
-msgstr ""
+msgstr "Lås"
 
-#: ../src/purple/purple-chat.c:267
+#: ../src/purple/purple-chat.c:280
 msgid "Unlock"
-msgstr ""
+msgstr "Åbn"
 
-#: ../src/purple/purple-chat.c:281
+#: ../src/purple/purple-chat.c:294
 msgid "Join conference call"
-msgstr ""
+msgstr "Gå til konferencekald"
 
-#: ../src/purple/purple-groupchat.c:47
+#: ../src/purple/purple-groupchat.c:53
 msgid "_URI:"
-msgstr ""
+msgstr "_URI:"
 
-#: ../src/purple/purple-groupchat.c:137
+#: ../src/purple/purple-groupchat.c:157
 msgid "Users"
-msgstr ""
+msgstr "Brugere"
 
-#: ../src/purple/purple-groupchat.c:140
+#: ../src/purple/purple-groupchat.c:160
 msgid "Invite"
-msgstr ""
+msgstr "Inviter"
 
-#: ../src/purple/purple-groupchat.c:143
+#: ../src/purple/purple-groupchat.c:163
 msgid "Private"
-msgstr ""
+msgstr "Privat"
 
-#: ../src/purple/purple-groupchat.c:146
+#: ../src/purple/purple-groupchat.c:166
 msgid "Log"
-msgstr ""
+msgstr "Log"
 
-#: ../src/purple/purple-groupchat.c:149
+#: ../src/purple/purple-groupchat.c:169
 msgid "Description"
-msgstr ""
+msgstr "Beskrivelse"
 
-#: ../src/purple/purple-im.c:71
+#: ../src/purple/purple-im.c:84
 #, c-format
 msgid "Conversation subject: %s"
-msgstr ""
+msgstr "Konversationsemne: %s"
 
 #. Macros to reduce code repetition.
 #. Translators: noun
-#: ../src/purple/purple-plugin.c:185
+#: ../src/purple/purple-plugin.c:201
 msgid "Message"
-msgstr "Meddelelse"
+msgstr "Besked"
 
-#: ../src/purple/purple-plugin.c:379
+#: ../src/purple/purple-plugin.c:399
 msgid "Connecting"
 msgstr "Forbinder"
 
-#: ../src/purple/purple-plugin.c:411
+#: ../src/purple/purple-plugin.c:426
 msgid "Password required"
-msgstr ""
+msgstr "Adgangskode krævet"
 
-#: ../src/purple/purple-plugin.c:570
+#: ../src/purple/purple-plugin.c:589
 msgid "user@company.com"
-msgstr ""
+msgstr "bruger@firma.com"
 
-#: ../src/purple/purple-plugin.c:838
+#: ../src/purple/purple-plugin.c:862
 msgid "First name"
-msgstr ""
+msgstr "Fornavn"
 
-#: ../src/purple/purple-plugin.c:840
+#: ../src/purple/purple-plugin.c:864
 msgid "Last name"
-msgstr ""
+msgstr "Efternavn"
 
-#: ../src/purple/purple-plugin.c:842 ../src/purple/purple-search.c:64
+#: ../src/purple/purple-plugin.c:866 ../src/purple/purple-search.c:69
 msgid "Email"
-msgstr "E-mail"
+msgstr "E-post"
 
-#: ../src/purple/purple-plugin.c:850
+#: ../src/purple/purple-plugin.c:874
 msgid "Search"
 msgstr "Søg"
 
-#: ../src/purple/purple-plugin.c:851
+#: ../src/purple/purple-plugin.c:875
 msgid "Search for a contact"
-msgstr ""
+msgstr "Søg efter kontakt"
 
-#: ../src/purple/purple-plugin.c:852
+#: ../src/purple/purple-plugin.c:876
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
-msgstr ""
+msgstr "Indtast informationen for personen du ønsker at finde. Tomme felter vil blive ignoreret."
 
-#: ../src/purple/purple-plugin.c:854
+#: ../src/purple/purple-plugin.c:878
 msgid "_Search"
 msgstr "_Søg"
 
-#: ../src/purple/purple-plugin.c:855 ../src/purple/purple-plugin.c:915
-#: ../src/purple/purple-plugin.c:952
+#: ../src/purple/purple-plugin.c:879 ../src/purple/purple-plugin.c:947
+#: ../src/purple/purple-plugin.c:992
 msgid "_Cancel"
-msgstr "_Fortryd"
+msgstr "_Afbryd"
 
-#: ../src/purple/purple-plugin.c:906
+#: ../src/purple/purple-plugin.c:938
 msgid "Phone number"
-msgstr ""
+msgstr "Telefonnummer"
 
-#: ../src/purple/purple-plugin.c:910 ../src/purple/purple-plugin.c:911
+#: ../src/purple/purple-plugin.c:942 ../src/purple/purple-plugin.c:943
 msgid "Call a phone number"
-msgstr ""
+msgstr "Foretag opkald til telefonnummer"
 
-#: ../src/purple/purple-plugin.c:914
+#: ../src/purple/purple-plugin.c:946
 msgid "_Call"
-msgstr ""
+msgstr "_Opkald"
 
-#: ../src/purple/purple-plugin.c:937
+#: ../src/purple/purple-plugin.c:977
 msgid "Meeting location"
-msgstr ""
+msgstr "Mødested"
 
-#: ../src/purple/purple-plugin.c:941
+#: ../src/purple/purple-plugin.c:981
 msgid "Join conference"
-msgstr ""
+msgstr "Slut til konference"
 
-#: ../src/purple/purple-plugin.c:942
+#: ../src/purple/purple-plugin.c:982
 msgid "Join scheduled conference"
-msgstr ""
+msgstr "Slut til planlagt konference"
 
-#: ../src/purple/purple-plugin.c:943
+#: ../src/purple/purple-plugin.c:983
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
@@ -943,43 +937,43 @@ msgid ""
 "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
-msgstr ""
+msgstr "Indtast mødestedsstreng du modtog i invitationen.\n\nGyldigt sted vil ligne\nmeet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nconf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\neller\nhttps://meet.company.com/someone/abcdef1234"
 
-#: ../src/purple/purple-plugin.c:951
+#: ../src/purple/purple-plugin.c:991
 msgid "_Join"
-msgstr ""
+msgstr "_Tilslut"
 
-#: ../src/purple/purple-plugin.c:963 ../src/purple/purple-plugin.c:977
+#: ../src/purple/purple-plugin.c:1008 ../src/purple/purple-plugin.c:1022
 msgid "Publishing of calendar information has been disabled"
-msgstr ""
+msgstr "Udgivelse af kalenderinformation er blevet deaktiveret"
 
-#: ../src/purple/purple-plugin.c:990
+#: ../src/purple/purple-plugin.c:1035
 msgid "About SIPE plugin..."
-msgstr ""
+msgstr "Om SIPE-udvidelsesmodul ..."
 
-#: ../src/purple/purple-plugin.c:993
+#: ../src/purple/purple-plugin.c:1038
 msgid "Contact search..."
-msgstr ""
+msgstr "Kontaktsøgning ..."
 
-#: ../src/purple/purple-plugin.c:997
+#: ../src/purple/purple-plugin.c:1042
 msgid "Call a phone number..."
-msgstr ""
+msgstr "Foretag opkald til et telefonnummer ..."
 
-#: ../src/purple/purple-plugin.c:1000
+#: ../src/purple/purple-plugin.c:1045
 msgid "Test call"
-msgstr ""
+msgstr "Testkald"
 
-#: ../src/purple/purple-plugin.c:1004
+#: ../src/purple/purple-plugin.c:1049
 msgid "Join scheduled conference..."
-msgstr ""
+msgstr "Slut til planlagt konference ..."
 
-#: ../src/purple/purple-plugin.c:1007
+#: ../src/purple/purple-plugin.c:1052
 msgid "Republish Calendar"
-msgstr ""
+msgstr "Genudsend kalender"
 
-#: ../src/purple/purple-plugin.c:1010
+#: ../src/purple/purple-plugin.c:1055
 msgid "Reset status"
-msgstr ""
+msgstr "Nulstil status"
 
 #. *
 #. * When adding new string settings please make sure to keep these
@@ -988,32 +982,32 @@ msgstr ""
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
 #. 
-#: ../src/purple/purple-plugin.c:1068
+#: ../src/purple/purple-plugin.c:1113
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
-msgstr ""
+msgstr "Logind\n   bruger eller DOMÆNE\\bruger eller\n   bruger@firma.com"
 
-#: ../src/purple/purple-plugin.c:1072
+#: ../src/purple/purple-plugin.c:1117
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
-msgstr ""
+msgstr "Server[:Port]\n(tom for automatisk registrering)"
 
-#: ../src/purple/purple-plugin.c:1075
+#: ../src/purple/purple-plugin.c:1120
 msgid "Connection type"
-msgstr ""
+msgstr "Forbindelsestype"
 
-#: ../src/purple/purple-plugin.c:1076
+#: ../src/purple/purple-plugin.c:1121
 msgid "Auto"
 msgstr "Auto"
 
-#: ../src/purple/purple-plugin.c:1077
+#: ../src/purple/purple-plugin.c:1122
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:1078
+#: ../src/purple/purple-plugin.c:1123
 msgid "TCP"
 msgstr "TCP"
 
@@ -1021,25 +1015,25 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:1084
+#: ../src/purple/purple-plugin.c:1129
 msgid "User Agent"
 msgstr "Brugeragent"
 
-#: ../src/purple/purple-plugin.c:1087
+#: ../src/purple/purple-plugin.c:1132
 msgid "Authentication scheme"
-msgstr ""
+msgstr "Godkendelsesskema"
 
-#: ../src/purple/purple-plugin.c:1088
+#: ../src/purple/purple-plugin.c:1133
 msgid "NTLM"
-msgstr ""
+msgstr "NTLM"
 
-#: ../src/purple/purple-plugin.c:1090
+#: ../src/purple/purple-plugin.c:1135
 msgid "Kerberos"
-msgstr ""
+msgstr "Kerberos"
 
-#: ../src/purple/purple-plugin.c:1092
+#: ../src/purple/purple-plugin.c:1137
 msgid "TLS-DSK"
-msgstr ""
+msgstr "TLS-DSK"
 
 #. * When the user selects Single Sign-On then SIPE will ignore the
 #. * settings for "login name" and "password". Instead it will use the
@@ -1054,83 +1048,83 @@ msgstr ""
 #. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
 #. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 #. 
-#: ../src/purple/purple-plugin.c:1110
+#: ../src/purple/purple-plugin.c:1155
 msgid "Use Single Sign-On"
-msgstr ""
+msgstr "Brug Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #. 
-#: ../src/purple/purple-plugin.c:1117
+#: ../src/purple/purple-plugin.c:1162
 msgid "Don't publish my calendar information"
-msgstr ""
+msgstr "Udgiv ikke min kalenderinformation"
 
-#: ../src/purple/purple-plugin.c:1120
+#: ../src/purple/purple-plugin.c:1165
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
-msgstr ""
+msgstr "E-posttjenestens adresse\n(tom for automatisk registrering)"
 
-#: ../src/purple/purple-plugin.c:1123
+#: ../src/purple/purple-plugin.c:1168
 msgid ""
 "Email address\n"
 "(if different from Username)"
-msgstr ""
+msgstr "E-postadresse\n(hvis forskellig fra brugernavn)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
 #. 
-#: ../src/purple/purple-plugin.c:1129
+#: ../src/purple/purple-plugin.c:1174
 msgid ""
 "Email login\n"
 "(if different from Login)"
-msgstr ""
+msgstr "E-postlogind\n(hvis forskellig fra logind)"
 
-#: ../src/purple/purple-plugin.c:1132
+#: ../src/purple/purple-plugin.c:1177
 msgid ""
 "Email password\n"
 "(if different from Password)"
-msgstr ""
+msgstr "Adgangskode for e-post\n(hvis forskellig fra adgangskode)"
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
 #. 
-#: ../src/purple/purple-plugin.c:1144
+#: ../src/purple/purple-plugin.c:1184
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
 "(leave empty to determine from Username)"
-msgstr ""
+msgstr "Group Chat Proxy\nfirma.com eller bruger@firma.com\n(tom hvis brugernavn skal bruges)"
 
-#: ../src/purple/purple-search.c:52
+#: ../src/purple/purple-search.c:57
 msgid "User name"
-msgstr ""
+msgstr "Brugernavn"
 
-#: ../src/purple/purple-search.c:55
+#: ../src/purple/purple-search.c:60
 msgid "Name"
 msgstr "Navn"
 
-#: ../src/purple/purple-transport.c:119
+#: ../src/purple/purple-transport.c:131
 msgid "Read error"
-msgstr ""
+msgstr "Læsefejl"
 
-#: ../src/purple/purple-transport.c:123
+#: ../src/purple/purple-transport.c:135
 #: ../src/telepathy/telepathy-transport.c:96
 msgid "Server has disconnected"
-msgstr "Server har afbrudt forbindelse"
+msgstr "Server har afbrudt forbindelsen"
 
-#: ../src/purple/purple-transport.c:185
+#: ../src/purple/purple-transport.c:197
 msgid "Could not connect"
 msgstr "Kunne ikke forbinde"
 
-#: ../src/purple/purple-transport.c:255
+#: ../src/purple/purple-transport.c:267
 msgid "Could not create SSL context"
-msgstr "Kunne ikke skabe SSL kontekst"
+msgstr "Kunne ikke oprette SSL-kontekst"
 
-#: ../src/purple/purple-transport.c:269
+#: ../src/purple/purple-transport.c:281
 msgid "Could not create socket"
-msgstr ""
+msgstr "Kunne ikke oprette sokkel"
 
-#: ../src/purple/purple-transport.c:356
+#: ../src/purple/purple-transport.c:372
 msgid "Write error"
-msgstr ""
+msgstr "Skrivefejl"

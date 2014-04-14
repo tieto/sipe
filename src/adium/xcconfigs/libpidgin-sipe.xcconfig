@@ -1,0 +1,11 @@
+//
+//  libpidgin-sipe.xcconfig
+//  SIPEAdiumPlugin
+//
+//  Created by Lamb, Michael on 11/13/13.
+//
+//
+PRODUCT_NAME = pidgin-sipe
+
+
+

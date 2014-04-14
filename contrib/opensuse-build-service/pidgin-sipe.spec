@@ -99,6 +99,7 @@
 %define has_gstreamer 1
 %if 0%{?suse_version} > 1210
 %define build_telepathy 1
+%define nice_gstreamer gstreamer-0_10-libnice
 %endif
 %endif
 %endif
@@ -118,6 +119,9 @@
 %if 0%{?fedora} >= 17
 %define build_telepathy 1
 %define build_ktp 1
+%if 0%{?fedora} >= 20
+%define nice_gstreamer libnice-gstreamer
+%endif
 %endif
 %endif
 %endif
@@ -138,7 +142,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.17.3
+Version:        1.18.1
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -182,6 +186,10 @@ BuildRequires:  gettext-devel
 # The following two are required to enable Voice & Video features
 %if 0%{?has_libnice:1}
 BuildRequires:  libnice-devel
+%if 0%{?nice_gstreamer:1}
+# Dependency required when gstreamer support is split into two packages
+Requires:       %{nice_gstreamer}
+%endif
 %endif
 %if 0%{?has_gstreamer:1}
 BuildRequires:  pkgconfig(gstreamer-0.10)
@@ -539,6 +547,15 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Apr 12 2014 J. D. User <jduser@noreply.com> 1.18.1
+- update to 1.18.1
+
+* Sat Mar 04 2014 J. D. User <jduser@noreply.com> 1.18.0-*git*
+- F20+/openSUSE 12.2+ require libnice gstreamer-0.10 plugin
+
+* Sat Jan 11 2014 J. D. User <jduser@noreply.com> 1.18.0
+- update to 1.18.0
+
 * Wed Dec 11 2013 J. D. User <jduser@noreply.com> 1.17.3
 - update to 1.17.3
 

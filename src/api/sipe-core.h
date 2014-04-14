@@ -128,7 +128,7 @@ struct sipe_core_public {
 	gchar *sip_domain;
 
 	/* server information */
-	guint keepalive_timeout;
+	/* currently nothing */
 };
 
 /**
@@ -310,7 +310,6 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 				     guint authentication,
 				     const gchar *server,
 				     const gchar *port);
-void sipe_core_transport_sip_keepalive(struct sipe_core_public *sipe_public);
 
 /**
  * Get SIP server host name

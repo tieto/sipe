@@ -22,6 +22,11 @@ tar --strip-components=2 --wildcards -xvf \
     "*/contrib/debian" || cleanup "tar failed"
 [ -e debian ]          || cleanup "directory 'debian' - does not exist"
 
+# Strip libnss3-dev from debian/control: build setup is controlled by .dsc's
+sed -i.ORIG -e 's/libnss3-dev, //' debian/control
+touch -r debian/control.ORIG debian/control
+rm debian/control.ORIG
+
 # Have the contents changed?
 if tar 2>/dev/null -df pidgin-sipe_${version}-1.debian.tar.gz; then
     echo "contrib/debian is unchanged - not updating .debian.tar.gz."

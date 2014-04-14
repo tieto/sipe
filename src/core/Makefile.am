@@ -4,7 +4,7 @@ EXTRA_DIST = \
 
 noinst_LTLIBRARIES = \
 	libsipe_core.la \
-	libsipe_core_crypto_nss.la \
+	libsipe_core_crypto.la \
 	libsipe_core_libxml2.la
 
 MAINTAINERCLEANFILES = \
@@ -107,6 +107,8 @@ libsipe_core_la_SOURCES += \
 	sipe-win32dep.h \
 	sipe-win32dep.c
 else
+
+if !SIP_SEC_GSSAPI_ONLY
 libsipe_core_la_SOURCES += \
 	md4.h \
 	md4.c \
@@ -120,10 +122,19 @@ libsipe_core_tests_la_SOURCES = \
 	sip-sec-ntlm-tests.c
 endif
 
-libsipe_core_crypto_nss_la_SOURCES = \
+endif
+
+if SIPE_OPENSSL
+libsipe_core_crypto_la_SOURCES = \
+	sipe-cert-crypto-openssl.c \
+	sipe-crypt-openssl.c \
+	sipe-digest-openssl.c
+else
+libsipe_core_crypto_la_SOURCES = \
 	sipe-cert-crypto-nss.c \
 	sipe-crypt-nss.c \
 	sipe-digest-nss.c
+endif
 
 libsipe_core_libxml2_la_SOURCES = \
 	sipe-xml.c
@@ -138,17 +149,24 @@ libsipe_core_la_CFLAGS = \
 	-I$(srcdir)/../api
 
 if !SIPE_OS_WIN32
+if !SIP_SEC_GSSAPI_ONLY
 libsipe_core_tests_la_CFLAGS = $(libsipe_core_la_CFLAGS)
 endif
+endif
 
-if SIP_SEC_KRB5
+if SIP_SEC_GSSAPI
 libsipe_core_la_SOURCES += \
-	sip-sec-krb5.h \
-	sip-sec-krb5.c \
+	sip-sec-gssapi.h \
+	sip-sec-gssapi.c
+libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
+
+if !SIP_SEC_GSSAPI_ONLY
+libsipe_core_la_SOURCES += \
 	sip-sec-negotiate.h \
 	sip-sec-negotiate.c
-libsipe_core_la_CFLAGS  += $(KRB5_CFLAGS)
 endif
+endif
+
 
 if SIPE_MIME_GMIME
 noinst_LTLIBRARIES           += libsipe_core_mime.la
@@ -160,10 +178,16 @@ if SIPE_OS_WIN32
 libsipe_core_la_CFLAGS  += -DHAVE_SSPI=1
 endif
 
-libsipe_core_crypto_nss_la_CFLAGS = \
-	$(libsipe_core_la_CFLAGS) \
+libsipe_core_crypto_la_CFLAGS = \
+	$(libsipe_core_la_CFLAGS)
+if SIPE_OPENSSL
+libsipe_core_crypto_la_CFLAGS += \
+	$(OPENSSL_CFLAGS)
+else
+libsipe_core_crypto_la_CFLAGS += \
 	$(NSS_CFLAGS) \
 	$(VALGRIND_CFLAGS)
+endif
 
 libsipe_core_libxml2_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(LIBXML2_CFLAGS)
 
@@ -187,10 +211,19 @@ check_PROGRAMS += sip_sec_digest_tests
 sip_sec_digest_tests_SOURCES = sip-sec-digest-tests.c
 sip_sec_digest_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
 sip_sec_digest_tests_LDADD = \
-	libsipe_core_la-sipe-utils.lo \
-	libsipe_core_crypto_nss_la-sipe-crypt-nss.lo \
-	libsipe_core_crypto_nss_la-sipe-digest-nss.lo \
-	$(NSS_LIBS) \
+	libsipe_core_la-sipe-utils.lo
+if SIPE_OPENSSL
+sip_sec_digest_tests_LDADD += \
+	libsipe_core_crypto_la-sipe-crypt-openssl.lo \
+	libsipe_core_crypto_la-sipe-digest-openssl.lo \
+	$(OPENSSL_LIBS)
+else
+sip_sec_digest_tests_LDADD += \
+	libsipe_core_crypto_la-sipe-crypt-nss.lo \
+	libsipe_core_crypto_la-sipe-digest-nss.lo \
+	$(NSS_LIBS)
+endif
+sip_sec_digest_tests_LDADD += \
 	$(GLIB_LIBS)
 
 # disables "caching" of memory blocks in tests
@@ -205,11 +238,21 @@ noinst_PROGRAMS += sipe_tls_tester
 sipe_tls_tester_SOURCES = sipe-tls-tester.c
 sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_tls_tester_LDADD = \
-	libsipe_core_la-sipe-tls.lo \
-	libsipe_core_crypto_nss_la-sipe-cert-crypto-nss.lo \
-	libsipe_core_crypto_nss_la-sipe-crypt-nss.lo \
-	libsipe_core_crypto_nss_la-sipe-digest-nss.lo \
-	$(NSS_LIBS) \
+	libsipe_core_la-sipe-tls.lo
+if SIPE_OPENSSL
+sipe_tls_tester_LDADD += \
+	libsipe_core_crypto_la-sipe-cert-crypto-openssl.lo \
+	libsipe_core_crypto_la-sipe-crypt-openssl.lo \
+	libsipe_core_crypto_la-sipe-digest-openssl.lo \
+	$(OPENSSL_LIBS)
+else
+sipe_tls_tester_LDADD += \
+	libsipe_core_crypto_la-sipe-cert-crypto-nss.lo \
+	libsipe_core_crypto_la-sipe-crypt-nss.lo \
+	libsipe_core_crypto_la-sipe-digest-nss.lo \
+	$(NSS_LIBS)
+endif
+sipe_tls_tester_LDADD += \
 	$(GLIB_LIBS)
 endif
 

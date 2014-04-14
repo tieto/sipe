@@ -1,0 +1,24 @@
+//
+//  SIPEAdiumPlugin.xcconfig
+//  SIPEAdiumPlugin
+//
+//  Created by Lamb, Michael on 11/13/13.
+//
+//
+PRODUCT_NAME = SIPEAdiumPlugin
+OTHER_LDFLAGS = -undefined dynamic_lookup
+LD_RUNPATH_SEARCH_PATHS = @loader_path/../Frameworks
+INFOPLIST_FILE = Info.plist
+WRAPPER_EXTENSION = AdiumLibpurplePlugin
+GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch
+DEPLOYMENT_LOCATION = YES
+DEPLOYMENT_POSTPROCESSING = YES
+DSTROOT =
+INSTALL_PATH = $(HOME)/Library/Application Support/Adium 2.0/PlugIns/
+
+USER_HEADER_SEARCH_PATHS = ../../../adium/Source ../purple ../api
+
+
+
+
+

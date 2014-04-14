@@ -35,12 +35,13 @@ telepathy_sipe_CFLAGS = \
 
 telepathy_sipe_LDADD = \
 	../core/libsipe_core.la \
-	../core/libsipe_core_crypto_nss.la \
+	../core/libsipe_core_crypto.la \
 	../core/libsipe_core_libxml2.la \
 	../core/libsipe_core_mime.la \
 	$(GMIME_LIBS) \
 	$(LIBXML2_LIBS) \
 	$(NSS_LIBS) \
+	$(OPENSSL_LIBS) \
 	$(TELEPATHY_GLIB_LIBS) \
 	$(DBUS_GLIB_LIBS) \
 	$(GIO_LIBS) \

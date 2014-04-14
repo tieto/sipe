@@ -21,7 +21,7 @@
  */
 #pragma comment(lib, "Secur32.lib")
 
-#ifdef HAVE_LIBKRB5
+#ifdef HAVE_GSSAPI_GSSAPI_H
 #pragma comment(lib, "krb5_32.lib")
 #pragma comment(lib, "gssapi32.lib")
 #pragma comment(lib, "comerr32.lib")
@@ -152,7 +152,7 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 
 			lock++;
 
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 			state = sipe_miranda_getBool(pr, "sso", FALSE);
 			if (state)
 			{
@@ -164,7 +164,7 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 				CheckDlgItem(hwndDlg, IDC_USESSO, BST_UNCHECKED);
 				EnableDlgItem(hwndDlg, IDC_LOGIN, TRUE);
 				EnableDlgItem(hwndDlg, IDC_PASSWORD, TRUE);
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 			}
 #endif
 
@@ -185,7 +185,7 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 			mir_free(str);
 
 			SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_ADDSTRING, 0, (LPARAM)_T("NTLM"));
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 			SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_ADDSTRING, 0, (LPARAM)_T("Kerberos"));
 #endif
 			SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_ADDSTRING, 0, (LPARAM)_T("TLS-DSK"));

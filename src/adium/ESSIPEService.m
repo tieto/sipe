@@ -12,6 +12,7 @@
 #import <Adium/AIStatusControllerProtocol.h>
 #import <AISharedAdium.h>
 
+#import "DCPurpleSIPEJoinChatViewController.h"
 #import "ESSIPEAccountViewController.h"
 #import "ESPurpleSIPEAccount.h"
 #import "ESSIPEService.h"
@@ -29,7 +30,11 @@
 }
 
 - (DCJoinChatViewController *)joinChatView{
-	return nil;
+	return [DCPurpleSIPEJoinChatViewController joinChatView];
+}
+
+- (BOOL)canCreateGroupChats{
+	return YES;
 }
 
 #pragma mark Service Description Metadata
@@ -58,9 +63,6 @@
 }
 - (AIServiceImportance)serviceImportance{
 	return AIServiceSecondary;
-}
-- (BOOL)canCreateGroupChats{
-	return NO;
 }
 
 // Some auth schemes may not need a password
@@ -93,67 +95,33 @@
 
 #pragma mark Statuses
 - (void)registerStatuses{
+    NSDictionary *statuses =
+    [NSDictionary dictionaryWithObjectsAndKeys:
+     AIAvailableStatusType, STATUS_NAME_AVAILABLE,
+     AIAwayStatusType,      STATUS_NAME_AWAY,
+     AIAwayStatusType,      STATUS_NAME_BUSY,
+     AIInvisibleStatusType, STATUS_NAME_INVISIBLE,
+     AIAwayStatusType,      STATUS_NAME_BRB,
+     AIAwayStatusType,      STATUS_NAME_DND,
+     AIAwayStatusType,      STATUS_NAME_LUNCH,
+     AIOfflineStatusType,   STATUS_NAME_OFFLINE,
+     AIAwayStatusType,      STATUS_NAME_PHONE,
+     AIAwayStatusType,      STATUS_NAME_NOT_AT_DESK,
+     AIAwayStatusType,      STATUS_NAME_NOT_IN_OFFICE,
+     AIAwayStatusType,      STATUS_NAME_AWAY_FRIENDS_ONLY,
+     nil
+     ];
     
-    
-	[adium.statusController registerStatus:STATUS_NAME_AVAILABLE
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_AVAILABLE]
-                                    ofType:AIAvailableStatusType
-                                forService:self];
-	
-	[adium.statusController registerStatus:STATUS_NAME_AWAY
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_AWAY]
-                                    ofType:AIAwayStatusType
-                                forService:self];
-	
-	[adium.statusController registerStatus:STATUS_NAME_BUSY
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BUSY]
-                                    ofType:AIAwayStatusType
-                                forService:self];
-    
-	[adium.statusController registerStatus:STATUS_NAME_INVISIBLE
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_INVISIBLE]
-                                    ofType:AIInvisibleStatusType
-                                forService:self];
-    
-    [adium.statusController registerStatus:STATUS_NAME_BRB
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_BRB]
-                                    ofType:AIAwayStatusType
-                                forService:self];
-    
-    [adium.statusController registerStatus:STATUS_NAME_DND
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_DND]
-                                    ofType:AIAwayStatusType
-                                forService:self];
-    
-    [adium.statusController registerStatus:STATUS_NAME_LUNCH
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_LUNCH]
-                                    ofType:AIAwayStatusType
-                                forService:self];
-    
-    [adium.statusController registerStatus:STATUS_NAME_OFFLINE
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_OFFLINE]
-                                    ofType:AIOfflineStatusType
-                                forService:self];
-    
-    [adium.statusController registerStatus:STATUS_NAME_PHONE
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_PHONE]
-                                    ofType:AIAwayStatusType
-                                forService:self];
-    
-    [adium.statusController registerStatus:STATUS_NAME_NOT_AT_DESK
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_NOT_AT_DESK]
-                                    ofType:AIAwayStatusType
-                                forService:self];
-    
-    [adium.statusController registerStatus:STATUS_NAME_NOT_IN_OFFICE
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_NOT_IN_OFFICE]
-                                    ofType:AIAwayStatusType
-                                forService:self];
-    
-    [adium.statusController registerStatus:STATUS_NAME_AWAY_FRIENDS_ONLY
-                           withDescription:[adium.statusController localizedDescriptionForCoreStatusName:STATUS_NAME_AWAY_FRIENDS_ONLY]
-                                    ofType:AIAwayStatusType
-                                forService:self];
+    for (NSString* key in statuses) {
+        AIStatusType value = [statuses objectForKey:key];
+        
+        [adium.statusController
+         registerStatus:key
+         withDescription:[adium.statusController localizedDescriptionForCoreStatusName:key]
+         ofType:value
+         forService:self
+         ];
+    }
 }
 
 

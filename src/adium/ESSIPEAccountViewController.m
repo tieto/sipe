@@ -7,15 +7,50 @@
 //  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
 //
 
-
-#import "ESSIPEAccountViewController.h"
-
 #import <AdiumLibpurple/CBPurpleAccount.h>
+#import <ESDebugAILog.h>
+#import "ESSIPEAccountViewController.h"
 
 #include "prpl.h"
 #include "ESPurpleSIPEAccount.h"
 
+// Gotta define these here, because they're not yet in the 10.9 SDK.  :(
+#define NSAppKitVersionNumber10_8 1187
+#define NSAppKitVersionNumber10_8_5 1187.4
+#define NSAppKitVersionNumber10_9 1265
+
 @implementation ESSIPEAccountViewController
+
+- (id)init {
+    [super init];
+    
+    sipe_key_to_gui =
+    [[NSDictionary alloc] initWithObjectsAndKeys:
+     textField_windowsLogin,     KEY_SIPE_WINDOWS_LOGIN,
+     textField_password,         KEY_SIPE_PASSWORD,
+     textField_server,           KEY_SIPE_CONNECT_HOST,
+     popup_connectionType,       KEY_SIPE_CONNECTION_TYPE,
+     popup_authenticationScheme, KEY_SIPE_AUTH_SCHEME,
+     textField_userAgent,        KEY_SIPE_USER_AGENT,
+     checkBox_singleSignOn,      KEY_SIPE_SINGLE_SIGN_ON,
+     checkbox_beastDisable,      KEY_SIPE_BEAST_DISABLE,
+     textField_groupchatUser,    KEY_SIPE_GROUP_CHAT_PROXY,
+     textField_emailURL,         KEY_SIPE_EMAIL_URL,
+     textField_email,            KEY_SIPE_EMAIL,
+     textField_emailLogin,       KEY_SIPE_EMAIL_LOGIN,
+     textField_emailPassword,    KEY_SIPE_EMAIL_PASSWORD,
+     checkbox_dontPublish,       KEY_SIPE_DONT_PUBLISH,
+     nil
+     ];
+    
+    return self;
+}
+
+- (void)dealloc
+{
+    [sipe_key_to_gui release];
+    [super dealloc];
+}
 
 - (NSString *)nibName{
     return @"ESSIPEAccountView";
@@ -25,105 +60,88 @@
 - (void)configureForAccount:(AIAccount *)inAccount
 {
     [super configureForAccount:inAccount];
-    
-    NSString *server = [account preferenceForKey:KEY_SIPE_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
-    [textField_server setStringValue:(server ? server : @"")];
-    
-    NSString *windowsLogin = [account preferenceForKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
-	[textField_windowsLogin setStringValue:(windowsLogin ? windowsLogin : @"")];
-    
- 	[checkBox_singleSignOn setState:[[account preferenceForKey:KEY_SIPE_SINGLE_SIGN_ON group:GROUP_ACCOUNT_STATUS] boolValue]];
-    
-	[checkbox_dontPublish setState:[[account preferenceForKey:KEY_SIPE_DONT_PUBLISH group:GROUP_ACCOUNT_STATUS] boolValue]];
 
-	NSString *userAgent = [account preferenceForKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
-	[textField_userAgent setStringValue:(userAgent ? userAgent : @"")];
+    // BEAST mitigation for Mavericks and 10.8.5 users (with Security Update 2014-001)
+    if (NSAppKitVersionNumber < NSAppKitVersionNumber10_8_5) {
+        // We are not running on an OS with BEAST mitigations - Don't display this as a configuration option
+        [checkbox_beastDisable setHidden:YES];
+    }
     
-	NSString *emailURL = [account preferenceForKey:KEY_SIPE_EMAIL_URL group:GROUP_ACCOUNT_STATUS];
-	[textField_emailURL setStringValue:(emailURL ? emailURL : @"")];
+    // Only need 1 hash for both connection & auth since there are no overlapping keys
+    NSDictionary *conn_auth_dict =
+    [NSDictionary dictionaryWithObjectsAndKeys:
+     @"NTLM",@"ntlm",
+     @"Kerberos",@"krb5",
+     @"TLS-DSK",@"tls-dsk",
+     @"Auto",@"auto",
+     @"SSL/TLS",@"tls",
+     @"TCP",@"tcp",
+     nil];
     
-    NSString *email = [account preferenceForKey:KEY_SIPE_EMAIL group:GROUP_ACCOUNT_STATUS];
-	[textField_email setStringValue:(email ? email : @"")];
-    
-    NSString *emailLogin = [account preferenceForKey:KEY_SIPE_EMAIL_LOGIN group:GROUP_ACCOUNT_STATUS];
-	[textField_emailLogin setStringValue:(emailLogin ? emailLogin : @"")];
-    
-    NSString *emailPassword = [account preferenceForKey:KEY_SIPE_EMAIL_PASSWORD group:GROUP_ACCOUNT_STATUS];
-	[textField_emailPassword setStringValue:(emailPassword ? emailPassword : @"")];
-    
-    NSString *groupchatUser = [account preferenceForKey:KEY_SIPE_GROUP_CHAT_PROXY group:GROUP_ACCOUNT_STATUS];
-	[textField_groupchatUser setStringValue:(groupchatUser ? groupchatUser : @"")];
-    
-    NSString *connType = [account preferenceForKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS];
-    NSDictionary *connTypeDict = [NSDictionary dictionaryWithObjectsAndKeys:
-                                  @"Auto",@"auto",
-                                  @"SSL/TLS",@"tls",
-                                  @"TCP",@"tcp",
-                                  nil];
-    [popup_connectionType selectItemWithTitle:[connTypeDict objectForKey:(connType ? connType : @"auto")]];
-    
-    NSString *authType = [account preferenceForKey:KEY_SIPE_AUTH_SCHEME group:GROUP_ACCOUNT_STATUS];
-    NSDictionary *authTypeDict = [NSDictionary dictionaryWithObjectsAndKeys:
-                                  @"NTLM",@"ntlm",
-                                  @"Kerberos",@"krb5",
-                                  @"TLS-DSK",@"tls-dsk",
-                                  nil];
-    [popup_authenticationScheme selectItemWithTitle:[authTypeDict objectForKey:(authType ? authType : @"ntlm")]];
+    for (NSString* key in sipe_key_to_gui) {
+        id value = [sipe_key_to_gui objectForKey:key];
+        
+        if ([value isKindOfClass:[NSTextField class]]) {
+            NSString *tmp = [account preferenceForKey:key group:GROUP_ACCOUNT_STATUS];
+            [value setStringValue:(tmp ? tmp : @"")];
+        } else if ([value isKindOfClass:[NSPopUpButton class]]) {
+            // NSPopUpButton *MUST* appear before NSButton in the if/else
+            //   because  NSPopUpButton is a NSButton...
+            NSString *tmp_key = [account preferenceForKey:key group:GROUP_ACCOUNT_STATUS];
+            NSString *tmp = [key isEqualToString:KEY_SIPE_CONNECTION_TYPE] ? @"auto" : @"ntlm";
+            
+            if (conn_auth_dict[tmp_key])
+                tmp = conn_auth_dict[tmp_key];
+            
+            [value selectItemWithTitle:tmp];
+        } else if ([value isKindOfClass:[NSButton class]]) {
+            [value setState:[[account preferenceForKey:key group:GROUP_ACCOUNT_STATUS] boolValue]];
+        } else {
+            AILog(@"(ESSIPEAccountViewController) Unknown class %@ for key %@", [value class], key);
+        }
+    }
 }
 
 - (void)saveConfiguration
 {
     [super saveConfiguration];
     
-    [account setPreference:[textField_windowsLogin stringValue]
-					forKey:KEY_SIPE_WINDOWS_LOGIN group:GROUP_ACCOUNT_STATUS];
+    // Only need 1 hash for both connection & auth since there are no overlapping keys
+    NSDictionary *conn_auth_dict =
+    [NSDictionary dictionaryWithObjectsAndKeys:
+     @"ntlm",@"NTLM",
+     @"krb5",@"Kerberos",
+     @"tls-dsk",@"TLS-DSK",
+     @"auto",@"Auto",
+     @"tls",@"SSL/TLS",
+     @"tcp",@"TCP",
+     nil];
     
-    [account setPreference:[textField_server stringValue]
-                    forKey:KEY_SIPE_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
-    
-    // TODO: Figure out how to only save the password if the user has "Save password" checked
-    [account setPreference:[textField_password stringValue]
-					forKey:KEY_SIPE_PASSWORD group:GROUP_ACCOUNT_STATUS];
-    
-	[account setPreference:[NSNumber numberWithBool:[checkBox_singleSignOn state]]
-                    forKey:KEY_SIPE_SINGLE_SIGN_ON group:GROUP_ACCOUNT_STATUS];
-    
-	[account setPreference:[NSNumber numberWithBool:[checkbox_dontPublish state]]
-                    forKey:KEY_SIPE_DONT_PUBLISH group:GROUP_ACCOUNT_STATUS];
-
-	[account setPreference:
-     ([[textField_userAgent stringValue] length] ? [textField_userAgent stringValue] : nil)
-                    forKey:KEY_SIPE_USER_AGENT group:GROUP_ACCOUNT_STATUS];
-    
-    [account setPreference:
-     ([[textField_emailURL stringValue] length] ? [textField_emailURL stringValue] : nil)
-                    forKey:KEY_SIPE_EMAIL_URL group:GROUP_ACCOUNT_STATUS];
-    
-    [account setPreference:
-     ([[textField_email stringValue] length] ? [textField_email stringValue] : nil)
-                    forKey:KEY_SIPE_EMAIL group:GROUP_ACCOUNT_STATUS];
-    
-	[account setPreference:
-     ([[textField_emailLogin stringValue] length] ? [textField_emailLogin stringValue] : nil)
-                    forKey:KEY_SIPE_EMAIL_LOGIN group:GROUP_ACCOUNT_STATUS];
-    
-    [account setPreference:
-     ([[textField_emailPassword stringValue] length] ? [textField_emailPassword stringValue] : nil)
-                    forKey:KEY_SIPE_EMAIL_PASSWORD group:GROUP_ACCOUNT_STATUS];
-    
-    [account setPreference:
-     ([[textField_groupchatUser stringValue] length] ? [textField_groupchatUser stringValue] : nil)
-                    forKey:KEY_SIPE_GROUP_CHAT_PROXY group:GROUP_ACCOUNT_STATUS];
-    
-    NSMutableArray *myArray = [[NSMutableArray alloc] initWithObjects:@"auto", @"tls", @"tcp", nil];
-    [account setPreference: [myArray objectAtIndex:[popup_connectionType selectedTag]]
-                    forKey:KEY_SIPE_CONNECTION_TYPE group:GROUP_ACCOUNT_STATUS];
-    [myArray release];
-    
-    myArray = [[NSMutableArray alloc] initWithObjects:@"ntlm", @"krb5", @"tls-dsk", nil];
-    [account setPreference: [myArray objectAtIndex:[popup_authenticationScheme selectedTag]]
-                    forKey:KEY_SIPE_AUTH_SCHEME group:GROUP_ACCOUNT_STATUS];
-    [myArray release];
+    for (NSString* key in sipe_key_to_gui) {
+        id value = [sipe_key_to_gui objectForKey:key];
+        
+        if ([value isKindOfClass:[NSTextField class]]) {
+            [account
+             setPreference:[[value stringValue] length] ? [value stringValue] : @""
+             forKey:key
+             group:GROUP_ACCOUNT_STATUS];
+        } else if ([value isKindOfClass:[NSPopUpButton class]]) {
+            // NSPopUpButton *MUST* appear before NSButton in the if/else
+            //   because  NSPopUpButton is a NSButton...
+            NSString *tmp = conn_auth_dict[[[value selectedItem] title]];
+            [account
+             setPreference:tmp
+             forKey:key
+             group:GROUP_ACCOUNT_STATUS];
+        } else if ([value isKindOfClass:[NSButton class]]) {
+            [account
+             setPreference:[NSNumber numberWithBool:[value state]]
+             forKey:key
+             group:GROUP_ACCOUNT_STATUS];
+        } else {
+            AILog(@"(ESSIPEAccountViewController) Unknown class %@ for key %@", [value class], key);
+        }
+    }
 }
 
 @end

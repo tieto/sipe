@@ -35,7 +35,6 @@
 
 #include "dnsquery.h"
 #include "dnssrv.h"
-#include "version.h"
 
 #include "sipe-common.h"
 #include "sipe-backend.h"

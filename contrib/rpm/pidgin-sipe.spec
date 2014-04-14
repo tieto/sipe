@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20120905gitcc6065b
+%define git       20140308git949b574
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -25,7 +25,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.17.3
+Version:        1.18.1
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -41,24 +41,32 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
-BuildRequires:  libpurple-devel >= 2.4.0
-BuildRequires:  glib2-devel >= 2.12.0
+BuildRequires:  pkgconfig(purple) >= 2.4.0
+BuildRequires:  pkgconfig(glib-2.0) >= 2.12.0
+BuildRequires:  pkgconfig(gmodule-2.0) >= 2.12.0
 BuildRequires:  gmime-devel
-BuildRequires:  libxml2-devel
-BuildRequires:  nss-devel
+BuildRequires:  pkgconfig(libxml-2.0)
+BuildRequires:  pkgconfig(nss)
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
 # Use "--with vv" to enable Voice & Video features
 %if 0%{?_with_vv:1}
-BuildRequires:  libpurple-devel >= 2.8.0
-BuildRequires:  libnice-devel >= 0.1.0
-BuildRequires:  gstreamer-devel
+BuildRequires:  pkgconfig(purple) >= 2.8.0
+BuildRequires:  pkgconfig(nice) >= 0.1.0
+%if 0%{?fedora} >= 20
+# Dependency required when gstreamer support is split into two packages
+Requires:       libnice-gstreamer
+%endif
+BuildRequires:  pkgconfig(gstreamer-0.10)
 %endif
 # Use "--without telepathy" to disable telepathy
 %if !0%{?_without_telepathy:1}
-BuildRequires:  telepathy-glib-devel >= 0.18.0
-BuildRequires:  glib2-devel >= 2.28.0
+BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
+BuildRequires:  pkgconfig(glib-2.0) >= 2.28.0
+BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
+BuildRequires:  pkgconfig(gobject-2.0)
+BuildRequires:  pkgconfig(dbus-glib-1)
 %endif
 
 # Configurable components
@@ -258,6 +266,18 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Apr 12 2014 J. D. User <jduser@noreply.com> 1.18.1
+- update to 1.18.1
+
+* Sat Mar 08 2014 J. D. User <jduser@noreply.com> 1.18.0-*git*
+- New Fedora packaging guidelines suggest to use pkgconfig() for BRs
+
+* Tue Mar 04 2014 J. D. User <jduser@noreply.com> 1.18.0-*git*
+- F20+ require libnice-gstreamer for correct operation
+
+* Sat Jan 11 2014 J. D. User <jduser@noreply.com> 1.18.0
+- update to 1.18.0
+
 * Wed Dec 11 2013 J. D. User <jduser@noreply.com> 1.17.3
 - update to 1.17.3
 

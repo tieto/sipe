@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -519,26 +519,30 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      const gchar *status_text)
 {
 	struct sipe_buddy *sbuddy;
-	const char *activity_str;
+	GString *status;
 
 	if (!sipe_public) return NULL; /* happens on pidgin exit */
 
 	sbuddy = sipe_buddy_find_by_uri(SIPE_CORE_PRIVATE, uri);
 	if (!sbuddy) return NULL;
 
-	activity_str = sbuddy->activity ? sbuddy->activity :
-		(activity == SIPE_ACTIVITY_BUSY) || (activity == SIPE_ACTIVITY_BRB) ?
-		status_text : NULL;
+	status = g_string_new(sbuddy->activity ? sbuddy->activity :
+			      (activity == SIPE_ACTIVITY_BUSY) || (activity == SIPE_ACTIVITY_BRB) ?
+			      status_text : NULL);
 
-	if (activity_str && sbuddy->note) {
-		return g_strdup_printf("%s - <i>%s</i>", activity_str, sbuddy->note);
-	} else if (activity_str) {
-		return g_strdup(activity_str);
-	} else if (sbuddy->note) {
-		return g_strdup_printf("<i>%s</i>", sbuddy->note);
-	} else {
-		return NULL;
+	if (sbuddy->is_mobile) {
+		if (status->len)
+			g_string_append(status, " - ");
+		g_string_append(status, _("Mobile"));
 	}
+
+	if (sbuddy->note) {
+		if (status->len)
+			g_string_append(status, " - ");
+		g_string_append(status, sbuddy->note);
+	}
+
+	return(g_string_free(status, FALSE));
 }
 
 gchar *sipe_buddy_get_alias(struct sipe_core_private *sipe_private,
@@ -1824,8 +1828,9 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 {
         if (sipe_backend_uses_photo()) {
 
-		/* Lync 2013 or newer: use UCS */
-		if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013)) {
+		/* Lync 2013 or newer: use UCS if contacts are migrated */
+		if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) &&
+		    sipe_ucs_is_migrated(sipe_private)) {
 
 			sipe_ucs_get_photo(sipe_private, uri);
 

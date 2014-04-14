@@ -28,9 +28,6 @@
 		1CE4A00D14A17FD100663393 /* sipe-tls.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00514A17FD100663393 /* sipe-tls.c */; };
 		1CE4A01E14A180E100663393 /* purple-search.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A01C14A180E100663393 /* purple-search.c */; };
 		1CE4A01F14A180E100663393 /* purple-status.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A01D14A180E100663393 /* purple-status.c */; };
-		1CE4A02514A1816B00663393 /* sipe-cert-crypto-nss.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A02214A1816B00663393 /* sipe-cert-crypto-nss.c */; };
-		1CE4A02614A1816B00663393 /* sipe-crypt-nss.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A02314A1816B00663393 /* sipe-crypt-nss.c */; };
-		1CE4A02714A1816B00663393 /* sipe-digest-nss.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A02414A1816B00663393 /* sipe-digest-nss.c */; };
 		1CF260F912C2DFA00045B6CC /* purple-buddy.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F112C2DFA00045B6CC /* purple-buddy.c */; };
 		1CF260FA12C2DFA00045B6CC /* purple-chat.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F212C2DFA00045B6CC /* purple-chat.c */; };
 		1CF260FB12C2DFA00045B6CC /* purple-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F312C2DFA00045B6CC /* purple-ft.c */; };
@@ -47,29 +44,19 @@
 		1CF2612C12C2E73F0045B6CC /* ESPurpleSIPEAccount.m in Sources */ = {isa = PBXBuildFile; fileRef = C99F358E109AE68400E79CB2 /* ESPurpleSIPEAccount.m */; };
 		1CF2612D12C2E7420045B6CC /* ESSIPEService.m in Sources */ = {isa = PBXBuildFile; fileRef = C948843C109B2F8100ABFAF7 /* ESSIPEService.m */; };
 		1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = C9488445109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.m */; };
-		7B379594176A2DDF001A02FD /* sipe-http-request.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379591176A2DDF001A02FD /* sipe-http-request.c */; };
-		7B379595176A2DDF001A02FD /* sipe-http-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379592176A2DDF001A02FD /* sipe-http-transport.c */; };
-		7B379596176A2DDF001A02FD /* sipe-http.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379593176A2DDF001A02FD /* sipe-http.c */; };
+		5AAF284A184E4172007481FA /* sipe-cert-crypto-openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = B82FA4181847524B00AE581B /* sipe-cert-crypto-openssl.c */; };
+		5AAF284B184E4172007481FA /* sipe-crypt-openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */; };
+		5AAF284C184E4172007481FA /* sipe-digest-openssl.c in Sources */ = {isa = PBXBuildFile; fileRef = B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */; };
+		5AAF284D184E4172007481FA /* sipe-http-request.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379591176A2DDF001A02FD /* sipe-http-request.c */; };
+		5AAF284E184E4172007481FA /* sipe-http-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379592176A2DDF001A02FD /* sipe-http-transport.c */; };
+		5AAF284F184E4172007481FA /* sipe-http.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B379593176A2DDF001A02FD /* sipe-http.c */; };
+		5AAF2850184E4172007481FA /* sip-sec-negotiate.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */; };
+		5AAF2851184E4172007481FA /* sip-sec-basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */; };
 		7B50EFAB16DB326100F897D1 /* PurpleDefaultsSIPE.plist in Resources */ = {isa = PBXBuildFile; fileRef = 7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */; };
-		7B5DD2EB16DB1E0A00B3D188 /* libnss3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B57773F166EC5FB000DBCD5 /* libnss3.dylib */; };
-		7B5DD2EC16DB1E0A00B3D188 /* libsoftokn3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */; };
-		7B5DD2ED16DB1E0A00B3D188 /* libfreebl3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */; };
-		7B5DD2EE16DB1E0A00B3D188 /* libplds4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B5777121668103B000DBCD5 /* libplds4.dylib */; };
-		7B5DD2EF16DB1E0A00B3D188 /* libplc4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B5777101668102A000DBCD5 /* libplc4.dylib */; };
-		7B5DD2F016DB1E0A00B3D188 /* libnssutil3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 7B2AB0931666A17D0020766F /* libnssutil3.dylib */; };
-		7B5DD2F116DB1E0A00B3D188 /* libsmime3.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */; };
-		7B5DD2F216DB1E0A00B3D188 /* libnspr4.dylib in CopyFiles */ = {isa = PBXBuildFile; fileRef = 1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */; };
-		7B6505B5170BCB0C002107A1 /* libnss3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B57773F166EC5FB000DBCD5 /* libnss3.dylib */; };
-		7B6505B6170BCB0E002107A1 /* libsoftokn3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */; };
-		7B6505B7170BCB11002107A1 /* libfreebl3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */; };
-		7B6505B8170BCB14002107A1 /* libplds4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5777121668103B000DBCD5 /* libplds4.dylib */; };
-		7B6505B9170BCB16002107A1 /* libplc4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B5777101668102A000DBCD5 /* libplc4.dylib */; };
-		7B6505BA170BCB19002107A1 /* libnssutil3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 7B2AB0931666A17D0020766F /* libnssutil3.dylib */; };
-		7B6505BB170BCB1C002107A1 /* libsmime3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */; };
-		7B6505BC170BCB22002107A1 /* libnspr4.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */; };
 		7B78055816DEC73400B844A6 /* ESSIPEAccountView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */; };
-		7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */; };
-		7B7805DA16DFF8D300B844A6 /* sip-sec-basic.c in Sources */ = {isa = PBXBuildFile; fileRef = 7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */; };
+		7BBE151C184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h in Headers */ = {isa = PBXBuildFile; fileRef = 7BBE151A184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h */; };
+		7BBE151D184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 7BBE151B184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m */; };
+		7BBE1529184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib in Resources */ = {isa = PBXBuildFile; fileRef = 7BBE1527184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib */; };
 		8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 089C167DFE841241C02AAC07 /* InfoPlist.strings */; };
 		8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */; };
 		B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB4F119D5155001CE037 /* purple-connection.c */; };
@@ -85,7 +72,7 @@
 		B13FAB6D119D5155001CE037 /* tests-load.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5D119D5155001CE037 /* tests-load.c */; };
 		B13FAB6E119D5155001CE037 /* tests.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5E119D5155001CE037 /* tests.c */; };
 		B13FABDF119D585A001CE037 /* sip-csta.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA3119D585A001CE037 /* sip-csta.c */; };
-		B13FABE1119D585A001CE037 /* sip-sec-krb5.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA5119D585A001CE037 /* sip-sec-krb5.c */; };
+		B13FABE1119D585A001CE037 /* sip-sec-gssapi.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA5119D585A001CE037 /* sip-sec-gssapi.c */; };
 		B13FABE5119D585A001CE037 /* sip-sec-ntlm.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */; };
 		B13FABE9119D585A001CE037 /* sip-sec.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABAD119D585A001CE037 /* sip-sec.c */; };
 		B13FABEB119D585A001CE037 /* sip-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABAF119D585A001CE037 /* sip-transport.c */; };
@@ -112,75 +99,61 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		7B2AB02B1665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC1183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 34BD9DA9053146CC000AB133;
 			remoteInfo = Adium;
 		};
-		7B2AB02D1665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC3183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 34BD9DE105314751000AB133;
 			remoteInfo = Adium.Framework;
 		};
-		7B2AB02F1665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC5183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 3485D68009EB416300232CC4;
 			remoteInfo = AdiumLibpurple;
 		};
-		7B2AB0311665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC7183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 6334FBFC0F9C11DC003C77A9;
 			remoteInfo = AIUtilities.framework;
 		};
-		7B2AB0331665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBC9183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 349C2EFA0867AC97000BF883;
 			remoteInfo = AdiumApplescriptRunner;
 		};
-		7B2AB0351665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBCB183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 312ED3CA0C7E875B00A6BDA9;
 			remoteInfo = "Unit tests";
 		};
-		7B2AB0371665EECF0020766F /* PBXContainerItemProxy */ = {
+		7BB8CBCD183AA605004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 2;
 			remoteGlobalIDString = 633D4FA40F9D3073004F491E;
 			remoteInfo = "Spotlight Importer";
 		};
-		7B2AB03A1665EEFA0020766F /* PBXContainerItemProxy */ = {
+		7BB8CC2A183AC198004351FF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+			containerPortal = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 			proxyType = 1;
-			remoteGlobalIDString = 34BD9DAF05314751000AB133;
-			remoteInfo = Adium.Framework;
-		};
-		7B2AB03C1665EEFA0020766F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 3485D67F09EB416300232CC4;
-			remoteInfo = AdiumLibpurple;
-		};
-		7B2AB03E1665EEFA0020766F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
-			proxyType = 1;
-			remoteGlobalIDString = 6334FBFB0F9C11DC003C77A9;
-			remoteInfo = AIUtilities.framework;
+			remoteGlobalIDString = 34BD9CD1053146CC000AB133;
+			remoteInfo = Adium;
 		};
 		C92A79F110B25023009B64B9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -198,14 +171,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
-				7B5DD2EB16DB1E0A00B3D188 /* libnss3.dylib in CopyFiles */,
-				7B5DD2EC16DB1E0A00B3D188 /* libsoftokn3.dylib in CopyFiles */,
-				7B5DD2ED16DB1E0A00B3D188 /* libfreebl3.dylib in CopyFiles */,
-				7B5DD2EE16DB1E0A00B3D188 /* libplds4.dylib in CopyFiles */,
-				7B5DD2EF16DB1E0A00B3D188 /* libplc4.dylib in CopyFiles */,
-				7B5DD2F016DB1E0A00B3D188 /* libnssutil3.dylib in CopyFiles */,
-				7B5DD2F116DB1E0A00B3D188 /* libsmime3.dylib in CopyFiles */,
-				7B5DD2F216DB1E0A00B3D188 /* libnspr4.dylib in CopyFiles */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -216,8 +181,6 @@
 		089C167EFE841241C02AAC07 /* English */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.strings; name = English; path = English.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		089C167FFE841241C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
-		1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnspr4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/pr/src/libnspr4.dylib; sourceTree = NSS_SRCPATH; };
-		1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsmime3.dylib; path = mozilla/security/nss/lib/smime/Darwin11.4.2_64_OPT.OBJ/libsmime3.dylib; sourceTree = NSS_SRCPATH; };
 		1C1DC3CF14A8005A001F6A0F /* md4.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = md4.c; sourceTree = "<group>"; };
 		1C7056D312C1E5820004E43B /* libpidgin-sipe.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libpidgin-sipe.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1C822BEB12F8E87500CC4AEA /* sipe-im.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-im.c"; sourceTree = "<group>"; };
@@ -240,9 +203,6 @@
 		1CE4A00514A17FD100663393 /* sipe-tls.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-tls.c"; sourceTree = "<group>"; };
 		1CE4A01C14A180E100663393 /* purple-search.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-search.c"; sourceTree = "<group>"; };
 		1CE4A01D14A180E100663393 /* purple-status.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-status.c"; sourceTree = "<group>"; };
-		1CE4A02214A1816B00663393 /* sipe-cert-crypto-nss.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-cert-crypto-nss.c"; sourceTree = "<group>"; };
-		1CE4A02314A1816B00663393 /* sipe-crypt-nss.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-crypt-nss.c"; sourceTree = "<group>"; };
-		1CE4A02414A1816B00663393 /* sipe-digest-nss.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-digest-nss.c"; sourceTree = "<group>"; };
 		1CF260F112C2DFA00045B6CC /* purple-buddy.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-buddy.c"; sourceTree = "<group>"; };
 		1CF260F212C2DFA00045B6CC /* purple-chat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-chat.c"; sourceTree = "<group>"; };
 		1CF260F312C2DFA00045B6CC /* purple-ft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-ft.c"; sourceTree = "<group>"; };
@@ -257,20 +217,23 @@
 		1CF2611012C2E1AA0045B6CC /* sipe-subscriptions.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-subscriptions.c"; sourceTree = "<group>"; };
 		1CF2611112C2E1AA0045B6CC /* sipe-user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-user.c"; sourceTree = "<group>"; };
 		32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SIPEAdiumPlugin_Prefix.pch; sourceTree = "<group>"; };
-		7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; path = Adium.xcodeproj; sourceTree = ADIUM_SRCPATH; };
-		7B2AB0931666A17D0020766F /* libnssutil3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnssutil3.dylib; path = mozilla/security/nss/lib/util/Darwin11.4.2_64_OPT.OBJ/libnssutil3.dylib; sourceTree = NSS_SRCPATH; };
 		7B379591176A2DDF001A02FD /* sipe-http-request.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http-request.c"; sourceTree = "<group>"; };
 		7B379592176A2DDF001A02FD /* sipe-http-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http-transport.c"; sourceTree = "<group>"; };
 		7B379593176A2DDF001A02FD /* sipe-http.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-http.c"; sourceTree = "<group>"; };
 		7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = PurpleDefaultsSIPE.plist; sourceTree = "<group>"; };
-		7B5777101668102A000DBCD5 /* libplc4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplc4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/libc/src/libplc4.dylib; sourceTree = NSS_SRCPATH; };
-		7B5777121668103B000DBCD5 /* libplds4.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libplds4.dylib; path = mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/ds/libplds4.dylib; sourceTree = NSS_SRCPATH; };
-		7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libfreebl3.dylib; path = mozilla/security/nss/lib/freebl/Darwin11.4.2_64_OPT.OBJ/Darwin_SINGLE_SHLIB/libfreebl3.dylib; sourceTree = NSS_SRCPATH; };
-		7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libsoftokn3.dylib; path = mozilla/security/nss/lib/softoken/Darwin11.4.2_64_OPT.OBJ/libsoftokn3.dylib; sourceTree = NSS_SRCPATH; };
-		7B57773F166EC5FB000DBCD5 /* libnss3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libnss3.dylib; path = mozilla/security/nss/lib/nss/Darwin11.4.2_64_OPT.OBJ/libnss3.dylib; sourceTree = NSS_SRCPATH; };
 		7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; name = ESSIPEAccountView.xib; path = English.lproj/ESSIPEAccountView.xib; sourceTree = "<group>"; };
 		7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-negotiate.c"; sourceTree = "<group>"; };
 		7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-basic.c"; sourceTree = "<group>"; };
+		7BB8CB91183AA0BD004351FF /* Base.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
+		7BB8CB92183AA0BD004351FF /* Debug-Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "Debug-Release.xcconfig"; sourceTree = "<group>"; };
+		7BB8CB93183AA0BD004351FF /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Debug.xcconfig; sourceTree = "<group>"; };
+		7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = "libpidgin-sipe.xcconfig"; sourceTree = "<group>"; };
+		7BB8CB96183AA0BD004351FF /* Release.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = Release.xcconfig; sourceTree = "<group>"; };
+		7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; path = SIPEAdiumPlugin.xcconfig; sourceTree = "<group>"; };
+		7BB8CBB3183AA600004351FF /* Adium.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = Adium.xcodeproj; path = ../../../adium/Adium.xcodeproj; sourceTree = "<group>"; };
+		7BBE151A184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = DCPurpleSIPEJoinChatViewController.h; sourceTree = "<group>"; };
+		7BBE151B184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = DCPurpleSIPEJoinChatViewController.m; sourceTree = "<group>"; };
+		7BBE1528184D4BF50000FFC9 /* English */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = English; path = English.lproj/DCPurpleSIPEJoinChatView.xib; sourceTree = "<group>"; };
 		8D5B49B6048680CD000E48DA /* SIPEAdiumPlugin.AdiumLibpurplePlugin */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SIPEAdiumPlugin.AdiumLibpurplePlugin; sourceTree = BUILT_PRODUCTS_DIR; };
 		8D5B49B7048680CD000E48DA /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = SOURCE_ROOT; };
 		B13FAB4F119D5155001CE037 /* purple-connection.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-connection.c"; sourceTree = "<group>"; };
@@ -286,7 +249,7 @@
 		B13FAB5D119D5155001CE037 /* tests-load.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "tests-load.c"; sourceTree = "<group>"; };
 		B13FAB5E119D5155001CE037 /* tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tests.c; sourceTree = "<group>"; };
 		B13FABA3119D585A001CE037 /* sip-csta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-csta.c"; sourceTree = "<group>"; };
-		B13FABA5119D585A001CE037 /* sip-sec-krb5.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-krb5.c"; sourceTree = "<group>"; };
+		B13FABA5119D585A001CE037 /* sip-sec-gssapi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-gssapi.c"; sourceTree = "<group>"; };
 		B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-ntlm.c"; sourceTree = "<group>"; };
 		B13FABAD119D585A001CE037 /* sip-sec.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec.c"; sourceTree = "<group>"; };
 		B13FABAF119D585A001CE037 /* sip-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-transport.c"; sourceTree = "<group>"; };
@@ -308,6 +271,9 @@
 		B13FABD7119D585A001CE037 /* sipmsg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sipmsg.c; sourceTree = "<group>"; };
 		B13FABD9119D585A001CE037 /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = uuid.c; sourceTree = "<group>"; };
 		B13FAC60119D721E001CE037 /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
+		B82FA4181847524B00AE581B /* sipe-cert-crypto-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-cert-crypto-openssl.c"; sourceTree = "<group>"; };
+		B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-crypt-openssl.c"; sourceTree = "<group>"; };
+		B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-digest-openssl.c"; sourceTree = "<group>"; };
 		C948843B109B2F8100ABFAF7 /* ESSIPEService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPEService.h; sourceTree = "<group>"; };
 		C948843C109B2F8100ABFAF7 /* ESSIPEService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ESSIPEService.m; sourceTree = "<group>"; };
 		C9488444109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPELibpurpleServicePlugin.h; sourceTree = "<group>"; };
@@ -326,14 +292,6 @@
 			files = (
 				8D5B49B4048680CD000E48DA /* Cocoa.framework in Frameworks */,
 				C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */,
-				7B6505B5170BCB0C002107A1 /* libnss3.dylib in Frameworks */,
-				7B6505B6170BCB0E002107A1 /* libsoftokn3.dylib in Frameworks */,
-				7B6505B7170BCB11002107A1 /* libfreebl3.dylib in Frameworks */,
-				7B6505B8170BCB14002107A1 /* libplds4.dylib in Frameworks */,
-				7B6505B9170BCB16002107A1 /* libplc4.dylib in Frameworks */,
-				7B6505BA170BCB19002107A1 /* libnssutil3.dylib in Frameworks */,
-				7B6505BB170BCB1C002107A1 /* libsmime3.dylib in Frameworks */,
-				7B6505BC170BCB22002107A1 /* libnspr4.dylib in Frameworks */,
 				1C3F91AC12C1F531000AA829 /* libpidgin-sipe.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -352,7 +310,7 @@
 		089C166AFE841209C02AAC07 /* SIPEAdiumPlugin */ = {
 			isa = PBXGroup;
 			children = (
-				7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */,
+				7BB8CBB3183AA600004351FF /* Adium.xcodeproj */,
 				08FB77AFFE84173DC02AAC07 /* Classes */,
 				C92A79B110B24C50009B64B9 /* pidgin-sipe */,
 				32C88E010371C26100C91783 /* Other Sources */,
@@ -366,7 +324,6 @@
 		089C1671FE841209C02AAC07 /* Frameworks and Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				7BC54799169BB9C0003DF552 /* NSS Libraries */,
 				7B1E80001665C79300E0C654 /* Other Libraries */,
 				1058C7ACFEA557BF11CA2CBB /* Linked Frameworks */,
 				1058C7AEFEA557BF11CA2CBB /* Other Frameworks */,
@@ -377,6 +334,7 @@
 		089C167CFE841241C02AAC07 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				7BBE1527184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib */,
 				7B78055716DEC73400B844A6 /* ESSIPEAccountView.xib */,
 				7B50EFAA16DB326100F897D1 /* PurpleDefaultsSIPE.plist */,
 				C9FDAEF4109ADF97004EEEAF /* sipe.png */,
@@ -389,6 +347,8 @@
 		08FB77AFFE84173DC02AAC07 /* Classes */ = {
 			isa = PBXGroup;
 			children = (
+				7BBE151A184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h */,
+				7BBE151B184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m */,
 				C99F358D109AE68400E79CB2 /* ESPurpleSIPEAccount.h */,
 				C99F358E109AE68400E79CB2 /* ESPurpleSIPEAccount.m */,
 				C9488444109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.h */,
@@ -432,6 +392,7 @@
 		32C88E010371C26100C91783 /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				7BB8CB90183AA07B004351FF /* xcconfigs */,
 				32DBCF630370AF2F00C91783 /* SIPEAdiumPlugin_Prefix.pch */,
 			);
 			name = "Other Sources";
@@ -445,33 +406,31 @@
 			name = "Other Libraries";
 			sourceTree = "<group>";
 		};
-		7B2AB01F1665EECF0020766F /* Products */ = {
+		7BB8CB90183AA07B004351FF /* xcconfigs */ = {
 			isa = PBXGroup;
 			children = (
-				7B2AB02C1665EECF0020766F /* Adium.app */,
-				7B2AB02E1665EECF0020766F /* Adium.framework */,
-				7B2AB0301665EECF0020766F /* AdiumLibpurple.framework */,
-				7B2AB0321665EECF0020766F /* AIUtilities.framework */,
-				7B2AB0341665EECF0020766F /* AdiumApplescriptRunner */,
-				7B2AB0361665EECF0020766F /* Unit tests.octest */,
-				7B2AB0381665EECF0020766F /* AdiumSpotlightImporter.mdimporter */,
+				7BB8CB91183AA0BD004351FF /* Base.xcconfig */,
+				7BB8CB92183AA0BD004351FF /* Debug-Release.xcconfig */,
+				7BB8CB93183AA0BD004351FF /* Debug.xcconfig */,
+				7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */,
+				7BB8CB96183AA0BD004351FF /* Release.xcconfig */,
+				7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */,
 			);
-			name = Products;
+			path = xcconfigs;
 			sourceTree = "<group>";
 		};
-		7BC54799169BB9C0003DF552 /* NSS Libraries */ = {
+		7BB8CBB4183AA600004351FF /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				7B57773F166EC5FB000DBCD5 /* libnss3.dylib */,
-				7B577733166EBF7D000DBCD5 /* libsoftokn3.dylib */,
-				7B577730166EBEB6000DBCD5 /* libfreebl3.dylib */,
-				7B5777121668103B000DBCD5 /* libplds4.dylib */,
-				7B5777101668102A000DBCD5 /* libplc4.dylib */,
-				7B2AB0931666A17D0020766F /* libnssutil3.dylib */,
-				1C1DC3CB14A80038001F6A0F /* libsmime3.dylib */,
-				1C1DC3C514A7FFED001F6A0F /* libnspr4.dylib */,
+				7BB8CBC2183AA605004351FF /* Adium.app */,
+				7BB8CBC4183AA605004351FF /* Adium.framework */,
+				7BB8CBC6183AA605004351FF /* AdiumLibpurple.framework */,
+				7BB8CBC8183AA605004351FF /* AIUtilities.framework */,
+				7BB8CBCA183AA605004351FF /* AdiumApplescriptRunner */,
+				7BB8CBCC183AA605004351FF /* Unit tests.octest */,
+				7BB8CBCE183AA605004351FF /* AdiumSpotlightImporter.mdimporter */,
 			);
-			name = "NSS Libraries";
+			name = Products;
 			sourceTree = "<group>";
 		};
 		B13FAB4D119D5155001CE037 /* purple */ = {
@@ -506,17 +465,17 @@
 		B13FAB9C119D585A001CE037 /* core */ = {
 			isa = PBXGroup;
 			children = (
+				B82FA4181847524B00AE581B /* sipe-cert-crypto-openssl.c */,
+				B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */,
+				B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */,
 				7B379591176A2DDF001A02FD /* sipe-http-request.c */,
 				7B379592176A2DDF001A02FD /* sipe-http-transport.c */,
 				7B379593176A2DDF001A02FD /* sipe-http.c */,
 				1C1DC3CF14A8005A001F6A0F /* md4.c */,
-				1CE4A02214A1816B00663393 /* sipe-cert-crypto-nss.c */,
-				1CE4A02314A1816B00663393 /* sipe-crypt-nss.c */,
-				1CE4A02414A1816B00663393 /* sipe-digest-nss.c */,
 				B13FABAD119D585A001CE037 /* sip-sec.c */,
 				B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */,
 				1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */,
-				B13FABA5119D585A001CE037 /* sip-sec-krb5.c */,
+				B13FABA5119D585A001CE037 /* sip-sec-gssapi.c */,
 				1CE4A00114A17FD100663393 /* sip-sec-digest.c */,
 				1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */,
 				7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */,
@@ -580,6 +539,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7BBE151C184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -606,9 +566,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				7B2AB03B1665EEFA0020766F /* PBXTargetDependency */,
-				7B2AB03D1665EEFA0020766F /* PBXTargetDependency */,
-				7B2AB03F1665EEFA0020766F /* PBXTargetDependency */,
+				7BB8CC2B183AC198004351FF /* PBXTargetDependency */,
 				C92A79F210B25023009B64B9 /* PBXTargetDependency */,
 			);
 			name = SIPEAdiumPlugin;
@@ -656,8 +614,8 @@
 			projectDirPath = "";
 			projectReferences = (
 				{
-					ProductGroup = 7B2AB01F1665EECF0020766F /* Products */;
-					ProjectRef = 7B1E80051665EA9B00E0C654 /* Adium.xcodeproj */;
+					ProductGroup = 7BB8CBB4183AA600004351FF /* Products */;
+					ProjectRef = 7BB8CBB3183AA600004351FF /* Adium.xcodeproj */;
 				},
 			);
 			projectRoot = "";
@@ -669,53 +627,53 @@
 /* End PBXProject section */
 
 /* Begin PBXReferenceProxy section */
-		7B2AB02C1665EECF0020766F /* Adium.app */ = {
+		7BB8CBC2183AA605004351FF /* Adium.app */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.application;
 			path = Adium.app;
-			remoteRef = 7B2AB02B1665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC1183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB02E1665EECF0020766F /* Adium.framework */ = {
+		7BB8CBC4183AA605004351FF /* Adium.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
 			path = Adium.framework;
-			remoteRef = 7B2AB02D1665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC3183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0301665EECF0020766F /* AdiumLibpurple.framework */ = {
+		7BB8CBC6183AA605004351FF /* AdiumLibpurple.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
 			path = AdiumLibpurple.framework;
-			remoteRef = 7B2AB02F1665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC5183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0321665EECF0020766F /* AIUtilities.framework */ = {
+		7BB8CBC8183AA605004351FF /* AIUtilities.framework */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.framework;
 			path = AIUtilities.framework;
-			remoteRef = 7B2AB0311665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC7183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0341665EECF0020766F /* AdiumApplescriptRunner */ = {
+		7BB8CBCA183AA605004351FF /* AdiumApplescriptRunner */ = {
 			isa = PBXReferenceProxy;
 			fileType = "compiled.mach-o.executable";
 			path = AdiumApplescriptRunner;
-			remoteRef = 7B2AB0331665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBC9183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0361665EECF0020766F /* Unit tests.octest */ = {
+		7BB8CBCC183AA605004351FF /* Unit tests.octest */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.cfbundle;
 			path = "Unit tests.octest";
-			remoteRef = 7B2AB0351665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBCB183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
-		7B2AB0381665EECF0020766F /* AdiumSpotlightImporter.mdimporter */ = {
+		7BB8CBCE183AA605004351FF /* AdiumSpotlightImporter.mdimporter */ = {
 			isa = PBXReferenceProxy;
 			fileType = wrapper.cfbundle;
 			path = AdiumSpotlightImporter.mdimporter;
-			remoteRef = 7B2AB0371665EECF0020766F /* PBXContainerItemProxy */;
+			remoteRef = 7BB8CBCD183AA605004351FF /* PBXContainerItemProxy */;
 			sourceTree = BUILT_PRODUCTS_DIR;
 		};
 /* End PBXReferenceProxy section */
@@ -728,6 +686,7 @@
 				8D5B49B0048680CD000E48DA /* InfoPlist.strings in Resources */,
 				C9FDAEF6109ADF97004EEEAF /* sipe.png in Resources */,
 				7B50EFAB16DB326100F897D1 /* PurpleDefaultsSIPE.plist in Resources */,
+				7BBE1529184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib in Resources */,
 				7B78055816DEC73400B844A6 /* ESSIPEAccountView.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -742,12 +701,8 @@
 				1CF2612C12C2E73F0045B6CC /* ESPurpleSIPEAccount.m in Sources */,
 				1CF2612D12C2E7420045B6CC /* ESSIPEService.m in Sources */,
 				1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */,
+				7BBE151D184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m in Sources */,
 				1CDEE46112C35DAD00790CAF /* ESSIPEAccountViewController.m in Sources */,
-				7B78059A16DFF8D300B844A6 /* sip-sec-negotiate.c in Sources */,
-				7B7805DA16DFF8D300B844A6 /* sip-sec-basic.c in Sources */,
-				7B379594176A2DDF001A02FD /* sipe-http-request.c in Sources */,
-				7B379595176A2DDF001A02FD /* sipe-http-transport.c in Sources */,
-				7B379596176A2DDF001A02FD /* sipe-http.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -755,6 +710,14 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5AAF284A184E4172007481FA /* sipe-cert-crypto-openssl.c in Sources */,
+				5AAF284B184E4172007481FA /* sipe-crypt-openssl.c in Sources */,
+				5AAF284C184E4172007481FA /* sipe-digest-openssl.c in Sources */,
+				5AAF284D184E4172007481FA /* sipe-http-request.c in Sources */,
+				5AAF284E184E4172007481FA /* sipe-http-transport.c in Sources */,
+				5AAF284F184E4172007481FA /* sipe-http.c in Sources */,
+				5AAF2850184E4172007481FA /* sip-sec-negotiate.c in Sources */,
+				5AAF2851184E4172007481FA /* sip-sec-basic.c in Sources */,
 				B13FAB5F119D5155001CE037 /* purple-connection.c in Sources */,
 				B13FAB61119D5155001CE037 /* purple-debug.c in Sources */,
 				B13FAB63119D5155001CE037 /* purple-dnsquery.c in Sources */,
@@ -768,7 +731,7 @@
 				B13FAB6D119D5155001CE037 /* tests-load.c in Sources */,
 				B13FAB6E119D5155001CE037 /* tests.c in Sources */,
 				B13FABDF119D585A001CE037 /* sip-csta.c in Sources */,
-				B13FABE1119D585A001CE037 /* sip-sec-krb5.c in Sources */,
+				B13FABE1119D585A001CE037 /* sip-sec-gssapi.c in Sources */,
 				B13FABE5119D585A001CE037 /* sip-sec-ntlm.c in Sources */,
 				B13FABE9119D585A001CE037 /* sip-sec.c in Sources */,
 				B13FABEB119D585A001CE037 /* sip-transport.c in Sources */,
@@ -820,9 +783,6 @@
 				1CE4A00D14A17FD100663393 /* sipe-tls.c in Sources */,
 				1CE4A01E14A180E100663393 /* purple-search.c in Sources */,
 				1CE4A01F14A180E100663393 /* purple-status.c in Sources */,
-				1CE4A02514A1816B00663393 /* sipe-cert-crypto-nss.c in Sources */,
-				1CE4A02614A1816B00663393 /* sipe-crypt-nss.c in Sources */,
-				1CE4A02714A1816B00663393 /* sipe-digest-nss.c in Sources */,
 				1C1DC3D014A8005A001F6A0F /* md4.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -830,20 +790,10 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		7B2AB03B1665EEFA0020766F /* PBXTargetDependency */ = {
+		7BB8CC2B183AC198004351FF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			name = Adium.Framework;
-			targetProxy = 7B2AB03A1665EEFA0020766F /* PBXContainerItemProxy */;
-		};
-		7B2AB03D1665EEFA0020766F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = AdiumLibpurple;
-			targetProxy = 7B2AB03C1665EEFA0020766F /* PBXContainerItemProxy */;
-		};
-		7B2AB03F1665EEFA0020766F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = AIUtilities.framework;
-			targetProxy = 7B2AB03E1665EEFA0020766F /* PBXContainerItemProxy */;
+			name = Adium;
+			targetProxy = 7BB8CC2A183AC198004351FF /* PBXContainerItemProxy */;
 		};
 		C92A79F210B25023009B64B9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -861,13 +811,22 @@
 			name = InfoPlist.strings;
 			sourceTree = SOURCE_ROOT;
 		};
+		7BBE1527184D4BF50000FFC9 /* DCPurpleSIPEJoinChatView.xib */ = {
+			isa = PBXVariantGroup;
+			children = (
+				7BBE1528184D4BF50000FFC9 /* English */,
+			);
+			name = DCPurpleSIPEJoinChatView.xib;
+			sourceTree = "<group>";
+		};
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		1DEB913B08733D840010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_MODEL_TUNING = G5;
@@ -875,47 +834,49 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
 				);
 				PRODUCT_NAME = SIPEAdiumPlugin;
-				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../purple ../api";
+				USER_HEADER_SEARCH_PATHS = "../../../adium/Source ../purple ../api";
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Debug;
 		};
 		1DEB913C08733D840010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
-				COMBINE_HIDPI_IMAGES = YES;
+				ALWAYS_SEARCH_USER_PATHS = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_MODEL_TUNING = G5;
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
 				INFOPLIST_FILE = Info.plist;
-				INSTALL_PATH = "$(HOME)/Library/Application Support/Adium 2.0/PlugIns/";
 				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
 				OTHER_LDFLAGS = (
 					"-undefined",
 					dynamic_lookup,
 				);
 				PRODUCT_NAME = SIPEAdiumPlugin;
-				USER_HEADER_SEARCH_PATHS = "$(ADIUM_SRCPATH)/Source ../purple ../api";
+				USER_HEADER_SEARCH_PATHS = "../../../adium/Source ../purple ../api";
 				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
 			};
 			name = Release;
 		};
 		1DEB913F08733D840010E9CD /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB93183AA0BD004351FF /* Debug.xcconfig */;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"\"$(BUILT_PRODUCTS_DIR)\"/**",
-					"\"$(ADIUM_SRCPATH)/Frameworks\"",
+					"\"../../../adium/Frameworks\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_OPTIMIZATION_LEVEL = 0;
@@ -929,8 +890,8 @@
 					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
-					"PACKAGE_VERSION=\\\"1.17.3\\\"",
-					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.3\\\"",
+					"PACKAGE_VERSION=\\\"1.18.1\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.18.1\\\"",
 					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
 					"STDC_HEADERS=1",
 					"HAVE_SYS_TYPES_H=1",
@@ -951,45 +912,35 @@
 					"HAVE_DCGETTEXT=1",
 					"HAVE_GETTEXT=1",
 					"HAVE_LOCALE_H=1",
-					"HAVE_LIBKRB5=1",
+					"HAVE_GSSAPI_GSSAPI_H=1",
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"\"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libintl.framework/Headers\"",
+					"\"../../../adium/Frameworks/libglib.framework/Headers\"",
+					"\"../../../adium/Frameworks/libpurple.framework/Headers\"",
+					"\"../../../adium/Frameworks/libintl.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers\"",
-					"$(NSS_SRCPATH)/**",
 				);
 				INFOPLIST_PREPROCESS = YES;
 				INFOPLIST_PREPROCESSOR_DEFINITIONS = "${GCC_PREPROCESSOR_DEFINITIONS}";
-				LIBRARY_SEARCH_PATHS = (
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/util/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/nss/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.2_64_OPT.OBJ/lib\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/softoken/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/libc/src\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/freebl/Darwin11.4.2_64_OPT.OBJ/Darwin_SINGLE_SHLIB\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/ds\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/smime/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/pr/src\"",
-				);
-				NSPR_SRCPATH = "$(NSS_SRCPATH)/mozilla/nsprpub";
+				LIBRARY_SEARCH_PATHS = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-16";
 			};
 			name = Debug;
 		};
 		1DEB914008733D840010E9CD /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB96183AA0BD004351FF /* Release.xcconfig */;
 			buildSettings = {
 				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"\"$(BUILT_PRODUCTS_DIR)\"/**",
-					"\"$(ADIUM_SRCPATH)/Frameworks\"",
+					"\"../../../adium/Frameworks\"",
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_PREPROCESSOR_DEFINITIONS = (
@@ -1002,8 +953,8 @@
 					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
-					"PACKAGE_VERSION=\\\"1.17.3\\\"",
-					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.3\\\"",
+					"PACKAGE_VERSION=\\\"1.18.1\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.18.1\\\"",
 					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
 					"STDC_HEADERS=1",
 					"HAVE_SYS_TYPES_H=1",
@@ -1024,40 +975,171 @@
 					"HAVE_DCGETTEXT=1",
 					"HAVE_GETTEXT=1",
 					"HAVE_LOCALE_H=1",
-					"HAVE_LIBKRB5=1",
+					"HAVE_GSSAPI_GSSAPI_H=1",
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				GCC_WARN_ABOUT_RETURN_TYPE = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				HEADER_SEARCH_PATHS = (
-					"\"$(ADIUM_SRCPATH)/Frameworks/libglib.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libpurple.framework/Headers\"",
-					"\"$(ADIUM_SRCPATH)/Frameworks/libintl.framework/Headers\"",
+					"\"../../../adium/Frameworks/libglib.framework/Headers\"",
+					"\"../../../adium/Frameworks/libpurple.framework/Headers\"",
+					"\"../../../adium/Frameworks/libintl.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers\"",
 					"\"$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers\"",
-					"$(NSS_SRCPATH)/**",
 				);
 				INFOPLIST_PREPROCESS = YES;
 				INFOPLIST_PREPROCESSOR_DEFINITIONS = "${GCC_PREPROCESSOR_DEFINITIONS}";
-				LIBRARY_SEARCH_PATHS = (
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/util/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/nss/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/dist/Darwin11.4.2_64_OPT.OBJ/lib\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/softoken/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/libc/src\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/freebl/Darwin11.4.2_64_OPT.OBJ/Darwin_SINGLE_SHLIB\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/lib/ds\"",
-					"\"$(NSS_SRCPATH)/mozilla/security/nss/lib/smime/Darwin11.4.2_64_OPT.OBJ\"",
-					"\"$(NSS_SRCPATH)/mozilla/nsprpub/Darwin11.4.2_64_OPT.OBJ/pr/src\"",
-				);
-				NSPR_SRCPATH = "$(NSS_SRCPATH)/mozilla/nsprpub";
+				LIBRARY_SEARCH_PATHS = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
 				STRINGS_FILE_OUTPUT_ENCODING = "UTF-16";
 			};
 			name = Release;
 		};
+		7BB8CBFE183AB83D004351FF /* Debug-Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB92183AA0BD004351FF /* Debug-Release.xcconfig */;
+			buildSettings = {
+				ARCHS = "$(ARCHS_STANDARD_64_BIT)";
+				FRAMEWORK_SEARCH_PATHS = (
+					"\"$(BUILT_PRODUCTS_DIR)\"/**",
+					"\"../../../adium/Frameworks\"",
+				);
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"LOCALEDIR=\\\"translations\\\"",
+					"PURPLE_STATIC_PRPL=1",
+					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
+					"ENABLE_NLS=1",
+					"ADIUM=1",
+					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
+					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
+					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
+					"PACKAGE_VERSION=\\\"1.17.1\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.1\\\"",
+					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
+					"STDC_HEADERS=1",
+					"HAVE_SYS_TYPES_H=1",
+					"HAVE_SYS_STAT_H=1",
+					"HAVE_STDLIB_H=1",
+					"HAVE_STRING_H=1",
+					"HAVE_MEMORY_H=1",
+					"HAVE_STRINGS_H=1",
+					"HAVE_INTTYPES_H=1",
+					"HAVE_STDINT_H=1",
+					"HAVE_UNISTD_H=1",
+					"HAVE_DLFCN_H=1",
+					"LT_OBJDIR=\\\".libs/\\\"",
+					"STDC_HEADERS=1",
+					"HAVE_LOCALE_H=1",
+					"HAVE_LC_MESSAGES=1",
+					"HAVE_DLFCN_H=1",
+					"HAVE_DCGETTEXT=1",
+					"HAVE_GETTEXT=1",
+					"HAVE_LOCALE_H=1",
+					"HAVE_GSSAPI_GSSAPI_H=1",
+					"HAVE_LANGINFO_CODESET=1",
+				);
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = (
+					"\"../../../adium/Frameworks/libglib.framework/Headers\"",
+					"\"../../../adium/Frameworks/libpurple.framework/Headers\"",
+					"\"../../../adium/Frameworks/libintl.framework/Headers\"",
+					"\"$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers\"",
+					"\"$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers\"",
+					"\"$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers\"",
+				);
+				INFOPLIST_PREPROCESS = YES;
+				INFOPLIST_PREPROCESSOR_DEFINITIONS = "${GCC_PREPROCESSOR_DEFINITIONS}";
+				LIBRARY_SEARCH_PATHS = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.8;
+				STRINGS_FILE_OUTPUT_ENCODING = "UTF-16";
+			};
+			name = "Debug-Release";
+		};
+		7BB8CBFF183AB83D004351FF /* Debug-Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
+			buildSettings = {
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = SIPEAdiumPlugin_Prefix.pch;
+				INFOPLIST_FILE = Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "@loader_path/../Frameworks";
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				OTHER_LDFLAGS = (
+					"-undefined",
+					dynamic_lookup,
+				);
+				PRODUCT_NAME = SIPEAdiumPlugin;
+				USER_HEADER_SEARCH_PATHS = "../../../adium/Source ../purple ../api";
+				WRAPPER_EXTENSION = AdiumLibpurplePlugin;
+			};
+			name = "Debug-Release";
+		};
+		7BB8CC00183AB83D004351FF /* Debug-Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				COMBINE_HIDPI_IMAGES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				GCC_MODEL_TUNING = G5;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"LOCALEDIR=\\\"translations\\\"",
+					"PURPLE_STATIC_PRPL=1",
+					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
+					"ENABLE_NLS=1",
+					"ADIUM=1",
+					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
+					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
+					"PACKAGE_VERSION=\\\"1.17.1\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.1\\\"",
+					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
+					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
+					"STDC_HEADERS=1",
+					"HAVE_SYS_TYPES_H=1",
+					"HAVE_SYS_STAT_H=1",
+					"HAVE_STDLIB_H=1",
+					"HAVE_STRING_H=1",
+					"HAVE_MEMORY_H=1",
+					"HAVE_STRINGS_H=1",
+					"HAVE_INTTYPES_H=1",
+					"HAVE_STDINT_H=1",
+					"HAVE_UNISTD_H=1",
+					"HAVE_DLFCN_H=1",
+					"LT_OBJDIR=\\\".libs/\\\"",
+					"STDC_HEADERS=1",
+					"HAVE_LOCALE_H=1",
+					"HAVE_LC_MESSAGES=1",
+					"HAVE_DLFCN_H=1",
+					"HAVE_DCGETTEXT=1",
+					"HAVE_GETTEXT=1",
+					"HAVE_LOCALE_H=1",
+					"HAVE_GSSAPI_GSSAPI_H=1",
+					"HAVE_LANGINFO_CODESET=1",
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					../purple,
+					../api,
+					/usr/include/libxml2,
+				);
+				INSTALL_PATH = /usr/local/lib;
+				LIBRARY_SEARCH_PATHS = "$(inherited)";
+				PRODUCT_NAME = "pidgin-sipe";
+				ZERO_LINK = NO;
+			};
+			name = "Debug-Release";
+		};
 		C92A796A10B24BAD009B64B9 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1073,8 +1155,8 @@
 					"ADIUM=1",
 					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
-					"PACKAGE_VERSION=\\\"1.17.3\\\"",
-					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.3\\\"",
+					"PACKAGE_VERSION=\\\"1.18.1\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.18.1\\\"",
 					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
 					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
 					"STDC_HEADERS=1",
@@ -1096,7 +1178,7 @@
 					"HAVE_DCGETTEXT=1",
 					"HAVE_GETTEXT=1",
 					"HAVE_LOCALE_H=1",
-					"HAVE_LIBKRB5=1",
+					"HAVE_GSSAPI_GSSAPI_H=1",
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				HEADER_SEARCH_PATHS = (
@@ -1114,6 +1196,7 @@
 		};
 		C92A796B10B24BAD009B64B9 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -1129,8 +1212,8 @@
 					"ADIUM=1",
 					"PACKAGE_NAME=\\\"pidgin-sipe\\\"",
 					"PACKAGE_TARNAME=\\\"pidgin-sipe\\\"",
-					"PACKAGE_VERSION=\\\"1.17.3\\\"",
-					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.17.3\\\"",
+					"PACKAGE_VERSION=\\\"1.18.1\\\"",
+					"PACKAGE_STRING=\\\"pidgin-sipe\\ 1.18.1\\\"",
 					"PACKAGE_BUGREPORT=\\\"https://sourceforge.net/p/sipe/bugs/\\\"",
 					"PACKAGE_URL=\\\"http://sipe.sourceforge.net/\\\"",
 					"STDC_HEADERS=1",
@@ -1152,7 +1235,7 @@
 					"HAVE_DCGETTEXT=1",
 					"HAVE_GETTEXT=1",
 					"HAVE_LOCALE_H=1",
-					"HAVE_LIBKRB5=1",
+					"HAVE_GSSAPI_GSSAPI_H=1",
 					"HAVE_LANGINFO_CODESET=1",
 				);
 				HEADER_SEARCH_PATHS = (
@@ -1176,6 +1259,7 @@
 			buildConfigurations = (
 				1DEB913B08733D840010E9CD /* Debug */,
 				1DEB913C08733D840010E9CD /* Release */,
+				7BB8CBFF183AB83D004351FF /* Debug-Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1185,6 +1269,7 @@
 			buildConfigurations = (
 				1DEB913F08733D840010E9CD /* Debug */,
 				1DEB914008733D840010E9CD /* Release */,
+				7BB8CBFE183AB83D004351FF /* Debug-Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -1194,6 +1279,7 @@
 			buildConfigurations = (
 				C92A796A10B24BAD009B64B9 /* Debug */,
 				C92A796B10B24BAD009B64B9 /* Release */,
+				7BB8CC00183AB83D004351FF /* Debug-Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
