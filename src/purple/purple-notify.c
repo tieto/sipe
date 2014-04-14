@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,11 @@
 #include "conversation.h"
 #include "notify.h"
 
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "conversations.h"
+#endif
+
 #include "sipe-backend.h"
 #include "sipe-core.h"
 
@@ -44,7 +49,11 @@ static void notify_message(struct sipe_core_public *sipe_public,
 	if (backend_session) {
 		conv = (PurpleConversation *) backend_session;
 	} else {
+#if PURPLE_VERSION_CHECK(3,0,0)
+		conv = (PurpleConversation *) purple_conversations_find_im_with_account(
+#else
 		conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY,
+#endif
 							     who,
 							     purple_private->account);
 	}
@@ -77,7 +86,11 @@ void sipe_backend_notify_error(struct sipe_core_public *sipe_public,
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
-	purple_notify_error(purple_private->gc, NULL, title, msg);
+	purple_notify_error(purple_private->gc, NULL, title, msg
+#if PURPLE_VERSION_CHECK(3,0,0)
+			    , NULL
+#endif
+			    );
 }
 
 /*

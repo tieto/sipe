@@ -37,6 +37,7 @@
 
 #include <glib.h>
 
+#include "sipe-common.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
 #include "sip-sec-sspi.h"
@@ -62,20 +63,56 @@ typedef struct _context_sspi {
 	struct sip_sec_context common;
 	CredHandle* cred_sspi;
 	CtxtHandle* ctx_sspi;
-	guint type;
 } *context_sspi;
 
-#define SIP_SEC_FLAG_SSPI_INITIAL  0x00010000
-#define SIP_SEC_FLAG_SSPI_SIP_NTLM 0x00020000
+#define SIP_SEC_FLAG_SSPI_SIP_NTLM 0x00010000
 
-static int
-sip_sec_get_interval_from_now_sec(TimeStamp timestamp);
+/* Utility Functions */
 
 static void
 sip_sec_sspi_print_error(const gchar *func,
-			 SECURITY_STATUS ret);
+			 SECURITY_STATUS ret)
+{
+	gchar *error_message;
+	static char *buff;
+	guint buff_length;
 
-/** internal method */
+	buff_length = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
+				    FORMAT_MESSAGE_ALLOCATE_BUFFER |
+				    FORMAT_MESSAGE_IGNORE_INSERTS,
+				    0,
+				    ret,
+				    0,
+				    (LPTSTR)&buff,
+				    16384,
+				    0);
+	error_message = g_strndup(buff, buff_length);
+	LocalFree(buff);
+
+	SIPE_DEBUG_ERROR("SSPI ERROR [%d] in %s: %s", (int)ret, func, error_message);
+	g_free(error_message);
+}
+
+/* Returns interval in seconds from now till provided value */
+static guint
+sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
+{
+	SYSTEMTIME stNow;
+	FILETIME ftNow;
+	ULARGE_INTEGER uliNow, uliTo;
+
+	GetLocalTime(&stNow);
+	SystemTimeToFileTime(&stNow, &ftNow);
+
+	uliNow.LowPart = ftNow.dwLowDateTime;
+	uliNow.HighPart = ftNow.dwHighDateTime;
+
+	uliTo.LowPart = timestamp.LowPart;
+	uliTo.HighPart = timestamp.HighPart;
+
+	return((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
+}
+
 static void
 sip_sec_destroy_sspi_context(context_sspi context)
 {
@@ -91,7 +128,7 @@ sip_sec_destroy_sspi_context(context_sspi context)
 	}
 }
 
-/* sip-sec-mech.h API implementation for SSPI - Kerberos and NTLM */
+/* sip-sec-mech.h API implementation for SSPI - Kerberos, NTLM and Negotiate */
 
 static gboolean
 sip_sec_acquire_cred__sspi(SipSecContext context,
@@ -105,10 +142,8 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	context_sspi ctx = (context_sspi)context;
 
 	/* this is the first time we are allowed to set private flags */
-	context->flags |= SIP_SEC_FLAG_SSPI_INITIAL;
-
 	if (((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
-	    (ctx->type == SIPE_AUTHENTICATION_TYPE_NTLM))
+	    (context->type == SIPE_AUTHENTICATION_TYPE_NTLM))
 		context->flags |= SIP_SEC_FLAG_SSPI_SIP_NTLM;
 
 	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
@@ -134,7 +169,7 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	ctx->cred_sspi = g_malloc0(sizeof(CredHandle));
 
 	ret = AcquireCredentialsHandleA(NULL,
-					(SEC_CHAR *)mech_names[ctx->type],
+					(SEC_CHAR *)mech_names[context->type],
 					SECPKG_CRED_OUTBOUND,
 					NULL,
 					(context->flags & SIP_SEC_FLAG_COMMON_SSO) ? NULL : &auth_identity,
@@ -170,43 +205,18 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: in use");
 
-	if (context->flags & SIP_SEC_FLAG_SSPI_SIP_NTLM) {
-		if (context->flags & SIP_SEC_FLAG_SSPI_INITIAL) {
-			/* empty initial message for connection-less NTLM */
-			if (in_buff.value == NULL) {
-				SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: initial message for connection-less NTLM");
-				out_buff->length = 0;
-				out_buff->value = (guint8 *) g_strdup("");
-				return TRUE;
-
-				/* call again to create context for connection-less NTLM */
-			} else {
-				SipSecBuffer empty = { 0, NULL };
-
-				context->flags &= ~SIP_SEC_FLAG_SSPI_INITIAL;
-				if (sip_sec_init_sec_context__sspi(context,
-								   empty,
-								   out_buff,
-								   service_name)) {
-					SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: connection-less NTLM second round");
-					g_free(out_buff->value);
-				} else {
-					return FALSE;
-				}
-			}
-		}
-	} else if ((context->flags & SIP_SEC_FLAG_COMMON_HTTP) &&
-		   ctx->ctx_sspi &&
-		   (in_buff.value == NULL)) {
-		/*
-		 * We already have an initialized connection-based context
-		 * and we're asked to initialize it with a NULL token. This
-		 * will fail with "invalid token". Drop old context instead.
-		 */
+	/*
+	 * If authentication was already completed, then this mean a new
+	 * authentication handshake has started on the existing connection.
+	 * We must throw away the old context, because we need a new one.
+	 */
+	if ((context->flags & SIP_SEC_FLAG_COMMON_READY) &&
+	    ctx->ctx_sspi) {
 		SIPE_DEBUG_INFO_NOFORMAT("sip_sec_init_sec_context__sspi: dropping old context");
 		DeleteSecurityContext(ctx->ctx_sspi);
 		g_free(ctx->ctx_sspi);
 		ctx->ctx_sspi = NULL;
+		context->flags &= ~SIP_SEC_FLAG_COMMON_READY;
 	}
 
 	/* reuse existing context on following calls */
@@ -260,16 +270,18 @@ sip_sec_init_sec_context__sspi(SipSecContext context,
 	}
 
 	out_buff->length = out_token.cbBuffer;
-	out_buff->value = NULL;
 	if (out_token.cbBuffer) {
 		out_buff->value = g_malloc(out_token.cbBuffer);
 		memcpy(out_buff->value, out_token.pvBuffer, out_token.cbBuffer);
-		FreeContextBuffer(out_token.pvBuffer);
+	} else {
+		/* Special case: empty token */
+		out_buff->value = (guint8 *) g_strdup("");
 	}
+	FreeContextBuffer(out_token.pvBuffer);
 
 	ctx->ctx_sspi = out_context;
 
-	if (ctx->type == SIPE_AUTHENTICATION_TYPE_KERBEROS) {
+	if (context->type == SIPE_AUTHENTICATION_TYPE_KERBEROS) {
 		context->expires = sip_sec_get_interval_from_now_sec(expiry);
 	}
 
@@ -387,8 +399,15 @@ sip_sec_verify_signature__sspi(SipSecContext context,
 	return TRUE;
 }
 
+/* SSPI implements SPNEGO (RFC 4559) */
+static const gchar *
+sip_sec_context_name__sspi(SipSecContext context)
+{
+	return(mech_names[context->type]);
+}
+
 SipSecContext
-sip_sec_create_context__sspi(guint type)
+sip_sec_create_context__sspi(SIPE_UNUSED_PARAMETER guint type)
 {
 	context_sspi context = g_malloc0(sizeof(struct _context_sspi));
 	if (!context) return(NULL);
@@ -398,7 +417,7 @@ sip_sec_create_context__sspi(guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__sspi;
 	context->common.make_signature_func   = sip_sec_make_signature__sspi;
 	context->common.verify_signature_func = sip_sec_verify_signature__sspi;
-	context->type = type;
+	context->common.context_name_func     = sip_sec_context_name__sspi;
 
 	return((SipSecContext) context);
 }
@@ -408,55 +427,6 @@ gboolean sip_sec_password__sspi(void)
 	/* SSPI supports Single-Sign On */
 	return(FALSE);
 }
-
-/* Utility Functions */
-
-/**
- * Returns interval in seconds from now till provided value
- */
-static int
-sip_sec_get_interval_from_now_sec(TimeStamp timestamp)
-{
-	SYSTEMTIME stNow;
-	FILETIME ftNow;
-	ULARGE_INTEGER uliNow, uliTo;
-
-	GetLocalTime(&stNow);
-	SystemTimeToFileTime(&stNow, &ftNow);
-
-	uliNow.LowPart = ftNow.dwLowDateTime;
-	uliNow.HighPart = ftNow.dwHighDateTime;
-
-	uliTo.LowPart = timestamp.LowPart;
-	uliTo.HighPart = timestamp.HighPart;
-
-	return (int)((uliTo.QuadPart - uliNow.QuadPart)/10/1000/1000);
-}
-
-static void
-sip_sec_sspi_print_error(const gchar *func,
-			 SECURITY_STATUS ret)
-{
-	gchar *error_message;
-	static char *buff;
-	guint buff_length;
-
-	buff_length = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM |
-				    FORMAT_MESSAGE_ALLOCATE_BUFFER |
-				    FORMAT_MESSAGE_IGNORE_INSERTS,
-				    0,
-				    ret,
-				    0,
-				    (LPTSTR)&buff,
-				    16384,
-				    0);
-	error_message = g_strndup(buff, buff_length);
-	LocalFree(buff);
-
-	SIPE_DEBUG_ERROR("SSPI ERROR [%d] in %s: %s", (int)ret, func, error_message);
-	g_free(error_message);
-}
-
 
 /*
   Local Variables:

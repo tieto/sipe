@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,7 +30,13 @@
 
 #include "conversation.h"
 #include "roomlist.h"
+
 #include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "conversations.h"
+#else
+#define purple_roomlist_get_account(r) r->account
+#endif
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -72,7 +78,11 @@ GHashTable *sipe_purple_chat_info_defaults(PurpleConnection *gc,
 		const gchar *uri = uri_map != NULL ?
 			g_hash_table_lookup(uri_map, chat_name) :
 			NULL;
+#if PURPLE_VERSION_CHECK(3,0,0)
+		PurpleChatConversation *conv = purple_conversations_find_chat_with_account(
+#else
 		PurpleConversation *conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_CHAT,
+#endif
 										 chat_name,
 										 purple_private->account);
 		/* Group Chat rooms have a valid URI */
@@ -108,6 +118,16 @@ void sipe_purple_chat_join(PurpleConnection *gc, GHashTable *data)
 	}
 }
 
+static void clear_roomlist(struct sipe_backend_private *purple_private)
+{
+#if PURPLE_VERSION_CHECK(3,0,0)
+	g_object_unref(purple_private->roomlist);
+#else
+	purple_roomlist_unref(purple_private->roomlist);
+#endif
+	purple_private->roomlist = NULL;
+}
+
 PurpleRoomlist *sipe_purple_roomlist_get_list(PurpleConnection *gc)
 {
 	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
@@ -120,7 +140,7 @@ PurpleRoomlist *sipe_purple_roomlist_get_list(PurpleConnection *gc)
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_roomlist_get_list");
 
 	if (purple_private->roomlist)
-		purple_roomlist_unref(purple_private->roomlist);
+		clear_roomlist(purple_private);
 	if (purple_private->roomlist_map)
 		g_hash_table_destroy(purple_private->roomlist_map);
 
@@ -162,12 +182,7 @@ PurpleRoomlist *sipe_purple_roomlist_get_list(PurpleConnection *gc)
 
 void sipe_purple_roomlist_cancel(PurpleRoomlist *roomlist)
 {
-	PurpleAccount *account =
-#if PURPLE_VERSION_CHECK(3,0,0)
-				 purple_roomlist_get_account(roomlist);
-#else
-				 roomlist->account;
-#endif
+	PurpleAccount *account = purple_roomlist_get_account(roomlist);
 	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 
@@ -175,10 +190,8 @@ void sipe_purple_roomlist_cancel(PurpleRoomlist *roomlist)
 
 	purple_roomlist_set_in_progress(roomlist, FALSE);
 
-	if (purple_private->roomlist == roomlist) {
-		purple_roomlist_unref(roomlist);
-		purple_private->roomlist = NULL;
-	}
+	if (purple_private->roomlist == roomlist)
+		clear_roomlist(purple_private);
 }
 
 void sipe_backend_groupchat_room_add(struct sipe_core_public *sipe_public,
@@ -222,8 +235,7 @@ void sipe_backend_groupchat_room_terminate(struct sipe_core_public *sipe_public)
 	PurpleRoomlist *roomlist = purple_private->roomlist;
 	if (roomlist) {
 		purple_roomlist_set_in_progress(roomlist, FALSE);
-		purple_roomlist_unref(roomlist);
-		purple_private->roomlist = NULL;
+		clear_roomlist(purple_private);
 	}
 }
 

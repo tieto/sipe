@@ -1,4 +1,4 @@
- /**
+/**
  * @file sipe-crypt-nss.c
  *
  * pidgin-sipe

@@ -35,12 +35,24 @@
 
 #include "sipe-common.h"
 
-#include "circbuffer.h"
 #include "connection.h"
 #include "eventloop.h"
 #include "network.h"
 #include "proxy.h"
 #include "sslconn.h"
+
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "circularbuffer.h"
+#else
+#include "circbuffer.h"
+#define PurpleCircularBuffer PurpleCircBuffer
+#define purple_circular_buffer_append(b, s, n) purple_circ_buffer_append(b, s, n)
+#define purple_circular_buffer_get_max_read(b) purple_circ_buffer_get_max_read(b)
+#define purple_circular_buffer_get_output(b)   b->outptr
+#define purple_circular_buffer_mark_read(b, s) purple_circ_buffer_mark_read(b, s)
+#define purple_circular_buffer_new(s)          purple_circ_buffer_new(s)
+#endif
 
 #ifdef _WIN32
 /* wrappers for write() & friends for socket handling */
@@ -64,7 +76,7 @@ struct sipe_transport_purple {
 	transport_error_cb *error;
 	PurpleSslConnection *gsc;
 	PurpleProxyConnectData *proxy;
-	PurpleCircBuffer *transmit_buffer;
+	PurpleCircularBuffer *transmit_buffer;
 	guint transmit_handler;
 	guint receive_handler;
 	int socket;
@@ -235,7 +247,7 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 	transport->connected        = setup->connected;
 	transport->input            = setup->input;
 	transport->error            = setup->error;
-	transport->transmit_buffer  = purple_circ_buffer_new(0);
+	transport->transmit_buffer  = purple_circular_buffer_new(0);
 	transport->is_valid         = TRUE;
 
 	purple_private->transports = g_slist_prepend(purple_private->transports,
@@ -317,7 +329,11 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 		purple_input_remove(transport->receive_handler);
 
 	if (transport->transmit_buffer)
+#if PURPLE_VERSION_CHECK(3,0,0)
+		g_object_unref(transport->transmit_buffer);
+#else
 		purple_circ_buffer_destroy(transport->transmit_buffer);
+#endif
 	g_free(transport->public.buffer);
 
 	/* defer deletion of transport data structure to idle callback */
@@ -338,14 +354,14 @@ static gboolean transport_write(struct sipe_transport_purple *transport)
 {
 	gsize max_write;
 
-	max_write = purple_circ_buffer_get_max_read(transport->transmit_buffer);
+	max_write = purple_circular_buffer_get_max_read(transport->transmit_buffer);
 	if (max_write > 0) {
 		gssize written = transport->gsc ?
 			(gssize) purple_ssl_write(transport->gsc,
-						  transport->transmit_buffer->outptr,
+						  purple_circular_buffer_get_output(transport->transmit_buffer),
 						  max_write) :
 			write(transport->socket,
-			      transport->transmit_buffer->outptr,
+			      purple_circular_buffer_get_output(transport->transmit_buffer),
 			      max_write);
 
 		if (written < 0 && errno == EAGAIN) {
@@ -357,8 +373,8 @@ static gboolean transport_write(struct sipe_transport_purple *transport)
 			return FALSE;
 		}
 
-		purple_circ_buffer_mark_read(transport->transmit_buffer,
-					     written);
+		purple_circular_buffer_mark_read(transport->transmit_buffer,
+						 written);
 
 	} else {
 		/* buffer is empty -> stop sending */
@@ -386,8 +402,8 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
 
 	/* add packet to circular buffer */
-	purple_circ_buffer_append(transport->transmit_buffer,
-				  buffer, strlen(buffer));
+	purple_circular_buffer_append(transport->transmit_buffer,
+				      buffer, strlen(buffer));
 
 	/* initiate transmission */
 	if (!transport->transmit_handler) {
@@ -402,8 +418,8 @@ void sipe_backend_transport_flush(struct sipe_transport_connection *conn)
 {
 	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
 
-	while (   purple_circ_buffer_get_max_read(transport->transmit_buffer)
-	       && transport_write(transport));
+	while (	purple_circular_buffer_get_max_read(transport->transmit_buffer)
+		&& transport_write(transport));
 }
 
 /*

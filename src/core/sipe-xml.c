@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-13 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,7 +107,7 @@ static void callback_start_element(void *user_data, const xmlChar *name, const x
 			   &amp; is replaced by the equivalent &#38; */
 			g_hash_table_insert(node->attributes,
 					    g_strdup((gchar *) key),
-					    replace((gchar *) *attrs++, "&#38;", "&"));
+					    sipe_utils_str_replace((gchar *) *attrs++, "&#38;", "&"));
 		}
 	}
 

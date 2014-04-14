@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -80,7 +80,8 @@ void sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 	const gchar *status_id = sipe_purple_activity_to_token(activity);
 	PurpleSavedStatus *saved_status;
 	const PurpleStatusType *acct_status_type =
-		purple_status_type_find_with_id(account->status_types, status_id);
+		purple_status_type_find_with_id(purple_account_get_status_types(account),
+						status_id);
 	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
 
 	saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, message);
@@ -118,7 +119,7 @@ void sipe_purple_set_status(PurpleAccount *account,
 	if (!purple_status_is_active(status))
 		return;
 
-	if (account->gc) {
+	if (purple_account_get_connection(account)) {
 		const gchar *status_id = purple_status_get_id(status);
 		const gchar *note      = purple_status_get_attr_string(status,
 								       SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE);

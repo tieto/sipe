@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -20,6 +20,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/**
+ * Documentation references:
+ *
+ * Microsoft DevNet: [MS-CONFIM]: Centralized Conference Control Protocol:
+ *                                Instant Messaging Extensions
+ *  <http://msdn.microsoft.com/en-us/library/cc431500%28v=office.12%29.aspx>
+ *
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1217,7 +1226,17 @@ sipe_process_imdn(struct sipe_core_private *sipe_private,
 	for (node = sipe_xml_child(xn_imdn, "recipient"); node; node = sipe_xml_twin(node)) {
 		gchar *tmp = parse_from(sipe_xml_attribute(node, "uri"));
 		gchar *uri = parse_from(tmp);
-		sipe_user_present_message_undelivered(sipe_private, session, -1, -1, uri, message);
+		gchar *status = sipe_xml_data(sipe_xml_child(node, "status"));
+		guint error = status ? g_ascii_strtoull(status, NULL, 10) : 0;
+		/* default to error if missing or conversion failed */
+		if ((error == 0) || (error >= 300))
+			sipe_user_present_message_undelivered(sipe_private,
+							      session,
+							      error,
+							      -1,
+							      uri,
+							      message);
+		g_free(status);
 		g_free(tmp);
 		g_free(uri);
 	}

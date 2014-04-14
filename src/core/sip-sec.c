@@ -36,6 +36,7 @@
 #include "sipe-common.h"
 #include "sip-sec.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
 #include "sipe-utils.h"
 
 #include "sip-sec-mech.h"
@@ -48,6 +49,10 @@
 #define SIP_SEC_WINDOWS_SSPI 0
 #endif
 
+#ifdef HAVE_GSSAPI_GSSAPI_H
+#include "sip-sec-gssapi.h"
+#endif
+
 /* SIPE_AUTHENTICATION_TYPE_BASIC */
 #include "sip-sec-basic.h"
 #define sip_sec_create_context__Basic      sip_sec_create_context__basic
@@ -58,6 +63,9 @@
 #if SIP_SEC_WINDOWS_SSPI
 #define sip_sec_create_context__NTLM       sip_sec_create_context__sspi
 #define sip_sec_password__NTLM             sip_sec_password__sspi
+#elif defined(HAVE_GSSAPI_ONLY)
+#define sip_sec_create_context__NTLM       sip_sec_create_context__gssapi
+#define sip_sec_password__NTLM             sip_sec_password__gssapi
 #else
 #include "sip-sec-ntlm.h"
 #define sip_sec_create_context__NTLM       sip_sec_create_context__ntlm
@@ -68,10 +76,9 @@
 #if SIP_SEC_WINDOWS_SSPI
 #define sip_sec_create_context__Kerberos   sip_sec_create_context__sspi
 #define sip_sec_password__Kerberos         sip_sec_password__sspi
-#elif defined(HAVE_LIBKRB5)
-#include "sip-sec-krb5.h"
-#define sip_sec_create_context__Kerberos   sip_sec_create_context__krb5
-#define sip_sec_password__Kerberos         sip_sec_password__krb5
+#elif defined(HAVE_GSSAPI_GSSAPI_H)
+#define sip_sec_create_context__Kerberos   sip_sec_create_context__gssapi
+#define sip_sec_password__Kerberos         sip_sec_password__gssapi
 #else
 #define sip_sec_create_context__Kerberos   sip_sec_create_context__NONE
 #define sip_sec_password__Kerberos         sip_sec_password__NONE
@@ -80,7 +87,9 @@
 /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
 #if SIP_SEC_WINDOWS_SSPI
 #define sip_sec_create_context__Negotiate  sip_sec_create_context__sspi
-#elif defined(HAVE_LIBKRB5)
+#elif defined(HAVE_GSSAPI_ONLY)
+#define sip_sec_create_context__Negotiate  sip_sec_create_context__gssapi
+#elif defined(HAVE_GSSAPI_GSSAPI_H)
 #include "sip-sec-negotiate.h"
 #define sip_sec_create_context__Negotiate  sip_sec_create_context__negotiate
 #else
@@ -133,6 +142,8 @@ sip_sec_create_context(guint type,
 
 	context = (*(auth_to_hook[type]))(type);
 	if (context) {
+
+		context->type = type;
 
 		/* NOTE: mechanism must set private flags acquire_cred_func()! */
 		context->flags = 0;
@@ -203,8 +214,23 @@ gboolean sip_sec_context_is_ready(SipSecContext context)
 	return(context && (context->flags & SIP_SEC_FLAG_COMMON_READY));
 }
 
-void
-sip_sec_destroy_context(SipSecContext context)
+const gchar *sip_sec_context_name(SipSecContext context)
+{
+	if (context)
+		return((*context->context_name_func)(context));
+	else
+		return(NULL);
+}
+
+guint sip_sec_context_type(SipSecContext context)
+{
+	if (context)
+		return(context->type);
+	else
+		return(SIPE_AUTHENTICATION_TYPE_UNSET);
+}
+
+void sip_sec_destroy_context(SipSecContext context)
 {
 	if (context) (*context->destroy_context_func)(context);
 }
@@ -267,14 +293,14 @@ gboolean sip_sec_requires_password(guint authentication,
 /* Initialize & Destroy */
 void sip_sec_init(void)
 {
-#ifndef HAVE_SSPI
+#if !defined(HAVE_GSSAPI_ONLY) && !defined(HAVE_SSPI)
 	sip_sec_init__ntlm();
 #endif
 }
 
 void sip_sec_destroy(void)
 {
-#ifndef HAVE_SSPI
+#if !defined(HAVE_GSSAPI_ONLY) && !defined(HAVE_SSPI)
 	sip_sec_destroy__ntlm();
 #endif
 }

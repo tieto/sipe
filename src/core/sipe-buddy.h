@@ -38,6 +38,7 @@ struct sipe_buddy {
 	 */
 	gchar *note;
 	gboolean is_oof_note;
+	gboolean is_mobile;
 	time_t note_since;
 
 	/* Calendar related fields */

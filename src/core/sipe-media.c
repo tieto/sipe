@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-13 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -100,6 +100,19 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 	}
 }
 
+static gint
+candidate_sort_cb(struct sdpcandidate *c1, struct sdpcandidate *c2)
+{
+	int cmp = sipe_strcompare(c1->foundation, c2->foundation);
+	if (cmp == 0) {
+		cmp = sipe_strcompare(c1->username, c2->username);
+		if (cmp == 0)
+			cmp = c1->component - c2->component;
+	}
+
+	return cmp;
+}
+
 static GSList *
 backend_candidates_to_sdpcandidate(GList *candidates)
 {
@@ -122,7 +135,8 @@ backend_candidates_to_sdpcandidate(GList *candidates)
 		c->username = sipe_backend_candidate_get_username(candidate);
 		c->password = sipe_backend_candidate_get_password(candidate);
 
-		result = g_slist_append(result, c);
+		result = g_slist_insert_sorted(result, c,
+					       (GCompareFunc)candidate_sort_cb);
 	}
 
 	return result;
@@ -156,6 +170,13 @@ get_stream_ip_and_ports(GSList *candidates,
 		if (*rtp_port != 0 && *rtcp_port != 0)
 			return;
 	}
+}
+
+static gint
+sdpcodec_compare(gconstpointer a, gconstpointer b)
+{
+	return ((const struct sdpcodec *)a)->id -
+	       ((const struct sdpcodec *)b)->id;
 }
 
 static struct sdpmedia *
@@ -207,7 +228,13 @@ backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 			c->parameters = g_slist_append(c->parameters, copy);
 		}
 
-		media->codecs = g_slist_append(media->codecs, c);
+		/* Buggy(?) codecs may report non-unique id (a.k.a. payload
+		 * type) that must not appear in SDP messages we send. Thus,
+		 * let's ignore any codec having the same id as one we already
+		 * have in the converted list. */
+		media->codecs = sipe_utils_slist_insert_unique_sorted(
+				media->codecs, c, sdpcodec_compare,
+				(GDestroyNotify)sdpcodec_free);
 	}
 
 	sipe_media_codec_list_free(codecs);
@@ -769,7 +796,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
-		sipe_media_call_free(call_private);
+		sipe_media_hangup(call_private);
 		sipe_backend_media_relays_free(backend_media_relays);
 		return;
 	}
@@ -782,7 +809,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating video stream"));
-		sipe_media_call_free(call_private);
+		sipe_media_hangup(call_private);
 		sipe_backend_media_relays_free(backend_media_relays);
 		return;
 	}
@@ -810,6 +837,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	struct sipe_backend_media_relays *backend_media_relays;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
+	SipeIceVersion ice_version;
 	gchar **parts;
 	gchar *av_uri;
 
@@ -824,8 +852,11 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	av_uri = g_strjoinv("app:conf:audio-video:", parts);
 	g_strfreev(parts);
 
+	ice_version = SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) ? SIPE_ICE_RFC_5245 :
+							    SIPE_ICE_DRAFT_6;
+
 	sipe_private->media_call = sipe_media_call_new(sipe_private, av_uri,
-						       TRUE, SIPE_ICE_DRAFT_6);
+						       TRUE, ice_version);
 
 	session = sipe_session_add_call(sipe_private, av_uri);
 	dialog = sipe_dialog_add(session);
@@ -850,7 +881,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
-		sipe_media_call_free(sipe_private->media_call);
+		sipe_media_hangup(sipe_private->media_call);
 		sipe_private->media_call = NULL;
 	}
 
@@ -931,9 +962,21 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 	gboolean has_new_media = FALSE;
 	GSList *i;
 
-	if (call_private && !is_media_session_msg(call_private, msg)) {
-		sip_transport_response(sipe_private, msg, 486, "Busy Here", NULL);
-		return;
+	if (call_private) {
+		char *self;
+
+		if (!is_media_session_msg(call_private, msg)) {
+			sip_transport_response(sipe_private, msg, 486, "Busy Here", NULL);
+			return;
+		}
+
+		self = sip_uri_self(sipe_private);
+		if (sipe_strequal(call_private->with, self)) {
+			g_free(self);
+			sip_transport_response(sipe_private, msg, 488, "Not Acceptable Here", NULL);
+			return;
+		}
+		g_free(self);
 	}
 
 	smsg = sdpmsg_parse_msg(msg->body);
@@ -1110,22 +1153,23 @@ reinvite_on_candidate_pair_cb(struct sipe_core_public *sipe_public)
 }
 
 static gboolean
-maybe_retry_call_with_ice_v6(struct sipe_core_private *sipe_private,
-			     struct transaction *trans)
+maybe_retry_call_with_ice_version(struct sipe_core_private *sipe_private,
+				  SipeIceVersion ice_version,
+				  struct transaction *trans)
 {
 	struct sipe_media_call_private *call_private = sipe_private->media_call;
 
-	if (call_private->ice_version == SIPE_ICE_RFC_5245 &&
+	if (call_private->ice_version != ice_version &&
 	    sip_transaction_cseq(trans) == 1) {
 		gchar *with = g_strdup(call_private->with);
 		struct sipe_backend_media *backend_private = call_private->public.backend_private;
 		gboolean with_video = sipe_backend_media_get_stream_by_id(backend_private, "video") != NULL;
 
 		sipe_media_hangup(call_private);
-		SIPE_DEBUG_INFO_NOFORMAT("Retrying call witn ICEv6.");
-		// We might be calling to OC 2007 instance, retry with ICEv6
-		sipe_media_initiate_call(sipe_private, with,
-					  SIPE_ICE_DRAFT_6, with_video);
+		SIPE_DEBUG_INFO("Retrying call with ICEv%d.",
+				ice_version == SIPE_ICE_DRAFT_6 ? 6 : 19);
+		sipe_media_initiate_call(sipe_private, with, ice_version,
+					 with_video);
 
 		g_free(with);
 		return TRUE;
@@ -1179,7 +1223,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 			case 415:
 				// OCS/Lync really sends response string with 'Mutipart' typo.
 				if (sipe_strequal(msg->responsestr, "Mutipart mime in content type not supported by Archiving CDR service") &&
-				    maybe_retry_call_with_ice_v6(sipe_private, trans)) {
+				    maybe_retry_call_with_ice_version(sipe_private, SIPE_ICE_DRAFT_6, trans)) {
 					return TRUE;
 				}
 				title = _("Unsupported media type");
@@ -1195,6 +1239,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				 * 488 Encryption Levels not compatible
 				 */
 				const gchar *ms_diag = sipmsg_find_header(msg, "ms-client-diagnostics");
+				SipeIceVersion retry_ice_version = SIPE_ICE_DRAFT_6;
 
 				if (sipe_strequal(msg->responsestr, "Encryption Levels not compatible") ||
 				    (ms_diag && g_str_has_prefix(ms_diag, "52017;"))) {
@@ -1203,7 +1248,15 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 					break;
 				}
 
-				if (maybe_retry_call_with_ice_v6(sipe_private, trans)) {
+				/* Check if this is failed conference using
+				 * ICEv6 with reason "Error parsing SDP" and
+				 * retry using ICEv19. */
+				ms_diag = sipmsg_find_header(msg, "ms-diagnostics");
+				if (ms_diag && g_str_has_prefix(ms_diag, "7008;")) {
+					retry_ice_version = SIPE_ICE_RFC_5245;
+				}
+
+				if (maybe_retry_call_with_ice_version(sipe_private, retry_ice_version, trans)) {
 					return TRUE;
 				}
 				// Break intentionally omitted

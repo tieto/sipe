@@ -245,12 +245,6 @@ sipe_is_bad_alias(const char *uri,
 gboolean
 is_empty(const char *st);
 
-/** Returns newly allocated string. Must be g_free()'d */
-char *
-replace(const char *st,
-	const char *search,
-	const char *replace);
-
 /**
  * Message debugging
  *

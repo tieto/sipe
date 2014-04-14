@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,13 @@
 
 #include "server.h"
 
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "conversations.h"
+#else
+#define purple_serv_got_im(c, w, m, f, t)	serv_got_im(c, w, m, f, t)
+#endif
+
 #include "purple-private.h"
 
 #include "sipe-backend.h"
@@ -41,7 +48,7 @@ void sipe_backend_im_message(struct sipe_core_public *sipe_public,
 			     const gchar *html)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	serv_got_im(purple_private->gc,
+	purple_serv_got_im(purple_private->gc,
 		    from,
 		    html,
 		    0,
@@ -60,11 +67,19 @@ void sipe_backend_im_topic(struct sipe_core_public *sipe_public,
 	 * Ensure we have an open conversation with the buddy, otherwise
 	 * message would be lost.
 	 */
+#if PURPLE_VERSION_CHECK(3,0,0)
+	conv = (PurpleConversation *) purple_conversations_find_im_with_account(
+#else
 	conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_ANY,
+#endif
 						     with,
 						     account);
 	if (!conv)
+#if PURPLE_VERSION_CHECK(3,0,0)
+		conv = (PurpleConversation *) purple_im_conversation_new(
+#else
 		conv = purple_conversation_new(PURPLE_CONV_TYPE_IM,
+#endif
 					       account,
 					       with);
 

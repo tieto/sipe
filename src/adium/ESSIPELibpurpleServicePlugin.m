@@ -7,14 +7,13 @@
 //  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
 //
 
+#import <ESDebugAILog.h>
 #import <libpurple/debug.h>
 #import "ESSIPEService.h"
 #import "ESSIPELibpurpleServicePlugin.h"
 
 // C declarations  
-extern BOOL AIDebugLoggingIsEnabled();
 extern void purple_init_sipe_plugin(void);
-extern void purple_debug_set_enabled(gboolean);
 
 @implementation ESSIPELibpurpleServicePlugin
 
@@ -24,8 +23,6 @@ extern void purple_debug_set_enabled(gboolean);
 
 - (void)loadLibpurplePlugin 
 {
-	purple_init_sipe_plugin();
-
     if(AIDebugLoggingIsEnabled()) {
         purple_debug_set_enabled(true);
         purple_debug_set_verbose(true);
@@ -35,8 +32,7 @@ extern void purple_debug_set_enabled(gboolean);
 
 - (void)installPlugin
 {
-	[super installPlugin];
-	
+	purple_init_sipe_plugin();
 	[ESSIPEService registerService];
 }
 

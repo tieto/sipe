@@ -78,6 +78,12 @@ struct sipe_backend_stream {
 	gboolean initialized_cb_was_fired;
 };
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+#define SIPE_RELAYS_G_TYPE G_TYPE_PTR_ARRAY
+#else
+#define SIPE_RELAYS_G_TYPE G_TYPE_VALUE_ARRAY
+#endif
+
 static void
 backend_stream_free(struct sipe_backend_stream *stream)
 {
@@ -329,10 +335,9 @@ ensure_codecs_conf()
 }
 
 static void
-append_relay(GValueArray *relay_info, const gchar *ip, guint port, gchar *type,
-	     gchar *username, gchar *password)
+append_relay(struct sipe_backend_media_relays *relay_info, const gchar *ip,
+	     guint port, gchar *type, gchar *username, gchar *password)
 {
-	GValue value;
 	GstStructure *gst_relay_info;
 
 	gst_relay_info = gst_structure_new("relay-info",
@@ -344,19 +349,31 @@ append_relay(GValueArray *relay_info, const gchar *ip, guint port, gchar *type,
 			NULL);
 
 	if (gst_relay_info) {
+#if PURPLE_VERSION_CHECK(3,0,0)
+		g_ptr_array_add((GPtrArray *)relay_info, gst_relay_info);
+#else
+		GValue value;
 		memset(&value, 0, sizeof(GValue));
 		g_value_init(&value, GST_TYPE_STRUCTURE);
 		gst_value_set_structure(&value, gst_relay_info);
 
-		g_value_array_append(relay_info, &value);
+		g_value_array_append((GValueArray *)relay_info, &value);
 		gst_structure_free(gst_relay_info);
+#endif
 	}
 }
 
 struct sipe_backend_media_relays *
 sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *password)
 {
-	GValueArray *relay_info = g_value_array_new(0);
+	struct sipe_backend_media_relays *relay_info;
+
+	relay_info = (struct sipe_backend_media_relays *)
+#if PURPLE_VERSION_CHECK(3,0,0)
+			g_ptr_array_new_with_free_func((GDestroyNotify) gst_structure_free);
+#else
+			g_value_array_new(0);
+#endif
 
 	for (; media_relays; media_relays = media_relays->next) {\
 		struct sipe_media_relay *relay = media_relays->data;
@@ -376,13 +393,17 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 #endif
 	}
 
-	return (struct sipe_backend_media_relays *)relay_info;
+	return relay_info;
 }
 
 void
 sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
 {
+#if !PURPLE_VERSION_CHECK(3,0,0)
 	g_value_array_free((GValueArray *)media_relays);
+#else
+	g_ptr_array_unref((GPtrArray *)media_relays);
+#endif
 }
 
 static guint
@@ -444,7 +465,7 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 
 		if (media_relays) {
 			params[3].name = "relay-info";
-			g_value_init(&params[3].value, G_TYPE_VALUE_ARRAY);
+			g_value_init(&params[3].value, SIPE_RELAYS_G_TYPE);
 			g_value_set_boxed(&params[3].value, media_relays);
 		} else
 			--params_cnt;

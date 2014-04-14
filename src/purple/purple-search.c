@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,11 @@
 #include <glib.h>
 
 #include "notify.h"
+
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "conversations.h"
+#endif
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
@@ -92,13 +97,23 @@ static void searchresults_im_buddy(PurpleConnection *gc,
 {
 	PurpleAccount *acct = purple_connection_get_account(gc);
 	gchar *id = sip_uri_from_name(g_list_nth_data(row, 0));
+
+#if PURPLE_VERSION_CHECK(3,0,0)
+	PurpleIMConversation *conv = purple_conversations_find_im_with_account(id,
+									       acct);
+
+	if (conv == NULL)
+		conv = purple_im_conversation_new(acct, id);
+#else
 	PurpleConversation *conv = purple_find_conversation_with_account(PURPLE_CONV_TYPE_IM,
 									 id,
 									 acct);
 	if (conv == NULL)
 		conv = purple_conversation_new(PURPLE_CONV_TYPE_IM, acct, id);
+#endif
+
 	g_free(id);
-	purple_conversation_present(conv);
+	purple_conversation_present((PurpleConversation *) conv);
 }
 
 static void searchresults_add_buddy(PurpleConnection *gc,

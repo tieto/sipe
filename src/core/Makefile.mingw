@@ -15,7 +15,7 @@
 #  - USE_SSPI not defined: NTLM & TLS-DSK but without Single Sign-On support
 #             [eg.: make -f Makefile.mingw USE_SSPI= ]
 #
-# @TODO: HAVE_LIBKRB5 support for USE_SSPI=. Where to find the libraries?
+# @TODO: HAVE_GSSAPI_GSSAPI_H support for USE_SSPI=. Where to find the libraries?
 #        Those would need to be packaged alongside the plugin.
 #
 USE_SSPI := 1

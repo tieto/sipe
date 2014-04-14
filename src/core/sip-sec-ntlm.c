@@ -1913,6 +1913,12 @@ sip_sec_destroy_sec_context__ntlm(SipSecContext context)
 	g_free(ctx);
 }
 
+static const gchar *
+sip_sec_context_name__ntlm(SIPE_UNUSED_PARAMETER SipSecContext context)
+{
+	return("NTLM");
+}
+
 SipSecContext
 sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER guint type)
 {
@@ -1924,6 +1930,7 @@ sip_sec_create_context__ntlm(SIPE_UNUSED_PARAMETER guint type)
 	context->common.destroy_context_func  = sip_sec_destroy_sec_context__ntlm;
 	context->common.make_signature_func   = sip_sec_make_signature__ntlm;
 	context->common.verify_signature_func = sip_sec_verify_signature__ntlm;
+	context->common.context_name_func     = sip_sec_context_name__ntlm;
 
 	return((SipSecContext) context);
 }

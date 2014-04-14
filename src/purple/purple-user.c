@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,10 +22,17 @@
 
 #include <glib.h>
 
-#include "request.h"
 #include "server.h"
+#include "request.h"
 
 #include "purple-private.h"
+
+#if PURPLE_VERSION_CHECK(3,0,0)
+#else
+#define purple_serv_got_typing(c, n, t, s)	serv_got_typing(c, n, t, s)
+#define purple_serv_got_typing_stopped(c, n)	serv_got_typing_stopped(c, n)
+#define PURPLE_IM_TYPING PURPLE_TYPING
+#endif
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -36,15 +43,16 @@ void sipe_backend_user_feedback_typing(struct sipe_core_public *sipe_public,
 				       const gchar *from)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	serv_got_typing(purple_private->gc, from,
-			SIPE_TYPING_RECV_TIMEOUT, PURPLE_TYPING);
+	purple_serv_got_typing(purple_private->gc, from,
+			       SIPE_TYPING_RECV_TIMEOUT,
+			       PURPLE_IM_TYPING);
 }
 
 void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public,
 					    const gchar *from)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	serv_got_typing_stopped(purple_private->gc, from);
+	purple_serv_got_typing_stopped(purple_private->gc, from);
 }
 
 static void ask_cb(gpointer key, int choice)
@@ -59,12 +67,23 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 			   gpointer key)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	PurpleRequestCommonParameters *cpar = purple_request_cpar_from_account(purple_private->account);
+#endif
 
 	purple_request_action(key, "Office Communicator", message,
-			      NULL, 0, purple_private->account,
-			      NULL, NULL, key, 2,
+			      NULL, 0,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      cpar,
+#else
+			      purple_private->account, NULL, NULL,
+#endif
+			      key, 2,
 			      accept_label, (PurpleRequestActionCb) ask_cb,
 			      decline_label, (PurpleRequestActionCb) ask_cb);
+#if PURPLE_VERSION_CHECK(3,0,0)
+	purple_request_cpar_unref(cpar);
+#endif
 }
 
 void sipe_backend_user_close_ask(gpointer key)

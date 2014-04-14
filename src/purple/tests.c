@@ -31,7 +31,11 @@
 
 #include <glib.h>
 
+#include "version.h"
+#if !PURPLE_VERSION_CHECK(3,0,0)
 #include "cipher.h"
+#endif
+
 #include "debug.h"
 #include "signals.h"
 
@@ -52,7 +56,9 @@ int main()
 	purple_signals_init();
 	purple_debug_init();
 	purple_debug_set_enabled(TRUE);
+#if !PURPLE_VERSION_CHECK(3,0,0)
 	purple_ciphers_init();
+#endif
 
 	/* Run tests */
 	return(sip_sec_ntlm_tests() ? 0 : 1);

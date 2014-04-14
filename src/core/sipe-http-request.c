@@ -76,9 +76,10 @@ struct sipe_http_request {
 	guint32 flags;
 };
 
-#define SIPE_HTTP_REQUEST_FLAG_FIRST    0x00000001
-#define SIPE_HTTP_REQUEST_FLAG_REDIRECT 0x00000002
-#define SIPE_HTTP_REQUEST_FLAG_AUTHDATA 0x00000004
+#define SIPE_HTTP_REQUEST_FLAG_FIRST     0x00000001
+#define SIPE_HTTP_REQUEST_FLAG_REDIRECT  0x00000002
+#define SIPE_HTTP_REQUEST_FLAG_AUTHDATA  0x00000004
+#define SIPE_HTTP_REQUEST_FLAG_HANDSHAKE 0x00000008
 
 static void sipe_http_request_free(struct sipe_core_private *sipe_private,
 				   struct sipe_http_request *req,
@@ -168,13 +169,67 @@ static void sipe_http_request_enqueue(struct sipe_core_private *sipe_private,
 						       req);
 }
 
+static void sipe_http_request_drop_context(struct sipe_http_connection_public *conn_public)
+{
+	g_free(conn_public->cached_authorization);
+	conn_public->cached_authorization = NULL;
+	sip_sec_destroy_context(conn_public->context);
+	conn_public->context = NULL;
+}
+
+static void sipe_http_request_finalize_negotiate(struct sipe_http_request *req,
+						 struct sipmsg *msg)
+{
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
+	/*
+	 * Negotiate can send a final package in the successful response.
+	 * We need to forward this to the context or otherwise it will
+	 * never reach the ready state.
+	 */
+	struct sipe_http_connection_public *conn_public = req->connection;
+
+	if (sip_sec_context_type(conn_public->context) == SIPE_AUTHENTICATION_TYPE_NEGOTIATE) {
+		const gchar *header = sipmsg_find_auth_header(msg, "Negotiate");
+
+		if (header) {
+			gchar **parts = g_strsplit(header, " ", 0);
+			gchar *spn    = g_strdup_printf("HTTP/%s", conn_public->host);
+			gchar *token;
+
+			SIPE_DEBUG_INFO("sipe_http_request_finalize_negotiate: init context target '%s' token '%s'",
+					spn, parts[1] ? parts[1] : "<NULL>");
+
+			if (sip_sec_init_context_step(conn_public->context,
+						      spn,
+						      parts[1],
+						      &token,
+						      NULL)) {
+				g_free(token);
+			} else {
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_finalize_negotiate: security context init step failed, throwing away context");
+				sipe_http_request_drop_context(conn_public);
+			}
+
+			g_free(spn);
+			g_strfreev(parts);
+		}
+	}
+#else
+	(void) req; /* keep compiler happy */
+	(void) msg; /* keep compiler happy */
+#endif
+}
+
+
 /* TRUE indicates failure */
 static gboolean sipe_http_request_response_redirection(struct sipe_core_private *sipe_private,
-						   struct sipe_http_request *req,
-						   struct sipmsg *msg)
+						       struct sipe_http_request *req,
+						       struct sipmsg *msg)
 {
 	const gchar *location = sipmsg_find_header(msg, "Location");
 	gboolean failed = TRUE;
+
+	sipe_http_request_finalize_negotiate(req, msg);
 
 	if (location) {
 		struct sipe_http_parsed_uri *parsed_uri = sipe_http_parse_uri(location);
@@ -187,7 +242,8 @@ static gboolean sipe_http_request_response_redirection(struct sipe_core_private 
 
 			/* free old request data */
 			g_free(req->path);
-			req->flags &= ~SIPE_HTTP_REQUEST_FLAG_FIRST;
+			req->flags &= ~( SIPE_HTTP_REQUEST_FLAG_FIRST |
+					 SIPE_HTTP_REQUEST_FLAG_HANDSHAKE );
 
 			/* resubmit request on other connection */
 			sipe_http_request_enqueue(sipe_private, req, parsed_uri);
@@ -208,40 +264,69 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 							struct sipe_http_request *req,
 							struct sipmsg *msg)
 {
+	struct sipe_http_connection_public *conn_public = req->connection;
 	const gchar *header = NULL;
-	const gchar *name;
 	guint type;
 	gboolean failed = TRUE;
 
-#if defined(HAVE_LIBKRB5) || defined(HAVE_SSPI)
+	/*
+	 * There are some buggy HTTP servers out there that add superfluous
+	 * WWW-Authenticate: headers during the authentication handshake.
+	 * Look only for the header of the active security context.
+	 */
+	if (conn_public->context) {
+		const gchar *name = sip_sec_context_name(conn_public->context);
+
+		header = sipmsg_find_auth_header(msg, name);
+		type   = sip_sec_context_type(conn_public->context);
+
+		if (!header) {
+			SIPE_DEBUG_INFO("sipe_http_request_response_unauthorized: expected authentication scheme %s not found",
+					name);
+			return(failed);
+		}
+
+		if (conn_public->cached_authorization) {
+			/*
+			 * The "Basic" scheme doesn't have any state.
+			 *
+			 * If we enter here then we have already tried "Basic"
+			 * authentication once for this request and it was
+			 * rejected by the server. As all future requests will
+			 * also be rejected, we need to abort here in order to
+			 * prevent an endless request/401/request/... loop.
+			 */
+			SIPE_DEBUG_INFO("sipe_http_request_response_unauthorized: Basic authentication has failed for host '%s', please check user name and password!",
+					conn_public->host);
+			return(failed);
+		}
+
+	} else {
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 #define DEBUG_STRING ", NTLM and Negotiate"
-	/* Use "Negotiate" unless the user requested "NTLM" */
-	if (sipe_private->authentication_type != SIPE_AUTHENTICATION_TYPE_NTLM)
-		header = sipmsg_find_auth_header(msg, "Negotiate");
-	if (header) {
-		type   = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
-		name   = "Negotiate";
-	} else
+		/* Use "Negotiate" unless the user requested "NTLM" */
+		if (sipe_private->authentication_type != SIPE_AUTHENTICATION_TYPE_NTLM)
+			header = sipmsg_find_auth_header(msg, "Negotiate");
+		if (header) {
+			type   = SIPE_AUTHENTICATION_TYPE_NEGOTIATE;
+		} else
 #else
 #define DEBUG_STRING " and NTLM"
-	(void) sipe_private; /* keep compiler happy */
+		(void) sipe_private; /* keep compiler happy */
 #endif
-	{
-		header = sipmsg_find_auth_header(msg, "NTLM");
-		type   = SIPE_AUTHENTICATION_TYPE_NTLM;
-		name   = "NTLM";
-	}
+		{
+			header = sipmsg_find_auth_header(msg, "NTLM");
+			type   = SIPE_AUTHENTICATION_TYPE_NTLM;
+		}
 
-	/* only fall back to "Basic" after everything else fails */
-	if (!header) {
-		header = sipmsg_find_auth_header(msg, "Basic");
-		type   = SIPE_AUTHENTICATION_TYPE_BASIC;
-		name   = "Basic";
+		/* only fall back to "Basic" after everything else fails */
+		if (!header) {
+			header = sipmsg_find_auth_header(msg, "Basic");
+			type   = SIPE_AUTHENTICATION_TYPE_BASIC;
+		}
 	}
 
 	if (header) {
-		struct sipe_http_connection_public *conn_public = req->connection;
-
 		if (!conn_public->context) {
 			gboolean valid = req->flags & SIPE_HTTP_REQUEST_FLAG_AUTHDATA;
 			conn_public->context = sip_sec_create_context(type,
@@ -252,26 +337,38 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 								      valid ? req->password : NULL);
 		}
 
-
 		if (conn_public->context) {
 			gchar **parts = g_strsplit(header, " ", 0);
 			gchar *spn    = g_strdup_printf("HTTP/%s", conn_public->host);
-			gchar *token;
+			gchar *token_out;
+			const gchar *token_in = parts[1];
 
 			SIPE_DEBUG_INFO("sipe_http_request_response_unauthorized: init context target '%s' token '%s'",
-					spn, parts[1] ? parts[1] : "<NULL>");
+					spn, token_in ? token_in : "<NULL>");
 
-			if (sip_sec_init_context_step(conn_public->context,
+			/*
+			 * If we receive a NULL token during the handshake
+			 * then the authentication scheme has failed.
+			 */
+			if ((req->flags & SIPE_HTTP_REQUEST_FLAG_HANDSHAKE) &&
+			    !token_in) {
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: authentication failed, throwing away context");
+				sipe_http_request_drop_context(conn_public);
+
+			} else if (sip_sec_init_context_step(conn_public->context,
 						      spn,
-						      parts[1],
-						      &token,
+						      token_in,
+						      &token_out,
 						      NULL)) {
+
+				/* handshake has started */
+				req->flags |= SIPE_HTTP_REQUEST_FLAG_HANDSHAKE;
 
 				/* generate authorization header */
 				req->authorization = g_strdup_printf("Authorization: %s %s\r\n",
-								     name,
-								     token ? token : "");
-				g_free(token);
+								     sip_sec_context_name(conn_public->context),
+								     token_out ? token_out : "");
+				g_free(token_out);
 
 				/*
 				 * authorization never changes for Basic
@@ -289,8 +386,10 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 				 */
 				failed = FALSE;
 
-			} else
-				SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: security context init step failed");
+			} else {
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_http_request_response_unauthorized: security context init step failed, throwing away context");
+				sipe_http_request_drop_context(conn_public);
+			}
 
 			g_free(spn);
 			g_strfreev(parts);
@@ -307,6 +406,8 @@ static void sipe_http_request_response_callback(struct sipe_core_private *sipe_p
 						struct sipmsg *msg)
 {
 	const gchar *hdr;
+
+	sipe_http_request_finalize_negotiate(req, msg);
 
 	/* Set-Cookie: RMID=732423sdfs73242; expires=Fri, 31-Dec-2010 23:59:59 GMT; path=/; domain=.example.net */
 	if (req->session &&
@@ -378,10 +479,7 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 		    conn_public->context) {
 			SIPE_DEBUG_INFO("sipe_http_request_response: response was %d, throwing away security context",
 					msg->response);
-			g_free(conn_public->cached_authorization);
-			conn_public->cached_authorization = NULL;
-			sip_sec_destroy_context(conn_public->context);
-			conn_public->context = NULL;
+			sipe_http_request_drop_context(conn_public);
 		}
 
 		/* All other cases are passed on to the user */

@@ -1,0 +1,9 @@
+//
+//  Debug-Release.xcconfig
+//  SIPEAdiumPlugin
+//
+//  Created by Lamb, Michael on 11/13/13.
+//
+//
+#include "Base.xcconfig"
+//:configuration = Debug-Release

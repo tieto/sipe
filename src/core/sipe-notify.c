@@ -305,7 +305,7 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	/* fix for Reuters environment on Linux */
 	if (data && strstr(data, "encoding=\"utf-16\"")) {
 		char *tmp_data;
-		tmp_data = replace(data, "encoding=\"utf-16\"", "encoding=\"utf-8\"");
+		tmp_data = sipe_utils_str_replace(data, "encoding=\"utf-16\"", "encoding=\"utf-8\"");
 		xn_presentity = sipe_xml_parse(tmp_data, strlen(tmp_data));
 		g_free(tmp_data);
 	} else {
@@ -718,6 +718,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 			int availability;
 			const sipe_xml *xn_availability;
 			const sipe_xml *xn_activity;
+			const sipe_xml *xn_device;
 			const sipe_xml *xn_meeting_subject;
 			const sipe_xml *xn_meeting_location;
 			const gchar *legacy_activity;
@@ -733,6 +734,14 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 			tmp = sipe_xml_data(xn_availability);
 			availability = atoi(tmp);
 			g_free(tmp);
+
+			sbuddy->is_mobile = FALSE;
+			xn_device = sipe_xml_child(xn_node, "device");
+			if (xn_device) {
+				tmp = sipe_xml_data(xn_device);
+				sbuddy->is_mobile = !g_ascii_strcasecmp(tmp, "Mobile");
+				g_free(tmp);
+			}
 
 			/* activity */
 			g_free(sbuddy->activity);

@@ -30,10 +30,11 @@
 #include "sipe-common.h"
 #include "sip-sec.h"
 #include "sip-sec-mech.h"
-#include "sip-sec-krb5.h"
+#include "sip-sec-gssapi.h" /* for Kerberos */
 #include "sip-sec-negotiate.h"
 #include "sip-sec-ntlm.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
 
 /* Security context for Negotiate */
 typedef struct _context_negotiate {
@@ -65,6 +66,8 @@ static void sip_sec_negotiate_copy_settings(context_negotiate ctx,
 {
 	if (context->flags & SIP_SEC_FLAG_COMMON_READY)
 		ctx->common.flags |= SIP_SEC_FLAG_COMMON_READY;
+	else
+		ctx->common.flags &= ~SIP_SEC_FLAG_COMMON_READY;
 	ctx->common.expires = context->expires;
 }
 
@@ -197,14 +200,29 @@ sip_sec_destroy_sec_context__negotiate(SipSecContext context)
 	g_free(ctx);
 }
 
+/*
+ * This module doesn't implement SPNEGO (RFC 4559) but instead returns raw
+ * NTLM. Therefore we should not use "Authorization: Negotiate" for NTLM
+ * although Microsoft servers *do* accept them.
+ */
+static const gchar *
+sip_sec_context_name__negotiate(SipSecContext context)
+{
+	context_negotiate ctx = (context_negotiate) context;
+	if (ctx->krb5)
+		return("Negotiate");
+	else
+		return("NTLM");
+}
+
 SipSecContext
-sip_sec_create_context__negotiate(guint type)
+sip_sec_create_context__negotiate(SIPE_UNUSED_PARAMETER guint type)
 {
 	context_negotiate context = NULL;
-	SipSecContext krb5 = sip_sec_create_context__krb5(type);
+	SipSecContext krb5 = sip_sec_create_context__gssapi(SIPE_AUTHENTICATION_TYPE_KERBEROS);
 
 	if (krb5) {
-		SipSecContext ntlm = sip_sec_create_context__ntlm(type);
+		SipSecContext ntlm = sip_sec_create_context__ntlm(SIPE_AUTHENTICATION_TYPE_NTLM);
 
 		if (ntlm) {
 			context = g_malloc0(sizeof(struct _context_negotiate));
@@ -215,8 +233,13 @@ sip_sec_create_context__negotiate(guint type)
 				context->common.destroy_context_func  = sip_sec_destroy_sec_context__negotiate;
 				context->common.make_signature_func   = sip_sec_make_signature__negotiate;
 				context->common.verify_signature_func = sip_sec_verify_signature__negotiate;
+				context->common.context_name_func     = sip_sec_context_name__negotiate;
 				context->krb5 = krb5;
 				context->ntlm = ntlm;
+
+				krb5->type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
+				ntlm->type = SIPE_AUTHENTICATION_TYPE_NTLM;
+
 			} else {
 				ntlm->destroy_context_func(ntlm);
 			}

@@ -1,5 +1,5 @@
 /**
- * @file sip-sec-krb5.h
+ * @file sip-sec-gssapi.h
  *
  * pidgin-sipe
  *
@@ -23,6 +23,6 @@
  */
 
 SipSecContext
-sip_sec_create_context__krb5(guint type);
+sip_sec_create_context__gssapi(guint type);
 
-gboolean sip_sec_password__krb5(void);
+gboolean sip_sec_password__gssapi(void);

@@ -25,9 +25,12 @@
     IBOutlet	NSButton		*checkBox_autoDiscover;
     IBOutlet	NSButton		*checkBox_singleSignOn;
     IBOutlet	NSButton		*checkbox_dontPublish;
+    IBOutlet	NSButton		*checkbox_beastDisable;
     
 	IBOutlet	NSPopUpButton	*popup_connectionType;
    	IBOutlet	NSPopUpButton	*popup_authenticationScheme;
+    
+    NSDictionary *sipe_key_to_gui;
 }
 
 

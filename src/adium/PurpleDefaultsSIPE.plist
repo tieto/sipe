@@ -2,13 +2,17 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>SIPE:Authentication Scheme</key>
+	<string>ntlm</string>
 	<key>SIPE:Single Sign On</key>
 	<false/>
 	<key>SIPE:Dont Publish</key>
 	<false/>
+	<key>SIPE:BEAST Disable</key>
+	<false/>
 	<key>SIPE:Connection Type</key>
 	<string>auto</string>
 	<key>Connect Host</key>
-	<string>autodetect</string>
+	<string>localhost</string>
 </dict>
 </plist>

@@ -300,7 +300,7 @@ static gboolean start_connecting(TpBaseConnection *base,
 
 	/* map option list to flags - default is NTLM */
 	self->authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
-#ifdef HAVE_LIBKRB5
+#ifdef HAVE_GSSAPI_GSSAPI_H
 	if (sipe_strequal(self->authentication, "krb5")) {
 		SIPE_DEBUG_INFO_NOFORMAT("start_connecting: KRB5 selected");
 		self->authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
@@ -722,9 +722,15 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 	/* initialize private fields */
 	conn->is_disconnecting = FALSE;
 
-	/* account & login are required fields */
+	/* account is required field */
 	conn->account = g_strdup(tp_asv_get_string(params, "account"));
-	conn->login   = g_strdup(tp_asv_get_string(params, "login"));
+
+	/* if login is not specified, account value will be used in connect_to_core */
+	value = tp_asv_get_string(params, "login");
+	if (value && strlen(value))
+		conn->login = g_strdup(value);
+	else
+		conn->login = NULL;
 
 	/* password */
 	value = tp_asv_get_string(params, "password");
