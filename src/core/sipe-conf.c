@@ -376,7 +376,7 @@ sipe_conf_create(struct sipe_core_private *sipe_private,
 	 *
 	 * focus_URI, from, endpoint_GUID
 	 */
-	const gchar CCCP_ADD_USER[] =
+	static const gchar CCCP_ADD_USER[] =
 		"<addUser>"
 			"<conferenceKeys confEntity=\"%s\"/>"
 			"<ci:user xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" entity=\"%s\">"
@@ -435,7 +435,7 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 	 * focus_uri (%s)
 	 * who (%s)
 	 */
-	const gchar CCCP_MODIFY_USER_ROLES[] =
+	static const gchar CCCP_MODIFY_USER_ROLES[] =
 		"<modifyUserRoles>"
 			"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"
 			"<user-roles xmlns=\"urn:ietf:params:xml:ns:conference-info\">"
@@ -499,7 +499,7 @@ sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
 	 * focus_uri (%s)
 	 * locked (%s) "true" or "false" values applicable
 	 */
-	const gchar CCCP_MODIFY_CONFERENCE_LOCK[] =
+	static const gchar CCCP_MODIFY_CONFERENCE_LOCK[] =
 		"<modifyConferenceLock>"
 			"<conferenceKeys confEntity=\"%s\"/>"
 			"<locked>%s</locked>"
@@ -534,7 +534,7 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 	 * focus_uri (%s)
 	 * who (%s)
 	 */
-	const gchar CCCP_DELETE_USER[] =
+	static const gchar CCCP_DELETE_USER[] =
 		"<deleteUser>"
 			"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"
 		"</deleteUser>";
@@ -694,7 +694,7 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	 * expiry_time		(%s) Ex.: 2009-07-13T17:57:09Z
 	 * conference_view	(%s) Ex.: <msci:entity-view entity="chat"/>
 	 */
-	const gchar CCCP_ADD_CONFERENCE[] =
+	static const gchar CCCP_ADD_CONFERENCE[] =
 		"<addConference>"
 			"<ci:conference-info xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" "
 					     "entity=\"\" "
@@ -709,7 +709,7 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 			"</ci:conference-info>"
 		"</addConference>";
 
-	const gchar *DESIRED_MCU_TYPES[] = {
+	static const gchar *DESIRED_MCU_TYPES[] = {
 		"chat",
 #ifdef HAVE_VV
 		"audio-video",

@@ -1471,7 +1471,7 @@ void
 sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private)
 {
 	// TODO: re-request credentials after duration expires?
-	const char CRED_REQUEST_XML[] =
+	static const char CRED_REQUEST_XML[] =
 		"<request requestID=\"%d\" "
 		         "from=\"%s\" "
 			 "version=\"1.0\" "

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -572,7 +572,7 @@ void sip_transport_response(struct sipe_core_private *sipe_private,
 	GString *outstr = g_string_new("");
 	gchar *contact;
 	GSList *tmp;
-	const gchar *keepers[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route", NULL };
+	static const gchar *keepers[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route", NULL };
 
 	/* Can return NULL! */
 	contact = get_contact(sipe_private);
