@@ -1,3 +1,34 @@
+pidgin-sipe (1.18.1-1) UNRELEASED; urgency=medium
+
+  * New upstream release (Closes: #741014).
+        - Fixed #238: False "not delivered" in conference
+        - Fixed #237: HTML escaping not removed from URL
+        - Fixed #210: Conference call ends with error message
+        - fix endless loop with failed HTTP Basic authentication
+        - fix crash when gstreamer nice plugin is missing
+        - fix EWS autodiscover for some Office 365 users
+        - purple: fix missing "Copy to" in buddy menu
+        - add indication when user is connected from a mobile device
+        - updated translations: Chinese (zh_CN), Portuguese (pt)
+        - Feature #71: Add support for EWS Autodiscover redirection
+        - Feature #69: Add UI support for (group) chats
+        - Feature #64: Add support for GSS-NTLMSSP
+          * sip-sec-krb5.c module has been renamed to sip-sec-gssapi.c
+          * if gssapi/gssapi_ntlmssp.h is detected then sip-sec-ntlm.c will
+            be disabled and NTLM will be handled by sip-sec-gssapi.c instead
+          * NOTE: at the time of this writing the user has to set up
+                  GSS-NTLMSSP by hand on his system, i.e. /etc/gss/mech
+        - Fixed #197: Account stays in connecting stage
+        - cleanup for sip-sec Kerberos & SSPI modules
+          * replace old TGT hack with gss_acquire_cred_with_password()
+          * clean up Kerberos detection in configure
+          * remove special case handling; code is more straight-forward now
+          * thanks to David Woodhouse and Simo Sorce for the GSSAPI information
+        - implement internal keepalive handling
+        - implement crypto backend based on OpenSSL
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 14 Apr 2014 09:16:43 +0200
+
 pidgin-sipe (1.17.3-1) unstable; urgency=medium
 
   * New upstream release.
