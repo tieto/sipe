@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -64,7 +64,6 @@ typedef enum {
 	SIPE_DEBUG_LEVEL_INFO,
 	SIPE_DEBUG_LEVEL_WARNING,
 	SIPE_DEBUG_LEVEL_ERROR,
-	SIPE_DEBUG_LEVEL_FATAL,
 }  sipe_debug_level;
 
 /**
@@ -97,8 +96,6 @@ void sipe_backend_debug(sipe_debug_level level,
 #define SIPE_DEBUG_WARNING_NOFORMAT(msg) sipe_backend_debug_literal(SIPE_DEBUG_LEVEL_WARNING, msg)
 #define SIPE_DEBUG_ERROR(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_ERROR,   fmt, __VA_ARGS__)
 #define SIPE_DEBUG_ERROR_NOFORMAT(msg)   sipe_backend_debug_literal(SIPE_DEBUG_LEVEL_ERROR,   msg)
-#define SIPE_DEBUG_FATAL(fmt, ...)       sipe_backend_debug(SIPE_DEBUG_LEVEL_FATAL,   fmt, __VA_ARGS__)
-#define SIPE_DEBUG_FATAL_NOFORMAT(msg)   sipe_backend_debug_literal(SIPE_DEBUG_LEVEL_FATAL,   msg)
 
 /**
  * Check backend debugging status

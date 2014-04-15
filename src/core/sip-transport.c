@@ -1629,7 +1629,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 						 FALSE);
 			sipe_utils_shrink_buffer(conn, cur);
 		} else {
-			if (msg){
+			if (msg) {
 				SIPE_DEBUG_INFO("sipe_transport_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
 				sipmsg_free(msg);
                         }
@@ -1639,8 +1639,16 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 			return;
 		}
 
-		// Verify the signature before processing it
-		if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
+		/* Fatal header parse error? */
+		if (msg->response == SIPMSG_RESPONSE_FATAL_ERROR) {
+			/* can't proceed -> drop connection */
+			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+						      SIPE_CONNECTION_ERROR_NETWORK,
+						      _("Corrupted message received"));
+			transport->processing_input = FALSE;
+
+		/* Verify the signature before processing it */
+		} else if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
 			struct sipmsg_breakdown msgbd;
 			gchar *signature_input_str;
 			gchar *rspauth;
@@ -1661,6 +1669,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_NETWORK,
 								      _("Invalid message signature received"));
+					transport->processing_input = FALSE;
 				}
 			} else if ((msg->response == 401) ||
 				   sipe_strequal(msg->method, "REGISTER")) {

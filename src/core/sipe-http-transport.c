@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -268,8 +268,10 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 	if (current != connection->buffer)
 		sipe_utils_shrink_buffer(connection, current);
 
-	if ((current = strstr(connection->buffer, "\r\n\r\n")) != NULL) {
+	if (conn->connection &&
+	    (current = strstr(connection->buffer, "\r\n\r\n")) != NULL) {
 		struct sipmsg *msg;
+		gboolean drop = FALSE;
 		gboolean next;
 
 		current += 2;
@@ -387,13 +389,21 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 			}
 		}
 
+		if (msg->response == SIPMSG_RESPONSE_FATAL_ERROR) {
+			/* fatal header parse error */
+			msg->response = SIPE_HTTP_STATUS_SERVER_ERROR;
+			drop          = TRUE;
+		} else if (sipe_strcase_equal(sipmsg_find_header(msg, "Connection"), "close")) {
+			SIPE_DEBUG_INFO("sipe_http_transport_input: server requested close '%s'",
+					conn->host_port);
+			drop          = TRUE;
+		}
+
 		sipe_http_request_response(SIPE_HTTP_CONNECTION_PUBLIC, msg);
 		next = sipe_http_request_pending(SIPE_HTTP_CONNECTION_PUBLIC);
 
-		if (sipe_strcase_equal(sipmsg_find_header(msg, "Connection"), "close")) {
+		if (drop) {
 			/* drop backend connection */
-			SIPE_DEBUG_INFO("sipe_http_transport_input: server requested close '%s'",
-					conn->host_port);
 			sipe_backend_transport_disconnect(conn->connection);
 			conn->connection       = NULL;
 			conn->public.connected = FALSE;

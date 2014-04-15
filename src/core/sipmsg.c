@@ -91,10 +91,19 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 			msg->bodylen = SIPMSG_BODYLEN_CHUNKED;
 		} else {
 			tmp = sipmsg_find_header(msg, "Content-Type");
-			if (tmp)
-				SIPE_DEBUG_FATAL_NOFORMAT("sipmsg_parse_header(): Content-Length header not found");
-			else
+			if (tmp) {
+				/*
+				 * This is a fatal error situation: the message
+				 * is corrupted and we can't proceed. Set the
+				 * response code to a special value so that the
+				 * caller can abort correctly.
+				 */
+				SIPE_DEBUG_ERROR_NOFORMAT("sipmsg_parse_header: Content-Length header not found. Aborting!");
+				msg->response = SIPMSG_RESPONSE_FATAL_ERROR;
+				return(msg);
+			} else {
 				msg->bodylen = 0;
+			}
 		}
 	}
 	if(msg->response) {
