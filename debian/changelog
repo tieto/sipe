@@ -26,6 +26,7 @@ pidgin-sipe (1.18.1-1) UNRELEASED; urgency=medium
           * thanks to David Woodhouse and Simo Sorce for the GSSAPI information
         - implement internal keepalive handling
         - implement crypto backend based on OpenSSL
+  * Explicitly disable usage of OpenSSL as the cryptographic backend.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 14 Apr 2014 09:16:43 +0200
 
