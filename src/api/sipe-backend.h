@@ -333,9 +333,10 @@ typedef enum {
 } SipeMediaType;
 
 typedef enum {
+	SIPE_NETWORK_PROTOCOL_UDP,
 	SIPE_NETWORK_PROTOCOL_TCP_ACTIVE,
 	SIPE_NETWORK_PROTOCOL_TCP_PASSIVE,
-	SIPE_NETWORK_PROTOCOL_UDP
+	SIPE_NETWORK_PROTOCOL_TCP_SO,
 } SipeNetworkProtocol;
 
 struct sipe_media_call;

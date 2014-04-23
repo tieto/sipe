@@ -194,7 +194,15 @@ parse_append_candidate_rfc_5245(gchar **tokens, GSList *candidates)
 		return candidates;
 	}
 
-	return g_slist_append(candidates, candidate);
+	candidates = g_slist_append(candidates, candidate);
+
+	// TCP-ACT candidates are both active and passive
+	if (candidate->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) {
+		candidate = sdpcandidate_copy(candidate);
+		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
+		candidates = g_slist_append(candidates, candidate);
+	}
+	return candidates;
 }
 
 static GSList *
@@ -620,12 +628,14 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 			struct sdpcandidate *c = media->remote_candidates->data;
 			uses_tcp_transport =
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE ||
-				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
+				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE ||
+				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_SO;
 			if (uses_tcp_transport) {
 				tcp_setup_str = g_strdup_printf(
 					"a=connection:existing\r\n"
 					"a=setup:%s\r\n",
-					(c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) ? "passive" : "active");
+					(c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE) ? "passive" :
+					((c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) ? "active" : "so"));
 			}
 		}
 
