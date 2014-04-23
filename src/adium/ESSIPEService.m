@@ -5,6 +5,7 @@
 //  Created by Matt Meissner on 10/30/09.
 //  Modified by Michael Lamb on 2/27/13
 //  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
+//  Copyright (C) 2014 SIPE Project <http://sipe.sourceforge.net/>
 //
 
 #import <AIUtilities/AICharacterSetAdditions.h>
@@ -72,11 +73,11 @@
 
 - (NSImage *)defaultServiceIconOfType:(AIServiceIconType)iconType {
 	NSImage *baseImage = [NSImage imageNamed:@"sipe" forClass:[self class]];
-    
+
 	if ((iconType == AIServiceIconSmall) || (iconType == AIServiceIconList)) { 
         [baseImage setSize:NSMakeSize(16, 16)];
 	}
-    
+
 	return baseImage;
 }
 
@@ -86,10 +87,17 @@
 {
 	NSMutableCharacterSet *allowedCharacters = [[NSCharacterSet alphanumericCharacterSet] mutableCopy];
 	NSCharacterSet *returnSet;
-	
-	[allowedCharacters addCharactersInString:@"._@-()[]^%#|/\\`=,"];
+
+	//
+	// NOTE: needs to be in sync with sipe-utils.c:escape_uri_part()
+	//
+	// @     -   XXX@YYY
+	// :     -   sip:XXX@YYY
+	// ._-~  -   unreserved, see RFC 3986 Appendix A
+	//
+	[allowedCharacters addCharactersInString:@"@:._-~"];
 	returnSet = [allowedCharacters immutableCopy];
-	
+
 	return [returnSet autorelease];
 }
 
@@ -111,10 +119,10 @@
      AIAwayStatusType,      STATUS_NAME_AWAY_FRIENDS_ONLY,
      nil
      ];
-    
+
     for (NSString* key in statuses) {
         AIStatusType value = [statuses objectForKey:key];
-        
+
         [adium.statusController
          registerStatus:key
          withDescription:[adium.statusController localizedDescriptionForCoreStatusName:key]
@@ -126,4 +134,3 @@
 
 
 @end
-
