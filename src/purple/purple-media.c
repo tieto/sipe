@@ -387,9 +387,13 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 				     "udp", username, password);
 
 #ifdef HAVE_ICE_TCP
-		if (relay->tcp_port != 0)
+		if (relay->tcp_port != 0) {
+			gchar *type = "tcp";
+			if (relay->tcp_port == 443)
+				type = "tls";
 			append_relay(relay_info, relay->hostname, relay->tcp_port,
-				     "tcp", username, password);
+				     type, username, password);
+		}
 #endif
 	}
 
