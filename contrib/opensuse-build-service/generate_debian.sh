@@ -65,6 +65,7 @@ done
 # Overwrite those .dsc's that have support for telepathy
 for os in \
     Debian_7.0 \
+    xUbuntu_14.04 \
     xUbuntu_13.10 \
     xUbuntu_13.04 \
     xUbuntu_12.10 \
