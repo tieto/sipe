@@ -180,6 +180,60 @@ sdpcodec_compare(gconstpointer a, gconstpointer b)
 	       ((const struct sdpcodec *)b)->id;
 }
 
+static void
+fill_zero_tcp_act_ports_from_tcp_pass(GSList *candidates)
+{
+	GSList *i;
+	GHashTable *ip_to_port = g_hash_table_new(g_str_hash, g_str_equal);
+
+	for (i = candidates; i; i = i->next) {
+		struct sdpcandidate *c = i->data;
+		GSList *j;
+
+		if (c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE &&
+		    c->type == SIPE_CANDIDATE_TYPE_HOST) {
+			g_hash_table_insert(ip_to_port, c->ip,
+					&c->port);
+		}
+
+		if (c->protocol != SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) {
+			continue;
+		}
+
+		for (j = candidates; j; j = j->next) {
+			struct sdpcandidate *passive = j->data;
+			if (passive->protocol != SIPE_NETWORK_PROTOCOL_TCP_PASSIVE ||
+			    c->type != passive->type) {
+				continue;
+			}
+
+			if (sipe_strequal(c->ip, passive->ip) &&
+			    sipe_strequal(c->base_ip, passive->base_ip)) {
+				if (c->port == 0) {
+					c->port = passive->port;
+				}
+
+				if (c->base_port == 0) {
+					c->base_port = passive->base_port;
+				}
+				break;
+			}
+		}
+	}
+
+	/* Fill base ports of all TCP relay candidates using what we have
+	 * collected from host candidates. */
+	for (i = candidates; i; i = i->next) {
+		struct sdpcandidate *c = i->data;
+		if (c->type == SIPE_CANDIDATE_TYPE_RELAY && c->base_port == 0) {
+			c->base_port = *(guint*)g_hash_table_lookup(ip_to_port,
+					c->base_ip);
+		}
+	}
+
+	g_hash_table_destroy(ip_to_port);
+}
+
 static struct sdpmedia *
 backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 			   struct sipe_backend_stream *backend_stream)
@@ -250,6 +304,7 @@ backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 							       backend_stream);
 
 	media->candidates = backend_candidates_to_sdpcandidate(candidates);
+	fill_zero_tcp_act_ports_from_tcp_pass(media->candidates);
 
 	sipe_media_candidate_list_free(candidates);
 
