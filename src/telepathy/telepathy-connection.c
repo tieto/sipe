@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -298,8 +298,12 @@ static gboolean start_connecting(TpBaseConnection *base,
 	tp_base_connection_change_status(base, TP_CONNECTION_STATUS_CONNECTING,
 					 TP_CONNECTION_STATUS_REASON_REQUESTED);
 
-	/* map option list to flags - default is NTLM */
-	self->authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+	/* map option list to flags - default is automatic */
+	self->authentication_type = SIPE_AUTHENTICATION_TYPE_AUTOMATIC;
+	if (sipe_strequal(self->authentication, "ntlm")) {
+		SIPE_DEBUG_INFO_NOFORMAT("start_connecting: NTLM selected");
+		self->authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+	} else
 #ifdef HAVE_GSSAPI_GSSAPI_H
 	if (sipe_strequal(self->authentication, "krb5")) {
 		SIPE_DEBUG_INFO_NOFORMAT("start_connecting: KRB5 selected");
