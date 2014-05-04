@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -53,6 +53,7 @@ static const gchar * const mech_names[] = {
 	"Kerberos",  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 	"Negotiate", /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
 	"",          /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+	"",          /* SIPE_AUTHENTICATION_TYPE_AUTOMATIC */
 };
 
 #ifndef ISC_REQ_IDENTIFY

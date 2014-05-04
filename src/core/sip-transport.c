@@ -184,6 +184,7 @@ static const gchar *const auth_type_to_protocol[] = {
 	"Kerberos", /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 	NULL,       /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
 	"TLS-DSK",  /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+	NULL,       /* SIPE_AUTHENTICATION_TYPE_AUTOMATIC */
 };
 #define AUTH_PROTOCOLS (sizeof(auth_type_to_protocol)/sizeof(gchar *))
 

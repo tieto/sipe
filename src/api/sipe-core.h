@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,6 +94,7 @@ struct sipe_backend_private;
 #define SIPE_AUTHENTICATION_TYPE_KERBEROS  3
 #define SIPE_AUTHENTICATION_TYPE_NEGOTIATE 4 /* internal use only */
 #define SIPE_AUTHENTICATION_TYPE_TLS_DSK   5
+#define SIPE_AUTHENTICATION_TYPE_AUTOMATIC 6 /* always last */
 
 /**
  * Flags

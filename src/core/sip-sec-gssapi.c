@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -778,7 +778,7 @@ sip_sec_create_context__gssapi(SIPE_UNUSED_PARAMETER guint type)
 
 gboolean sip_sec_password__gssapi(void)
 {
-	/* Kerberos supports Single-Sign On */
+	/* GSSAPI supports Single-Sign On */
 	return(FALSE);
 }
 
