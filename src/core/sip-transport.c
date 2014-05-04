@@ -1211,18 +1211,27 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				}
 
 				if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
-					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
-					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-								      _("Authentication failed"));
-					return TRUE;
+					/* NTLM is the scheme with lowest priority - don't retry */
+					if ((sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_AUTOMATIC) &&
+					    (transport->registrar.type != SIPE_AUTHENTICATION_TYPE_NTLM)) {
+						guint failed = transport->registrar.type;
+						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - trying next authentication scheme.");
+						sipe_auth_free(&transport->registrar);
+						transport->registrar.type = failed;
+						transport->auth_retry     = TRUE;
+					} else {
+						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
+						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+									      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+									      _("Authentication failed"));
+						return TRUE;
+					}
 				}
 
 				if (sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_AUTOMATIC) {
 					guint try = transport->registrar.type;
 
 					while (!auth_hdr) {
-
 						/*
 						 * Determine next authentication
 						 * scheme in priority order
@@ -1259,9 +1268,9 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					transport->auth_retry = FALSE;
 
 				} else
-					  auth_hdr = get_auth_header(sipe_private,
-								     sipe_private->authentication_type,
-								     msg);
+					auth_hdr = get_auth_header(sipe_private,
+								   sipe_private->authentication_type,
+								   msg);
 
 				if (!auth_hdr) {
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
