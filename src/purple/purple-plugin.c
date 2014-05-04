@@ -282,12 +282,15 @@ static guint get_authentication_type(PurpleAccount *account)
 {
 	const gchar *auth = purple_account_get_string(account, "authentication", "ntlm");
 
-	/* map option list to type - default is NTLM */
-	guint authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+	/* map option list to type - default is automatic */
+	guint authentication_type = SIPE_AUTHENTICATION_TYPE_AUTOMATIC;
+	if (sipe_strequal(auth, "ntlm")) {
+		authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+	} else
 #if PURPLE_SIPE_SSO_AND_KERBEROS
 	if (sipe_strequal(auth, "krb5")) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
-	}
+	} else
 #endif
 	if (sipe_strequal(auth, "tls-dsk")) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
@@ -1121,6 +1124,7 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	option = purple_account_option_list_new(_("Authentication scheme"), "authentication", NULL);
+	purple_account_option_add_list_item(option, _("Auto"), "auto");
 	purple_account_option_add_list_item(option, _("NTLM"), "ntlm");
 #if PURPLE_SIPE_SSO_AND_KERBEROS
 	purple_account_option_add_list_item(option, _("Kerberos"), "krb5");
