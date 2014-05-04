@@ -437,7 +437,14 @@ void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
 const gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	GSList *tmp;
 	struct sipnameval *elem;
-	int name_len = strlen(name);
+	int name_len;
+
+	if (!name) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipmsg_find_auth_header: no authentication scheme specified");
+		return NULL;
+	}
+
+	name_len = strlen(name);
 	tmp = msg->headers;
 	while(tmp) {
 		elem = tmp->data;
@@ -453,7 +460,7 @@ const gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 		/* SIPE_DEBUG_INFO_NOFORMAT("moving to next header"); */
 		tmp = g_slist_next(tmp);
 	}
-	SIPE_DEBUG_INFO("auth header '%s' not found.", name);
+	SIPE_DEBUG_INFO("sipmsg_find_auth_header: '%s' not found", name);
 	return NULL;
 }
 
