@@ -114,6 +114,7 @@ struct sip_transport {
 
 	gboolean processing_input;   /* whether full header received */
 	gboolean auth_incomplete;    /* whether authentication not completed */
+	gboolean auth_retry;         /* whether next authentication should be tried */
 	gboolean reregister_set;     /* whether reregister timer set */
 	gboolean reauthenticate_set; /* whether reauthenticate timer set */
 	gboolean subscribed;         /* whether subscribed to events, except buddies presence */
@@ -934,10 +935,12 @@ void sip_transport_update(struct sipe_core_private *sipe_private,
 }
 
 static const gchar *get_auth_header(struct sipe_core_private *sipe_private,
-				    struct sip_auth *auth,
+				    guint type,
 				    struct sipmsg *msg)
 {
-	auth->type     = sipe_private->authentication_type;
+	struct sip_auth *auth = &sipe_private->transport->registrar;
+
+	auth->type     = type;
 	auth->protocol = auth_type_to_protocol[auth->type];
 
 	return(sipmsg_find_auth_header(msg, auth->protocol));
@@ -958,6 +961,7 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 	sipe_auth_free(&transport->registrar);
 	sipe_auth_free(&transport->proxy);
 	sipe_schedule_cancel(sipe_private, "<registration>");
+	transport->auth_retry     = TRUE;
 	transport->reregister_set = FALSE;
 	transport->register_attempt = 0;
 	do_register(sipe_private, FALSE);
@@ -1032,7 +1036,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					transport->user_agent = NULL;
 				}
 
-				auth_hdr = get_auth_header(sipe_private, &transport->registrar, msg);
+				auth_hdr = sipmsg_find_auth_header(msg,
+								   transport->registrar.protocol);
 				if (auth_hdr) {
 					SIPE_DEBUG_INFO("process_register_response: Auth header: %s", auth_hdr);
 					fill_auth(auth_hdr, &transport->registrar);
@@ -1195,7 +1200,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			break;
 		case 401:
 		        {
-				const char *auth_hdr;
+				const char *auth_hdr = NULL;
 
 				SIPE_DEBUG_INFO("process_register_response: REGISTER retries %d", transport->registrar.retries);
 
@@ -1213,7 +1218,51 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					return TRUE;
 				}
 
-				auth_hdr = get_auth_header(sipe_private, &transport->registrar, msg);
+				if (sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_AUTOMATIC) {
+					guint try = transport->registrar.type;
+
+					while (!auth_hdr) {
+
+						/*
+						 * Determine next authentication
+						 * scheme in priority order
+						 */
+						if (transport->auth_retry)
+							switch (try) {
+							case SIPE_AUTHENTICATION_TYPE_UNSET:
+								try = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
+								break;
+
+							case SIPE_AUTHENTICATION_TYPE_TLS_DSK:
+								try = SIPE_AUTHENTICATION_TYPE_KERBEROS;
+								break;
+
+							case SIPE_AUTHENTICATION_TYPE_KERBEROS:
+								try = SIPE_AUTHENTICATION_TYPE_NTLM;
+								break;
+
+							default:
+								try = SIPE_AUTHENTICATION_TYPE_UNSET;
+								break;
+							}
+
+						if (try == SIPE_AUTHENTICATION_TYPE_UNSET) {
+							SIPE_DEBUG_INFO_NOFORMAT("process_register_response: no more authentication schemes to try");
+							break;
+						}
+
+						auth_hdr = get_auth_header(sipe_private,
+									   try,
+									   msg);
+					}
+
+					transport->auth_retry = FALSE;
+
+				} else
+					  auth_hdr = get_auth_header(sipe_private,
+								     sipe_private->authentication_type,
+								     msg);
+
 				if (!auth_hdr) {
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
@@ -1762,6 +1811,7 @@ static void sipe_server_register(struct sipe_core_private *sipe_private,
 	};
 	struct sip_transport *transport = g_new0(struct sip_transport, 1);
 
+	transport->auth_retry   = TRUE;
 	transport->server_name  = server_name;
 	transport->server_port  = setup.server_port;
 	transport->connection   = sipe_backend_transport_connect(SIPE_CORE_PUBLIC,
