@@ -1243,10 +1243,12 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 								break;
 
 							case SIPE_AUTHENTICATION_TYPE_TLS_DSK:
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 								try = SIPE_AUTHENTICATION_TYPE_KERBEROS;
 								break;
 
 							case SIPE_AUTHENTICATION_TYPE_KERBEROS:
+#endif
 								try = SIPE_AUTHENTICATION_TYPE_NTLM;
 								break;
 
