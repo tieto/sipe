@@ -313,22 +313,20 @@ parse_lync_join_url(const gchar *uri)
 
 	for (parts_count = 0; parts[parts_count]; ++parts_count);
 	if (parts_count >= 3) {
-		gchar *base_url = parts[0];
-		gchar *conference_id = parts[parts_count - 1];
-		gchar *organizer_alias = parts[parts_count - 2];
+		const gchar *conference_id   = parts[parts_count - 1];
+		const gchar *organizer_alias = parts[parts_count - 2];
 
-		gchar **url_parts = g_strsplit(base_url, ".", 0);
-		int url_parts_count = 0;
-		for (url_parts_count = 0; url_parts[url_parts_count]; ++url_parts_count);
+		gchar **domain_parts = g_strsplit(parts[0], ".", 2);
 
-		if (url_parts_count >= 3) {
-			focus_uri = g_strdup_printf("sip:%s@%s.%s;gruu;opaque=app:conf:focus:id:%s",
-					organizer_alias,
-					url_parts[url_parts_count - 2], url_parts[url_parts_count - 1],
-					conference_id);
+		/* we need to drop the first sub-domain from the URL */
+		if (domain_parts[0] && domain_parts[1]) {
+			focus_uri = g_strdup_printf("sip:%s@%s;gruu;opaque=app:conf:focus:id:%s",
+						    organizer_alias,
+						    domain_parts[1],
+						    conference_id);
 		}
 
-		g_strfreev(url_parts);
+		g_strfreev(domain_parts);
 	}
 
 	g_strfreev(parts);
@@ -343,6 +341,10 @@ sipe_core_conf_create(struct sipe_core_public *sipe_public,
 	gchar *uri_ue = sipe_utils_uri_unescape(uri);
 	gchar *focus_uri;
 	struct sip_session *session = NULL;
+
+	SIPE_DEBUG_INFO("sipe_core_conf_create: URI '%s' unescaped '%s'",
+			uri    ? uri    : "<UNDEFINED>",
+			uri_ue ? uri_ue : "<UNDEFINED>");
 
 	focus_uri = parse_ocs_focus_uri(uri_ue);
 	if (!focus_uri) {
