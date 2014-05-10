@@ -89,6 +89,7 @@ struct sip_auth {
 	guint retries;
 	guint ntlm_num;
 	guint expires;
+	gboolean can_retry;
 };
 
 /* sip-transport.c private data */
@@ -147,6 +148,7 @@ static void sipe_auth_free(struct sip_auth *auth)
 	auth->type = SIPE_AUTHENTICATION_TYPE_UNSET;
 	auth->retries = 0;
 	auth->expires = 0;
+	auth->can_retry = FALSE;
 	g_free(auth->gssapi_data);
 	auth->gssapi_data = NULL;
 	sip_sec_destroy_context(auth->gssapi_context);
@@ -198,6 +200,36 @@ static gchar *msg_signature_to_auth(struct sip_auth *auth,
 			       msg->rand, msg->num, msg->signature));
 }
 
+static gboolean auth_can_retry(struct sip_transport *transport,
+			       const struct sip_auth *auth)
+{
+	/* NTLM is the scheme with lowest priority - don't retry */
+	gboolean retry =
+		auth->can_retry &&
+		(auth->type != SIPE_AUTHENTICATION_TYPE_NTLM);
+	if (retry)
+		transport->auth_retry = TRUE;
+	return(retry);
+}
+
+static void initialize_auth_retry(struct sipe_core_private *sipe_private,
+				  struct sip_auth *auth)
+{
+	struct sip_transport *transport = sipe_private->transport;
+
+	if (auth_can_retry(transport, auth)) {
+		if (auth->gssapi_context) {
+			/* need to drop context for retry */
+			sip_sec_destroy_context(auth->gssapi_context);
+			auth->gssapi_context = NULL;
+		}
+	} else {
+		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+					      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+					      _("Failed to authenticate to server"));
+	}
+}
+
 static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 				      struct sip_auth *auth,
 				      struct sipmsg *msg)
@@ -232,9 +264,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		      (sip_sec_context_is_ready(auth->gssapi_context) || gssapi_data))) {
 			SIPE_DEBUG_ERROR_NOFORMAT("initialize_auth_context: security context continuation failed");
 			g_free(gssapi_data);
-			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-						      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-						      _("Failed to authenticate to server"));
+			initialize_auth_retry(sipe_private, auth);
 			return NULL;
 		}
 
@@ -292,11 +322,10 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 						  &(auth->expires));
 		}
 
-		if (!gssapi_data || !auth->gssapi_context) {
-			g_free(gssapi_data);
-			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-						      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-						      _("Failed to authenticate to server"));
+		/* if auth->gssapi_context is NULL then gssapi_data is still NULL */
+		if (!gssapi_data) {
+			SIPE_DEBUG_ERROR_NOFORMAT("initialize_auth_context: security context initialization failed");
+			initialize_auth_retry(sipe_private, auth);
 			return NULL;
 		}
 	}
@@ -1211,14 +1240,14 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				}
 
 				if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
+					struct sip_auth *auth = &transport->registrar;
+
 					/* NTLM is the scheme with lowest priority - don't retry */
-					if ((sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_AUTOMATIC) &&
-					    (transport->registrar.type != SIPE_AUTHENTICATION_TYPE_NTLM)) {
-						guint failed = transport->registrar.type;
+					if (auth_can_retry(transport, auth)) {
+						guint failed = auth->type;
 						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - trying next authentication scheme.");
-						sipe_auth_free(&transport->registrar);
-						transport->registrar.type = failed;
-						transport->auth_retry     = TRUE;
+						sipe_auth_free(auth);
+						auth->type = failed;
 					} else {
 						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
 						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
@@ -1229,7 +1258,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				}
 
 				if (sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_AUTOMATIC) {
-					guint try = transport->registrar.type;
+					struct sip_auth *auth = &transport->registrar;
+					guint try             = auth->type;
 
 					while (!auth_hdr) {
 						/*
@@ -1257,7 +1287,9 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 								break;
 							}
 
-						if (try == SIPE_AUTHENTICATION_TYPE_UNSET) {
+						auth->can_retry = (try != SIPE_AUTHENTICATION_TYPE_UNSET);
+
+						if (!auth->can_retry) {
 							SIPE_DEBUG_INFO_NOFORMAT("process_register_response: no more authentication schemes to try");
 							break;
 						}
