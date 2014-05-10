@@ -112,23 +112,23 @@ static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 				gchar *type = sipe_xml_data(sipe_xml_child(node,
 									   "Type"));
 
-				if (sipe_strequal("EXCH", type)) {
-					g_free(type);
+				/* Exchange or Office 365 */
+				if (sipe_strequal("EXCH", type) ||
+				    sipe_strequal("EXPR", type)) {
 
 #define _URL(name, field) \
-			{ \
+			if (!ews_data->field) {	\
 				ews_data->field = sipe_xml_data(sipe_xml_child(node, #name)); \
 				SIPE_DEBUG_INFO("sipe_ews_autodiscover_parse: " #field " = '%s'", \
 						ews_data->field ? ews_data->field : "<NOT FOUND>"); \
 			}
 
+					/* use first entry */
 					_URL(ASUrl,  as_url);
 					_URL(EwsUrl, ews_url);
 					_URL(OABUrl, oab_url);
 					_URL(OOFUrl, oof_url);
 #undef _URL
-
-					break;
 
 				}
 				g_free(type);
