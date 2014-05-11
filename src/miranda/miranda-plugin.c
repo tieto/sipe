@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -184,6 +184,7 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 			SendDlgItemMessage(hwndDlg, IDC_PASSWORD, EM_SETLIMITTEXT, 16, 0);
 			mir_free(str);
 
+			SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_ADDSTRING, 0, (LPARAM)_T("Auto"));
 			SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_ADDSTRING, 0, (LPARAM)_T("NTLM"));
 #if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
 			SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_ADDSTRING, 0, (LPARAM)_T("Kerberos"));
@@ -195,10 +196,10 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_SELECTSTRING, -1, (LPARAM)_T("NTLM"));
 			else if (iptype == SIPE_AUTHENTICATION_TYPE_KERBEROS)
 				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_SELECTSTRING, -1, (LPARAM)_T("Kerberos"));
-			else if (!strcmp(str, "tls-dsk"))
+			else if (iptype == SIPE_AUTHENTICATION_TYPE_TLS_DSK)
 				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_SELECTSTRING, -1, (LPARAM)_T("TLS-DSK"));
 			else
-				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_SELECTSTRING, -1, (LPARAM)_T("NTLM"));
+				SendDlgItemMessage(hwndDlg, IDC_AUTHTYPE, CB_SELECTSTRING, -1, (LPARAM)_T("Auto"));
 
 			SendDlgItemMessage(hwndDlg, IDC_CONNTYPE, CB_ADDSTRING, 0, (LPARAM)_T("Auto"));
 			SendDlgItemMessage(hwndDlg, IDC_CONNTYPE, CB_ADDSTRING, 0, (LPARAM)_T("SSL/TLS"));
@@ -319,6 +320,8 @@ static INT_PTR CALLBACK DlgProcSipSimpleOpts(HWND hwndDlg, UINT msg, WPARAM wPar
 					sipe_miranda_setWord(pr, NULL, "authscheme", SIPE_AUTHENTICATION_TYPE_KERBEROS);
 				else if (!_tcscmp(tbuf, _T("TLS-DSK")))
 					sipe_miranda_setWord(pr, NULL, "authscheme", SIPE_AUTHENTICATION_TYPE_TLS_DSK);
+				else
+					sipe_miranda_setWord(pr, NULL, "authscheme", SIPE_AUTHENTICATION_TYPE_AUTOMATIC);
 
 				GetDlgItemTextA(hwndDlg, IDC_PUBLICIP, buf, sizeof(buf));
 				sipe_miranda_setGlobalString("public_ip", buf);
@@ -637,7 +640,7 @@ void sipe_miranda_login(SIPPROTO *pr) {
 	gchar *tmp = (char*)mir_calloc(1024);
 	int tmpstatus;
 	int ttype;
-	guint authentication_type;
+	guint authentication_type = SIPE_AUTHENTICATION_TYPE_AUTOMATIC;
 	struct sipe_core_public *sipe_public;
 
 //	CloseHandle((HANDLE) mir_forkthreadex(show_vlc, NULL, 65536, NULL));
@@ -677,7 +680,7 @@ void sipe_miranda_login(SIPPROTO *pr) {
 
 	//sipe_miranda_chat_setup_rejoin(pr);
 
-	/* default is NTLM */
+	/* default is Auto */
 	sipe_miranda_getWord(pr, NULL, "authscheme", &authentication_type);
 
 	/* Set display name */
