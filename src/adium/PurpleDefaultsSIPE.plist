@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>SIPE:Authentication Scheme</key>
-	<string>ntlm</string>
+	<string>auto</string>
 	<key>SIPE:Single Sign On</key>
 	<false/>
 	<key>SIPE:Dont Publish</key>

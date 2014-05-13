@@ -88,7 +88,7 @@
             // NSPopUpButton *MUST* appear before NSButton in the if/else
             //   because  NSPopUpButton is a NSButton...
             NSString *tmp_key = [account preferenceForKey:key group:GROUP_ACCOUNT_STATUS];
-            NSString *tmp = [key isEqualToString:KEY_SIPE_CONNECTION_TYPE] ? @"auto" : @"ntlm";
+            NSString *tmp = @"auto";
             
             if (conn_auth_dict[tmp_key])
                 tmp = conn_auth_dict[tmp_key];
