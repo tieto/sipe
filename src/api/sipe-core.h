@@ -110,6 +110,11 @@ struct sipe_backend_private;
 	(sipe_public->flags &= ~SIPE_CORE_FLAG_ ## flag)
 
 /**
+ * Byte length of cryptographic key for call encryption.
+ */
+#define SIPE_SRTP_KEY_LEN 30
+
+/**
  * Public part of the Sipe data structure
  *
  * This part contains the information needed by the core and the backend.

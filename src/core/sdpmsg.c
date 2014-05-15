@@ -28,6 +28,7 @@
 #include <glib.h>
 
 #include "sipe-backend.h"
+#include "sipe-core.h"
 #include "sdpmsg.h"
 #include "sipe-utils.h"
 
@@ -323,6 +324,38 @@ parse_codecs(GSList *attrs, SipeMediaType type)
 	return codecs;
 }
 
+static guchar *
+parse_encryption_key(GSList *attrs)
+{
+	int i = 0;
+	const gchar *attr;
+	guchar *result = NULL;
+
+	while ((attr = sipe_utils_nameval_find_instance(attrs, "crypto", i++))) {
+		gchar **tokens = g_strsplit_set(attr, " :|", 6);
+
+		if (tokens[0] && tokens[1] && tokens[2] && tokens[3] && tokens[4] &&
+		    sipe_strcase_equal(tokens[1], "AES_CM_128_HMAC_SHA1_80") &&
+		    sipe_strequal(tokens[2], "inline") &&
+		    !tokens[5]) {
+			gsize key_len;
+			result = g_base64_decode(tokens[3], &key_len);
+			if (key_len != SIPE_SRTP_KEY_LEN) {
+				g_free(result);
+				result = NULL;
+			}
+		}
+
+		g_strfreev(tokens);
+
+		if (result) {
+			break;
+		}
+	}
+
+	return result;
+}
+
 struct sdpmsg *
 sdpmsg_parse_msg(gchar *msg)
 {
@@ -357,6 +390,7 @@ sdpmsg_parse_msg(gchar *msg)
 		}
 
 		media->codecs = parse_codecs(media->attributes, type);
+		media->encryption_key = parse_encryption_key(media->attributes);
 	}
 
 	return smsg;
@@ -771,6 +805,8 @@ sdpmedia_free(struct sdpmedia *media)
 				  (GDestroyNotify) sdpcodec_free);
 		sipe_utils_slist_free_full(media->remote_candidates,
 				  (GDestroyNotify) sdpcandidate_free);
+
+		g_free(media->encryption_key);
 
 		g_free(media);
 	}
