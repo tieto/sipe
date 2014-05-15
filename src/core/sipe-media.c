@@ -69,6 +69,8 @@ struct sipe_media_call_private {
 
 struct sipe_media_stream_private {
 	struct sipe_media_stream public;
+
+	guchar *encryption_key;
 };
 #define SIPE_MEDIA_STREAM         ((struct sipe_media_stream *) stream_private)
 #define SIPE_MEDIA_STREAM_PRIVATE ((struct sipe_media_stream_private *) stream)
@@ -94,6 +96,7 @@ remove_stream(struct sipe_media_call* call,
 			g_slist_remove(call_private->streams, stream_private);
 	sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
 	g_free(SIPE_MEDIA_STREAM->id);
+	g_free(stream_private->encryption_key);
 	g_free(stream_private);
 }
 
@@ -928,6 +931,7 @@ sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
 	struct sipe_media_stream_private *stream_private;
 	struct sipe_backend_media_stream *backend_stream;
 	struct sipe_backend_media_relays *backend_media_relays;
+	int i;
 
 	backend_media_relays = sipe_backend_media_relays_convert(
 						sipe_private->media_relays,
@@ -947,6 +951,11 @@ sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
 	stream_private = g_new0(struct sipe_media_stream_private, 1);
 	SIPE_MEDIA_STREAM->id = g_strdup(id);
 	SIPE_MEDIA_STREAM->backend_private = backend_stream;
+
+	stream_private->encryption_key = g_new0(guchar, SIPE_SRTP_KEY_LEN);
+	for (i = 0; i != SIPE_SRTP_KEY_LEN; ++i) {
+		stream_private->encryption_key[i] = rand() & 0xff;
+	}
 
 	sipe_private->media_call->streams =
 			g_slist_append(sipe_private->media_call->streams,
