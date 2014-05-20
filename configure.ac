@@ -339,36 +339,9 @@ AS_IF([test "x$enable_purple" != xno],
 		 AC_SUBST(PURPLE_MAJOR_VERSION)
 
 		 ac_save_CFLAGS=$CFLAGS
+		 ac_save_LIBS=$LIBS
 		 CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
-
-		 dnl on windows
-		 dnl test program needs to be in the same location as libpurple
-		 dnl installation for latter to load ssl plugin referenced by
-		 dnl RELATIVE path.
-		 AS_IF([test "x${os_win32}" != xyes],
-			[dnl purple SSL support is mandatory
-			 AC_MSG_CHECKING([for purple SSL support])
-			 ac_save_LIBS=$LIBS
-			 LIBS="$PURPLE_LIBS"
-			 AC_RUN_IFELSE(
-				[AC_LANG_PROGRAM([[
-#include <glib.h>
-#include <plugin.h>
-#include <sslconn.h>
-						]],
-						[[
-	purple_prefs_init();
-	purple_plugins_init();
-	purple_plugins_probe(G_MODULE_SUFFIX);
-	purple_ssl_init();
-	return(purple_ssl_is_supported()?0:1);
-						]])],
-				[AC_MSG_RESULT(ok)],
-				[AC_MSG_FAILURE([your purple hasn't been compiled with SSL support.
-])
-				],
-				[AC_MSG_WARN([cross compiling: not checking])])
-		 ])
+		 LIBS="$PURPLE_LIBS"
 
 		 dnl check whether enable voice and video support
 		 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
