@@ -378,15 +378,30 @@ codecs_to_string(GSList *codecs)
 				       c->clock_rate);
 
 		if (params) {
-			g_string_append_printf(result, "a=fmtp:%d", c->id);
+			GString *param_str = g_string_new(NULL);
+			int written_params = 0;
+
+			g_string_append_printf(param_str, "a=fmtp:%d", c->id);
 
 			for (; params; params = params->next) {
 				struct sipnameval* par = params->data;
-				g_string_append_printf(result, " %s=%s",
+				if (sipe_strequal(par->name, "farsight-send-profile")) {
+					// Lync AVMCU doesn't like this property.
+					continue;
+				}
+
+				g_string_append_printf(param_str, " %s=%s",
 						       par->name, par->value);
+				++written_params;
 			}
 
-			g_string_append(result, "\r\n");
+			g_string_append(param_str, "\r\n");
+
+			if (written_params > 0) {
+				g_string_append(result, param_str->str);
+			}
+
+			g_string_free(param_str, TRUE);
 		}
 	}
 
