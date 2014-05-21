@@ -421,8 +421,11 @@ static void connect_to_core(PurpleConnection *gc,
 static void password_required_cb(PurpleConnection *gc,
 				 SIPE_UNUSED_PARAMETER PurpleRequestFields *fields)
 {
-        if (!PURPLE_CONNECTION_IS_VALID(gc))
-                return;
+#if !PURPLE_VERSION_CHECK(3,0,0)
+	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
+		return;
+	}
+#endif
 
 	purple_connection_error(gc,
 				PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
@@ -434,8 +437,11 @@ static void password_ok_cb(PurpleConnection *gc,
 {
 	const gchar *password;
 
-        if (!PURPLE_CONNECTION_IS_VALID(gc))
-                return;
+#if !PURPLE_VERSION_CHECK(3,0,0)
+	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
+		return;
+	}
+#endif
 
 	password = purple_request_fields_get_string(fields, "password");
 
