@@ -196,6 +196,10 @@ GList *sipe_backend_media_get_active_local_candidates(SIPE_UNUSED_PARAMETER stru
 						      SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
 GList *sipe_backend_media_get_active_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
 						       SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
+void sipe_backend_media_set_encryption_keys(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+					    SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
+					    SIPE_UNUSED_PARAMETER const guchar *encryption_key,
+					    SIPE_UNUSED_PARAMETER const guchar *decryption_key) {}
 void sipe_backend_stream_hold(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
 			      SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 			      SIPE_UNUSED_PARAMETER gboolean local) {}

@@ -610,6 +610,33 @@ sipe_backend_media_get_active_remote_candidates(struct sipe_media_call *media,
 	return duplicate_tcp_candidates(candidates);
 }
 
+#ifdef HAVE_SRTP
+void
+sipe_backend_media_set_encryption_keys(struct sipe_media_call *media,
+				       struct sipe_media_stream *stream,
+				       const guchar *encryption_key,
+				       const guchar *decryption_key)
+{
+	purple_media_set_encryption_parameters(media->backend_private->m,
+			stream->id,
+			"aes-128-icm",
+			"hmac-sha1-80",
+			(gchar *)encryption_key, SIPE_SRTP_KEY_LEN);
+	purple_media_set_decryption_parameters(media->backend_private->m,
+			stream->id, media->with,
+			"aes-128-icm",
+			"hmac-sha1-80",
+			(gchar *)decryption_key, SIPE_SRTP_KEY_LEN);
+}
+#else
+void
+sipe_backend_media_set_encryption_keys(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+				       SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
+				       SIPE_UNUSED_PARAMETER const guchar *encryption_key,
+				       SIPE_UNUSED_PARAMETER const guchar *decryption_key)
+{}
+#endif
+
 void sipe_backend_stream_hold(struct sipe_media_call *media,
 			      struct sipe_media_stream *stream,
 			      gboolean local)

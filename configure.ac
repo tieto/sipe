@@ -378,6 +378,11 @@ AS_IF([test "x$enable_purple" != xno],
 				[AC_MSG_WARN([cross compiling: not checking])])
 			 ])
 
+		 dnl enable SRTP when building with libpurple 3.x
+		 AS_IF([test "x$purple_pkgconfig" = xpurple-3],
+			[AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])
+		 ])
+
 		 CFLAGS=$ac_save_CFLAGS
 		 LIBS=$ac_save_LIBS])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
