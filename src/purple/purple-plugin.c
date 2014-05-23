@@ -688,7 +688,9 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* get_chat_name */
 	sipe_purple_chat_invite,		/* chat_invite */
 	sipe_purple_chat_leave,			/* chat_leave */
+#if !PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* chat_whisper */
+#endif
 	sipe_purple_chat_send,			/* chat_send */
 	NULL,					/* keepalive */
 	NULL,					/* register_user */
