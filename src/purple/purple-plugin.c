@@ -505,6 +505,15 @@ static void sipe_purple_close(PurpleConnection *gc)
 	}
 }
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+static int sipe_purple_send_im(PurpleConnection *gc, PurpleMessage *msg)
+{
+	sipe_core_im_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			purple_message_get_who(msg),
+			purple_message_get_contents(msg));
+	return 1;
+}
+#else
 static int sipe_purple_send_im(PurpleConnection *gc,
 			       const char *who,
 			       const char *what,
@@ -513,6 +522,7 @@ static int sipe_purple_send_im(PurpleConnection *gc,
 	sipe_core_im_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who, what);
 	return 1;
 }
+#endif
 
 static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 					    const char *who,
