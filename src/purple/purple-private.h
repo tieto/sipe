@@ -29,6 +29,7 @@ struct _PurpleBuddy;
 struct _PurpleChat;
 struct _PurpleConnection;
 struct _PurpleGroup;
+struct _PurpleMessage;
 struct _PurpleRoomlist;
 struct _PurpleStatus;
 struct _PurpleXfer;
@@ -94,8 +95,12 @@ void sipe_purple_chat_invite(struct _PurpleConnection *gc,
 void sipe_purple_chat_leave(struct _PurpleConnection *gc, int id);
 int sipe_purple_chat_send(struct _PurpleConnection *gc,
 			  int id,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			  struct _PurpleMessage *msg);
+#else
 			  const char *what,
 			  _PurpleMessageFlags flags);
+#endif
 GList *sipe_purple_chat_menu(struct _PurpleChat *chat);
 
 /* libpurple chat room callbacks */

@@ -219,12 +219,21 @@ void sipe_purple_chat_leave(PurpleConnection *gc, int id)
 
 int sipe_purple_chat_send(PurpleConnection *gc,
 			  int id,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			  PurpleMessage *msg)
+#else
 			  const char *what,
 			  SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
+#endif
 {
 	struct sipe_chat_session *session = sipe_purple_chat_find(gc, id);
 	if (!session) return -ENOTCONN;
-	sipe_core_chat_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session, what);
+	sipe_core_chat_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			purple_message_get_contents(msg));
+#else
+			what);
+#endif
 	return 1;
 }
 
