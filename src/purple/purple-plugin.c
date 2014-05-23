@@ -1161,6 +1161,15 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	 */
 	option = purple_account_option_string_new(_("Group Chat Proxy\n   company.com  or  user@company.com\n(leave empty to determine from Username)"), "groupchat_user", "");
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+
+#ifdef HAVE_SRTP
+	option = purple_account_option_list_new(_("Media encryption"), "encryption-policy", NULL);
+	purple_account_option_add_list_item(option, _("Obey server policy"), "obey-server");
+	purple_account_option_add_list_item(option, _("Always"), "required");
+	purple_account_option_add_list_item(option, _("Optional"), "optional");
+	purple_account_option_add_list_item(option, _("Disabled"), "disabled");
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+#endif
 }
 
 /* This macro makes the code a purple plugin */

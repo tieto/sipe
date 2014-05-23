@@ -339,6 +339,13 @@ typedef enum {
 	SIPE_NETWORK_PROTOCOL_TCP_SO,
 } SipeNetworkProtocol;
 
+typedef enum {
+	SIPE_ENCRYPTION_POLICY_REJECTED,
+	SIPE_ENCRYPTION_POLICY_OPTIONAL,
+	SIPE_ENCRYPTION_POLICY_REQUIRED,
+	SIPE_ENCRYPTION_POLICY_OBEY_SERVER
+} SipeEncryptionPolicy;
+
 struct sipe_media_call;
 struct sipe_backend_media;
 struct sipe_backend_codec;
@@ -1031,6 +1038,8 @@ struct sipe_backend_buddy_menu *sipe_backend_buddy_sub_menu_add(struct sipe_core
 								struct sipe_backend_buddy_menu *menu,
 								const gchar *label,
 								struct sipe_backend_buddy_menu *sub);
+
+SipeEncryptionPolicy sipe_backend_media_get_encryption_policy(struct sipe_core_public *sipe_public);
 
 #ifdef __cplusplus
 }

@@ -1045,6 +1045,34 @@ purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto)
 	}
 }
 
+#ifdef HAVE_SRTP
+SipeEncryptionPolicy
+sipe_backend_media_get_encryption_policy(struct sipe_core_public *sipe_public)
+{
+	PurpleAccount *account = sipe_public->backend_private->account;
+
+	const char *policy =
+			purple_account_get_string(account, "encryption-policy",
+						  "obey-server");
+
+	if (sipe_strequal(policy, "disabled")) {
+		return SIPE_ENCRYPTION_POLICY_REJECTED;
+	} else if (sipe_strequal(policy, "optional")) {
+		return SIPE_ENCRYPTION_POLICY_OPTIONAL;
+	} else if (sipe_strequal(policy, "required")) {
+		return SIPE_ENCRYPTION_POLICY_REQUIRED;
+	} else {
+		return SIPE_ENCRYPTION_POLICY_OBEY_SERVER;
+	}
+}
+#else
+SipeEncryptionPolicy
+sipe_backend_media_get_encryption_policy(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+	return SIPE_ENCRYPTION_POLICY_REJECTED;
+}
+#endif
+
 /*
   Local Variables:
   mode: c
