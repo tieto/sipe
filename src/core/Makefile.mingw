@@ -43,7 +43,7 @@ DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/p/sipe/bugs/\"
 DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
 DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
-DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\"
+DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.com/projects/p/pidgin-sipe/resource/mob/\"
 #DEFINES += -DENABLE_OCS2005_MESSAGE_HACK=1
 
 ifdef USE_SSPI
