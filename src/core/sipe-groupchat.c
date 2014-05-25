@@ -377,10 +377,12 @@ static gboolean groupchat_expired_session_response(struct sipe_core_private *sip
 		struct sip_dialog *dialog = sipe_dialog_find(session,
 							     session->with);
 
-		/* close dialog from our side */
-		sip_transport_bye(sipe_private, dialog);
-		sipe_dialog_remove(session, session->with);
-		/* dialog is no longer valid */
+		if (dialog) {
+			/* close dialog from our side */
+			sip_transport_bye(sipe_private, dialog);
+			sipe_dialog_remove(session, session->with);
+			/* dialog is no longer valid */
+		}
 
 		/* re-initialize groupchat session */
 		groupchat->session = NULL;
