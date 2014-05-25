@@ -881,7 +881,7 @@
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/resource/mob/\\\"",
 					"LOCALEDIR=\\\"translations\\\"",
 					"PURPLE_STATIC_PRPL=1",
 					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
@@ -944,7 +944,7 @@
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/resource/mob/\\\"",
 					"LOCALEDIR=\\\"translations\\\"",
 					"PURPLE_STATIC_PRPL=1",
 					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
@@ -1007,7 +1007,7 @@
 				);
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/resource/mob/\\\"",
 					"LOCALEDIR=\\\"translations\\\"",
 					"PURPLE_STATIC_PRPL=1",
 					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
@@ -1090,7 +1090,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_MODEL_TUNING = G5;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/resource/mob/\\\"",
 					"LOCALEDIR=\\\"translations\\\"",
 					"PURPLE_STATIC_PRPL=1",
 					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
@@ -1147,7 +1147,7 @@
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/resource/mob/\\\"",
 					"LOCALEDIR=\\\"translations\\\"",
 					"PURPLE_STATIC_PRPL=1",
 					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
@@ -1204,7 +1204,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				GCC_MODEL_TUNING = G5;
 				GCC_PREPROCESSOR_DEFINITIONS = (
-					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/r/mob/\\\"",
+					"SIPE_TRANSLATIONS_URL=\\\"https://www.transifex.com/projects/p/pidgin-sipe/resource/mob/\\\"",
 					"LOCALEDIR=\\\"translations\\\"",
 					"PURPLE_STATIC_PRPL=1",
 					"HAVE_BIND_TEXTDOMAIN_CODESET=1",
