@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -98,6 +98,7 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 					"dlxExternalUrl" : "dlxInternalUrl";
 			const gchar *addressbook_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
 					"absExternalServerUrl" : "absInternalServerUrl";
+			gchar *ucPC2PCAVEncryption = NULL;
 
 			g_free(sipe_private->focus_factory_uri);
 			sipe_private->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
@@ -128,6 +129,17 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 			if (sipe_private->mras_uri)
 					sipe_media_get_av_edge_credentials(sipe_private);
 #endif
+
+			ucPC2PCAVEncryption = g_strstrip(sipe_xml_data(sipe_xml_child(node, "ucPC2PCAVEncryption")));
+			if (sipe_strequal(ucPC2PCAVEncryption, "SupportEncryption")) {
+				sipe_private->server_av_encryption_policy = SIPE_ENCRYPTION_POLICY_OPTIONAL;
+			} else if (sipe_strequal(ucPC2PCAVEncryption, "DoNotSupportEncryption")) {
+				sipe_private->server_av_encryption_policy = SIPE_ENCRYPTION_POLICY_REJECTED;
+			} else {
+				// "RequireEncryption" or any unknown value.
+				sipe_private->server_av_encryption_policy = SIPE_ENCRYPTION_POLICY_REQUIRED;
+			}
+			g_free(ucPC2PCAVEncryption);
 
 		/* persistentChatConfiguration */
 		} else if (sipe_strequal("persistentChatConfiguration", node_name)) {

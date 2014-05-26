@@ -134,6 +134,7 @@ struct sipe_core_private {
 	gchar *media_relay_username;
 	gchar *media_relay_password;
 	GSList *media_relays;
+	SipeEncryptionPolicy server_av_encryption_policy;
 
 	/* Group chat */
 	struct sipe_groupchat *groupchat;
