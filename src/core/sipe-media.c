@@ -613,25 +613,6 @@ send_response_with_session_description(struct sipe_media_call_private *call_priv
 }
 
 static gboolean
-encryption_levels_compatible(struct sdpmsg *msg)
-{
-	GSList *i;
-
-	for (i = msg->media; i; i = i->next) {
-		const gchar *enc_level;
-		struct sdpmedia *m = i->data;
-
-		enc_level = sipe_utils_nameval_find(m->attributes, "encryption");
-
-		// Decline call if peer requires encryption as we don't support it yet.
-		if (sipe_strequal(enc_level, "required"))
-			return FALSE;
-	}
-
-	return TRUE;
-}
-
-static gboolean
 process_invite_call_response(struct sipe_core_private *sipe_private,
 								   struct sipmsg *msg,
 								   struct transaction *trans);
@@ -736,9 +717,17 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 
 	sipe_utils_slist_free_full(call_private->failed_media, (GDestroyNotify)sdpmedia_free);
 	call_private->failed_media = NULL;
+	call_private->encryption_compatible = TRUE;
 
 	for (i = msg->media; i; i = i->next) {
 		struct sdpmedia *media = i->data;
+		const gchar *enc_level =
+				sipe_utils_nameval_find(media->attributes, "encryption");
+		if (sipe_strequal(enc_level, "rejected") &&
+		    get_encryption_policy(call_private->sipe_private) == SIPE_ENCRYPTION_POLICY_REQUIRED) {
+			call_private->encryption_compatible = FALSE;
+		}
+
 		if (!update_call_from_remote_sdp(call_private, media)) {
 			media->port = 0;
 			call_private->failed_media =
@@ -751,8 +740,6 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 	for (i = call_private->failed_media; i; i = i->next) {
 		msg->media = g_slist_remove(msg->media, i->data);
 	}
-
-	call_private->encryption_compatible = encryption_levels_compatible(msg);
 }
 
 static gboolean
