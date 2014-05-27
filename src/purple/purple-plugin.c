@@ -509,7 +509,7 @@ static void sipe_purple_close(PurpleConnection *gc)
 static int sipe_purple_send_im(PurpleConnection *gc, PurpleMessage *msg)
 {
 	sipe_core_im_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
-			purple_message_get_who(msg),
+			purple_message_get_recipient(msg),
 			purple_message_get_contents(msg));
 	return 1;
 }
