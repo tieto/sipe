@@ -90,8 +90,8 @@
             NSString *tmp_key = [account preferenceForKey:key group:GROUP_ACCOUNT_STATUS];
             NSString *tmp = @"auto";
             
-            if (conn_auth_dict[tmp_key])
-                tmp = conn_auth_dict[tmp_key];
+            if ([conn_auth_dict objectForKey:tmp_key])
+                tmp = [conn_auth_dict objectForKey:tmp_key];
             
             [value selectItemWithTitle:tmp];
         } else if ([value isKindOfClass:[NSButton class]]) {
@@ -128,7 +128,7 @@
         } else if ([value isKindOfClass:[NSPopUpButton class]]) {
             // NSPopUpButton *MUST* appear before NSButton in the if/else
             //   because  NSPopUpButton is a NSButton...
-            NSString *tmp = conn_auth_dict[[[value selectedItem] title]];
+            NSString *tmp = [conn_auth_dict objectForKey:[[value selectedItem] title]];
             [account
              setPreference:tmp
              forKey:key
