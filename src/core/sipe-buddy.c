@@ -1742,6 +1742,40 @@ static gchar *create_x_ms_webticket_header(const gchar *wsse_security)
 	return x_ms_webticket_header;
 }
 
+void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
+			     const gchar *uri,
+			     const gchar *photo_hash,
+			     const gchar *photo_url,
+			     const gchar *headers)
+{
+	const gchar *photo_hash_old =
+		sipe_backend_buddy_get_photo_hash(SIPE_CORE_PUBLIC, uri);
+
+	if (!sipe_strequal(photo_hash, photo_hash_old)) {
+		struct photo_response_data *data = g_new(struct photo_response_data, 1);
+
+		SIPE_DEBUG_INFO("sipe_buddy_update_photo: who '%s' url '%s' hash '%s'",
+				uri, photo_url, photo_hash);
+
+		data->who        = g_strdup(uri);
+		data->photo_hash = g_strdup(photo_hash);
+
+		data->request = sipe_http_request_get(sipe_private,
+						      photo_url,
+						      headers,
+						      process_buddy_photo_response,
+						      data);
+
+		if (data->request) {
+			sipe_private->buddies->pending_photo_requests =
+				g_slist_append(sipe_private->buddies->pending_photo_requests, data);
+			sipe_http_request_ready(data->request);
+		} else {
+			photo_response_data_free(data);
+		}
+	}
+}
+
 static void get_photo_ab_entry_response(struct sipe_core_private *sipe_private,
 					const gchar *uri,
 					SIPE_UNUSED_PARAMETER const gchar *raw,
@@ -1751,8 +1785,6 @@ static void get_photo_ab_entry_response(struct sipe_core_private *sipe_private,
 	struct ms_dlx_data *mdd = callback_data;
 	gchar *photo_rel_path = NULL;
 	gchar *photo_hash = NULL;
-	const gchar *photo_hash_old =
-		sipe_backend_buddy_get_photo_hash(SIPE_CORE_PUBLIC, mdd->other);
 
 	if (soap_body) {
 		const sipe_xml *node;
@@ -1783,30 +1815,16 @@ static void get_photo_ab_entry_response(struct sipe_core_private *sipe_private,
 		}
 	}
 
-	if (sipe_private->addressbook_uri && photo_rel_path &&
-	    photo_hash && !sipe_strequal(photo_hash, photo_hash_old)) {
+	if (sipe_private->addressbook_uri && photo_rel_path && photo_hash) {
 		gchar *photo_url = g_strdup_printf("%s/%s",
 				sipe_private->addressbook_uri, photo_rel_path);
 		gchar *x_ms_webticket_header = create_x_ms_webticket_header(mdd->wsse_security);
 
-		struct photo_response_data *data = g_new(struct photo_response_data, 1);
-		data->who = g_strdup(mdd->other);
-		data->photo_hash = photo_hash;
-		photo_hash = NULL;
-
-		data->request = sipe_http_request_get(sipe_private,
-						      photo_url,
-						      x_ms_webticket_header,
-						      process_buddy_photo_response,
-						      data);
-
-		if (data->request) {
-			sipe_private->buddies->pending_photo_requests =
-				g_slist_append(sipe_private->buddies->pending_photo_requests, data);
-			sipe_http_request_ready(data->request);
-		} else {
-			photo_response_data_free(data);
-		}
+		sipe_buddy_update_photo(sipe_private,
+					mdd->other,
+					photo_hash,
+					photo_url,
+					x_ms_webticket_header);
 
 		g_free(x_ms_webticket_header);
 		g_free(photo_url);

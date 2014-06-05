@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -224,6 +224,22 @@ void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
 				const gchar *uri,
 				sipe_buddy_info_fields propkey,
 				gchar *property_value);
+
+/**
+ * Update the buddy photo with given SIP URI. If hash is the same
+ * as the cached one then the fetching of the photo is skipped.
+ *
+ * @param sipe_private SIPE core data
+ * @param uri          a SIP URI
+ * @param photo_hash   hash value for the photo data
+ * @param photo_url    HTTP URL where to get the photo data
+ * @param headers      additional HTTP headers (may be @c NULL)
+ */
+void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
+			     const gchar *uri,
+			     const gchar *photo_hash,
+			     const gchar *photo_url,
+			     const gchar *headers);
 
 /**
  * Triggers a download of all buddy photos that were changed on the server.
