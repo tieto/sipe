@@ -689,8 +689,8 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 					if (!is_empty(uri) && !is_empty(hash)) {
 						sipe_buddy_update_photo(sipe_private,
 									uri,
-									photo_url,
 									hash,
+									photo_url,
 									NULL);
 						found = TRUE;
 					}
