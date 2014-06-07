@@ -1,3 +1,9 @@
+version 1.19.0 "???" (2014-XX-XX)
+	- Feature #73: Support buddy photos from contactCard (Stefan Becker)
+	- Feature #65: Fall back from Kerberos to NTLM (Stefan Becker)
+	- support for libnice TCP mode (Youness Alaoul, Jakub Adam)
+	- refactor CCCP request code (Jakub Adam)
+
 version 1.18.2 "Bug Fixes II" (2014-06-07)
 	- Fixed #255: Crash when PersistentChat sends BYE instead of response (Stefan Becker)
 	- Fixed #248: Remove libpurple SSL configure check (Stefan Becker)
