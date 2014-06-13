@@ -1,4 +1,4 @@
-pidgin-sipe (1.18.2-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.18.2-1) unstable; urgency=medium
 
   * New upstream release.
         - Fixed #255: Crash when PersistentChat sends BYE instead of response
@@ -13,7 +13,7 @@ pidgin-sipe (1.18.2-1) UNRELEASED; urgency=medium
   * Don't build with -Wundef (Closes: #751060)
         - fixes build against MIT Kerberos 1.12.1.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 13 Jun 2014 08:10:41 +0200
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 13 Jun 2014 21:34:04 +0200
 
 pidgin-sipe (1.18.1-1) unstable; urgency=medium
 
