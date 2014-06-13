@@ -1,3 +1,18 @@
+pidgin-sipe (1.18.2-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+        - Fixed #255: Crash when PersistentChat sends BYE instead of response
+        - Fixed #248: Remove libpurple SSL configure check
+        - Fixed #245: "Unable to resolve DNS SRV record" error when joining
+          conference
+        - Fixed #210: Conference call ends with error message
+        - ews: extract settings also from type EXPR
+        - ucs: honor user specified email URL
+        - updated Transifex URLs
+        - updated translations: Hindi (hi), Telugu (te)
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Fri, 13 Jun 2014 08:10:41 +0200
+
 pidgin-sipe (1.18.1-1) unstable; urgency=medium
 
   * New upstream release (Closes: #741014).
