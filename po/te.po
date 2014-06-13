@@ -5,25 +5,23 @@
 # 
 # 
 # Translators:
-# krupa.sagar <gksreddy@eml.cc>, 2014
-# Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2014-04-23 10:23+0000\n"
-"Last-Translator: krupa.sagar <gksreddy@eml.cc>\n"
-"Language-Team: Hindi (http://www.transifex.com/projects/p/pidgin-sipe/language/hi/)\n"
+"PO-Revision-Date: 2014-04-23 11:32+0000\n"
+"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"Language-Team: Telugu (http://www.transifex.com/projects/p/pidgin-sipe/language/te/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Language: hi\n"
+"Language: te\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: ../src/core/sip-transport.c:235 ../src/core/sip-transport.c:297
 msgid "Failed to authenticate to server"
-msgstr "सर्वर से प्रमाणीकरण करने मे विफल "
+msgstr ""
 
 #: ../src/core/sip-transport.c:255
 #, c-format
@@ -36,27 +34,27 @@ msgstr ""
 
 #: ../src/core/sip-transport.c:1211
 msgid "Authentication failed"
-msgstr "प्रमाणीकरण विफल "
+msgstr ""
 
 #: ../src/core/sip-transport.c:1219
 msgid "Incompatible authentication scheme chosen"
-msgstr "असंगत प्रमाणीकरण व्यवस्था चुना गया "
+msgstr ""
 
 #: ../src/core/sip-transport.c:1236 ../src/core/sipe-notify.c:1067
 #, c-format
 msgid "You have been rejected by the server: %s"
-msgstr "%s: आप सर्वर द्वारा अस्वीकार किये गए"
+msgstr ""
 
 #: ../src/core/sip-transport.c:1237 ../src/core/sip-transport.c:1253
 #: ../src/core/sip-transport.c:1277 ../src/core/sip-transport.c:1301
 #: ../src/core/sipe-conf.c:249 ../src/core/sipe-notify.c:1067
 msgid "no reason given"
-msgstr "कोई कारण नहीं दिया गया "
+msgstr ""
 
 #: ../src/core/sip-transport.c:1252
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr "%s मौजूद नहीं। अपने व्यवस्थापक से संपर्क करें "
+msgstr ""
 
 #: ../src/core/sip-transport.c:1254
 msgid "SIP is either not enabled for the destination URI or it does not exist"
@@ -69,15 +67,15 @@ msgstr ""
 
 #: ../src/core/sip-transport.c:1663
 msgid "Invalid message signature received"
-msgstr "अवैध संदेश हस्ताक्षर प्राप्त"
+msgstr ""
 
 #: ../src/core/sipe-buddy.c:819
 msgid "Status"
-msgstr "स्थिति "
+msgstr ""
 
 #: ../src/core/sipe-buddy.c:822
 msgid "Calendar"
-msgstr "कैलेंडर "
+msgstr ""
 
 #: ../src/core/sipe-buddy.c:827
 msgid "Meeting in"
@@ -117,7 +115,7 @@ msgstr ""
 
 #: ../src/core/sipe-buddy.c:1070 ../src/core/sipe-buddy.c:1208
 msgid "Unable to display the search results"
-msgstr "खोज परिणामों को प्रदर्शित करने में तकलीफ़ "
+msgstr ""
 
 #: ../src/core/sipe-buddy.c:1173 ../src/core/sipe-buddy.c:1185
 msgid "Contact search failed"
@@ -125,7 +123,7 @@ msgstr ""
 
 #: ../src/core/sipe-buddy.c:1307
 msgid "Invalid contact search query"
-msgstr "अवैध कांटेक्ट खोज क्वेरी "
+msgstr ""
 
 #: ../src/core/sipe-buddy.c:1987
 #, c-format
@@ -144,7 +142,7 @@ msgstr ""
 
 #: ../src/core/sipe-buddy.c:2030
 msgid "New chat"
-msgstr "नया चैट "
+msgstr ""
 
 #: ../src/core/sipe-buddy.c:2043
 msgid "Work"
@@ -156,11 +154,11 @@ msgstr ""
 
 #: ../src/core/sipe-buddy.c:2058
 msgid "Home"
-msgstr "होम "
+msgstr ""
 
 #: ../src/core/sipe-buddy.c:2066
 msgid "Other"
-msgstr "अन्य "
+msgstr ""
 
 #: ../src/core/sipe-buddy.c:2074
 msgid "Custom1"
@@ -168,7 +166,7 @@ msgstr ""
 
 #: ../src/core/sipe-buddy.c:2084
 msgid "Send email..."
-msgstr "ईमेल भेजिए ...  "
+msgstr ""
 
 #: ../src/core/sipe-cal.c:904
 msgid "Free"
@@ -181,12 +179,12 @@ msgstr ""
 #. SIPE_ACTIVITY_BUSY
 #: ../src/core/sipe-cal.c:906 ../src/core/sipe-status.c:61
 msgid "Busy"
-msgstr "व्यस्त "
+msgstr ""
 
 #. SIPE_ACTIVITY_OOF
 #: ../src/core/sipe-cal.c:907 ../src/core/sipe-status.c:72
 msgid "Out of office"
-msgstr "छुट्टी पे "
+msgstr ""
 
 #: ../src/core/sipe-cal.c:908
 msgid "No data"
@@ -296,55 +294,55 @@ msgstr ""
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:181
 msgid "Home Page"
-msgstr "होम पेज "
+msgstr ""
 
 #. About note, part 3/13: support forum URL (label)
 #: ../src/core/sipe-core.c:183
 msgid "Support"
-msgstr "सपोर्ट "
+msgstr ""
 
 #. About note, part 4/13: support forum name (hyperlink text)
 #: ../src/core/sipe-core.c:185
 msgid "Help Forum"
-msgstr "सहायता फोरम "
+msgstr ""
 
 #. About note, part 5/13: bug tracker URL (label)
 #: ../src/core/sipe-core.c:187
 msgid "Report Problems"
-msgstr "समस्याए बतायें "
+msgstr ""
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
 #: ../src/core/sipe-core.c:189
 msgid "Bug Tracker"
-msgstr "बग ट्रैकर "
+msgstr ""
 
 #. About note, part 7/13: translation service URL (label)
 #: ../src/core/sipe-core.c:191
 msgid "Translations"
-msgstr "अनुवाद "
+msgstr ""
 
 #. About note, part 8/13: license type (label)
 #: ../src/core/sipe-core.c:193
 msgid "License"
-msgstr "लाइसेंस "
+msgstr ""
 
 #. About note, part 9/13: (REMOVED)
 #. About note, part 10/13: translation request, text before Transifex.com URL
 #. append a space if text is not empty
 #: ../src/core/sipe-core.c:197
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr "SIPE को अपनी भाषा में अनुवाद करने में हमारी मदद करें - यहाँ पे "
+msgstr ""
 
 #. About note, part 11/13: translation request, text after Transifex.com URL
 #. start with a space if text is not empty
 #: ../src/core/sipe-core.c:200
 msgid " using convenient web interface"
-msgstr "सुविधाजनक वेब इंटरफ़ेस का उपयोग करके "
+msgstr ""
 
 #. About note, part 12/13: author list (header)
 #: ../src/core/sipe-core.c:202
 msgid "Authors"
-msgstr "ऑथर्स "
+msgstr ""
 
 #. About note, part 13/13: Localization credit
 #. PLEASE NOTE: do *NOT* simply translate the english original
@@ -392,13 +390,13 @@ msgstr ""
 #. extract meeting location
 #: ../src/core/sipe-domino.c:260 ../src/core/sipe-domino.c:261
 msgid "Location:"
-msgstr "स्थान "
+msgstr ""
 
 #: ../src/core/sipe-ft.c:222 ../src/core/sipe-ft-tftp.c:108
 #: ../src/core/sipe-ft-tftp.c:388 ../src/core/sipe-ft-tftp.c:417
 #: ../src/core/sipe-ft-tftp.c:476
 msgid "Socket read failed"
-msgstr "सॉकेट से पढ़ना नाकाम हुआ "
+msgstr ""
 
 #: ../src/core/sipe-ft.c:359
 msgid "Received encryption key has wrong size."
@@ -415,7 +413,7 @@ msgstr ""
 #: ../src/core/sipe-ft-tftp.c:114 ../src/core/sipe-ft-tftp.c:520
 #: ../src/core/sipe-ft-tftp.c:529
 msgid "Socket write failed"
-msgstr "सॉकेट को लिखने में तकलीफ "
+msgstr ""
 
 #: ../src/core/sipe-ft-tftp.c:207
 msgid "File size is different from the advertised value."
@@ -446,7 +444,7 @@ msgstr ""
 #: ../src/core/sipe-notify.c:1108 ../src/core/sipe-notify.c:1212
 #: ../src/purple/purple-search.c:125
 msgid "Other Contacts"
-msgstr "अन्य कांटेक्ट "
+msgstr ""
 
 #: ../src/core/sipe-groupchat.c:329
 #, c-format
@@ -479,7 +477,7 @@ msgstr ""
 #: ../src/core/sipe-im.c:197
 #, c-format
 msgid "Failed to invite %s"
-msgstr "%s को आमंत्रित करने मे विफल "
+msgstr ""
 
 #: ../src/core/sipe-incoming.c:749
 #, c-format
@@ -515,7 +513,7 @@ msgstr ""
 
 #: ../src/core/sipe-media.c:915
 msgid "Audio Test Service is not available."
-msgstr "ऑडियो टेस्ट सेवा उपलब्ध नही है "
+msgstr ""
 
 #: ../src/core/sipe-media.c:1166
 msgid "User unavailable"
@@ -542,7 +540,7 @@ msgstr ""
 
 #: ../src/core/sipe-media.c:1185
 msgid "Unsupported media type"
-msgstr " "
+msgstr ""
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe-notify.c:1059
@@ -551,27 +549,27 @@ msgstr ""
 
 #: ../src/core/sipe-notify.c:1061
 msgid "user disabled"
-msgstr "यूज़र डिसेबल किये गए "
+msgstr ""
 
 #: ../src/core/sipe-notify.c:1063
 msgid "user moved"
-msgstr "यूज़र मूव किये गए "
+msgstr ""
 
 #: ../src/core/sipe-ocs2007.c:458 ../src/purple/purple-buddy.c:622
 #: ../src/purple/purple-buddy.c:629
 msgid "Blocked"
-msgstr "ब्लॉक किये गए "
+msgstr ""
 
 #: ../src/core/sipe-ocs2007.c:459 ../src/purple/purple-buddy.c:618
 #: ../src/purple/purple-buddy.c:625
 msgid "Personal"
-msgstr "व्यक्तिगत "
+msgstr ""
 
 #. index 0
 #: ../src/core/sipe-ocs2007.c:460 ../src/purple/purple-buddy.c:619
 #: ../src/purple/purple-buddy.c:626
 msgid "Team"
-msgstr "टीम "
+msgstr ""
 
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
@@ -579,16 +577,16 @@ msgstr "टीम "
 #: ../src/purple/purple-buddy.c:620 ../src/purple/purple-buddy.c:627
 #: ../src/purple/purple-plugin.c:868 ../src/purple/purple-search.c:63
 msgid "Company"
-msgstr "संस्था"
+msgstr ""
 
 #: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:621
 #: ../src/purple/purple-buddy.c:628
 msgid "Public"
-msgstr "सार्वजानिक "
+msgstr ""
 
 #: ../src/core/sipe-ocs2007.c:464
 msgid "Unknown"
-msgstr "अनजाना "
+msgstr ""
 
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe-ocs2007.c:2539
@@ -597,7 +595,7 @@ msgstr ""
 
 #: ../src/core/sipe-ocs2007.c:2558
 msgid "People in my company"
-msgstr "मेरे संस्था के लोग "
+msgstr ""
 
 #: ../src/core/sipe-ocs2007.c:2568
 msgid "People in domains connected with my company"
@@ -634,46 +632,46 @@ msgstr ""
 #. SIPE_ACTIVITY_INACTIVE
 #: ../src/core/sipe-status.c:60
 msgid "Inactive"
-msgstr "निष्क्रिय"
+msgstr ""
 
 #. SIPE_ACTIVITY_BUSYIDLE
 #: ../src/core/sipe-status.c:62
 msgid "Busy-Idle"
-msgstr "व्यस्त-निष्क्रिय"
+msgstr ""
 
 #. SIPE_ACTIVITY_DND
 #. SIPE_ACTIVITY_BRB
 #: ../src/core/sipe-status.c:64
 msgid "Be right back"
-msgstr "थोड़ी ही देर में वापस "
+msgstr ""
 
 #. SIPE_ACTIVITY_AWAY
 #. SIPE_ACTIVITY_LUNCH
 #: ../src/core/sipe-status.c:66
 msgid "Out to lunch"
-msgstr "भोजन विराम में "
+msgstr ""
 
 #. SIPE_ACTIVITY_INVISIBLE
 #. SIPE_ACTIVITY_OFFLINE
 #. SIPE_ACTIVITY_ON_PHONE
 #: ../src/core/sipe-status.c:69
 msgid "In a call"
-msgstr "कॉल में "
+msgstr ""
 
 #. SIPE_ACTIVITY_IN_CONF
 #: ../src/core/sipe-status.c:70
 msgid "In a conference"
-msgstr "कॉन्फरेंस में "
+msgstr ""
 
 #. SIPE_ACTIVITY_IN_MEETING
 #: ../src/core/sipe-status.c:71
 msgid "In a meeting"
-msgstr "मीटिंग में "
+msgstr ""
 
 #. SIPE_ACTIVITY_URGENT_ONLY
 #: ../src/core/sipe-status.c:73
 msgid "Urgent interruptions only"
-msgstr "सिर्फ़ ज़रूरी रुकावटें ही "
+msgstr ""
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -716,7 +714,7 @@ msgstr ""
 #. SIPE_BUDDY_INFO_DISPLAY_NAME
 #: ../src/purple/purple-buddy.c:66
 msgid "Display name"
-msgstr "दिखने वाला नाम "
+msgstr ""
 
 #. SIPE_BUDDY_INFO_JOB_TITLE
 #: ../src/purple/purple-buddy.c:67
@@ -726,24 +724,24 @@ msgstr ""
 #. SIPE_BUDDY_INFO_CITY
 #: ../src/purple/purple-buddy.c:68
 msgid "City"
-msgstr "शहर "
+msgstr ""
 
 #. SIPE_BUDDY_INFO_STATE
 #: ../src/purple/purple-buddy.c:69
 msgid "State"
-msgstr "राज्य "
+msgstr ""
 
 #. SIPE_BUDDY_INFO_OFFICE
 #: ../src/purple/purple-buddy.c:70
 msgid "Office"
-msgstr "दफ्तर "
+msgstr ""
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
 #: ../src/purple/purple-buddy.c:72 ../src/purple/purple-plugin.c:870
 #: ../src/purple/purple-search.c:66
 msgid "Country"
-msgstr "देश"
+msgstr ""
 
 #. SIPE_BUDDY_INFO_WORK_PHONE
 #: ../src/purple/purple-buddy.c:73
@@ -753,7 +751,7 @@ msgstr ""
 #. SIPE_BUDDY_INFO_EMAIL
 #: ../src/purple/purple-buddy.c:76
 msgid "Email address"
-msgstr "ईमेल एड्रेस "
+msgstr ""
 
 #. SIPE_BUDDY_INFO_SITE
 #: ../src/purple/purple-buddy.c:77
@@ -782,7 +780,7 @@ msgstr ""
 
 #: ../src/purple/purple-buddy.c:259 ../src/purple/purple-buddy.c:277
 msgid "you"
-msgstr "आप "
+msgstr ""
 
 #: ../src/purple/purple-buddy.c:563
 msgid ""
@@ -854,7 +852,7 @@ msgstr ""
 #. Translators: noun
 #: ../src/purple/purple-plugin.c:201
 msgid "Message"
-msgstr "संदेश"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:399
 msgid "Connecting"
@@ -862,7 +860,7 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:426
 msgid "Password required"
-msgstr "पासवर्ड ज़रूरी"
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:589
 msgid "user@company.com"
@@ -878,7 +876,7 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:866 ../src/purple/purple-search.c:69
 msgid "Email"
-msgstr "ईमेल "
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:874
 msgid "Search"
@@ -905,15 +903,15 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:938
 msgid "Phone number"
-msgstr "फ़ोन नंबर "
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:942 ../src/purple/purple-plugin.c:943
 msgid "Call a phone number"
-msgstr "किसी फ़ोन नंबर पर कॉल करें "
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:946
 msgid "_Call"
-msgstr "_कॉल "
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:977
 msgid "Meeting location"
@@ -956,11 +954,11 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:1042
 msgid "Call a phone number..."
-msgstr "किसी फ़ोन नंबर पर कॉल करें ..."
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:1045
 msgid "Test call"
-msgstr "टेस्ट कॉल "
+msgstr ""
 
 #: ../src/purple/purple-plugin.c:1049
 msgid "Join scheduled conference..."
@@ -1092,11 +1090,11 @@ msgstr ""
 
 #: ../src/purple/purple-search.c:57
 msgid "User name"
-msgstr "यूज़र नाम "
+msgstr ""
 
 #: ../src/purple/purple-search.c:60
 msgid "Name"
-msgstr "नाम"
+msgstr ""
 
 #: ../src/purple/purple-transport.c:131
 msgid "Read error"
@@ -1105,11 +1103,11 @@ msgstr ""
 #: ../src/purple/purple-transport.c:135
 #: ../src/telepathy/telepathy-transport.c:96
 msgid "Server has disconnected"
-msgstr "सर्वर ने कनेक्शन तोड़ा"
+msgstr ""
 
 #: ../src/purple/purple-transport.c:197
 msgid "Could not connect"
-msgstr "कनेक्ट नहीं कर पाया"
+msgstr ""
 
 #: ../src/purple/purple-transport.c:267
 msgid "Could not create SSL context"
