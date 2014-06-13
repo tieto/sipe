@@ -1,0 +1,20 @@
+From: Jakub Adam <jakub.adam@ktknet.cz>
+Date: Fri, 13 Jun 2014 08:37:18 +0200
+Subject: cflags-remove-Wundef
+
+---
+ configure.ac | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/configure.ac b/configure.ac
+index c30a185..587ca0d 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -110,7 +110,6 @@ AS_IF([test "x$enable_quality_check" = xyes],
+ 			"-Wmissing-prototypes" \
+ 			"-Wnested-externs" \
+ 			"-Wpointer-arith" \
+-			"-Wundef" \
+ 			"-Wunused-but-set-variable" \
+ 	 ; do
+ 		 ac_save_CFLAGS=$CFLAGS
