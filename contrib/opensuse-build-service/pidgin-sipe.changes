@@ -1,7 +1,25 @@
 -------------------------------------------------------------------
-Sat Apr 12 14:37:00 UTC 2014 - chemobejk@gmail.com
+Sat Jun  7 09:30:00 UTC 2014 - chemobejk@gmail.com
+
+- Update to version 1.18.2:
+
+-------------------------------------------------------------------
+Sun Apr 13 20:58:31 UTC 2014 - zaitor@opensuse.org
 
 - Update to version 1.18.1:
+  + sf#238: Fixed false "not delivered" in conference.
+  + sf#237: HTML escaping not removed from URL.
+  + sf#210: Conference call ends with error message.
+  + Fix endless loop with failed HTTP Basic authentication.
+  + Fix crash when gstreamer nice plugin is missing.
+  + Fix EWS autodiscover for some Office 365 users.
+  + purple: fix missing "Copy to" in buddy menu.
+  + purple/adium: ignore empty search values.
+  + adium:
+    - Fix group chat UI.
+    - Implement BEAST mitigations for 10.8.5.
+  + Add indication when user is connected from a mobile device.
+  + Updated translations.
 
 -------------------------------------------------------------------
 Mon Jan 20 12:49:36 UTC 2014 - zaitor@opensuse.org

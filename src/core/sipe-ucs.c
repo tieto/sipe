@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -664,6 +664,18 @@ static void ucs_get_im_item_list(struct sipe_core_private *sipe_private)
 				      NULL);
 }
 
+static void ucs_set_ews_url(struct sipe_core_private *sipe_private,
+		      const gchar *ews_url)
+{
+	struct sipe_ucs *ucs = sipe_private->ucs;
+
+	SIPE_DEBUG_INFO("ucs_set_ews_url: '%s'", ews_url);
+	ucs->ews_url = g_strdup(ews_url);
+
+	/* this will trigger sending of the first deferred request */
+	ucs_get_im_item_list(sipe_private);
+}
+
 static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 				    const struct sipe_ews_autodiscover_data *ews_data,
 				    SIPE_UNUSED_PARAMETER gpointer callback_data)
@@ -680,11 +692,7 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	SIPE_DEBUG_INFO("ucs_ews_autodiscover_cb: EWS URL '%s'", ews_url);
-	ucs->ews_url = g_strdup(ews_url);
-
-	/* this will trigger sending of the first deferred request */
-	ucs_get_im_item_list(sipe_private);
+	ucs_set_ews_url(sipe_private, ews_url);
 }
 
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private)
@@ -696,6 +704,7 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 		   gboolean migrated)
 {
 	struct sipe_ucs *ucs;
+	const gchar *ews_url;
 
 	if (sipe_private->ucs) {
 		struct sipe_ucs *ucs = sipe_private->ucs;
@@ -719,15 +728,20 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 	}
 
 	sipe_private->ucs = ucs = g_new0(struct sipe_ucs, 1);
-	ucs->migrated            = migrated;
+	ucs->migrated           = migrated;
 
 	/* create default transaction */
 	sipe_ucs_transaction(sipe_private);
 	ucs->default_transaction = ucs->transactions;
 
-	sipe_ews_autodiscover_start(sipe_private,
-				    ucs_ews_autodiscover_cb,
-				    NULL);
+	/* user specified a service URL? */
+	ews_url = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
+	if (is_empty(ews_url))
+		sipe_ews_autodiscover_start(sipe_private,
+					    ucs_ews_autodiscover_cb,
+					    NULL);
+	else
+		ucs_set_ews_url(sipe_private, ews_url);
 }
 
 void sipe_ucs_free(struct sipe_core_private *sipe_private)
