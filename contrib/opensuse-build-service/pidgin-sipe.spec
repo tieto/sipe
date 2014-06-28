@@ -445,6 +445,7 @@ perl contrib/opensuse-build-service/generate_nsi.pl po/LINGUAS \
 	set -e; \
 	cd %{buildroot}; \
 	makensis \
+		-DPIDGIN_VERSION=UNKNOWN \
 		-DVERSION=%{version} \
 		-DMINGW_LIBDIR=%{buildroot}%{mingw_libdir} \
 		-DMINGW_DATADIR=%{buildroot}%{mingw_datadir} \
