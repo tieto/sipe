@@ -111,19 +111,15 @@ static void sipe_http_transport_drop(struct sipe_http *http,
 			conn->host_port,
 			message ? message : "REASON UNKNOWN");
 
-	/*
-	 * It seems that the value destroy function can be called *before* the
-	 * entry is removed from the hash table. As it is possible that the user
-	 * callback, triggered by sipe_http_transport_free(), generates a new
-	 * HTTP request to the same host:port combination immediately, then
-	 * sipe_http_transport_new() will find the *invalid* entry and try
-	 * to re-establish the connection. This will lead to a crash as soon as
-	 * the memory for the invalid entry will be freed.
-	 *
-	 * Therefore we don't use g_hash_table_remove() here.
-	 */
+#if GLIB_CHECK_VERSION(2,30,0)
+	/* this triggers sipe_http_transport_free() */
+	g_hash_table_remove(http->connections, conn->host_port);
+#else
+	/* GLIB < 2.30 calls destroy notifiers *before* removing the entry */
+	/* which can cause a race condition with sipe_http_transport_new() */
 	g_hash_table_steal(http->connections, conn->host_port);
 	sipe_http_transport_free(conn);
+#endif
 	/* conn is no longer valid */
 }
 
