@@ -239,7 +239,7 @@ static gboolean sipe_ews_autodiscover_url(struct sipe_core_private *sipe_private
 
 	sea->request = sipe_http_request_post(sipe_private,
 					      url,
-					      NULL,
+					      "Accept: text/xml\r\n",
 					      body,
 					      "text/xml",
 					      sipe_ews_autodiscover_response,
