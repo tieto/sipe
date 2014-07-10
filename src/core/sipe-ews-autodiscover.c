@@ -185,17 +185,19 @@ static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 
 static void sipe_ews_autodiscover_response(struct sipe_core_private *sipe_private,
 					   guint status,
-					   SIPE_UNUSED_PARAMETER GSList *headers,
+					   GSList *headers,
 					   const gchar *body,
 					   gpointer data)
 {
 	struct sipe_ews_autodiscover *sea = data;
+	const gchar *type = sipe_utils_nameval_find(headers, "Content-Type");
 
 	sea->request = NULL;
 
 	switch (status) {
 	case SIPE_HTTP_STATUS_OK:
-		if (body)
+		/* only accept XML responses */
+		if (body && g_str_has_prefix(type, "text/xml"))
 			sipe_ews_autodiscover_parse(sipe_private, body);
 		else
 			sipe_ews_autodiscover_request(sipe_private, TRUE);
