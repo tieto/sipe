@@ -457,6 +457,8 @@ sdpmsg_parse_msg(gchar *msg)
 			type = SIPE_MEDIA_VIDEO;
 		else if (sipe_strequal(media->name, "data"))
 			type = SIPE_MEDIA_APPLICATION;
+		else if (sipe_strequal(media->name, "applicationsharing"))
+			type = SIPE_MEDIA_APPLICATION;
 		else {
 			// Unknown media type
 			sdpmsg_free(smsg);
