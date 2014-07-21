@@ -431,6 +431,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		type = SIPE_MEDIA_VIDEO;
 	else if (sipe_strequal(sdpmedia->name, "data"))
 		type = SIPE_MEDIA_APPLICATION;
+	else if (sipe_strequal(sdpmedia->name, "applicationsharing"))
+		type = SIPE_MEDIA_APPLICATION;
 	else {
 		// TODO: incompatible media, should not happen here
 		g_free(sdpmedia->name);
@@ -1578,7 +1580,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 		SipeMediaCallFlags flags = 0;
 
-		if (strstr(msg->body, "m=data")) {
+		if (strstr(msg->body, "m=data") ||
+		    strstr(msg->body, "m=applicationsharing")) {
 			flags |= SIPE_MEDIA_CALL_NO_UI;
 		}
 
@@ -1615,6 +1618,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 				type = SIPE_MEDIA_VIDEO;
 				ssrc_count = VIDEO_SSRC_COUNT;
 			} else if (sipe_strequal(id, "data"))
+				type = SIPE_MEDIA_APPLICATION;
+			else if (sipe_strequal(id, "applicationsharing"))
 				type = SIPE_MEDIA_APPLICATION;
 			else
 				continue;
