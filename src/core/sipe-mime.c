@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -76,12 +76,25 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 		GMimeStream *stream = g_mime_data_wrapper_get_stream(data);
 
 		if (stream) {
-			ssize_t length = g_mime_stream_length(stream);
+			ssize_t length = 0;
+			const char *encoding = g_mime_object_get_header(part, "Content-Transfer-Encoding");
+			if (encoding) {
+				GMimeFilter *filter = g_mime_filter_basic_new(
+						g_mime_content_encoding_from_string(encoding), FALSE);
+				stream = g_mime_stream_filter_new (stream);
+				g_mime_stream_filter_add(GMIME_STREAM_FILTER(stream), filter);
+				g_object_unref (filter);
+			}
+
+			length = g_mime_stream_length(stream);
 
 			if (length != -1) {
 				gchar *content = g_malloc(length + 1);
 
-				if (g_mime_stream_read(stream, content, length) == length) {
+				length = g_mime_stream_read(stream, content, length);
+				/* Read length can be smaller than stream length because of
+				 * the conversion from transfer encoding. */
+				if (length > 0) {
 					struct gmime_callback_data *cd = user_data;
 					GSList *fields = gmime_fields_to_nameval(part);
 
@@ -90,6 +103,11 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 					sipe_utils_nameval_free(fields);
 				}
 				g_free(content);
+			}
+
+			if (encoding) {
+				// Unref GMimeStreamFilter wrapping GMimeStream.
+				g_object_unref(stream);
 			}
 		}
 	}
