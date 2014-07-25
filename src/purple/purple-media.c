@@ -412,19 +412,6 @@ sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
 #endif
 }
 
-static guint
-stream_demultiplex_cb(const gchar *buf, SIPE_UNUSED_PARAMETER gpointer *user_data)
-{
-	guint8 payload_type = buf[1] & 0x7F;
-	if (payload_type >= 200 && payload_type <=204) {
-		// Looks like RTCP
-		return PURPLE_MEDIA_COMPONENT_RTCP;
-	} else {
-		// Looks like RTP
-		return PURPLE_MEDIA_COMPONENT_RTP;
-	}
-}
-
 struct sipe_backend_stream *
 sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			      const gchar *id,
@@ -436,54 +423,34 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 {
 	struct sipe_backend_stream *stream = NULL;
 	PurpleMediaSessionType prpl_type = sipe_media_to_purple(type);
-	GParameter *params = NULL;
+	// Preallocate enough space for all potential parameters to fit.
+	GParameter *params = g_new0(GParameter, 5);
 	guint params_cnt = 0;
 	gchar *transmitter;
+	GValue *relay_info = NULL;
 
 	if (ice_version != SIPE_ICE_NO_ICE) {
 		transmitter = "nice";
-		params_cnt = 4;
 
-		params = g_new0(GParameter, params_cnt);
-
-		params[0].name = "compatibility-mode";
-		g_value_init(&params[0].value, G_TYPE_UINT);
-		g_value_set_uint(&params[0].value,
+		params[params_cnt].name = "compatibility-mode";
+		g_value_init(&params[params_cnt].value, G_TYPE_UINT);
+		g_value_set_uint(&params[params_cnt].value,
 				 ice_version == SIPE_ICE_DRAFT_6 ?
 				 NICE_COMPATIBILITY_OC2007 :
 				 NICE_COMPATIBILITY_OC2007R2);
-
-		params[1].name = "transport-protocols";
-		g_value_init(&params[1].value, G_TYPE_UINT);
-#ifdef HAVE_ICE_TCP
-		g_value_set_uint(&params[1].value,
-				 PURPLE_MEDIA_NETWORK_PROTOCOL_UDP |
-				 PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE |
-				 PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE);
-#else
-		g_value_set_uint(&params[1].value,
-				 PURPLE_MEDIA_NETWORK_PROTOCOL_UDP);
-#endif
-
-		params[2].name = "demultiplex-func";
-		g_value_init(&params[2].value, G_TYPE_POINTER);
-		g_value_set_pointer(&params[2].value, stream_demultiplex_cb);
+		++params_cnt;
 
 		if (media_relays) {
-			params[3].name = "relay-info";
-			g_value_init(&params[3].value, SIPE_RELAYS_G_TYPE);
-			g_value_set_boxed(&params[3].value, media_relays);
-		} else
-			--params_cnt;
+			params[params_cnt].name = "relay-info";
+			g_value_init(&params[params_cnt].value, SIPE_RELAYS_G_TYPE);
+			g_value_set_boxed(&params[params_cnt].value, media_relays);
+			relay_info = &params[params_cnt].value;
+			++params_cnt;
+		}
 	} else {
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
 		//sessionid = "sipe-voice-rawudp";
-
-		/* To avoid Coverity FORWARD_NULL warning. params_cnt is
-		 * still 0 so this is a no-op. libpurple API documentation
-		 * doesn't specify if params can be NULL or not. */
-		params = g_new0(GParameter, 1);
 	}
 
 	ensure_codecs_conf();
@@ -501,8 +468,9 @@ sipe_backend_media_add_stream(struct sipe_backend_media *media,
 			++media->unconfirmed_streams;
 	}
 
-	if ((params_cnt > 2) && media_relays)
-		g_value_unset(&params[3].value);
+	if (relay_info) {
+		g_value_unset(relay_info);
+	}
 
 	g_free(params);
 
