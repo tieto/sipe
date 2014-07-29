@@ -85,15 +85,22 @@ struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_p
 	ft_private->sipe_private      = sipe_private;
 
 	ft_private->public.init = ft_outgoing_init;
+	ft_private->public.deallocate = sipe_ft_free;
 
 	ft_private->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
 
 	return(SIPE_FILE_TRANSFER_PUBLIC);
 }
 
-static void sipe_ft_deallocate(struct sipe_file_transfer *ft)
+void
+sipe_ft_free(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
+	struct sip_dialog *dialog = ft_private->dialog;
+
+	if (dialog)
+		dialog->filetransfers =
+				g_slist_remove(dialog->filetransfers, ft_private);
 
 	if (ft->backend_private)
 		sipe_backend_ft_deallocate(ft);
@@ -110,17 +117,6 @@ static void sipe_ft_deallocate(struct sipe_file_transfer *ft)
 	g_free(ft_private->invitation_cookie);
 	g_free(ft_private->encrypted_outbuf);
 	g_free(ft_private);
-}
-
-void sipe_core_ft_deallocate(struct sipe_file_transfer *ft)
-{
-	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
-	struct sip_dialog *dialog = ft_private->dialog;
-
-	if (dialog)
-		dialog->filetransfers = g_slist_remove(dialog->filetransfers, ft_private);
-
-	sipe_ft_deallocate(ft);
 }
 
 static void sipe_ft_request(struct sipe_file_transfer_private *ft_private,
@@ -311,6 +307,7 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
 
 	ft_private->public.init = ft_incoming_init;
 	ft_private->public.request_denied = ft_request_denied;
+	ft_private->public.deallocate = sipe_ft_free;
 
 	generate_key(ft_private->encryption_key, SIPE_FT_KEY_LENGTH);
 	generate_key(ft_private->hash_key, SIPE_FT_KEY_LENGTH);
@@ -332,7 +329,7 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
 	if (ft_private->public.backend_private != NULL) {
 		ft_private->dialog->filetransfers = g_slist_append(ft_private->dialog->filetransfers, ft_private);
 	} else {
-		sipe_ft_deallocate(SIPE_FILE_TRANSFER_PUBLIC);
+		sipe_ft_free(SIPE_FILE_TRANSFER_PUBLIC);
 	}
 }
 

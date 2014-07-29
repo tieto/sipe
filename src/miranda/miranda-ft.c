@@ -156,7 +156,9 @@ free_xfer_struct(struct sipe_backend_file_transfer *xfer)
 			sipe_miranda_input_remove(xfer->watcher);
 			xfer->watcher = 0;
 		}
-		sipe_core_ft_deallocate(ft);
+		if (ft->deallocate) {
+			ft->deallocate(ft);
+		}
 		xfer->ft = NULL;
 	}
 }

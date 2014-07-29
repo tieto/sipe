@@ -154,7 +154,9 @@ ft_free_xfer_struct(PurpleXfer *xfer)
 			purple_input_remove(purple_xfer_get_watcher(xfer));
 			purple_xfer_set_watcher(xfer, 0);
 		}
-		sipe_core_ft_deallocate(ft);
+		if (ft->deallocate) {
+			ft->deallocate(ft);
+		}
 		purple_xfer_set_protocol_data(xfer, NULL);
 	}
 }
