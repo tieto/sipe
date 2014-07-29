@@ -23,5 +23,11 @@
 void
 sipe_ft_tftp_start_receiving(struct sipe_file_transfer *ft, gsize total_size);
 
+gboolean
+sipe_ft_tftp_stop_receiving(struct sipe_file_transfer *ft);
+
 void
 sipe_ft_tftp_start_sending(struct sipe_file_transfer *ft, gsize total_size);
+
+gboolean
+sipe_ft_tftp_stop_sending(struct sipe_file_transfer *ft);

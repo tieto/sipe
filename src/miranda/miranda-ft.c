@@ -538,19 +538,11 @@ do_transfer(struct sipe_backend_file_transfer *xfer)
 	if (xfer->status == SIPE_MIRANDA_XFER_STATUS_DONE)
 	{
 		xfer->end_time = time(NULL);
-		if (xfer->incoming)
-		{
-			if (sipe_core_tftp_incoming_stop(xfer->ft)) {
-		                /* We're done with this transfer */
-				free_xfer_struct(xfer);
-		        } else {
-				_unlink(xfer->local_filename);
-			}
-		} else {
-			if (sipe_core_tftp_outgoing_stop(xfer->ft)) {
-				/* We're done with this transfer */
-				free_xfer_struct(xfer);
-			}
+		if (xfer->ft->end && xfer->ft->end(xfer->ft)) {
+			/* We're done with this transfer */
+			free_xfer_struct(xfer);
+		} else if (xfer->incoming) {
+			_unlink(xfer->local_filename);
 		}
 
 		if (xfer->watcher != 0) {

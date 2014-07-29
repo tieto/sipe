@@ -87,6 +87,7 @@ struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_p
 
 	ft_private->public.init = ft_outgoing_init;
 	ft_private->public.start = sipe_ft_tftp_start_sending;
+	ft_private->public.end = sipe_ft_tftp_stop_sending;
 	ft_private->public.deallocate = sipe_ft_free;
 
 	ft_private->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
@@ -309,6 +310,7 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
 
 	ft_private->public.init = ft_incoming_init;
 	ft_private->public.start = sipe_ft_tftp_start_receiving;
+	ft_private->public.end = sipe_ft_tftp_stop_receiving;
 	ft_private->public.request_denied = ft_request_denied;
 	ft_private->public.deallocate = sipe_ft_free;
 

@@ -205,12 +205,15 @@ ft_start(PurpleXfer *xfer)
 }
 
 static void
-tftp_incoming_stop(PurpleXfer *xfer)
+ft_end(PurpleXfer *xfer)
 {
-	if (sipe_core_tftp_incoming_stop(PURPLE_XFER_TO_SIPE_FILE_TRANSFER)) {
+	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
+
+	if (ft->end && ft->end(ft)) {
 		/* We're done with this transfer */
 		ft_free_xfer_struct(xfer);
-	} else {
+	} else if (purple_xfer_get_xfer_type(xfer) == PURPLE_XFER_TYPE_RECEIVE) {
+		/* Remove incomplete file from failed transfer. */
 		unlink(purple_xfer_get_local_filename(xfer));
 	}
 }
@@ -230,15 +233,6 @@ static gssize tftp_read(guchar **buffer,
 				   xfer->current_buffer_size
 #endif
 		);
-}
-
-static void
-tftp_outgoing_stop(PurpleXfer *xfer)
-{
-	if (sipe_core_tftp_outgoing_stop(PURPLE_XFER_TO_SIPE_FILE_TRANSFER)) {
-		/* We're done with this transfer */
-		ft_free_xfer_struct(xfer);
-	}
 }
 
 static gssize
@@ -280,7 +274,7 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_start_fnc(xfer, ft_start);
-		purple_xfer_set_end_fnc(xfer, tftp_incoming_stop);
+		purple_xfer_set_end_fnc(xfer, ft_end);
 		purple_xfer_set_read_fnc(xfer, tftp_read);
 
 		purple_xfer_request(xfer);
@@ -360,7 +354,7 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_start_fnc(xfer, ft_start);
-		purple_xfer_set_end_fnc(xfer, tftp_outgoing_stop);
+		purple_xfer_set_end_fnc(xfer, ft_end);
 		purple_xfer_set_write_fnc(xfer, tftp_write);
 	}
 

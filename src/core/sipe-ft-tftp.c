@@ -220,7 +220,7 @@ sipe_ft_tftp_start_receiving(struct sipe_file_transfer *ft, gsize total_size)
 }
 
 gboolean
-sipe_core_tftp_incoming_stop(struct sipe_file_transfer *ft)
+sipe_ft_tftp_stop_receiving(struct sipe_file_transfer *ft)
 {
 	static const guchar BYE[] = "BYE 16777989\r\n";
 	const gsize MAC_OFFSET    = 4;
@@ -335,7 +335,7 @@ sipe_ft_tftp_start_sending(struct sipe_file_transfer *ft, gsize total_size)
 }
 
 gboolean
-sipe_core_tftp_outgoing_stop(struct sipe_file_transfer *ft)
+sipe_ft_tftp_stop_sending(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	guchar buffer[BUFFER_SIZE];
