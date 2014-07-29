@@ -168,9 +168,15 @@ ft_request_denied(PurpleXfer *xfer)
 }
 
 static void
-ft_incoming_init(PurpleXfer *xfer)
+ft_init(PurpleXfer *xfer)
 {
-	sipe_core_ft_incoming_init(PURPLE_XFER_TO_SIPE_FILE_TRANSFER);
+	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
+	g_return_if_fail(ft->init);
+
+	ft->init(ft,
+		 purple_xfer_get_filename(xfer),
+		 purple_xfer_get_size(xfer),
+		 purple_xfer_get_remote_user(xfer));
 }
 
 static void
@@ -206,15 +212,6 @@ static gssize tftp_read(guchar **buffer,
 				   xfer->current_buffer_size
 #endif
 		);
-}
-
-static void
-ft_outgoing_init(PurpleXfer *xfer)
-{
-	sipe_core_ft_outgoing_init(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
-				   purple_xfer_get_filename(xfer),
-				   purple_xfer_get_size(xfer),
-				   purple_xfer_get_remote_user(xfer));
 }
 
 static void
@@ -274,7 +271,7 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 		purple_xfer_set_filename(xfer, file_name);
 		purple_xfer_set_size(xfer, file_size);
 
-		purple_xfer_set_init_fnc(xfer, ft_incoming_init);
+		purple_xfer_set_init_fnc(xfer, ft_init);
 		purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
 		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
@@ -354,7 +351,7 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 		ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
 		purple_xfer_set_protocol_data(xfer, ft);
 
-		purple_xfer_set_init_fnc(xfer, ft_outgoing_init);
+		purple_xfer_set_init_fnc(xfer, ft_init);
 		purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
 		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -34,6 +34,7 @@
 #include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-crypt.h"
@@ -58,6 +59,10 @@
 #define SIPE_FT_TCP_PORT_MIN 6891
 #define SIPE_FT_TCP_PORT_MAX 6901
 
+static void
+ft_outgoing_init(struct sipe_file_transfer *ft, const gchar *filename,
+		 gsize size, const gchar *who);
+
 void sipe_ft_raise_error_and_cancel(struct sipe_file_transfer_private *ft_private,
 				    const gchar *errmsg)
 {
@@ -78,6 +83,9 @@ struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_p
 		g_new0(struct sipe_file_transfer_private, 1);
 
 	ft_private->sipe_private      = sipe_private;
+
+	ft_private->public.init = ft_outgoing_init;
+
 	ft_private->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
 
 	return(SIPE_FILE_TRANSFER_PUBLIC);
@@ -228,7 +236,11 @@ client_connected_cb(struct sipe_backend_fd *fd, gpointer data)
 	sipe_backend_fd_free(fd);
 }
 
-void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft)
+static void
+ft_incoming_init(struct sipe_file_transfer *ft,
+		 SIPE_UNUSED_PARAMETER const gchar *filename,
+		 SIPE_UNUSED_PARAMETER gsize size,
+		 SIPE_UNUSED_PARAMETER const gchar *who)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 
@@ -244,9 +256,9 @@ void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft)
 	}
 }
 
-void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
-				const gchar *filename, gsize size,
-				const gchar *who)
+static void
+ft_outgoing_init(struct sipe_file_transfer *ft, const gchar *filename,
+		 gsize size, const gchar *who)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	struct sipe_core_private *sipe_private = ft_private->sipe_private;
@@ -295,6 +307,8 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
 
 	ft_private = g_new0(struct sipe_file_transfer_private, 1);
 	ft_private->sipe_private = sipe_private;
+
+	ft_private->public.init = ft_incoming_init;
 
 	generate_key(ft_private->encryption_key, SIPE_FT_KEY_LENGTH);
 	generate_key(ft_private->hash_key, SIPE_FT_KEY_LENGTH);

@@ -77,6 +77,9 @@ struct sipe_chat_session;
  */
 struct sipe_file_transfer {
 	struct sipe_backend_file_transfer *backend_private;
+
+	void (* init)(struct sipe_file_transfer *ft, const gchar *filename,
+		      gsize size, const gchar *who);
 };
 
 /**
@@ -446,10 +449,6 @@ void sipe_core_media_test_call(struct sipe_core_public *sipe_public);
 struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);
 void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
 void sipe_core_ft_cancel(struct sipe_file_transfer *ft);
-void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft);
-void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
-				const gchar *filename, gsize size,
-				const gchar *who);
 
 void sipe_core_tftp_incoming_start(struct sipe_file_transfer *ft,
 				   gsize total_size);

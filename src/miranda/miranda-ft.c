@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -700,7 +700,7 @@ sipe_miranda_SendFile( SIPPROTO *pr, HANDLE hContact, const PROTOCHAR* szDescrip
 		ft->backend_private->local_filename = g_strdup(TCHAR2CHAR(ppszFiles[0]));
 		ft->backend_private->filename = g_path_get_basename(ft->backend_private->local_filename);
 		FT_SIPE_DEBUG_INFO("set filename to <%s>", ft->backend_private->filename);
-		sipe_core_ft_outgoing_init(ft, ft->backend_private->filename, ft->backend_private->file_size, dbv.pszVal);
+		ft->init(ft, ft->backend_private->filename, ft->backend_private->file_size, dbv.pszVal);
 		sipe_miranda_SendBroadcast(pr, hContact, ACKTYPE_FILE, ACKRESULT_CONNECTING, (HANDLE)ft->backend_private, 0);
 		UNLOCK;
 
@@ -724,7 +724,7 @@ sipe_miranda_FileAllow( SIPPROTO *pr, HANDLE hContact, HANDLE hTransfer, const P
 	FT_SIPE_DEBUG_INFO("Incoming ft <%08x> allowed", ft);
 	ft->backend_private->local_filename = g_strdup_printf("%s%s", TCHAR2CHAR(szPath), ft->backend_private->filename);
 	sipe_miranda_SendBroadcast(pr, hContact, ACKTYPE_FILE, ACKRESULT_CONNECTING, (HANDLE)ft->backend_private, 0);
-	sipe_core_ft_incoming_init(ft);
+	ft->init(ft, ft->backend_private->filename, ft->backend_private->file_size, NULL);
 	return ft->backend_private;
 }
 
