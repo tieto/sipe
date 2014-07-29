@@ -608,9 +608,7 @@ begin_transfer(struct sipe_file_transfer *ft)
 
 	LOCK;
 	FT_SIPE_DEBUG_INFO("incoming <%d> size <%d>", ft->backend_private->incoming, ft->backend_private->file_size);
-	if (ft->backend_private->incoming)
-		sipe_core_tftp_incoming_start(ft, ft->backend_private->file_size);
-	else {
+	if (!ft->backend_private->incoming) {
 		/* Set socket to nonblocking */
 		SOCKET sock = CallService(MS_NETLIB_GETSOCKET, (WPARAM)xfer->fd, (LPARAM)0);
 		unsigned long parm = 1;
@@ -621,7 +619,9 @@ begin_transfer(struct sipe_file_transfer *ft)
 		}
 		
 		FT_SIPE_DEBUG_INFO("outgoing ft <%08x> size <%d>", ft, ft->backend_private->file_size);
-		sipe_core_tftp_outgoing_start(ft, ft->backend_private->file_size);
+	}
+	if (ft->start) {
+		ft->start(ft, ft->backend_private->file_size);
 	}
 	UNLOCK;
 

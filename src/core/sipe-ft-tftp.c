@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -38,6 +38,7 @@
 #include "sipe-dialog.h"
 #include "sipe-digest.h"
 #include "sipe-ft.h"
+#include "sipe-ft-tftp.h"
 #include "sipe-nls.h"
 #include "sipe-utils.h"
 
@@ -166,7 +167,7 @@ sipe_hmac_finalize(gpointer hmac_context)
 }
 
 void
-sipe_core_tftp_incoming_start(struct sipe_file_transfer *ft, gsize total_size)
+sipe_ft_tftp_start_receiving(struct sipe_file_transfer *ft, gsize total_size)
 {
 	static const guchar VER[]    = "VER MSN_SECURE_FTP\r\n";
 	static const guchar TFR[]    = "TFR\r\n";
@@ -264,7 +265,7 @@ sipe_core_tftp_incoming_stop(struct sipe_file_transfer *ft)
 }
 
 void
-sipe_core_tftp_outgoing_start(struct sipe_file_transfer *ft, gsize total_size)
+sipe_ft_tftp_start_sending(struct sipe_file_transfer *ft, gsize total_size)
 {
 	static const guchar VER[] = "VER MSN_SECURE_FTP\r\n";
 

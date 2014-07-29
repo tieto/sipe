@@ -185,10 +185,23 @@ ft_init(PurpleXfer *xfer)
 }
 
 static void
-tftp_incoming_start(PurpleXfer *xfer)
+ft_start(PurpleXfer *xfer)
 {
-	sipe_core_tftp_incoming_start(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
-				      purple_xfer_get_size(xfer));
+	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
+
+	if (purple_xfer_get_xfer_type(xfer) == PURPLE_XFER_TYPE_RECEIVE) {
+		/* Set socket to non-blocking mode */
+		int flags = fcntl(purple_xfer_get_fd(xfer), F_GETFL, 0);
+		if (flags == -1) {
+			flags = 0;
+		}
+		/* @TODO: ignoring potential error return - how to handle? */
+		fcntl(purple_xfer_get_fd(xfer), F_SETFL, flags | O_NONBLOCK);
+	}
+
+	if (ft->start) {
+		ft->start(ft, purple_xfer_get_size(xfer));
+	}
 }
 
 static void
@@ -217,20 +230,6 @@ static gssize tftp_read(guchar **buffer,
 				   xfer->current_buffer_size
 #endif
 		);
-}
-
-static void
-tftp_outgoing_start(PurpleXfer *xfer)
-{
-	/* Set socket to non-blocking mode */
-	int flags = fcntl(purple_xfer_get_fd(xfer), F_GETFL, 0);
-	if (flags == -1)
-		flags = 0;
-	/* @TODO: ignoring potential error return - how to handle? */
-	(void) fcntl(purple_xfer_get_fd(xfer), F_SETFL, flags | O_NONBLOCK);
-
-	sipe_core_tftp_outgoing_start(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
-				      purple_xfer_get_size(xfer));
 }
 
 static void
@@ -280,7 +279,7 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 		purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
 		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
-		purple_xfer_set_start_fnc(xfer, tftp_incoming_start);
+		purple_xfer_set_start_fnc(xfer, ft_start);
 		purple_xfer_set_end_fnc(xfer, tftp_incoming_stop);
 		purple_xfer_set_read_fnc(xfer, tftp_read);
 
@@ -360,7 +359,7 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 		purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
 		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
-		purple_xfer_set_start_fnc(xfer, tftp_outgoing_start);
+		purple_xfer_set_start_fnc(xfer, ft_start);
 		purple_xfer_set_end_fnc(xfer, tftp_outgoing_stop);
 		purple_xfer_set_write_fnc(xfer, tftp_write);
 	}
