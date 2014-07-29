@@ -137,7 +137,8 @@ static void sipe_ft_request(struct sipe_file_transfer_private *ft_private,
 			      NULL);
 }
 
-void sipe_core_ft_cancel(struct sipe_file_transfer *ft)
+static void
+ft_request_denied(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 
@@ -309,6 +310,7 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
 	ft_private->sipe_private = sipe_private;
 
 	ft_private->public.init = ft_incoming_init;
+	ft_private->public.request_denied = ft_request_denied;
 
 	generate_key(ft_private->encryption_key, SIPE_FT_KEY_LENGTH);
 	generate_key(ft_private->hash_key, SIPE_FT_KEY_LENGTH);

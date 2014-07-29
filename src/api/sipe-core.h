@@ -80,6 +80,7 @@ struct sipe_file_transfer {
 
 	void (* init)(struct sipe_file_transfer *ft, const gchar *filename,
 		      gsize size, const gchar *who);
+	void (* request_denied)(struct sipe_file_transfer *ft);
 };
 
 /**
@@ -448,7 +449,6 @@ void sipe_core_media_test_call(struct sipe_core_public *sipe_public);
 /* file transfer */
 struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);
 void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
-void sipe_core_ft_cancel(struct sipe_file_transfer *ft);
 
 void sipe_core_tftp_incoming_start(struct sipe_file_transfer *ft,
 				   gsize total_size);
