@@ -87,6 +87,7 @@ struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_p
 
 	ft_private->public.init = ft_outgoing_init;
 	ft_private->public.start = sipe_ft_tftp_start_sending;
+	ft_private->public.write = sipe_ft_tftp_write;
 	ft_private->public.end = sipe_ft_tftp_stop_sending;
 	ft_private->public.deallocate = sipe_ft_free;
 

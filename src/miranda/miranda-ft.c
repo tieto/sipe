@@ -488,7 +488,7 @@ do_transfer(struct sipe_backend_file_transfer *xfer)
 		}
 
 		s = MIN(xfer->bytes_remaining, result);
-		r = sipe_core_tftp_write(xfer->ft, buffer, s);
+		r = ft->write(ft, buffer, s);
 
 		if ((xfer->bytes_remaining - r) == 0)
 			set_completed(xfer, TRUE);

@@ -447,8 +447,8 @@ sipe_ft_tftp_read(struct sipe_file_transfer *ft, guchar **buffer,
 }
 
 gssize
-sipe_core_tftp_write(struct sipe_file_transfer *ft, const guchar *buffer,
-		     gsize size)
+sipe_ft_tftp_write(struct sipe_file_transfer *ft, const guchar *buffer,
+		   gsize size)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	gssize bytes_written;
