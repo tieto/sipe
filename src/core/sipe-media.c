@@ -156,9 +156,12 @@ get_stream_ip_and_ports(GSList *candidates,
 		struct sdpcandidate *candidate = candidates->data;
 
 		if (type == SIPE_CANDIDATE_TYPE_ANY || candidate->type == type) {
-			if (!*ip) {
+			if (!(*ip ||
+			      is_empty(candidate->ip) ||
+			      /* reject IPv6 addresses */
+			      strchr(candidate->ip, ':'))) {
 				*ip = g_strdup(candidate->ip);
-			} else if (!sipe_strequal(*ip, candidate->ip)) {
+			} else if (!(*ip && sipe_strequal(*ip, candidate->ip))) {
 				continue;
 			}
 
