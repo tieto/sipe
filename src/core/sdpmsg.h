@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2014 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,14 +22,14 @@
  */
 
 struct sdpmsg {
-	gchar		*ip;
+	gchar		*ip;    /* currently this has to be an IPv4 address */
 	GSList		*media;
 	SipeIceVersion	 ice_version;
 };
 
 struct sdpmedia {
 	gchar		*name;
-	gchar		*ip;
+	gchar		*ip;    /* currently this has to be an IPv4 address */
 	guint		 port;
 
 	GSList		*attributes;
@@ -43,7 +44,7 @@ struct sdpcandidate {
 	SipeCandidateType	 type;
 	SipeNetworkProtocol	 protocol;
 	guint32			 priority;
-	gchar			*ip;
+	gchar			*ip; /* this can be an IPv4 or IPv6 address */
 	guint			 port;
 	gchar			*base_ip;
 	guint			 base_port;
