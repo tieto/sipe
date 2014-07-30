@@ -374,8 +374,8 @@ static void raise_ft_error(struct sipe_file_transfer_private *ft_private,
 }
 
 gssize
-sipe_core_tftp_read(struct sipe_file_transfer *ft, guchar **buffer,
-		    gsize bytes_remaining, gsize bytes_available)
+sipe_ft_tftp_read(struct sipe_file_transfer *ft, guchar **buffer,
+		  gsize bytes_remaining, gsize bytes_available)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	gsize  bytes_to_read;

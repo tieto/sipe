@@ -423,8 +423,8 @@ do_transfer(struct sipe_backend_file_transfer *xfer)
 	FT_SIPE_DEBUG_INFO("incoming <%d>", xfer->incoming);
 	if (xfer->incoming) {
 		FT_SIPE_DEBUG_INFO_NOFORMAT("incoming branch");
-		r = sipe_core_tftp_read(xfer->ft, &buffer, xfer->bytes_remaining,
-					xfer->current_buffer_size);
+		r = ft->read(xfer->ft, &buffer, xfer->bytes_remaining,
+			     xfer->current_buffer_size);
 		if (r > 0) {
 			size_t wc;
 			wc = fwrite(buffer, 1, r, xfer->dest_fp);

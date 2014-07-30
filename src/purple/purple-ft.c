@@ -218,21 +218,22 @@ ft_end(PurpleXfer *xfer)
 	}
 }
 
-static gssize tftp_read(guchar **buffer,
+static gssize
+ft_read(guchar **buffer,
 #if PURPLE_VERSION_CHECK(3,0,0)
 			size_t buffer_size,
 #endif
 			PurpleXfer *xfer)
 {
-	return sipe_core_tftp_read(PURPLE_XFER_TO_SIPE_FILE_TRANSFER,
-				   buffer,
-				   purple_xfer_get_bytes_remaining(xfer),
+	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
+	g_return_val_if_fail(ft->read, 0);
+	return ft->read(ft, buffer, purple_xfer_get_bytes_remaining(xfer),
 #if PURPLE_VERSION_CHECK(3,0,0)
-				   buffer_size
+			buffer_size
 #else
-				   xfer->current_buffer_size
+			xfer->current_buffer_size
 #endif
-		);
+	);
 }
 
 static gssize
@@ -275,7 +276,7 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_start_fnc(xfer, ft_start);
 		purple_xfer_set_end_fnc(xfer, ft_end);
-		purple_xfer_set_read_fnc(xfer, tftp_read);
+		purple_xfer_set_read_fnc(xfer, ft_read);
 
 		purple_xfer_request(xfer);
 	}
