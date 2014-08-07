@@ -1,7 +1,13 @@
 -------------------------------------------------------------------
-Sat Jun  7 09:30:00 UTC 2014 - chemobejk@gmail.com
+Sat Jul 12 13:49:48 UTC 2014 - dimstar@opensuse.org
 
 - Update to version 1.18.2:
+  + ews: extract settings also from type EXPR.
+  + ucs: honor user specified email URL.
+  +	adium: fix compilation on OS X 10.7.
+  +	Updated Transifex URLs.
+  + Bugs fixed: sf#210, sf#241, sf#245, sf#248, sf#255.
+  + Updated translations.
 
 -------------------------------------------------------------------
 Sun Apr 13 20:58:31 UTC 2014 - zaitor@opensuse.org
