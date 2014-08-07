@@ -37,6 +37,8 @@
 #include "sipmsg.h"
 
 struct sipe_file_transfer_lync {
+	struct sipe_file_transfer public;
+
 	gchar *sdp;
 	gchar *file_name;
 	gchar *id;
@@ -154,6 +156,30 @@ candidate_pair_established_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call
 				 ft_private, NULL);
 }
 
+static void
+ft_lync_incoming_init(struct sipe_file_transfer *ft,
+		      SIPE_UNUSED_PARAMETER const gchar *filename,
+		      SIPE_UNUSED_PARAMETER gsize size,
+		      SIPE_UNUSED_PARAMETER const gchar *who)
+{
+	struct sipe_media_call *call = SIPE_FILE_TRANSFER_PRIVATE->call;
+
+	if (call) {
+		sipe_backend_media_accept(call->backend_private, TRUE);
+	}
+}
+
+static void
+ft_lync_deallocate(struct sipe_file_transfer *ft)
+{
+	struct sipe_media_call *call = SIPE_FILE_TRANSFER_PRIVATE->call;
+
+	if (call) {
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+	}
+	sipe_file_transfer_lync_free(SIPE_FILE_TRANSFER_PRIVATE);
+}
+
 void
 process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 				struct sipmsg *msg)
@@ -189,13 +215,16 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	call = ft_private->call;
 	call->candidate_pair_established_cb = candidate_pair_established_cb;
 
+	ft_private->public.ft_init = ft_lync_incoming_init;
+	ft_private->public.ft_deallocate = ft_lync_deallocate;
+
 	stream = sipe_core_media_get_stream_by_id(call, "data");
 	sipe_media_stream_add_extra_attribute(stream, "recvonly", NULL);
 	sipe_media_stream_set_data(stream, ft_private, NULL);
 
-	/* TODO: Call should be accepted only after file transfer backend is
-	 * initialized. */
-	sipe_backend_media_accept(call->backend_private, TRUE);
+	sipe_backend_ft_incoming(SIPE_CORE_PUBLIC, SIPE_FILE_TRANSFER,
+				 call->with, ft_private->file_name,
+				 ft_private->file_size);
 }
 
 /*
