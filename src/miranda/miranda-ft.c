@@ -668,7 +668,7 @@ sipe_backend_ft_is_incoming(struct sipe_file_transfer *ft)
 HANDLE
 sipe_miranda_SendFile( SIPPROTO *pr, HANDLE hContact, const PROTOCHAR* szDescription, PROTOCHAR** ppszFiles )
 {
-	struct sipe_file_transfer *ft = sipe_core_ft_allocate(pr->sip);
+	struct sipe_file_transfer *ft = sipe_core_ft_create_outgoing(pr->sip);
 	DBVARIANT dbv;
 
 	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {

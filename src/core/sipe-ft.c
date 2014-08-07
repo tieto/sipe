@@ -77,7 +77,8 @@ static void generate_key(guchar *buffer, gsize size)
 	while (i < size) buffer[i++] = rand();
 }
 
-struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public)
+struct sipe_file_transfer *
+sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_file_transfer_private *ft_private =
