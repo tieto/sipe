@@ -113,15 +113,6 @@ void sipe_purple_ft_send_file(struct _PurpleConnection *gc,
 			      const char *who,
 			      const char *file);
 
-/**
- * Creates new PurpleXfer structure representing a file transfer.
- *
- * @param gc  a PurpleConnection
- * @param who remote participant in the file transfer session
- */
-struct _PurpleXfer *sipe_purple_ft_new_xfer(struct _PurpleConnection *gc,
-					    const char *who);
-
 /* libpurple chat callbacks */
 #define SIPE_PURPLE_COMPONENT_KEY_CONVERSATION "_conv"
 

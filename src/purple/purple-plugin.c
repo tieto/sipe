@@ -135,7 +135,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* roomlist_expand_category */
 	NULL,					/* can_receive_file */
 	sipe_purple_ft_send_file,		/* send_file */
-	sipe_purple_ft_new_xfer,		/* new_xfer */
+	NULL,					/* new_xfer */
 	NULL,					/* offline_message */
 	NULL,					/* whiteboard_prpl_ops */
 	NULL,					/* send_raw */

@@ -143,7 +143,6 @@ static void
 sipe_protocol_xfer_iface_init(PurpleProtocolXferIface *xfer_iface)
 {
 	xfer_iface->send = sipe_purple_ft_send_file;
-	xfer_iface->new_xfer = sipe_purple_ft_new_xfer;
 }
 
 static void
