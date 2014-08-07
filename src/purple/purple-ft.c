@@ -252,7 +252,30 @@ ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 	return bytes_written;
 }
 
-//******************************************************************************
+static PurpleXfer *
+create_xfer(PurpleAccount *account, PurpleXferType type, const char *who,
+	    struct sipe_file_transfer *ft)
+{
+	PurpleXfer *xfer = purple_xfer_new(account, type, who);
+	if (xfer) {
+		ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
+
+		purple_xfer_set_protocol_data(xfer, ft);
+		purple_xfer_set_init_fnc(xfer, ft_init);
+		purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
+		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
+		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
+		purple_xfer_set_start_fnc(xfer, ft_start);
+		purple_xfer_set_end_fnc(xfer, ft_end);
+		if (type == PURPLE_XFER_TYPE_SEND) {
+			purple_xfer_set_write_fnc(xfer, ft_write);
+		} else if (type == PURPLE_XFER_TYPE_RECEIVE) {
+			purple_xfer_set_read_fnc(xfer, ft_read);
+		}
+	}
+
+	return xfer;
+}
 
 void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 			      struct sipe_file_transfer *ft,
@@ -261,26 +284,11 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 			      gsize file_size)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	PurpleXfer *xfer;
-
-	xfer = purple_xfer_new(purple_private->account,
-			       PURPLE_XFER_TYPE_RECEIVE,
-			       who);
-
+	PurpleXfer *xfer = create_xfer(purple_private->account,
+				       PURPLE_XFER_TYPE_RECEIVE, who, ft);
 	if (xfer) {
-		ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
-		purple_xfer_set_protocol_data(xfer, ft);
-
 		purple_xfer_set_filename(xfer, file_name);
 		purple_xfer_set_size(xfer, file_size);
-
-		purple_xfer_set_init_fnc(xfer, ft_init);
-		purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
-		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
-		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
-		purple_xfer_set_start_fnc(xfer, ft_start);
-		purple_xfer_set_end_fnc(xfer, ft_end);
-		purple_xfer_set_read_fnc(xfer, ft_read);
 
 		purple_xfer_request(xfer);
 	}
@@ -336,7 +344,7 @@ void sipe_purple_ft_send_file(PurpleConnection *gc,
 
 PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 {
-	PurpleXfer *xfer = NULL;
+	struct sipe_file_transfer *ft = NULL;
 
 #if !PURPLE_VERSION_CHECK(3,0,0)
 	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
@@ -344,26 +352,9 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 	}
 #endif
 
-	xfer = purple_xfer_new(purple_connection_get_account(gc),
-					   PURPLE_XFER_TYPE_SEND,
-					   who);
-
-	if (xfer) {
-		struct sipe_file_transfer *ft = sipe_core_ft_allocate(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
-
-		ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
-		purple_xfer_set_protocol_data(xfer, ft);
-
-		purple_xfer_set_init_fnc(xfer, ft_init);
-		purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
-		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
-		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
-		purple_xfer_set_start_fnc(xfer, ft_start);
-		purple_xfer_set_end_fnc(xfer, ft_end);
-		purple_xfer_set_write_fnc(xfer, ft_write);
-	}
-
-	return xfer;
+	ft = sipe_core_ft_allocate(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	return create_xfer(purple_connection_get_account(gc),
+			   PURPLE_XFER_TYPE_SEND, who, ft);
 }
 
 gboolean
