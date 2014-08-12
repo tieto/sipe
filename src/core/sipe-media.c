@@ -121,15 +121,26 @@ backend_candidates_to_sdpcandidate(GList *candidates)
 
 	for (i = candidates; i; i = i->next) {
 		struct sipe_backend_candidate *candidate = i->data;
-		struct sdpcandidate *c = g_new(struct sdpcandidate, 1);
+		struct sdpcandidate *c;
 
+		gchar *ip = sipe_backend_candidate_get_ip(candidate);
+		gchar *base_ip = sipe_backend_candidate_get_base_ip(candidate);
+		if (is_empty(ip) || strchr(ip, ':') ||
+		    (base_ip && strchr(base_ip, ':'))) {
+			/* Ignore IPv6 candidates. */
+			g_free(ip);
+			g_free(base_ip);
+			continue;
+		}
+
+		c = g_new(struct sdpcandidate, 1);
 		c->foundation = sipe_backend_candidate_get_foundation(candidate);
 		c->component = sipe_backend_candidate_get_component_type(candidate);
 		c->type = sipe_backend_candidate_get_type(candidate);
 		c->protocol = sipe_backend_candidate_get_protocol(candidate);
-		c->ip = sipe_backend_candidate_get_ip(candidate);
+		c->ip = ip;
 		c->port = sipe_backend_candidate_get_port(candidate);
-		c->base_ip = sipe_backend_candidate_get_base_ip(candidate);
+		c->base_ip = base_ip;
 		c->base_port = sipe_backend_candidate_get_base_port(candidate);
 		c->priority = sipe_backend_candidate_get_priority(candidate);
 		c->username = sipe_backend_candidate_get_username(candidate);
