@@ -249,6 +249,12 @@ on_candidate_pair_established_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		purple_media_set_send_rtcp_mux(media, sessionid, participant, TRUE);
 	}
 #endif
+
+	if (call->candidate_pair_established_cb) {
+		struct sipe_media_stream *stream =
+				sipe_core_media_get_stream_by_id(call, sessionid);
+		call->candidate_pair_established_cb(call, stream);
+	}
 }
 
 struct sipe_backend_media *
