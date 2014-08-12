@@ -278,7 +278,7 @@ is_empty(const char *st)
 	{
 		return TRUE;
 	}
-	/* suspecious leading or trailing staces */
+	/* suspicious leading or trailing spaces */
 	else if (isspace((unsigned char) *st) ||
 		 isspace((unsigned char) *(st + strlen(st) - 1)))
 	{
