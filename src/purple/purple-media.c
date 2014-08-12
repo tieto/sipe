@@ -586,22 +586,60 @@ sipe_backend_stream_initialized(struct sipe_backend_media *media,
 	return FALSE;
 }
 
+static GList *
+duplicate_tcp_candidates(GList *candidates)
+{
+	GList *i;
+	GList *result = NULL;
+
+	for (i = candidates; i; i = i->next) {
+		PurpleMediaCandidate *candidate = i->data;
+		PurpleMediaNetworkProtocol protocol =
+				purple_media_candidate_get_protocol(candidate);
+		guint component_id =
+				purple_media_candidate_get_component_id(candidate);
+
+		if (protocol != PURPLE_MEDIA_NETWORK_PROTOCOL_UDP) {
+			PurpleMediaCandidate *c2;
+
+			if (component_id != PURPLE_MEDIA_COMPONENT_RTP) {
+				/* Ignore TCP candidates for other than
+				 * the first component. */
+				g_object_unref(candidate);
+				continue;
+			}
+
+			c2 = purple_media_candidate_copy(candidate);
+			g_object_set(c2,
+				     "component-id", PURPLE_MEDIA_COMPONENT_RTCP,
+				     NULL);
+			result = g_list_append(result, c2);
+		}
+
+		result = g_list_append(result, candidate);
+	}
+
+	g_list_free(candidates);
+
+	return result;
+}
+
 GList *
 sipe_backend_media_get_active_local_candidates(struct sipe_backend_media *media,
 					       struct sipe_backend_stream *stream)
 {
-	return purple_media_get_active_local_candidates(media->m,
-							stream->sessionid,
-							stream->participant);
+	GList *candidates = purple_media_get_active_local_candidates(
+			media->m, stream->sessionid, stream->participant);
+	return duplicate_tcp_candidates(candidates);
 }
 
 GList *
 sipe_backend_media_get_active_remote_candidates(struct sipe_backend_media *media,
 						struct sipe_backend_stream *stream)
 {
-	return purple_media_get_active_remote_candidates(media->m,
-							 stream->sessionid,
-							 stream->participant);
+	GList *candidates = purple_media_get_active_remote_candidates(
+			media->m, stream->sessionid, stream->participant);
+	return duplicate_tcp_candidates(candidates);
 }
 
 const gchar *
@@ -896,6 +934,8 @@ sipe_backend_get_local_candidates(struct sipe_backend_media *media,
 	GList *candidates = purple_media_get_local_candidates(media->m,
 							      stream->sessionid,
 							      stream->participant);
+	candidates = duplicate_tcp_candidates(candidates);
+
 	/*
 	 * Sometimes purple will not return complete list of candidates, even
 	 * after "candidates-prepared" signal is emitted. This is a feature of
