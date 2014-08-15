@@ -44,7 +44,7 @@ struct sdpcandidate {
 	SipeCandidateType	 type;
 	SipeNetworkProtocol	 protocol;
 	guint32			 priority;
-	gchar			*ip; /* this can be an IPv4 or IPv6 address */
+	gchar			*ip; /* currently this has to be an IPv4 address */
 	guint			 port;
 	gchar			*base_ip;
 	guint			 base_port;
