@@ -1,3 +1,9 @@
+version 1.18.3 "Bug Fixes III" (2014-08-16)
+	- Fixed #259: HTML response to EWS autodiscover triggers libxml2 assert (Stefan Becker)
+	- Fixed #258: V&V call gets rejected when IPv6 is enabled (Stefan Becker, Jakub Adam)
+	- Fixed #257: Windows 7: SIPE crashes after a minute (Stefan Becker)
+	- mingw: improve crash information reporting (Stefan Becker)
+
 version 1.18.2 "Bug Fixes II" (2014-06-07)
 	- Fixed #255: Crash when PersistentChat sends BYE instead of response (Stefan Becker)
 	- Fixed #248: Remove libpurple SSL configure check (Stefan Becker)
