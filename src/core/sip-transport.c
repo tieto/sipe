@@ -171,8 +171,11 @@ static void sipe_make_signature(struct sipe_core_private *sipe_private,
 		signature_input_str = sipmsg_breakdown_get_string(transport->registrar.version, &msgbd);
 		if (signature_input_str != NULL) {
 			char *signature_hex = sip_sec_make_signature(transport->registrar.gssapi_context, signature_input_str);
+			g_free(msg->signature);
 			msg->signature = signature_hex;
+			g_free(msg->rand);
 			msg->rand = g_strdup(msgbd.rand);
+			g_free(msg->num);
 			msg->num = g_strdup(msgbd.num);
 			g_free(signature_input_str);
 		}
