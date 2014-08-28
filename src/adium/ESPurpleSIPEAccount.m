@@ -126,7 +126,12 @@
                 if ([value isEqualToString:@""]) {
                     // An empty sipe_connect_host means we're autodetecting the server
                     // So we set this to our own hostname, so that the reachability test has a *network* address (i.e. non-loopback) to check connectivity against.
-                    [self setPreference:[[NSHost currentHost] localizedName] forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+                    // SIPE Bug #262: this does not work, because the name is not a valid DNS name
+                    // [self setPreference:[[NSHost currentHost] localizedName] forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+                    // Replacing localizedName with name/names does also no work, because the value changes depending on network connectivity
+                    // [self setPreference:[[NSHost currentHost] name] forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+                    // hard-code to "localhost" instead, which should always be valid
+                    [self setPreference:@"localhost" forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
                 } else {
                     // If the user entered server:port only give the server portion to adium
                     // otherwise the DNS lookup will fail the reachability test
