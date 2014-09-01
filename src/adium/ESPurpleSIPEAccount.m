@@ -124,14 +124,28 @@
         if ([value isKindOfClass:[NSString class]]) {
             if ([key isEqualToString:KEY_SIPE_CONNECT_HOST]) {
                 if ([value isEqualToString:@""]) {
-                    // An empty sipe_connect_host means we're autodetecting the server
-                    // So we set this to our own hostname, so that the reachability test has a *network* address (i.e. non-loopback) to check connectivity against.
-                    // SIPE Bug #262: this does not work, because the name is not a valid DNS name
-                    // [self setPreference:[[NSHost currentHost] localizedName] forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
-                    // Replacing localizedName with name/names does also no work, because the value changes depending on network connectivity
-                    // [self setPreference:[[NSHost currentHost] name] forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
-                    // hard-code to "localhost" instead, which should always be valid
-                    [self setPreference:@"localhost" forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
+                    /*
+                     * We're using auto-discover, i.e. we can only
+                     * determine the real server name when we have a
+                     * valid network connection.
+                     *
+                     * Unfortunately Adiums' reachability feature
+                     * requires us to specify a host even when no
+                     * network is available:
+                     *
+                     *   * must be a valid DNS name
+                     *     (can't use [[NSHost currentHost] ...])
+                     *   * must only be reachable via network
+                     *     (can't use @"localhost")
+                     *
+                     * Hard-code a well-known host name instead. As
+                     * this is for Adium we use the obvious choice.
+                     *
+                     * NOTE: this will fail for Intranet-only users.
+                     *
+                     * See also: https://sourceforge.net/p/sipe/bugs/262
+                     */
+                    [self setPreference:@"adium.im" forKey:KEY_CONNECT_HOST group:GROUP_ACCOUNT_STATUS];
                 } else {
                     // If the user entered server:port only give the server portion to adium
                     // otherwise the DNS lookup will fail the reachability test
