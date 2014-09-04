@@ -198,6 +198,11 @@ libsipe_core_la_SOURCES += sipe-media.h sipe-media.c \
 	sdpmsg.h sdpmsg.c
 endif
 
+if SIPE_WITH_XDATA
+libsipe_core_la_SOURCES += \
+	sipe-ft-lync.h sipe-ft-lync.c
+endif
+
 check_PROGRAMS =
 
 check_PROGRAMS += sipe_xml_tests
