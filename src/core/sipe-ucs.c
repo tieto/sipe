@@ -704,7 +704,6 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 		   gboolean migrated)
 {
 	struct sipe_ucs *ucs;
-	const gchar *ews_url;
 
 	if (sipe_private->ucs) {
 		struct sipe_ucs *ucs = sipe_private->ucs;
@@ -734,14 +733,17 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 	sipe_ucs_transaction(sipe_private);
 	ucs->default_transaction = ucs->transactions;
 
-	/* user specified a service URL? */
-	ews_url = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
-	if (is_empty(ews_url))
-		sipe_ews_autodiscover_start(sipe_private,
-					    ucs_ews_autodiscover_cb,
-					    NULL);
-	else
-		ucs_set_ews_url(sipe_private, ews_url);
+	if (migrated) {
+		/* user specified a service URL? */
+		const gchar *ews_url = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
+
+		if (is_empty(ews_url))
+			sipe_ews_autodiscover_start(sipe_private,
+						    ucs_ews_autodiscover_cb,
+						    NULL);
+		else
+			ucs_set_ews_url(sipe_private, ews_url);
+	}
 }
 
 void sipe_ucs_free(struct sipe_core_private *sipe_private)
