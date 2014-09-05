@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -476,7 +476,6 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 				      struct sipe_svc_session *session,
 				      const gchar *service_uri,
 				      const gchar *auth_uri,
-				      const gchar *authuser,
 				      const gchar *content_type,
 				      const gchar *request_extension,
 				      sipe_svc_callback *callback,
@@ -487,7 +486,7 @@ static gboolean request_user_password(struct sipe_core_private *sipe_private,
 						       " <wsse:Username>%s</wsse:Username>"
 						       " <wsse:Password>%s</wsse:Password>"
 						       "</wsse:UsernameToken>",
-						       authuser,
+						       sipe_private->authuser ? sipe_private->authuser : sipe_private->username,
 						       sipe_private->password ? sipe_private->password : "");
 
 	gboolean ret = request_passport(sipe_private,
@@ -514,7 +513,6 @@ gboolean sipe_svc_webticket_adfs(struct sipe_core_private *sipe_private,
 				     session,
 				     "urn:federation:MicrosoftOnline",
 				     adfs_uri,
-				     sipe_private->username,
 				     /* ADFS is special, *sigh* */
 				     "application/soap+xml; charset=utf-8",
 				     "<wst:KeyType>http://schemas.xmlsoap.org/ws/2005/05/identity/NoProofKey</wst:KeyType>",
@@ -534,7 +532,6 @@ gboolean sipe_svc_webticket_lmc(struct sipe_core_private *sipe_private,
 				     session,
 				     service_uri,
 				     LMC_URI,
-				     sipe_private->authuser ? sipe_private->authuser : sipe_private->username,
 				     NULL,
 				     NULL,
 				     callback,
