@@ -201,7 +201,8 @@ endif
 
 if SIPE_HAVE_XDATA
 libsipe_core_la_SOURCES += \
-	sipe-ft-lync.h sipe-ft-lync.c
+	sipe-ft-lync.h sipe-ft-lync.c \
+	sipe-applicationsharing.h sipe-applicationsharing.c
 endif
 
 check_PROGRAMS =
