@@ -392,6 +392,9 @@ struct sipe_media_call {
 					      struct sipe_media_stream *);
 	void (*call_hangup_cb)(struct sipe_media_call *, gboolean local);
 	void (*error_cb)(struct sipe_media_call *, gchar *message);
+
+	void (*writable_cb)(struct sipe_media_call *,
+			    struct sipe_media_stream *, gboolean writable);
 };
 
 struct sipe_media_relay {
