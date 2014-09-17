@@ -29,6 +29,7 @@
 
 #include <glib.h>
 
+#include "sipe-applicationsharing.h"
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
@@ -412,9 +413,16 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 
 #ifdef HAVE_VV
+	if (sipe_strcase_equal(content_type, "application/sdp") && msg->body &&
+	    strstr(msg->body, "m=applicationsharing") &&
+	    sipe_strequal(sipmsg_find_header(msg, "CSeq"), "1 INVITE")) {
+		process_incoming_invite_applicationsharing(sipe_private, msg);
+		return;
+	}
+
 	/* Invitation to audio call or file transfer */
 	if (msg->body &&
-	    (strstr(msg->body, "m=audio") || strstr(msg->body, "m=data"))) {
+	    (strstr(msg->body, "m=audio") || strstr(msg->body, "m=data") || strstr(msg->body, "m=applicationsharing"))) {
 		process_incoming_invite_call(sipe_private, msg);
 		return;
 	}
