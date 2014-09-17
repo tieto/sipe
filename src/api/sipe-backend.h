@@ -521,6 +521,11 @@ void sipe_backend_media_accept(struct sipe_backend_media *media, gboolean local)
 void sipe_backend_media_hangup(struct sipe_backend_media *media, gboolean local);
 void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local);
 
+gint sipe_backend_media_write(struct sipe_media_call *call,
+			      struct sipe_media_stream *stream,
+			      guint8 *buffer, guint buffer_len,
+			      gboolean blocking);
+
 /** NETWORK ******************************************************************/
 
 const gchar *sipe_backend_network_ip_address(struct sipe_core_public *sipe_public);

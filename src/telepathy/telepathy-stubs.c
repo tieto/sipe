@@ -269,6 +269,11 @@ SipeEncryptionPolicy sipe_backend_media_get_encryption_policy(SIPE_UNUSED_PARAME
 gssize sipe_backend_media_stream_read(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 				      SIPE_UNUSED_PARAMETER guint8 *buffer,
 				      SIPE_UNUSED_PARAMETER gsize len) { return(-1); }
+gint sipe_backend_media_write(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
+			      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream,
+			      SIPE_UNUSED_PARAMETER guint8 *buffer,
+			      SIPE_UNUSED_PARAMETER guint buffer_len,
+			      SIPE_UNUSED_PARAMETER gboolean blocking) { return(-1); }
 #endif
 
 /** NETWORK ******************************************************************/
