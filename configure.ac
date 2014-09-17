@@ -232,6 +232,14 @@ dnl check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
 PKG_CHECK_MODULES(GMODULE, [gmodule-2.0 >= 2.12.0])
 
+dnl check for gio-2.0 optional for application sharing support
+PKG_CHECK_MODULES(GIO, [gio-2.0],
+	[ac_have_gio=yes],
+	[ac_have_gio=no])
+AM_CONDITIONAL(SIPE_HAVE_GIO, [test "x$ac_have_gio" == xyes])
+AS_IF([test "x$ac_have_gio" == xyes],
+	[AC_DEFINE(HAVE_GIO, 1, [Define if we have GIO library.])])
+
 dnl check for gmime
 dnl See also: https://bugzilla.gnome.org/show_bug.cgi?id=613653#c8
 PKG_CHECK_MODULES(GMIME, [gmime-2.6 >= 2.5.2],

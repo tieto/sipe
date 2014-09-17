@@ -211,8 +211,15 @@ endif
 
 if SIPE_HAVE_XDATA
 libsipe_core_la_SOURCES += \
-	sipe-ft-lync.h sipe-ft-lync.c \
-	sipe-appshare.h sipe-appshare.c
+	sipe-ft-lync.h sipe-ft-lync.c
+
+if SIPE_HAVE_GIO
+libsipe_core_la_SOURCES += \
+	sipe-appshare.h sipe-appshare.c \
+	sipe-appshare-xfreerdp.h sipe-appshare-xfreerdp.c
+
+libsipe_core_la_CFLAGS += $(GIO_CFLAGS)
+endif
 endif
 
 check_PROGRAMS =

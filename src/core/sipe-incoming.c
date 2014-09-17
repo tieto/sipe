@@ -29,6 +29,10 @@
 
 #include <glib.h>
 
+#ifdef HAVE_GIO
+#include <gio/gio.h>
+#endif
+
 #include "sipe-appshare.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
@@ -416,7 +420,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	if (sipe_strcase_equal(content_type, "application/sdp") && msg->body &&
 	    strstr(msg->body, "m=applicationsharing") &&
 	    sipe_strequal(sipmsg_find_header(msg, "CSeq"), "1 INVITE")) {
-#ifdef HAVE_XDATA
+#if defined(HAVE_XDATA) && defined(HAVE_GIO)
 		process_incoming_invite_appshare(sipe_private, msg);
 #else
 		sip_transport_response(sipe_private, msg,
