@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -375,6 +375,13 @@ sipe_backend_media_get_encryption_policy(struct sipe_core_public *sipe_public)
 gssize
 sipe_backend_media_stream_read(struct sipe_media_stream *stream,
 			       guint8 *buffer, gsize len)
+{
+	_NIF();
+}
+
+gssize
+sipe_backend_media_stream_write(struct sipe_media_stream *stream,
+				guint8 *buffer, gsize len)
 {
 	_NIF();
 }

@@ -447,6 +447,8 @@ GList *sipe_backend_media_stream_get_active_remote_candidates(struct sipe_media_
 
 gssize sipe_backend_media_stream_read(struct sipe_media_stream *stream,
 				     guint8 *buffer, gsize len);
+gssize sipe_backend_media_stream_write(struct sipe_media_stream *stream,
+				       guint8 *buffer, gsize len);
 
 void sipe_backend_media_stream_end(struct sipe_media_call *media,
 				   struct sipe_media_stream *stream);
