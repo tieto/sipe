@@ -157,6 +157,8 @@ libsipe_core_la_CFLAGS = \
         $(DEBUG_CFLAGS) \
         $(QUALITY_CFLAGS) \
         $(GLIB_CFLAGS) \
+        $(GIO_CFLAGS) \
+        $(GIO_UNIX_CFLAGS) \
         $(LOCALE_CPPFLAGS) \
 	-I$(srcdir)/../api
 
@@ -212,7 +214,8 @@ endif
 if SIPE_HAVE_XDATA
 libsipe_core_la_SOURCES += \
 	sipe-ft-lync.h sipe-ft-lync.c \
-	sipe-appshare.h sipe-appshare.c
+	sipe-appshare.h sipe-appshare.c \
+	sipe-appshare-xfreerdp.h sipe-appshare-xfreerdp.c
 endif
 
 check_PROGRAMS =
@@ -224,7 +227,9 @@ sipe_xml_tests_LDADD = \
 	libsipe_core_libxml2.la \
 	libsipe_core_la-sipe-utils.lo \
 	$(LIBXML2_LIBS) \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) \
+	$(GIO_LIBS) \
+	$(GIO_UNIX_LIBS)
 
 check_PROGRAMS += sip_sec_digest_tests
 sip_sec_digest_tests_SOURCES = sip-sec-digest-tests.c

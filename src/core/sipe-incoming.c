@@ -29,6 +29,8 @@
 
 #include <glib.h>
 
+#include <gio/gio.h>
+
 #include "sipe-appshare.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
