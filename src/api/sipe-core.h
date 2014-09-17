@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -433,6 +433,18 @@ sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stre
 
 void
 sipe_core_media_stream_readable(struct sipe_media_stream *stream);
+
+/**
+ * Called by media backend when a @c SIPE_MEDIA_APPLICATION stream changes its
+ * state between writable and unwritable.
+ *
+ * @param stream (in) SIPE media stream data.
+ * @param writable (in) @c TRUE if stream has become writable, otherwise
+ *                 @c FALSE.
+ */
+void
+sipe_core_media_stream_writable(struct sipe_media_stream *stream,
+				gboolean writable);
 
 /**
  * Connects to a conference call specified by given chat session

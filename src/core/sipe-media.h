@@ -4,6 +4,7 @@
  * pidgin-sipe
  *
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
+ * Copyright (C) 2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -200,6 +201,16 @@ void
 sipe_media_stream_read_async(struct sipe_media_stream *stream,
 			     gpointer buffer, gsize len,
 			     sipe_media_stream_read_callback callback);
+
+/**
+ * Checks whether a @c SIPE_MEDIA_APPLICATION stream is in writable state.
+ *
+ * @param stream (in) media stream data
+ *
+ * @return @c TRUE if @c stream is writable, otherwise @c FALSE.
+ */
+gboolean
+sipe_media_stream_is_writable(struct sipe_media_stream *stream);
 
 /**
  * Associates user data with the media stream.

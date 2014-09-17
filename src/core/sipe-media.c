@@ -81,6 +81,8 @@ struct sipe_media_stream_private {
 
 	GSList *extra_sdp;
 
+	gboolean writable;
+
 	GQueue *async_reads;
 	gssize read_pos;
 
@@ -2045,6 +2047,23 @@ sipe_media_stream_read_async(struct sipe_media_stream *stream,
 	data->callback = callback;
 
 	g_queue_push_tail(SIPE_MEDIA_STREAM_PRIVATE->async_reads, data);
+}
+
+void
+sipe_core_media_stream_writable(struct sipe_media_stream *stream,
+				gboolean writable)
+{
+	SIPE_MEDIA_STREAM_PRIVATE->writable = writable;
+
+	if (sipe_media_stream_is_writable(stream) && stream->writable_cb) {
+		stream->writable_cb(stream);
+	}
+}
+
+gboolean
+sipe_media_stream_is_writable(struct sipe_media_stream *stream)
+{
+	return SIPE_MEDIA_STREAM_PRIVATE->writable;
 }
 #endif
 
