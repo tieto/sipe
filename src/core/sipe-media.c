@@ -1453,7 +1453,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 		SipeMediaCallFlags flags = 0;
 
-		if (strstr(msg->body, "m=data")) {
+		if (strstr(msg->body, "m=data") ||
+		    strstr(msg->body, "m=applicationsharing")) {
 			flags |= SIPE_MEDIA_CALL_NO_UI;
 		}
 
