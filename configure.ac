@@ -231,6 +231,8 @@ AM_CONDITIONAL(SIP_SEC_GSSAPI_ONLY, [test "x$enable_gssapi_only" != xno])
 dnl check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
 PKG_CHECK_MODULES(GMODULE, [gmodule-2.0 >= 2.12.0])
+PKG_CHECK_MODULES(GIO, [gio-2.0])
+PKG_CHECK_MODULES(GIO_UNIX, [gio-unix-2.0])
 
 dnl check for gmime
 dnl See also: https://bugzilla.gnome.org/show_bug.cgi?id=613653#c8
