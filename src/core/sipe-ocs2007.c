@@ -1532,7 +1532,9 @@ static gboolean process_send_presence_category_publish_response(struct sipe_core
 {
 	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
 
-	if (msg->response == 409 && g_str_has_prefix(contenttype, "application/msrtc-fault+xml")) {
+	if (msg->response == 200 && g_str_has_prefix(contenttype, "application/vnd-microsoft-roaming-self+xml")) {
+		sipe_ocs2007_process_roaming_self(sipe_private, msg);
+	} else if (msg->response == 409 && g_str_has_prefix(contenttype, "application/msrtc-fault+xml")) {
 		sipe_xml *xml;
 		const sipe_xml *node;
 		gchar *fault_code;
