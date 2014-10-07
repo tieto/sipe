@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,21 +45,11 @@ gboolean sipe_backend_status_changed(struct sipe_core_public *sipe_public,
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleStatus *status = purple_account_get_active_status(purple_private->account);
 	const gchar *status_id = sipe_purple_activity_to_token(activity);
-	gboolean changed = TRUE;
 
-	if (g_str_equal(status_id, purple_status_get_id(status)) &&
-	    sipe_strequal(message,
-			  purple_status_get_attr_string(status,
-							SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE)))
-	{
-		changed = FALSE;
-	}
-
-	if (purple_savedstatus_is_idleaway()) {
-		changed = FALSE;
-	}
-
-	return(changed);
+	return(!(g_str_equal(status_id, purple_status_get_id(status)) &&
+		 sipe_strequal(message,
+			       purple_status_get_attr_string(status,
+							     SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE))));
 }
 
 /**
