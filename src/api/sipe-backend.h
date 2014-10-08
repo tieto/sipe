@@ -349,6 +349,8 @@ struct sipe_backend_media_relays;
 struct sipe_media_call {
 	struct sipe_backend_media *backend_private;
 
+	gchar *with;
+
 	void (*stream_initialized_cb)(struct sipe_media_call *,
 				      struct sipe_backend_stream *);
 	void (*media_end_cb)(struct sipe_media_call *);
