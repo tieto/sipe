@@ -64,6 +64,9 @@ struct sipe_file_transfer_lync {
 	int backend_pipe[2];
 
 	struct sipe_media_call *call;
+
+	void (*call_reject_parent_cb)(struct sipe_media_call *call,
+				      gboolean local);
 };
 #define SIPE_FILE_TRANSFER         ((struct sipe_file_transfer *) ft_private)
 #define SIPE_FILE_TRANSFER_PRIVATE ((struct sipe_file_transfer_lync *) ft)
@@ -331,6 +334,16 @@ ft_lync_incoming_init(struct sipe_file_transfer *ft,
 	}
 }
 
+static struct sipe_file_transfer_lync *
+ft_private_from_call(struct sipe_media_call *call)
+{
+	struct sipe_media_stream *stream =
+			sipe_core_media_get_stream_by_id(call, "data");
+	g_return_val_if_fail(stream, NULL);
+
+	return sipe_media_stream_get_data(stream);
+}
+
 static void
 send_transfer_progress(struct sipe_file_transfer_lync *ft_private)
 {
@@ -363,6 +376,21 @@ ft_lync_end(struct sipe_file_transfer *ft)
 	SIPE_FILE_TRANSFER_PRIVATE->call = NULL;
 
 	return TRUE;
+}
+
+static void
+call_reject_cb(struct sipe_media_call *call, gboolean local)
+{
+	struct sipe_file_transfer_lync *ft_private = ft_private_from_call(call);
+	g_return_if_fail(ft_private);
+
+	if (ft_private->call_reject_parent_cb) {
+		ft_private->call_reject_parent_cb(call, local);
+	}
+
+	if (!local) {
+		sipe_backend_ft_cancel_remote(&ft_private->public);
+	}
 }
 
 static void
@@ -413,6 +441,9 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	ft_private->public.ft_init = ft_lync_incoming_init;
 	ft_private->public.ft_end = ft_lync_end;
 	ft_private->public.ft_deallocate = ft_lync_deallocate;
+
+	ft_private->call_reject_parent_cb = call->call_reject_cb;
+	call->call_reject_cb = call_reject_cb;
 
 	stream = sipe_core_media_get_stream_by_id(call, "data");
 	stream->read_cb = read_cb;
