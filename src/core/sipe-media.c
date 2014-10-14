@@ -520,8 +520,8 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 								   struct transaction *trans);
 
 static gboolean
-update_remote_media(struct sipe_media_call_private* call_private,
-		    struct sdpmedia *media)
+update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
+			    struct sdpmedia *media)
 {
 	struct sipe_backend_media *backend_media = SIPE_MEDIA_CALL->backend_private;
 	struct sipe_backend_stream *backend_stream;
@@ -613,7 +613,7 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 
 	for (i = msg->media; i; i = i->next) {
 		struct sdpmedia *media = i->data;
-		if (!update_remote_media(call_private, media)) {
+		if (!update_call_from_remote_sdp(call_private, media)) {
 			media->port = 0;
 			call_private->failed_media =
 				g_slist_append(call_private->failed_media, media);
