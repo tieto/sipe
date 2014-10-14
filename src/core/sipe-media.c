@@ -886,9 +886,17 @@ call_reject_cb(struct sipe_media_call *call, gboolean local)
 {
 	if (local) {
 		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+		struct sip_session *session = NULL;
+
 		sip_transport_response(call_private->sipe_private,
 				       call_private->invitation,
 				       603, "Decline", NULL);
+
+		session = sipe_session_find_call(call_private->sipe_private,
+						 call->with);
+		if (session) {
+			sipe_session_remove(call_private->sipe_private, session);
+		}
 	}
 }
 
