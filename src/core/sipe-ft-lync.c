@@ -473,6 +473,11 @@ process_response(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
 		ft_private->call = NULL;
 
 		sipe_file_transfer_lync_free(ft_private);
+	} else if (sipe_strequal(code, "failure")) {
+		const gchar *reason = sipe_xml_attribute(xml, "reason");
+		if (sipe_strequal(reason, "requestCancelled")) {
+			sipe_backend_ft_cancel_remote(SIPE_FILE_TRANSFER);
+		}
 	}
 }
 
