@@ -160,6 +160,13 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 		process_incoming_info_conversation(sipe_private, msg);
 		return;
 	}
+#ifdef HAVE_XDATA
+	else if (g_str_has_prefix(contenttype, "application/ms-filetransfer+xml"))
+	{
+		process_incoming_info_ft_lync(sipe_private, msg);
+		return;
+	}
+#endif
 
 	from = parse_from(sipmsg_find_header(msg, "From"));
 	session = sipe_session_find_chat_or_im(sipe_private, callid, from);

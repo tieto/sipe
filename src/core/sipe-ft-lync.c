@@ -420,6 +420,13 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 				 ft_private->file_size);
 }
 
+void
+process_incoming_info_ft_lync(struct sipe_core_private *sipe_private,
+			      struct sipmsg *msg)
+{
+	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+}
+
 /*
   Local Variables:
   mode: c
