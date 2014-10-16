@@ -1391,7 +1391,7 @@ void process_incoming_cancel_call(struct sipe_media_call_private *call_private,
 				       487, "Request Terminated", NULL);
 	}
 
-	sipe_media_hangup(call_private);
+	sipe_backend_media_reject(SIPE_MEDIA_CALL->backend_private, FALSE);
 }
 
 static gboolean
