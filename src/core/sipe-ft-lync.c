@@ -306,6 +306,16 @@ ft_lync_incoming_init(struct sipe_file_transfer *ft,
 	}
 }
 
+static struct sipe_file_transfer_lync *
+ft_private_from_call(struct sipe_media_call *call)
+{
+	struct sipe_media_stream *stream =
+			sipe_core_media_get_stream_by_id(call, "data");
+	g_return_val_if_fail(stream, NULL);
+
+	return sipe_media_stream_get_data(stream);
+}
+
 static void
 send_transfer_progress(struct sipe_file_transfer_lync *ft_private)
 {
@@ -331,6 +341,10 @@ static gboolean
 ft_lync_end(struct sipe_file_transfer *ft)
 {
 	send_transfer_progress(SIPE_FILE_TRANSFER_PRIVATE);
+
+	/* Don't automatically deallocate our file transfer structure. We still
+	 * need it until we get success response from the sender. */
+	ft->ft_deallocate = NULL;
 
 	return TRUE;
 }
@@ -393,6 +407,57 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	sipe_backend_ft_incoming(SIPE_CORE_PUBLIC, SIPE_FILE_TRANSFER,
 				 call->with, ft_private->file_name,
 				 ft_private->file_size);
+}
+
+static void
+process_response(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
+{
+	guint request_id = atoi(sipe_xml_attribute(xml, "requestId"));
+	const gchar *code;
+
+	if (request_id != ft_private->request_id) {
+		return;
+	}
+
+	code = sipe_xml_attribute(xml, "code");
+	if (sipe_strequal(code, "success")) {
+		/* Don't let the call be hung up during transfer data release
+		 * because we have to wait for BYE from the sender in order for
+		 * the transfer to be reported as successful by Lync client. */
+		ft_private->call = NULL;
+
+		sipe_file_transfer_lync_free(ft_private);
+	}
+}
+
+void
+process_incoming_info_ft_lync(struct sipe_core_private *sipe_private,
+			      struct sipmsg *msg)
+{
+	struct sipe_media_call *call;
+	struct sipe_file_transfer_lync *ft_private;
+	sipe_xml *xml;
+
+	call = g_hash_table_lookup(sipe_private->media_calls,
+				   sipmsg_find_header(msg, "Call-ID"));
+
+	ft_private = ft_private_from_call(call);
+	if (!ft_private) {
+		return;
+	}
+
+	xml = sipe_xml_parse(msg->body, msg->bodylen);
+	if (!xml) {
+		return;
+	}
+
+	if (sipe_strequal(sipe_xml_name(xml), "response")) {
+		process_response(ft_private, xml);
+	}
+
+	sipe_xml_free(xml);
+
+	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 }
 
 /*
