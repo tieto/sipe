@@ -394,6 +394,37 @@ call_reject_cb(struct sipe_media_call *call, gboolean local)
 }
 
 static void
+ft_lync_incoming_cancelled(struct sipe_file_transfer *ft)
+{
+	static const gchar *FILETRANSFER_CANCEL_REQUEST =
+			"<request xmlns=\"http://schemas.microsoft.com/rtc/2009/05/filetransfer\" requestId=\"%d\"/>"
+				"<cancelTransfer>"
+					"<transferId>%d</transferId>"
+					"<fileInfo>"
+						"<id>%s</id>"
+						"<name>%s</name>"
+					"</fileInfo>"
+				"</cancelTransfer>"
+			"</request>";
+
+	struct sipe_file_transfer_lync *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
+	struct sipe_media_stream *stream;
+
+	send_ms_filetransfer_msg(g_strdup_printf(FILETRANSFER_CANCEL_REQUEST,
+						 ft_private->request_id + 1,
+						 ft_private->request_id,
+						 ft_private->id,
+						 ft_private->file_name),
+				 ft_private,
+				 NULL);
+
+	stream = sipe_core_media_get_stream_by_id(ft_private->call, "data");
+	if (stream) {
+		stream->read_cb = NULL;
+	}
+}
+
+static void
 ft_lync_deallocate(struct sipe_file_transfer *ft)
 {
 	struct sipe_media_call *call = SIPE_FILE_TRANSFER_PRIVATE->call;
@@ -439,6 +470,7 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	call->candidate_pair_established_cb = candidate_pair_established_cb;
 
 	ft_private->public.ft_init = ft_lync_incoming_init;
+	ft_private->public.ft_cancelled = ft_lync_incoming_cancelled;
 	ft_private->public.ft_end = ft_lync_end;
 	ft_private->public.ft_deallocate = ft_lync_deallocate;
 
