@@ -65,6 +65,8 @@ struct sipe_file_transfer_lync {
 
 	struct sipe_media_call *call;
 
+	gboolean was_cancelled;
+
 	void (*call_reject_parent_cb)(struct sipe_media_call *call,
 				      gboolean local);
 };
@@ -78,6 +80,9 @@ typedef enum {
 } SipeXDataMessages;
 
 #define XDATA_HEADER_SIZE sizeof (guint8) + sizeof (guint16)
+
+static void
+ft_lync_deallocate(struct sipe_file_transfer *ft);
 
 static void
 sipe_file_transfer_lync_free(struct sipe_file_transfer_lync *ft_private)
@@ -276,7 +281,12 @@ read_cb(struct sipe_media_stream *stream)
 	struct sipe_file_transfer_lync *ft_private =
 			sipe_media_stream_get_data(stream);
 
-	if (ft_private->buffer_read_pos < ft_private->buffer_len) {
+	if (ft_private->was_cancelled) {
+		/* File transfer cancelled. Just drop the incoming data. */
+
+		sipe_backend_media_stream_read(stream, ft_private->buffer,
+					       sizeof ft_private->buffer);
+	} else if (ft_private->buffer_read_pos < ft_private->buffer_len) {
 		/* Have data in buffer, write them to the backend. */
 
 		gpointer buffer;
@@ -392,6 +402,68 @@ call_reject_cb(struct sipe_media_call *call, gboolean local)
 	}
 }
 
+static gboolean
+request_cancelled_cb(struct sipe_core_private *sipe_private,
+		     struct sipmsg *msg,
+		     SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	struct sipe_media_call *call =
+			g_hash_table_lookup(sipe_private->media_calls,
+					    sipmsg_find_header(msg, "Call-ID"));
+
+	struct sipe_file_transfer_lync *ft_private = ft_private_from_call(call);
+
+	ft_lync_deallocate(SIPE_FILE_TRANSFER);
+
+	return TRUE;
+}
+
+static gboolean
+cancel_transfer_cb(struct sipe_core_private *sipe_private,
+		   struct sipmsg *msg,
+		   SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	struct sipe_media_call *call =
+			g_hash_table_lookup(sipe_private->media_calls,
+					    sipmsg_find_header(msg, "Call-ID"));
+
+	send_ms_filetransfer_response(ft_private_from_call(call),
+				      "failure", "requestCancelled",
+				      request_cancelled_cb);
+
+	return TRUE;
+}
+
+static void
+ft_lync_incoming_cancelled(struct sipe_file_transfer *ft, gboolean local)
+{
+	static const gchar *FILETRANSFER_CANCEL_REQUEST =
+			"<request xmlns=\"http://schemas.microsoft.com/rtc/2009/05/filetransfer\" requestId=\"%d\"/>"
+				"<cancelTransfer>"
+					"<transferId>%d</transferId>"
+					"<fileInfo>"
+						"<id>%s</id>"
+						"<name>%s</name>"
+					"</fileInfo>"
+				"</cancelTransfer>"
+			"</request>";
+
+	if (local) {
+		send_ms_filetransfer_msg(g_strdup_printf(FILETRANSFER_CANCEL_REQUEST,
+							 SIPE_FILE_TRANSFER_PRIVATE->request_id + 1,
+							 SIPE_FILE_TRANSFER_PRIVATE->request_id,
+							 SIPE_FILE_TRANSFER_PRIVATE->id,
+							 SIPE_FILE_TRANSFER_PRIVATE->file_name),
+					 SIPE_FILE_TRANSFER_PRIVATE,
+					 cancel_transfer_cb);
+
+		SIPE_FILE_TRANSFER_PRIVATE->was_cancelled = TRUE;
+		/* We still need our filetransfer structure so don't let backend
+		 * deallocate it. */
+		ft->ft_deallocate = NULL;
+	}
+}
+
 static void
 ft_lync_deallocate(struct sipe_file_transfer *ft)
 {
@@ -439,6 +511,7 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	call->candidate_pair_established_cb = candidate_pair_established_cb;
 
 	ft_private->public.ft_init = ft_lync_incoming_init;
+	ft_private->public.ft_cancelled = ft_lync_incoming_cancelled;
 	ft_private->public.ft_end = ft_lync_end;
 	ft_private->public.ft_deallocate = ft_lync_deallocate;
 
