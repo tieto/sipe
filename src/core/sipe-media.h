@@ -89,6 +89,16 @@ void sipe_media_handle_going_offline(struct sipe_core_private *sipe_private);
 gboolean sipe_media_is_conference_call(struct sipe_media_call_private *call_private);
 
 /**
+ * Retrieves the sipe core structure the given call is associated to.
+ *
+ * @param call (in) media call data
+ *
+ * @return @c sipe_core_private structure.
+ */
+struct sipe_core_private *
+sipe_media_get_sipe_core_private(struct sipe_media_call *call);
+
+/**
  * Retrieves a SIP dialog associated with the call.
  *
  * @param call (in) media call data

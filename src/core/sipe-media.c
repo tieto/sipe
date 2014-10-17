@@ -1663,6 +1663,14 @@ gboolean sipe_media_is_conference_call(struct sipe_media_call_private *call_priv
 	return g_strstr_len(SIPE_MEDIA_CALL->with, -1, "app:conf:audio-video:") != NULL;
 }
 
+struct sipe_core_private *
+sipe_media_get_sipe_core_private(struct sipe_media_call *call)
+{
+	g_return_val_if_fail(call, NULL);
+
+	return SIPE_MEDIA_CALL_PRIVATE->sipe_private;
+}
+
 struct sip_dialog *
 sipe_media_get_sip_dialog(struct sipe_media_call *call)
 {
