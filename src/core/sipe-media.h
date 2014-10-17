@@ -89,6 +89,16 @@ void sipe_media_handle_going_offline(struct sipe_core_private *sipe_private);
 gboolean sipe_media_is_conference_call(struct sipe_media_call_private *call_private);
 
 /**
+ * Retrieves a SIP dialog associated with the call.
+ *
+ * @param call (in) media call data
+ *
+ * @return a @c sip_dialog structure associated with @c call.
+ */
+struct sip_dialog *
+sipe_media_get_sip_dialog(struct sipe_media_call *call);
+
+/**
  * Checks whether SIP message belongs to the session of the given media call.
  *
  * Test is done on the basis of the Call-ID of the message.
