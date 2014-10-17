@@ -32,6 +32,7 @@
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-dialog.h"
 #include "sipe-media.h"
 
 struct {
@@ -113,9 +114,27 @@ writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 	    gboolean writable)
 {
 	if (writable && !foobar.socket) {
-		gchar socket_path[] = "/tmp/sipe-appshare-socket";
+		gchar *runtime_dir;
+		gchar *socket_path;
+		gchar *cmdline;
+		struct sip_dialog *dialog;
 		GSocketAddress *address;
 		GError *error = NULL;
+
+		dialog = sipe_media_get_sip_dialog(call);
+		if (!dialog) {
+			return;
+		}
+
+		runtime_dir = g_strdup_printf("%s/sipe",
+					      g_get_user_runtime_dir());
+
+		g_mkdir_with_parents(runtime_dir, 0700);
+
+		socket_path = g_strdup_printf("%s/applicationsharing-%u-%s",
+					      runtime_dir,
+					      getpid(),
+					      dialog->callid);
 
 		foobar.socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
 					     G_SOCKET_TYPE_STREAM,
@@ -140,8 +159,14 @@ writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 		foobar.media = call;
 		foobar.stream = stream;
 
-		g_spawn_command_line_async("xfreerdp /v:/tmp/sipe-appshare-socket /sec:rdp", &error);
+		cmdline = g_strdup_printf("xfreerdp /v:%s /sec:rdp",socket_path);
+
+		g_spawn_command_line_async(cmdline, &error);
 		g_assert_no_error(error);
+
+		g_free(cmdline);
+		g_free(socket_path);
+		g_free(runtime_dir);
 	}
 }
 
