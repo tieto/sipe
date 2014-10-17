@@ -35,18 +35,25 @@
 #include "sipe-dialog.h"
 #include "sipe-media.h"
 
-struct {
+struct sipe_appshare {
 	struct sipe_media_call *media;
 	struct sipe_media_stream *stream;
 	GSocket *socket;
 	GSocket *data_socket;
 	GIOChannel *listen_channel;
 	GIOChannel *data_channel;
-} foobar;
+};
+
+static void
+sipe_appshare_free(struct sipe_appshare *appshare)
+{
+	g_free(appshare);
+}
 
 static void
 read_cb(struct sipe_media_stream *stream)
 {
+	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
 	guint8 buffer[0x800];
 	gint bytes_read;
 	gsize bytes_written;
@@ -60,9 +67,10 @@ read_cb(struct sipe_media_stream *stream)
 		return;
 	}
 
-	g_io_channel_write_chars(foobar.data_channel, (gchar *)buffer, bytes_read, &bytes_written, &error);
+	g_io_channel_write_chars(appshare->data_channel, (gchar *)buffer,
+				 bytes_read, &bytes_written, &error);
 	g_assert_no_error(error);
-	g_io_channel_flush(foobar.data_channel, &error);
+	g_io_channel_flush(appshare->data_channel, &error);
 	g_assert_no_error(error);
 	g_assert(bytes_read == (gint)bytes_written);
 }
@@ -70,8 +78,9 @@ read_cb(struct sipe_media_stream *stream)
 static gboolean
 rdp_channel_readable_cb(GIOChannel *channel,
 			SIPE_UNUSED_PARAMETER GIOCondition condition,
-			SIPE_UNUSED_PARAMETER gpointer data)
+			gpointer data)
 {
+	struct sipe_appshare *appshare = data;
 	GError *error = NULL;
 	gchar buffer[2048];
 	gsize bytes_read;
@@ -80,11 +89,12 @@ rdp_channel_readable_cb(GIOChannel *channel,
 		g_io_channel_read_chars(channel, buffer, sizeof (buffer), &bytes_read, &error);
 		g_assert_no_error(error);
 
-		if (bytes_read > 0) {
-			sipe_backend_media_write(foobar.media, foobar.stream, (guint8 *)buffer, bytes_read, TRUE);
-		} else {
+		if (bytes_read == 0) {
 			break;
 		}
+
+		sipe_backend_media_write(appshare->media, appshare->stream,
+					 (guint8 *)buffer, bytes_read, TRUE);
 	}
 
 	return TRUE;
@@ -93,19 +103,20 @@ rdp_channel_readable_cb(GIOChannel *channel,
 static gboolean
 socket_connect_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 		   SIPE_UNUSED_PARAMETER GIOCondition condition,
-		   SIPE_UNUSED_PARAMETER gpointer data)
+		   gpointer data)
 {
+	struct sipe_appshare *appshare = data;
 	GError *error = NULL;
 
-	foobar.data_socket = g_socket_accept(foobar.socket, NULL, &error);
+	appshare->data_socket = g_socket_accept(appshare->socket, NULL, &error);
 	g_assert_no_error(error);
 	g_io_channel_shutdown(channel, TRUE, &error);
 
-	foobar.data_channel = g_io_channel_unix_new(g_socket_get_fd(foobar.data_socket));
-	g_io_channel_set_encoding(foobar.data_channel, NULL, &error);
+	appshare->data_channel = g_io_channel_unix_new(g_socket_get_fd(appshare->data_socket));
+	g_io_channel_set_encoding(appshare->data_channel, NULL, &error);
 	g_assert_no_error(error);
-	g_io_add_watch(foobar.data_channel, G_IO_IN , rdp_channel_readable_cb,
-		       NULL);
+	g_io_add_watch(appshare->data_channel, G_IO_IN,
+		       rdp_channel_readable_cb, appshare);
 
 	return FALSE;
 }
@@ -114,7 +125,9 @@ static void
 writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 	    gboolean writable)
 {
-	if (writable && !foobar.socket) {
+	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
+
+	if (writable && !appshare->socket) {
 		gchar *runtime_dir;
 		gchar *socket_path;
 		gchar *cmdline;
@@ -137,28 +150,29 @@ writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 					      getpid(),
 					      dialog->callid);
 
-		foobar.socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
+		appshare->socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
 					     G_SOCKET_TYPE_STREAM,
 					     G_SOCKET_PROTOCOL_DEFAULT,
 					     &error);
 		g_assert_no_error(error);
-		g_socket_set_blocking(foobar.socket, FALSE);
+		g_socket_set_blocking(appshare->socket, FALSE);
 
 		address = g_unix_socket_address_new(socket_path);
 
 		g_unlink(socket_path);
 
-		g_socket_bind(foobar.socket, address, TRUE, &error);
+		g_socket_bind(appshare->socket, address, TRUE, &error);
 		g_assert_no_error(error);
-		g_socket_listen(foobar.socket, &error);
+		g_socket_listen(appshare->socket, &error);
 		g_assert_no_error(error);
 
-		foobar.listen_channel = g_io_channel_unix_new(g_socket_get_fd(foobar.socket));
-		g_io_add_watch(foobar.listen_channel, G_IO_IN, socket_connect_cb, NULL);
+		appshare->listen_channel = g_io_channel_unix_new(g_socket_get_fd(appshare->socket));
+		g_io_add_watch(appshare->listen_channel, G_IO_IN,
+			       socket_connect_cb, appshare);
 
 		/* We need to send the data after the reinvite, or need to set the encryption params after the first invite*/
-		foobar.media = call;
-		foobar.stream = stream;
+		appshare->media = call;
+		appshare->stream = stream;
 
 		cmdline = g_strdup_printf("xfreerdp /v:%s /sec:rdp",socket_path);
 
@@ -183,14 +197,21 @@ process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_privat
 		return;
 	}
 
-	foobar.socket = 0;
+	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
+	if (!stream) {
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+		return;
+	}
 
-	sipe_backend_media_accept(call->backend_private, TRUE);
+	sipe_media_stream_set_data(stream,
+				   g_new0(struct sipe_appshare, 1),
+				   (GDestroyNotify)sipe_appshare_free);
+
+	stream->read_cb = read_cb;
 
 	call->writable_cb = writable_cb;
 
-	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
-	stream->read_cb = read_cb;
+	sipe_backend_media_accept(call->backend_private, TRUE);
 }
 
 /*
