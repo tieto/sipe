@@ -39,14 +39,36 @@ struct sipe_appshare {
 	struct sipe_media_call *media;
 	struct sipe_media_stream *stream;
 	GSocket *socket;
-	GSocket *data_socket;
-	GIOChannel *listen_channel;
-	GIOChannel *data_channel;
+	GIOChannel *channel;
+	guint rdp_channel_readable_watch_id;
 };
+
+static void
+unlink_appshare_socket(GSocket *socket)
+{
+	GError *error = NULL;
+	GSocketAddress *address = g_socket_get_local_address(socket, &error);
+
+	g_return_if_fail(address);
+
+	unlink(g_unix_socket_address_get_path(G_UNIX_SOCKET_ADDRESS(address)));
+	g_object_unref(address);
+}
 
 static void
 sipe_appshare_free(struct sipe_appshare *appshare)
 {
+	GError *error = NULL;
+
+	g_source_destroy(g_main_context_find_source_by_id(NULL,
+			appshare->rdp_channel_readable_watch_id));
+
+	g_io_channel_shutdown(appshare->channel, TRUE, &error);
+	g_io_channel_unref(appshare->channel);
+
+	unlink_appshare_socket(appshare->socket);
+	g_object_unref(appshare->socket);
+
 	g_free(appshare);
 }
 
@@ -67,10 +89,10 @@ read_cb(struct sipe_media_stream *stream)
 		return;
 	}
 
-	g_io_channel_write_chars(appshare->data_channel, (gchar *)buffer,
+	g_io_channel_write_chars(appshare->channel, (gchar *)buffer,
 				 bytes_read, &bytes_written, &error);
 	g_assert_no_error(error);
-	g_io_channel_flush(appshare->data_channel, &error);
+	g_io_channel_flush(appshare->channel, &error);
 	g_assert_no_error(error);
 	g_assert(bytes_read == (gint)bytes_written);
 }
@@ -108,16 +130,23 @@ socket_connect_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 {
 	struct sipe_appshare *appshare = data;
 	GError *error = NULL;
+	GSocket *data_socket;
 
-	appshare->data_socket = g_socket_accept(appshare->socket, NULL, &error);
-	g_assert_no_error(error);
-	g_io_channel_shutdown(channel, TRUE, &error);
+	data_socket = g_socket_accept(appshare->socket, NULL, &error);
 
-	appshare->data_channel = g_io_channel_unix_new(g_socket_get_fd(appshare->data_socket));
-	g_io_channel_set_encoding(appshare->data_channel, NULL, &error);
+	unlink_appshare_socket(appshare->socket);
+	g_io_channel_shutdown(appshare->channel, TRUE, &error);
+	g_io_channel_unref(appshare->channel);
+	g_object_unref(appshare->socket);
+
+	appshare->socket = data_socket;
+
+	appshare->channel = g_io_channel_unix_new(g_socket_get_fd(appshare->socket));
+	g_io_channel_set_encoding(appshare->channel, NULL, &error);
 	g_assert_no_error(error);
-	g_io_add_watch(appshare->data_channel, G_IO_IN,
-		       rdp_channel_readable_cb, appshare);
+	appshare->rdp_channel_readable_watch_id =
+			g_io_add_watch(appshare->channel, G_IO_IN,
+				       rdp_channel_readable_cb, appshare);
 
 	return FALSE;
 }
@@ -167,9 +196,10 @@ writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 		g_socket_listen(appshare->socket, &error);
 		g_assert_no_error(error);
 
-		appshare->listen_channel = g_io_channel_unix_new(g_socket_get_fd(appshare->socket));
-		g_io_add_watch(appshare->listen_channel, G_IO_IN,
-			       socket_connect_cb, appshare);
+		appshare->channel = g_io_channel_unix_new(g_socket_get_fd(appshare->socket));
+		appshare->rdp_channel_readable_watch_id =
+				g_io_add_watch(appshare->channel, G_IO_IN,
+					       socket_connect_cb, appshare);
 
 		/* We need to send the data after the reinvite, or need to set the encryption params after the first invite*/
 		appshare->media = call;
