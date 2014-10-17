@@ -73,6 +73,10 @@ struct sipe_media_stream_private {
 	guchar *encryption_key;
 	int encryption_key_id;
 	gboolean remote_candidates_and_codecs_set;
+
+	/* User data associated with the stream. */
+	gpointer data;
+	GDestroyNotify data_free_func;
 };
 #define SIPE_MEDIA_STREAM         ((struct sipe_media_stream *) stream_private)
 #define SIPE_MEDIA_STREAM_PRIVATE ((struct sipe_media_stream_private *) stream)
@@ -94,6 +98,9 @@ remove_stream(struct sipe_media_call* call,
 	      struct sipe_media_stream_private *stream_private)
 {
 	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+
+	sipe_media_stream_set_data(SIPE_MEDIA_STREAM, NULL, NULL);
+
 	call_private->streams =
 			g_slist_remove(call_private->streams, stream_private);
 	sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
@@ -1748,6 +1755,31 @@ sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private)
 			      process_get_av_edge_credentials_response);
 
 	g_free(body);
+}
+
+void
+sipe_media_stream_set_data(struct sipe_media_stream *stream, gpointer data,
+			   GDestroyNotify free_func)
+{
+	struct sipe_media_stream_private *stream_private =
+			SIPE_MEDIA_STREAM_PRIVATE;
+
+	g_return_if_fail(stream_private);
+
+	if (stream_private->data && stream_private->data_free_func) {
+		stream_private->data_free_func(stream_private->data);
+	}
+
+	stream_private->data = data;
+	stream_private->data_free_func = free_func;
+}
+
+gpointer
+sipe_media_stream_get_data(struct sipe_media_stream *stream)
+{
+	g_return_val_if_fail(stream, NULL);
+
+	return SIPE_MEDIA_STREAM_PRIVATE->data;
 }
 
 /*

@@ -24,6 +24,7 @@
 struct sipmsg;
 struct sipe_core_private;
 struct sipe_media_call_private;
+struct sipe_media_stream;
 
 /**
  * Handles incoming SIP INVITE message to start a media session.
@@ -88,6 +89,27 @@ gboolean is_media_session_msg(struct sipe_media_call_private *call_private,
  * @param sipe_private (in) SIPE core data.
  */
 void sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private);
+
+/**
+ * Associates user data with the media stream.
+ *
+ * @param stream (in) media stream data
+ * @param data (in) user data
+ * @param free_func (in) function to free @c data when @c stream is destroyed
+ */
+void
+sipe_media_stream_set_data(struct sipe_media_stream *stream, gpointer data,
+			   GDestroyNotify free_func);
+
+/**
+ * Returns user data associated with the media stream.
+ *
+ * @param stream (in) media stream data
+ *
+ * @return user data
+ */
+gpointer
+sipe_media_stream_get_data(struct sipe_media_stream *stream);
 
 /**
  * Deallocates the opaque list of media relay structures
