@@ -1,5 +1,7 @@
-version 1.18.3 "Bug Fixes III" (2014-08-16)
-	- Fixed #259: HTML response to EWS autodiscover triggers libxml2 assert (Stefan Becker)
-	- Fixed #258: V&V call gets rejected when IPv6 is enabled (Stefan Becker, Jakub Adam)
-	- Fixed #257: Windows 7: SIPE crashes after a minute (Stefan Becker)
-	- mingw: improve crash information reporting (Stefan Becker)
+version 1.18.4 "Bug Fixes IV" (2014-10-18)
+	- Fixed #263: ADFS fails when user and login name differ (Stefan Becker)
+	- Fixed #262: Adium: SIPE doesn't auto- or re-connect (Stefan Becker)
+	- fixed memory leaks (Stefan Becker)
+	- fixed processing of presence publish event response (John Zhang, Stefan Becker)
+	  * fixes a longstanding issue that the Pidgin user status sometimes
+	    didn't switch back to "Available" after the end of a meeting
