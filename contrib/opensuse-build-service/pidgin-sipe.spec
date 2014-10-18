@@ -437,6 +437,15 @@ make %{_smp_mflags} check
 %{mingw_makeinstall}
 rm -f %{buildroot}%{mingw_libdir}/purple-2/*.dll.a
 
+# generate .dbgsym file
+rm -f %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym
+mv \
+	%{buildroot}%{mingw_libdir}/purple-2/libsipe.dll \
+	%{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym
+%{__strip} --strip-unneeded \
+	%{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym \
+	-o %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll \
+
 # generate NSIS installer package
 perl contrib/opensuse-build-service/generate_nsi.pl po/LINGUAS \
 	<contrib/opensuse-build-service/pidgin-sipe.nsi.template \
@@ -492,6 +501,7 @@ rm -rf %{buildroot}
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
 %if 0%{?mingw_prefix:1}
 %{mingw_libdir}/purple-2/libsipe.dll
+%{mingw_libdir}/purple-2/libsipe.dll.dbgsym
 %else
 %{_libdir}/purple-2/libsipe.so
 %endif
