@@ -4,9 +4,14 @@ Sat Oct 18 14:26:00 UTC 2014 - chemobejk@gmail.com
 - Update to version 1.18.4:
 
 -------------------------------------------------------------------
-Sat Aug 16 11:31:00 UTC 2014 - chemobejk@gmail.com
+Sat Aug 16 20:54:45 UTC 2014 - dimstar@opensuse.org
 
 - Update to version 1.18.3:
+  + HTML response to EWS autodiscover triggers libxml2 assert.
+  + V&V call gets rejected when IPv6 is enabled.
+  + Windows 7: SIPE crashes after a minute.
+  + mingw: improve crash information reporting.
+  + Bugs fixed: sf#257, sf#258, sf#259.
 
 -------------------------------------------------------------------
 Sat Jul 12 13:49:48 UTC 2014 - dimstar@opensuse.org
