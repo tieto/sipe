@@ -27,13 +27,18 @@
 
 #include <stdlib.h>
 
+#include "sipmsg.h"
 #include "sipe-applicationsharing.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-media.h"
+#include "sipe-nls.h"
+#include "sipe-user.h"
+#include "sipe-utils.h"
 
 struct sipe_appshare {
 	struct sipe_media_call *media;
@@ -41,6 +46,7 @@ struct sipe_appshare {
 	GSocket *socket;
 	GIOChannel *channel;
 	guint rdp_channel_readable_watch_id;
+	struct sipe_user_ask_ctx *ask_ctx;
 };
 
 static void
@@ -68,6 +74,10 @@ sipe_appshare_free(struct sipe_appshare *appshare)
 
 	unlink_appshare_socket(appshare->socket);
 	g_object_unref(appshare->socket);
+
+	if (appshare->ask_ctx) {
+		sipe_user_close_ask(appshare->ask_ctx);
+	}
 
 	g_free(appshare);
 }
@@ -210,10 +220,6 @@ writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 				g_io_add_watch(appshare->channel, G_IO_IN,
 					       socket_connect_cb, appshare);
 
-		/* We need to send the data after the reinvite, or need to set the encryption params after the first invite*/
-		appshare->media = call;
-		appshare->stream = stream;
-
 		cmdline = g_strdup_printf("xfreerdp /v:%s /sec:rdp",socket_path);
 
 		g_spawn_command_line_async(cmdline, &error);
@@ -225,12 +231,53 @@ writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 	}
 }
 
+static void
+accept_cb(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+	  gpointer data)
+{
+	struct sipe_appshare *appshare = data;
+	appshare->ask_ctx = NULL;
+
+	sipe_backend_media_accept(appshare->media->backend_private, TRUE);
+}
+
+static void
+decline_cb(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+	  gpointer data)
+{
+	struct sipe_appshare *appshare = data;
+	appshare->ask_ctx = NULL;
+
+	sipe_backend_media_hangup(appshare->media->backend_private, TRUE);
+}
+
+static void
+ask_accept_applicationsharing(struct sipe_core_private *sipe_private,
+			      struct sipmsg *msg,
+			      struct sipe_appshare *appshare)
+{
+	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+	gchar *alias = sipe_buddy_get_alias(sipe_private, from);
+	gchar *ask_msg = g_strdup_printf(_("%s wants to start presenting"),
+					 alias ? alias : from);
+
+	appshare->ask_ctx = sipe_user_ask(sipe_private, ask_msg,
+			     _("Accept"), accept_cb,
+			     _("Decline"), decline_cb,
+			     appshare);
+
+	g_free(ask_msg);
+	g_free(alias);
+	g_free(from);
+}
+
 void
 process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_private,
 					   struct sipmsg *msg)
 {
 	struct sipe_media_call *call = NULL;
 	struct sipe_media_stream *stream;
+	struct sipe_appshare *appshare;
 
 	call = process_incoming_invite_call(sipe_private, msg);
 	if (!call) {
@@ -243,15 +290,18 @@ process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_privat
 		return;
 	}
 
-	sipe_media_stream_set_data(stream,
-				   g_new0(struct sipe_appshare, 1),
+	appshare = g_new0(struct sipe_appshare, 1);
+	appshare->media = call;
+	appshare->stream = stream;
+
+	ask_accept_applicationsharing(sipe_private, msg, appshare);
+
+	sipe_media_stream_set_data(stream, appshare,
 				   (GDestroyNotify)sipe_appshare_free);
 
 	stream->read_cb = read_cb;
 
 	call->writable_cb = writable_cb;
-
-	sipe_backend_media_accept(call->backend_private, TRUE);
 }
 
 /*
