@@ -24,18 +24,24 @@
 
 #include <gio/gio.h>
 
+#include "sipmsg.h"
 #include "sipe-appshare.h"
 #include "sipe-appshare-xfreerdp.h"
 #include "sipe-backend.h"
+#include "sipe-buddy.h"
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-media.h"
+#include "sipe-nls.h"
+#include "sipe-user.h"
+#include "sipe-utils.h"
 
 struct sipe_appshare {
 	struct sipe_media_stream *stream;
 	GSocket *socket;
 	GIOChannel *channel;
 	guint rdp_channel_readable_watch_id;
+	struct sipe_user_ask_ctx *ask_ctx;
 
 	struct sipe_rdp_client client;
 };
@@ -52,6 +58,10 @@ sipe_appshare_free(struct sipe_appshare *appshare)
 	g_io_channel_unref(appshare->channel);
 
 	g_object_unref(appshare->socket);
+
+	if (appshare->ask_ctx) {
+		sipe_user_close_ask(appshare->ask_ctx);
+	}
 
 	if (appshare->client.free_cb) {
 		appshare->client.free_cb(&appshare->client);
@@ -228,6 +238,46 @@ writable_cb(struct sipe_media_stream *stream)
 	}
 }
 
+static void
+accept_cb(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+	  gpointer data)
+{
+	struct sipe_appshare *appshare = data;
+	appshare->ask_ctx = NULL;
+
+	sipe_backend_media_accept(appshare->stream->call->backend_private, TRUE);
+}
+
+static void
+decline_cb(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+	  gpointer data)
+{
+	struct sipe_appshare *appshare = data;
+	appshare->ask_ctx = NULL;
+
+	sipe_backend_media_hangup(appshare->stream->call->backend_private, TRUE);
+}
+
+static void
+ask_accept_applicationsharing(struct sipe_core_private *sipe_private,
+			      struct sipmsg *msg,
+			      struct sipe_appshare *appshare)
+{
+	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+	gchar *alias = sipe_buddy_get_alias(sipe_private, from);
+	gchar *ask_msg = g_strdup_printf(_("%s wants to start presenting"),
+					 alias ? alias : from);
+
+	appshare->ask_ctx = sipe_user_ask(sipe_private, ask_msg,
+			     _("Accept"), accept_cb,
+			     _("Decline"), decline_cb,
+			     appshare);
+
+	g_free(ask_msg);
+	g_free(alias);
+	g_free(from);
+}
+
 void
 process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 				 struct sipmsg *msg)
@@ -264,7 +314,7 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 	stream->read_cb = read_cb;
 	stream->writable_cb = writable_cb;
 
-	sipe_backend_media_accept(call->backend_private, TRUE);
+	ask_accept_applicationsharing(sipe_private, msg, appshare);
 }
 
 /*
