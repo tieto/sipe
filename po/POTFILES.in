@@ -3,6 +3,7 @@
 
 src/adium/ESPurpleSIPEAccount.h
 src/core/sip-transport.c
+src/core/sipe-applicationsharing.c
 src/core/sipe-buddy.c
 src/core/sipe-cal.c
 src/core/sipe-certificate.c
