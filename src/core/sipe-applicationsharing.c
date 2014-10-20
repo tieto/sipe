@@ -91,21 +91,30 @@ read_cb(struct sipe_media_stream *stream)
 
 	g_io_channel_write_chars(appshare->channel, (gchar *)buffer,
 				 bytes_read, &bytes_written, &error);
-	g_assert_no_error(error);
-	g_io_channel_flush(appshare->channel, &error);
+	if (g_io_channel_flush(appshare->channel, &error) == G_IO_STATUS_ERROR &&
+	    g_error_matches(error, G_IO_CHANNEL_ERROR, G_IO_CHANNEL_ERROR_PIPE)) {
+		g_error_free(error);
+		return;
+	}
+
 	g_assert_no_error(error);
 	g_assert(bytes_read == (gint)bytes_written);
 }
 
 static gboolean
 rdp_channel_readable_cb(GIOChannel *channel,
-			SIPE_UNUSED_PARAMETER GIOCondition condition,
+			GIOCondition condition,
 			gpointer data)
 {
 	struct sipe_appshare *appshare = data;
 	GError *error = NULL;
 	gchar buffer[2048];
 	gsize bytes_read;
+
+	if (condition & G_IO_HUP) {
+		sipe_backend_media_hangup(appshare->media->backend_private, TRUE);
+		return FALSE;
+	}
 
 	while (sipe_media_stream_is_writable(appshare->stream)) {
 		g_io_channel_read_chars(channel, buffer, sizeof (buffer), &bytes_read, &error);
@@ -145,7 +154,7 @@ socket_connect_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 	g_io_channel_set_encoding(appshare->channel, NULL, &error);
 	g_assert_no_error(error);
 	appshare->rdp_channel_readable_watch_id =
-			g_io_add_watch(appshare->channel, G_IO_IN,
+			g_io_add_watch(appshare->channel, G_IO_IN | G_IO_HUP,
 				       rdp_channel_readable_cb, appshare);
 
 	return FALSE;
