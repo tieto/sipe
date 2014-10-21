@@ -237,8 +237,13 @@ fill_zero_tcp_act_ports_from_tcp_pass(GSList *candidates)
 	for (i = candidates; i; i = i->next) {
 		struct sdpcandidate *c = i->data;
 		if (c->type == SIPE_CANDIDATE_TYPE_RELAY && c->base_port == 0) {
-			c->base_port = *(guint*)g_hash_table_lookup(ip_to_port,
-					c->base_ip);
+			guint *base_port = (guint*)g_hash_table_lookup(ip_to_port, c->base_ip);
+			if (base_port) {
+				c->base_port = *base_port;
+			} else {
+				SIPE_DEBUG_WARNING("Couldn't determine base port for candidate "
+						   "with foundation %s", c->foundation);
+			}
 		}
 	}
 
