@@ -81,7 +81,8 @@ sipe_backend_media_add_stream(struct sipe_media_call *media,
 			      SipeMediaType type,
 			      SipeIceVersion ice_version,
 			      gboolean initiator,
-			      struct sipe_backend_media_relays *media_relays)
+			      struct sipe_backend_media_relays *media_relays,
+			      guint min_port, guint max_port)
 {
 	_NIF();
 	return NULL;
