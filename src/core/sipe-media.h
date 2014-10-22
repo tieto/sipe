@@ -135,6 +135,21 @@ gboolean is_media_session_msg(struct sipe_media_call_private *call_private,
 void sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private);
 
 /**
+ * Turns @c call's next INVITE into a MIME multipart message with @c body as
+ * the extra part.
+ *
+ * @param call (in) media call data
+ * @param invite_content_type (in) MIME media type of the resulting message,
+ *                            e.g. "multipart/alternative" or "multipart/mixed"
+ * @param body (in) content to add as the second part of the INVITE message;
+ *             @c call takes ownership of @c body and will free it after use
+ */
+void
+sipe_media_add_extra_invite_section(struct sipe_media_call *call,
+				    const gchar *invite_content_type,
+				    gchar *body);
+
+/**
  * Adds application-specific SDP attribute to the stream. This will be sent as
  * a part of our SIP INVITE alongside standard media description, formatted as:
  *
