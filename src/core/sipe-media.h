@@ -145,6 +145,11 @@ void sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private);
  * @param value (in) optional value of the attribute
  */
 void
+sipe_media_add_extra_invite_section(struct sipe_media_call *call,
+				    const gchar *invite_content_type,
+				    gchar *body);
+
+void
 sipe_media_stream_add_extra_attribute(struct sipe_media_stream *stream,
 				      const gchar *name, const gchar *value);
 
