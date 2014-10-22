@@ -27,6 +27,23 @@ struct sipe_media_call_private;
 struct sipe_media_stream;
 
 /**
+ * Adds a new media stream to a call.
+ *
+ * @param call (in) a media call.
+ * @param id (in) a string identifier for the media stream.
+ * @param type (in) a type of stream's content (audio, video, data, ...).
+ * @param ice_version (in) a version of ICE to use when negotiating the
+ *                    connection.
+ * @param initiator (in) @c TRUE if our client is the initiator of the stream.
+ *
+ * @return a new @c sipe_media_stream structure or @c NULL on error.
+ */
+struct sipe_media_stream *
+sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
+		      SipeMediaType type, SipeIceVersion ice_version,
+		      gboolean initiator);
+
+/**
  * Handles incoming SIP INVITE message to start a media session.
  *
  * @param sipe_private (in) SIPE core data.

@@ -1024,29 +1024,32 @@ void sipe_media_hangup(struct sipe_media_call_private *call_private)
 	}
 }
 
-static gboolean
-sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
-		      const gchar *with, SipeMediaType type,
-		      SipeIceVersion ice_version, gboolean initiator)
+struct sipe_media_stream *
+sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
+		      SipeMediaType type, SipeIceVersion ice_version,
+		      gboolean initiator)
 {
-	struct sipe_media_call_private *call_private = sipe_private->media_call;
+	struct sipe_core_private *sipe_private;
 	struct sipe_media_stream_private *stream_private;
 	struct sipe_backend_media_stream *backend_stream;
 	struct sipe_backend_media_relays *backend_media_relays;
+
+	sipe_private = SIPE_MEDIA_CALL_PRIVATE->sipe_private;
 
 	backend_media_relays = sipe_backend_media_relays_convert(
 						sipe_private->media_relays,
 						sipe_private->media_relay_username,
 						sipe_private->media_relay_password);
 
-	backend_stream = sipe_backend_media_add_stream(SIPE_MEDIA_CALL,
-						id, with, type, ice_version,
-						initiator, backend_media_relays);
+	backend_stream = sipe_backend_media_add_stream(call, id, call->with,
+						       type, ice_version,
+						       initiator,
+						       backend_media_relays);
 
 	sipe_backend_media_relays_free(backend_media_relays);
 
 	if (!backend_stream) {
-		return FALSE;
+		return NULL;
 	}
 
 	stream_private = g_new0(struct sipe_media_stream_private, 1);
@@ -1068,7 +1071,7 @@ sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
 			g_slist_append(sipe_private->media_call->streams,
 				       stream_private);
 
-	return TRUE;
+	return SIPE_MEDIA_STREAM;
 }
 
 static void
@@ -1076,13 +1079,16 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 			 const char *with, SipeIceVersion ice_version,
 			 gboolean with_video)
 {
+	struct sipe_media_call_private *call_private;
+
 	if (sipe_private->media_call)
 		return;
 
-	sipe_media_call_new(sipe_private, with, NULL, ice_version, 0);
+	call_private = sipe_media_call_new(sipe_private, with, NULL,
+					   ice_version, 0);
 
-	if (!sipe_media_stream_add(sipe_private, "audio", with, SIPE_MEDIA_AUDIO,
-				   sipe_private->media_call->ice_version,
+	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
+				   call_private->ice_version,
 				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
@@ -1092,7 +1098,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 	}
 
 	if (with_video &&
-	    !sipe_media_stream_add(sipe_private, "video", with, SIPE_MEDIA_VIDEO,
+	    !sipe_media_stream_add(SIPE_MEDIA_CALL, "video", SIPE_MEDIA_VIDEO,
 				   sipe_private->media_call->ice_version,
 				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
@@ -1118,6 +1124,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_media_call_private *call_private;
 	struct sip_session *session;
 	SipeIceVersion ice_version;
 	gchar **parts;
@@ -1143,12 +1150,11 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	ice_version = SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) ? SIPE_ICE_RFC_5245 :
 							    SIPE_ICE_DRAFT_6;
 
-	sipe_media_call_new(sipe_private, av_uri, NULL, ice_version, 0);
+	call_private = sipe_media_call_new(sipe_private, av_uri, NULL,
+					   ice_version, 0);
 
-	if (!sipe_media_stream_add(sipe_private, "audio", av_uri,
-				   SIPE_MEDIA_AUDIO,
-				   sipe_private->media_call->ice_version,
-				   TRUE)) {
+	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
+				   call_private->ice_version, TRUE)) {
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occurred"),
 					  _("Error creating audio stream"));
@@ -1277,8 +1283,6 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 
 		if (   media->port != 0
 		    && !sipe_core_media_get_stream_by_id(SIPE_MEDIA_CALL, id)) {
-			gchar *with;
-
 			if (sipe_strequal(id, "audio"))
 				type = SIPE_MEDIA_AUDIO;
 			else if (sipe_strequal(id, "video"))
@@ -1286,11 +1290,9 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			else
 				continue;
 
-			with = parse_from(sipmsg_find_header(msg, "From"));
-			sipe_media_stream_add(sipe_private, id, with, type,
+			sipe_media_stream_add(SIPE_MEDIA_CALL, id, type,
 					      smsg->ice_version, FALSE);
 			has_new_media = TRUE;
-			g_free(with);
 		}
 	}
 
