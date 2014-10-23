@@ -623,7 +623,6 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 	gchar *candidates_str = NULL;
 	gchar *remote_candidates_str = NULL;
 
-	gchar *tcp_setup_str = NULL;
 	gchar *attributes_str = NULL;
 	gchar *credentials = NULL;
 
@@ -645,13 +644,6 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE ||
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE ||
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_SO;
-			if (uses_tcp_transport) {
-				tcp_setup_str = g_strdup_printf(
-					"a=connection:existing\r\n"
-					"a=setup:%s\r\n",
-					(c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE) ? "passive" :
-					((c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) ? "active" : "so"));
-			}
 		}
 
 		attributes_str = attributes_to_string(media->attributes);
@@ -672,13 +664,11 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 				    "%s"
 				    "%s"
 				    "%s"
-				    "%s"
 				    "%s",
 				    media->name, media->port, uses_tcp_transport ? "TCP/" : "", codec_ids_str,
 				    media_conninfo ? media_conninfo : "",
 				    candidates_str ? candidates_str : "",
 				    remote_candidates_str ? remote_candidates_str : "",
-				    tcp_setup_str ? tcp_setup_str : "",
 				    codecs_str ? codecs_str : "",
 				    attributes_str ? attributes_str : "",
 				    credentials ? credentials : "");
@@ -688,7 +678,6 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 	g_free(codec_ids_str);
 	g_free(candidates_str);
 	g_free(remote_candidates_str);
-	g_free(tcp_setup_str);
 	g_free(attributes_str);
 	g_free(credentials);
 
