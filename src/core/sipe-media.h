@@ -29,6 +29,11 @@ struct sipe_media_stream;
 typedef void (* sipe_media_stream_read_callback)(struct sipe_media_stream *stream,
 						 guint8 *buffer, gsize len);
 
+struct sipe_media_call *
+sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
+		    struct sipmsg *msg, SipeIceVersion ice_version,
+		    SipeMediaCallFlags flags);
+
 /**
  * Adds a new media stream to a call.
  *

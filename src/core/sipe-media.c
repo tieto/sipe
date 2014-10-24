@@ -966,7 +966,7 @@ error_cb(struct sipe_media_call *call, gchar *message)
 	sipe_backend_media_hangup(call->backend_private, initiator || accepted);
 }
 
-static struct sipe_media_call_private *
+struct sipe_media_call *
 sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 		    struct sipmsg *msg, SipeIceVersion ice_version,
 		    SipeMediaCallFlags flags)
@@ -1038,7 +1038,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 
 	g_free(cname);
 
-	return call_private;
+	return SIPE_MEDIA_CALL;
 }
 
 void sipe_media_hangup(struct sipe_media_call_private *call_private)
@@ -1133,37 +1133,36 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 			 const char *with, SipeIceVersion ice_version,
 			 gboolean with_video)
 {
-	struct sipe_media_call_private *call_private;
+	struct sipe_media_call *call;
 
 	if (sipe_core_media_get_call(SIPE_CORE_PUBLIC)) {
 		return;
 	}
 
-	call_private = sipe_media_call_new(sipe_private, with, NULL,
-					   ice_version, 0);
+	call = sipe_media_call_new(sipe_private, with, NULL, ice_version, 0);
 
-	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
-				   call_private->ice_version,
+	if (!sipe_media_stream_add(call, "audio", SIPE_MEDIA_AUDIO,
+				   SIPE_MEDIA_CALL_PRIVATE->ice_version,
 				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
-		sipe_media_hangup(call_private);
+		sipe_media_hangup(SIPE_MEDIA_CALL_PRIVATE);
 		return;
 	}
 
 	if (with_video &&
-	    !sipe_media_stream_add(SIPE_MEDIA_CALL, "video", SIPE_MEDIA_VIDEO,
-				   call_private->ice_version,
+	    !sipe_media_stream_add(call, "video", SIPE_MEDIA_VIDEO,
+				   SIPE_MEDIA_CALL_PRIVATE->ice_version,
 				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating video stream"));
-		sipe_media_hangup(call_private);
+		sipe_media_hangup(SIPE_MEDIA_CALL_PRIVATE);
 		return;
 	}
 
-	append_proxy_fallback_invite_if_needed(call_private);
+	append_proxy_fallback_invite_if_needed(SIPE_MEDIA_CALL_PRIVATE);
 
 	// Processing continues in stream_initialized_cb
 }
@@ -1181,7 +1180,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_media_call_private *call_private;
+	struct sipe_media_call *call;
 	struct sip_session *session;
 	SipeIceVersion ice_version;
 	gchar **parts;
@@ -1208,16 +1207,15 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	ice_version = SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) ? SIPE_ICE_RFC_5245 :
 							    SIPE_ICE_DRAFT_6;
 
-	call_private = sipe_media_call_new(sipe_private, av_uri, NULL,
-					   ice_version, 0);
+	call = sipe_media_call_new(sipe_private, av_uri, NULL, ice_version, 0);
 
-	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
-				   call_private->ice_version, TRUE)) {
+	if (!sipe_media_stream_add(call, "audio", SIPE_MEDIA_AUDIO,
+				   SIPE_MEDIA_CALL_PRIVATE->ice_version, TRUE)) {
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occurred"),
 					  _("Error creating audio stream"));
 
-		sipe_media_hangup(call_private);
+		sipe_media_hangup(SIPE_MEDIA_CALL_PRIVATE);
 	}
 
 	g_free(av_uri);
@@ -1346,6 +1344,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 	}
 
 	if (!call_private) {
+		struct sipe_media_call *call;
 		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 		SipeMediaCallFlags flags = 0;
 
@@ -1353,8 +1352,9 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			flags |= SIPE_MEDIA_CALL_NO_UI;
 		}
 
-		call_private = sipe_media_call_new(sipe_private, with, msg,
-						   smsg->ice_version, flags);
+		call = sipe_media_call_new(sipe_private, with, msg,
+					   smsg->ice_version, flags);
+		call_private = (struct sipe_media_call_private *)call;
 
 		g_free(with);
 	}
