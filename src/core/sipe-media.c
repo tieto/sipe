@@ -962,7 +962,7 @@ error_cb(struct sipe_media_call *call, gchar *message)
 	sipe_backend_media_hangup(call->backend_private, initiator || accepted);
 }
 
-static struct sipe_media_call_private *
+struct sipe_media_call *
 sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 		    struct sipmsg *msg, SipeIceVersion ice_version,
 		    SipeMediaCallFlags flags)
@@ -1034,7 +1034,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 
 	g_free(cname);
 
-	return call_private;
+	return SIPE_MEDIA_CALL;
 }
 
 void sipe_media_hangup(struct sipe_media_call_private *call_private)
@@ -1135,8 +1135,9 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	call_private = sipe_media_call_new(sipe_private, with, NULL,
-					   ice_version, 0);
+	call_private = (struct sipe_media_call_private *)
+				sipe_media_call_new(sipe_private, with, NULL,
+						    ice_version, 0);
 
 	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
 				   call_private->ice_version,
@@ -1219,8 +1220,9 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	ice_version = SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) ? SIPE_ICE_RFC_5245 :
 							    SIPE_ICE_DRAFT_6;
 
-	call_private = sipe_media_call_new(sipe_private, av_uri, NULL,
-					   ice_version, 0);
+	call_private = (struct sipe_media_call_private *)
+				sipe_media_call_new(sipe_private, av_uri, NULL,
+						    ice_version, 0);
 	call_private->conference_session = session;
 
 	stream = sipe_media_stream_add(SIPE_MEDIA_CALL, "audio",
@@ -1401,9 +1403,10 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			flags |= SIPE_MEDIA_CALL_NO_UI;
 		}
 
-		call_private = sipe_media_call_new(sipe_private, with, msg,
-						   smsg->ice_version, flags);
-
+		call_private = (struct sipe_media_call_private *)
+					sipe_media_call_new(sipe_private, with,
+							    msg, smsg->ice_version,
+							    flags);
 		g_free(with);
 	}
 

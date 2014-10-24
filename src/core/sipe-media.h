@@ -30,6 +30,24 @@ typedef void (* sipe_media_stream_read_callback)(struct sipe_media_stream *strea
 						 guint8 *buffer, gsize len);
 
 /**
+ * Creates a new media call.
+ *
+ * @param sipe_private (in) SIPE core data.
+ * @param with (in) SIP URI of the second participant.
+ * @param msg (in) SIP INVITE message from the second participant or NULL if we
+ *            are the call initiator.
+ * @param ice_version (in) version of ICE protocol to use when establishing the
+ *                    connection path.
+ * @param flags (in) bitwise-or'd media call flags.
+ *
+ * @return a new @c sipe_media_call structure or @c NULL on error.
+ */
+struct sipe_media_call *
+sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
+		    struct sipmsg *msg, SipeIceVersion ice_version,
+		    SipeMediaCallFlags flags);
+
+/**
  * Adds a new media stream to a call.
  *
  * @param call (in) a media call.
