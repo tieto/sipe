@@ -168,6 +168,8 @@ struct sipe_core_private {
 	/* [MS-CONFPRO] CCCP request ID counter */
 	guint cccp_request_id;
 
+	guint ms_filetransfer_request_id;
+
 	GSList *conf_mcu_types;
 
 	/* Dial-in conferencing phone numbers for different regions */

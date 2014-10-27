@@ -24,6 +24,9 @@
 struct sipe_core_private;
 struct sipmsg;
 
+struct sipe_file_transfer *
+sipe_file_transfer_lync_new_outgoing(struct sipe_core_private *sipe_private);
+
 void process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 				     struct sipmsg *msg);
 

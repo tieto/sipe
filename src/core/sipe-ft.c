@@ -41,6 +41,7 @@
 #include "sipe-dialog.h"
 #include "sipe-digest.h"
 #include "sipe-ft.h"
+#include "sipe-ft-lync.h"
 #include "sipe-ft-tftp.h"
 #include "sipe-im.h"
 #include "sipe-nls.h"
@@ -105,7 +106,15 @@ sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
 {
 	struct sipe_file_transfer *ft;
 
-	ft = sipe_file_transfer_new_outgoing(SIPE_CORE_PRIVATE);
+#ifdef HAVE_XDATA
+	if (g_getenv("SIPE_LEGACY_FILETRANSFER") == NULL) {
+		ft = sipe_file_transfer_lync_new_outgoing(SIPE_CORE_PRIVATE);
+	} else
+#endif
+	{
+		ft = sipe_file_transfer_new_outgoing(SIPE_CORE_PRIVATE);
+	}
+
 	if (!ft) {
 		SIPE_DEBUG_ERROR_NOFORMAT("Couldn't initialize core file "
 					  "transfer structure");
