@@ -759,7 +759,7 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 	return TRUE;
 }
 
-static void
+static gboolean
 apply_remote_message(struct sipe_media_call_private* call_private,
 		     struct sdpmsg* msg)
 {
@@ -790,6 +790,9 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 	for (i = call_private->failed_media; i; i = i->next) {
 		msg->media = g_slist_remove(msg->media, i->data);
 	}
+
+	/* FALSE if all streams failed - call ends. */
+	return msg->media != NULL;
 }
 
 static gboolean
@@ -853,8 +856,9 @@ stream_initialized_cb(struct sipe_media_call *call,
 			struct sdpmsg *smsg = call_private->smsg;
 			call_private->smsg = NULL;
 
-			apply_remote_message(call_private, smsg);
-			maybe_send_first_invite_response(call_private);
+			if (apply_remote_message(call_private, smsg)) {
+				maybe_send_first_invite_response(call_private);
+			}
 			sdpmsg_free(smsg);
 		}
 	}
