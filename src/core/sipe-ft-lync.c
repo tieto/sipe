@@ -42,6 +42,7 @@
 #include "sipe-ft-lync.h"
 #include "sipe-media.h"
 #include "sipe-mime.h"
+#include "sipe-nls.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipmsg.h"
@@ -63,9 +64,12 @@ struct sipe_file_transfer_lync {
 
 	int backend_pipe[2];
 
+	struct sipe_core_private *sipe_private;
 	struct sipe_media_call *call;
 
 	gboolean was_cancelled;
+
+	int write_source_id;
 
 	void (*call_reject_parent_cb)(struct sipe_media_call *call,
 				      gboolean local);
@@ -95,6 +99,11 @@ sipe_file_transfer_lync_free(struct sipe_file_transfer_lync *ft_private)
 	g_free(ft_private->file_name);
 	g_free(ft_private->sdp);
 	g_free(ft_private->id);
+
+	if (ft_private->write_source_id) {
+		g_source_remove(ft_private->write_source_id);
+	}
+
 	g_free(ft_private);
 }
 
@@ -484,6 +493,7 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	struct sipe_media_stream *stream;
 
 	ft_private = g_new0(struct sipe_file_transfer_lync, 1);
+	ft_private->sipe_private = sipe_private;
 	sipe_mime_parts_foreach(sipmsg_find_header(msg, "Content-Type"),
 				msg->body, mime_mixed_cb, ft_private);
 
@@ -554,6 +564,112 @@ process_response(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
 	}
 }
 
+static void
+write_chunk(struct sipe_media_call *call, struct sipe_media_stream *stream,
+	    guint8 type, guint16 len, const gchar *buffer, gboolean blocking)
+{
+	guint16 len_be = GUINT16_TO_BE(len);
+
+	sipe_backend_media_write(call, stream, &type, sizeof (guint8), blocking);
+	sipe_backend_media_write(call, stream, (guint8 *)&len_be, sizeof (guint16), blocking);
+	sipe_backend_media_write(call, stream, (guint8 *)buffer, len, blocking);
+}
+
+static gboolean
+send_file_chunk(struct sipe_file_transfer_lync *ft_private)
+{
+	struct sipe_media_call *call = ft_private->call;
+	struct sipe_media_stream *stream =
+			sipe_core_media_get_stream_by_id(call, "data");
+	//gchar buffer[G_MAXINT16];
+	gchar buffer[1024];
+	gssize bytes_read;
+
+	bytes_read = sipe_backend_ft_read_file(SIPE_FILE_TRANSFER,
+					       (guchar *)&buffer,
+					       sizeof (buffer));
+	if (bytes_read != 0) {
+		write_chunk(call, stream, 0x00, bytes_read, buffer, TRUE);
+	}
+
+	if (sipe_backend_ft_is_completed(SIPE_FILE_TRANSFER)) {
+		/* End of transfer. */
+		gchar *request_id_str =
+				g_strdup_printf("%u", ft_private->request_id);
+		write_chunk(call, stream, 0x02, strlen(request_id_str),
+			    request_id_str, TRUE);
+		g_free(request_id_str);
+		ft_private->write_source_id = 0;
+		return G_SOURCE_REMOVE;
+	}
+
+	return G_SOURCE_CONTINUE;
+}
+
+static void
+start_writing(struct sipe_file_transfer_lync *ft_private)
+{
+	struct sipe_media_call *call = ft_private->call;
+	struct sipe_media_stream *stream =
+			sipe_core_media_get_stream_by_id(call, "data");
+
+	if (stream) {
+		gchar *request_id_str =
+				g_strdup_printf("%u", ft_private->request_id);
+
+		write_chunk(call, stream, 0x01, strlen(request_id_str),
+			    request_id_str, TRUE);
+
+		g_free(request_id_str);
+
+		sipe_backend_ft_start(SIPE_FILE_TRANSFER, 0, NULL, 0);
+		ft_private->write_source_id =
+				g_idle_add((GSourceFunc)send_file_chunk,
+					   ft_private);
+	}
+}
+
+static void
+process_request(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
+{
+	static const gchar *DOWNLOAD_PENDING_RESPONSE =
+			"<response xmlns=\"http://schemas.microsoft.com/rtc/2009/05/filetransfer\" requestId=\"%u\" code=\"pending\"/>";
+
+	if (sipe_xml_child(xml, "downloadFile")) {
+		ft_private->request_id =
+				atoi(sipe_xml_attribute(xml, "requestId"));
+
+		send_ms_filetransfer_msg(g_strdup_printf(DOWNLOAD_PENDING_RESPONSE,
+							 ft_private->request_id),
+					 ft_private, NULL);
+
+		start_writing(ft_private);
+	}
+}
+
+static void
+process_notify(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
+{
+	static const gchar *DOWNLOAD_SUCCESS_RESPONSE =
+		"<response xmlns=\"http://schemas.microsoft.com/rtc/2009/05/filetransfer\" requestId=\"%u\" code=\"success\"/>";
+
+	const sipe_xml *progress_node = sipe_xml_child(xml, "fileTransferProgress");
+
+	if (progress_node) {
+		gchar *to_str = sipe_xml_data(sipe_xml_child(progress_node, "bytesReceived/to"));
+
+		if (atoi(to_str) == (int)(ft_private->file_size - 1)) {
+			send_ms_filetransfer_msg(g_strdup_printf(DOWNLOAD_SUCCESS_RESPONSE,
+								 ft_private->request_id),
+						 ft_private, NULL);
+			/* This also hangs up the call and sends BYE to the
+			 * other party. */
+			ft_lync_deallocate(SIPE_FILE_TRANSFER);
+		}
+		g_free(to_str);
+	}
+}
+
 void
 process_incoming_info_ft_lync(struct sipe_core_private *sipe_private,
 			      struct sipmsg *msg)
@@ -575,13 +691,110 @@ process_incoming_info_ft_lync(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	if (sipe_strequal(sipe_xml_name(xml), "response")) {
-		process_response(ft_private, xml);
+	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+
+	if (sipe_backend_ft_is_incoming(SIPE_FILE_TRANSFER)) {
+		if (sipe_strequal(sipe_xml_name(xml), "response")) {
+			process_response(ft_private, xml);
+		}
+	} else {
+		if (sipe_strequal(sipe_xml_name(xml), "request")) {
+			process_request(ft_private, xml);
+		} else if (sipe_strequal(sipe_xml_name(xml), "notify")) {
+			process_notify(ft_private, xml);
+		}
 	}
 
 	sipe_xml_free(xml);
+}
 
-	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+static void
+append_publish_file_invite(struct sipe_media_call *call,
+			   struct sipe_file_transfer_lync *ft_private)
+{
+	static const gchar *PUBLISH_FILE_REQUEST =
+			"Content-Type: application/ms-filetransfer+xml\r\n"
+			"Content-Transfer-Encoding: 7bit\r\n"
+			"Content-Disposition: render; handling=optional\r\n"
+			"\r\n"
+			"<request xmlns=\"http://schemas.microsoft.com/rtc/2009/05/filetransfer\" requestId=\"%u\">"
+				"<publishFile>"
+					"<fileInfo>"
+						"<id>{6244F934-2EB1-443F-8E2C-48BA64AF463D}</id>"
+						"<name>%s</name>"
+						"<size>%u</size>"
+					"</fileInfo>"
+				"</publishFile>"
+			"</request>\r\n";
+	gchar *body;
+
+	ft_private->request_id =
+			++ft_private->sipe_private->ms_filetransfer_request_id;
+
+	body = g_strdup_printf(PUBLISH_FILE_REQUEST, ft_private->request_id,
+			       ft_private->file_name, ft_private->file_size);
+
+	sipe_media_add_extra_invite_section(call, "multipart/mixed", body);
+}
+
+static void
+ft_lync_outgoing_init(struct sipe_file_transfer *ft, const gchar *filename,
+		      gsize size, SIPE_UNUSED_PARAMETER const gchar *who)
+{
+	struct sipe_core_private *sipe_private =
+			SIPE_FILE_TRANSFER_PRIVATE->sipe_private;
+	struct sipe_file_transfer_lync *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
+	struct sipe_media_call *call;
+	struct sipe_media_stream *stream;
+
+	ft_private->file_name = g_strdup(filename);
+	ft_private->file_size = size;
+
+	call = sipe_media_call_new(sipe_private, who, NULL, SIPE_ICE_RFC_5245,
+				   SIPE_MEDIA_CALL_NO_UI);
+
+	ft_private->call = call;
+
+	stream = sipe_media_stream_add(call, "data", SIPE_MEDIA_APPLICATION,
+				       SIPE_ICE_RFC_5245, TRUE);
+	if (!stream) {
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Error occurred"),
+					  _("Error creating data stream"));
+
+		sipe_backend_media_hangup(call->backend_private, FALSE);
+		sipe_backend_ft_cancel_local(ft);
+		return;
+	}
+
+	sipe_media_stream_add_extra_attribute(stream, "sendonly", NULL);
+	sipe_media_stream_add_extra_attribute(stream, "mid", "1");
+	sipe_media_stream_set_data(stream, ft, NULL);
+	append_publish_file_invite(call, ft_private);
+}
+
+static gboolean
+ft_lync_outgoing_end(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft)
+{
+	/* We still need our filetransfer structure so don't let backend
+	 * deallocate it. We'll free it in process_notify(). */
+	ft->ft_deallocate = NULL;
+
+	return TRUE;
+}
+
+struct sipe_file_transfer *
+sipe_core_ft_lync_create_outgoing(struct sipe_core_public *sipe_public)
+{
+	struct sipe_file_transfer_lync *ft_private =
+		g_new0(struct sipe_file_transfer_lync, 1);
+
+	ft_private->sipe_private = SIPE_CORE_PRIVATE;
+	ft_private->public.ft_init = ft_lync_outgoing_init;
+	ft_private->public.ft_end = ft_lync_outgoing_end;
+	ft_private->public.ft_deallocate = ft_lync_deallocate;
+
+	return (struct sipe_file_transfer *)ft_private;
 }
 
 /*

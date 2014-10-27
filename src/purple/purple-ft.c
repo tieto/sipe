@@ -388,8 +388,10 @@ void sipe_purple_ft_send_file(PurpleConnection *gc,
 			      const char *who,
 			      const char *file)
 {
+	// TODO: retry with old FT.
 	struct sipe_file_transfer *ft =
-			sipe_core_ft_create_outgoing(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+			sipe_core_ft_lync_create_outgoing(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+			//sipe_core_ft_create_outgoing(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 	PurpleXfer *xfer = create_xfer(purple_connection_get_account(gc),
 				       PURPLE_XFER_TYPE_SEND, who, ft);
 	if (xfer) {
