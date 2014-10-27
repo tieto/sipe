@@ -235,6 +235,8 @@ void sipe_backend_ft_set_completed(struct sipe_file_transfer *ft);
 gssize sipe_backend_ft_read_file(struct sipe_file_transfer *ft, guchar *data,
 				 gsize size);
 
+gboolean sipe_backend_ft_is_completed(struct sipe_file_transfer *ft);
+
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft);
 void sipe_backend_ft_cancel_remote(struct sipe_file_transfer *ft);
 
