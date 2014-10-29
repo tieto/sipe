@@ -65,39 +65,43 @@ void sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 				  guint activity,
 				  const gchar *message)
 {
-	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	PurpleAccount *account = purple_private->account;
-	const gchar *status_id = sipe_purple_activity_to_token(activity);
-	PurpleSavedStatus *saved_status;
-	const PurpleStatusType *acct_status_type =
-		purple_status_type_find_with_id(purple_account_get_status_types(account),
-						status_id);
-	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
+	if ((activity == SIPE_ACTIVITY_AWAY) && purple_savedstatus_is_idleaway()) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_backend_status_and_notes: user is already idle-away");
+	} else {
+		struct sipe_backend_private *purple_private = sipe_public->backend_private;
+		PurpleAccount *account = purple_private->account;
+		const gchar *status_id = sipe_purple_activity_to_token(activity);
+		PurpleSavedStatus *saved_status;
+		const PurpleStatusType *acct_status_type =
+			purple_status_type_find_with_id(purple_account_get_status_types(account),
+							status_id);
+		PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
 
-	saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, message);
-	if (saved_status) {
-		purple_savedstatus_set_substatus(saved_status, account, acct_status_type, message);
-	}
-
-	/* If this type+message is unique then create a new transient saved status
-	 * Ref: gtkstatusbox.c
-	 */
-	if (!saved_status) {
-		GList *tmp;
-		GList *active_accts = purple_accounts_get_all_active();
-
-		saved_status = purple_savedstatus_new(NULL, primitive);
-		purple_savedstatus_set_message(saved_status, message);
-
-		for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
-			purple_savedstatus_set_substatus(saved_status,
-							 (PurpleAccount *)tmp->data, acct_status_type, message);
+		saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, message);
+		if (saved_status) {
+			purple_savedstatus_set_substatus(saved_status, account, acct_status_type, message);
 		}
-		g_list_free(active_accts);
-	}
 
-	/* Set the status for each account */
-	purple_savedstatus_activate(saved_status);
+		/* If this type+message is unique then create a new transient saved status
+		 * Ref: gtkstatusbox.c
+		 */
+		if (!saved_status) {
+			GList *tmp;
+			GList *active_accts = purple_accounts_get_all_active();
+
+			saved_status = purple_savedstatus_new(NULL, primitive);
+			purple_savedstatus_set_message(saved_status, message);
+
+			for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
+				purple_savedstatus_set_substatus(saved_status,
+								 (PurpleAccount *)tmp->data, acct_status_type, message);
+			}
+			g_list_free(active_accts);
+		}
+
+		/* Set the status for each account */
+		purple_savedstatus_activate(saved_status);
+	}
 }
 
 void sipe_purple_set_status(PurpleAccount *account,
