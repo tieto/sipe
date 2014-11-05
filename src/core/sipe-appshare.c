@@ -517,6 +517,12 @@ sipe_core_appshare_connect(struct sipe_core_public *sipe_public,
 	initialize_incoming_appshare(stream);
 }
 
+void
+sipe_core_share_application(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+			    SIPE_UNUSED_PARAMETER const gchar *who)
+{
+}
+
 /*
   Local Variables:
   mode: c

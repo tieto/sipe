@@ -507,6 +507,10 @@ void
 sipe_core_appshare_connect(struct sipe_core_public *sipe_public,
 			   struct sipe_chat_session *session);
 
+void
+sipe_core_share_application(struct sipe_core_public *sipe_public,
+			    const gchar *who);
+
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
 void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
