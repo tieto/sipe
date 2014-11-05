@@ -2370,6 +2370,14 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 		}
 	}
 
+#ifdef HAVE_RDP_SERVER
+	menu = sipe_backend_buddy_menu_add(sipe_public,
+					   menu,
+					   _("Share my desktop"),
+					   SIPE_BUDDY_MENU_SHARE_DESKTOP,
+					   NULL);
+#endif // HAVE_RDP_SERVER
+
 	/* access level control */
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
 		menu = sipe_backend_buddy_sub_menu_add(sipe_public,

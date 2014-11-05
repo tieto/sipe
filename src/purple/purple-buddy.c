@@ -664,6 +664,19 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 			      gc);
 }
 
+#ifdef HAVE_RDP_SERVER
+static void sipe_purple_buddy_share_desktop_cb(PurpleBuddy *buddy,
+					       SIPE_UNUSED_PARAMETER gpointer parameter)
+{
+	sipe_core_appshare_share_desktop(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+					 purple_buddy_get_name(buddy));
+}
+#else
+static void sipe_purple_buddy_share_desktop_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy,
+					       SIPE_UNUSED_PARAMETER gpointer parameter)
+{}
+#endif // HAVE_RDP_SERVER
+
 typedef void (*buddy_menu_callback)(PurpleBuddy *buddy,
 				    gpointer parameter);
 static const buddy_menu_callback callback_map[SIPE_BUDDY_MENU_TYPES] = {
@@ -676,6 +689,7 @@ static const buddy_menu_callback callback_map[SIPE_BUDDY_MENU_TYPES] = {
 /* SIPE_BUDDY_MENU_ACCESS_LEVEL_HELP   */ sipe_purple_buddy_access_level_help_cb,
 /* SIPE_BUDDY_MENU_CHANGE_ACCESS_LEVEL */ sipe_purple_buddy_change_access_level_cb,
 /* SIPE_BUDDY_MENU_ADD_NEW_DOMAIN      */ sipe_purple_buddy_add_new_domain_cb,
+/* SIPE_BUDDY_MENU_SHARE_DESKTOP       */ sipe_purple_buddy_share_desktop_cb,
 };
 
 struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_start(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
