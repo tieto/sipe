@@ -497,6 +497,11 @@ sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
 			     const gchar *who,
 			     const gchar *file);
 
+/* application sharing */
+
+void sipe_core_share_application(struct sipe_core_public *sipe_public,
+				 const gchar *who);
+
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
 void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
