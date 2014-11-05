@@ -312,6 +312,12 @@ process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_privat
 	call->writable_cb = writable_cb;
 }
 
+void
+sipe_core_share_application(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+			    SIPE_UNUSED_PARAMETER const gchar *who)
+{
+}
+
 /*
   Local Variables:
   mode: c
