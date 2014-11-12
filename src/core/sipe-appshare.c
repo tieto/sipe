@@ -20,10 +20,23 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 #include <string.h>
 
 #include <gio/gio.h>
+
+#ifdef HAVE_RDP_SERVER
+#include <glib/gstdio.h>
+
+#include <sys/socket.h>
+#include <sys/un.h>
+
+#include <freerdp/server/shadow.h>
+#endif // HAVE_RDP_SERVER
 
 #include "sipmsg.h"
 #include "sipe-appshare.h"
@@ -55,6 +68,10 @@ struct sipe_appshare {
 	gsize rdp_channel_buffer_len;
 
 	struct sipe_rdp_client client;
+
+#ifdef HAVE_RDP_SERVER
+	rdpShadowServer *server;
+#endif // HAVE_RDP_SERVER
 };
 
 static void
@@ -85,6 +102,18 @@ sipe_appshare_free(struct sipe_appshare *appshare)
 	if (appshare->socket) {
 		g_object_unref(appshare->socket);
 	}
+
+#ifdef HAVE_RDP_SERVER
+	if (appshare->server) {
+		if (appshare->server->ipcSocket) {
+			g_unlink(appshare->server->ipcSocket);
+		}
+
+		shadow_server_stop(appshare->server);
+		shadow_server_uninit(appshare->server);
+		shadow_server_free(appshare->server);
+	}
+#endif // HAVE_RDP_SERVER
 
 	if (appshare->ask_ctx) {
 		sipe_user_close_ask(appshare->ask_ctx);
@@ -638,6 +667,156 @@ sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
 		connect_conference(SIPE_CORE_PRIVATE, chat_session);
 	}
 }
+
+#ifdef HAVE_RDP_SERVER
+static void
+candidate_pairs_established_cb(struct sipe_media_stream *stream)
+{
+	struct sipe_appshare *appshare;
+	GSocketAddress *address;
+	GError *error = NULL;
+	struct sockaddr_un native;
+	rdpShadowServer* server;
+	const gchar *server_error = NULL;
+
+	g_return_if_fail(sipe_strequal(stream->id, "applicationsharing"));
+
+	appshare = sipe_media_stream_get_data(stream);
+
+	shadow_subsystem_set_entry_builtin("X11");
+
+	server = shadow_server_new();
+	if(!server) {
+		server_error = _("Could not create RDP server.");
+	} else {
+		server->ipcSocket = g_strdup_printf("%s/sipe-appshare-%u-%p",
+						    g_get_user_runtime_dir(),
+						    getpid(), stream);
+		server->authentication = FALSE;
+
+		/* Experimentally determined cap on multifrag max request size
+		 * Lync client would accept. Higher values result in a black
+		 * screen being displayed on the remote end.
+		 *
+		 * See related https://github.com/FreeRDP/FreeRDP/pull/3669. */
+		server->settings->MultifragMaxRequestSize = 0x3EFFFF;
+
+		if(shadow_server_init(server) < 0) {
+			server_error = _("Could not initialize RDP server.");
+		} else if(shadow_server_start(server) < 0) {
+			server_error = _("Could not start RDP server.");
+		}
+	}
+	if (server_error) {
+		struct sipe_core_private *sipe_private;
+
+		sipe_private = sipe_media_get_sipe_core_private(stream->call);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Application sharing error"),
+					  server_error);
+		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
+		if (server) {
+			shadow_server_uninit(server);
+			shadow_server_free(server);
+		}
+		return;
+	}
+
+	appshare->server = server;
+	appshare->socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
+					G_SOCKET_TYPE_STREAM,
+					G_SOCKET_PROTOCOL_DEFAULT,
+					&error);
+	if (error) {
+		SIPE_DEBUG_ERROR("Can't create RDP server socket: %s",
+				 error->message);
+		g_error_free(error);
+		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
+		return;
+	}
+
+	g_socket_set_blocking(appshare->socket, FALSE);
+
+	native.sun_family = AF_LOCAL;
+	strncpy(native.sun_path, server->ipcSocket, sizeof (native.sun_path) - 1);
+	native.sun_path[sizeof (native.sun_path) - 1] = '\0';
+	address = g_socket_address_new_from_native(&native, sizeof native);
+
+	g_socket_connect(appshare->socket, address, NULL, &error);
+	if (error) {
+		SIPE_DEBUG_ERROR("Can't connect to RDP server: %s", error->message);
+		g_error_free(error);
+		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
+		return;
+	}
+
+	appshare->channel = g_io_channel_unix_new(g_socket_get_fd(appshare->socket));
+
+	// No encoding for binary data
+	g_io_channel_set_encoding(appshare->channel, NULL, &error);
+	if (error) {
+		SIPE_DEBUG_ERROR("Error setting RDP channel encoding: %s",
+				 error->message);
+		g_error_free(error);
+		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
+		return;
+	}
+
+	appshare->rdp_channel_readable_watch_id =
+			g_io_add_watch(appshare->channel, G_IO_IN | G_IO_HUP,
+				       rdp_channel_readable_cb, appshare);
+
+	// Appshare structure initialized; don't call this again.
+	stream->candidate_pairs_established_cb = NULL;
+}
+
+void
+sipe_core_appshare_share_desktop(struct sipe_core_public *sipe_public,
+				 const gchar *with)
+{
+	struct sipe_media_call *call;
+	struct sipe_media_stream *stream;
+	struct sipe_appshare *appshare;
+
+	call = sipe_media_call_new(SIPE_CORE_PRIVATE, with, NULL,
+				   SIPE_ICE_RFC_5245,
+				   SIPE_MEDIA_CALL_INITIATOR |
+				   SIPE_MEDIA_CALL_NO_UI);
+
+	stream = sipe_media_stream_add(call, "applicationsharing",
+				       SIPE_MEDIA_APPLICATION,
+				       SIPE_ICE_RFC_5245, TRUE, 0);
+	if (!stream) {
+		sipe_backend_notify_error(sipe_public,
+				_("Application sharing error"),
+				_("Couldn't initialize application sharing"));
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+		return;
+	}
+
+	stream->candidate_pairs_established_cb = candidate_pairs_established_cb;
+	stream->read_cb = read_cb;
+
+	sipe_media_stream_add_extra_attribute(stream,
+					      "mid",
+					      "1");
+	sipe_media_stream_add_extra_attribute(stream,
+					      "x-applicationsharing-session-id",
+					      "1");
+	sipe_media_stream_add_extra_attribute(stream,
+					      "x-applicationsharing-role",
+					      "sharer");
+	sipe_media_stream_add_extra_attribute(stream,
+					      "x-applicationsharing-media-type",
+					      "rdp");
+
+	appshare = g_new0(struct sipe_appshare, 1);
+	appshare->stream = stream;
+
+	sipe_media_stream_set_data(stream, appshare,
+				   (GDestroyNotify)sipe_appshare_free);
+}
+#endif // HAVE_RDP_SERVER
 
 /*
   Local Variables:
