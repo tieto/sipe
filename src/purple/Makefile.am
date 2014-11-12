@@ -136,6 +136,11 @@ libsipe_la_LIBADD             += \
 	$(NICE_LIBS) \
 	$(GSTREAMER_LIBS) \
 	$(FARSTREAM_LIBS)
+
+if SIPE_HAVE_RDP_SERVER
+libsipe_la_LIBADD             += \
+	$(FREERDP_SHADOW_LIBS)
+endif
 endif
 
 TESTS = $(check_PROGRAMS)

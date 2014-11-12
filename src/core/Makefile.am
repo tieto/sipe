@@ -222,6 +222,11 @@ libsipe_core_la_SOURCES += \
 	sipe-appshare-xfreerdp.c
 
 libsipe_core_la_CFLAGS += $(GIO_CFLAGS)
+
+if SIPE_HAVE_RDP_SERVER
+libsipe_core_la_CFLAGS += \
+	$(FREERDP_SHADOW_CFLAGS)
+endif
 endif
 endif
 
