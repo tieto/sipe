@@ -169,6 +169,30 @@ socket_connect_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 	return FALSE;
 }
 
+static gchar*
+build_socket_path(struct sipe_media_call *call)
+{
+	gchar *socket_path;
+	gchar *runtime_dir;
+	struct sip_dialog *dialog;
+
+	dialog = sipe_media_get_sip_dialog(call);
+	if (!dialog) {
+		return NULL;
+	}
+
+	runtime_dir = g_strdup_printf("%s/sipe", g_get_user_runtime_dir());
+
+	g_mkdir_with_parents(runtime_dir, 0700);
+
+	socket_path = g_strdup_printf("%s/applicationsharing-%u-%s",
+				      runtime_dir, getpid(), dialog->callid);
+
+	g_free(runtime_dir);
+
+	return socket_path;
+}
+
 static void
 writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 	    gboolean writable)
@@ -176,27 +200,12 @@ writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
 
 	if (writable && !appshare->socket) {
-		gchar *runtime_dir;
 		gchar *socket_path;
 		gchar *cmdline;
-		struct sip_dialog *dialog;
 		GSocketAddress *address;
 		GError *error = NULL;
 
-		dialog = sipe_media_get_sip_dialog(call);
-		if (!dialog) {
-			return;
-		}
-
-		runtime_dir = g_strdup_printf("%s/sipe",
-					      g_get_user_runtime_dir());
-
-		g_mkdir_with_parents(runtime_dir, 0700);
-
-		socket_path = g_strdup_printf("%s/applicationsharing-%u-%s",
-					      runtime_dir,
-					      getpid(),
-					      dialog->callid);
+		socket_path = build_socket_path(call);
 
 		appshare->socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
 					     G_SOCKET_TYPE_STREAM,
@@ -225,7 +234,6 @@ writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
 
 		g_free(cmdline);
 		g_free(socket_path);
-		g_free(runtime_dir);
 	}
 }
 
