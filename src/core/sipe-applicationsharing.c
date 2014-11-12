@@ -312,10 +312,101 @@ process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_privat
 	call->writable_cb = writable_cb;
 }
 
-void
-sipe_core_share_application(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-			    SIPE_UNUSED_PARAMETER const gchar *who)
+static void
+candidate_pairs_established_cb(struct sipe_media_stream *stream)
 {
+	gchar *socket_path;
+	gchar *cmdline;
+	struct sipe_appshare *appshare;
+	GSocketAddress *address;
+	GError *error = NULL;
+
+	g_return_if_fail(sipe_strequal(stream->id, "applicationsharing"));
+
+	socket_path = build_socket_path(stream->call);
+
+	cmdline = g_strdup_printf("freerdp-shadow /ipc-socket:%s -auth",
+				  socket_path);
+	g_spawn_command_line_async(cmdline, &error);
+	g_free(cmdline);
+
+	if (error) {
+		struct sipe_core_private *sipe_private =
+				sipe_media_get_sipe_core_private(stream->call);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Application sharing error"),
+					  error->message);
+		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
+		g_free(socket_path);
+		return;
+	}
+
+	appshare = g_new0(struct sipe_appshare, 1);
+	appshare->media = stream->call;
+	appshare->stream = stream;
+	appshare->socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
+					G_SOCKET_TYPE_STREAM,
+					G_SOCKET_PROTOCOL_DEFAULT,
+					&error);
+	g_assert_no_error(error);
+	g_socket_set_blocking(appshare->socket, FALSE);
+
+	address = g_unix_socket_address_new(socket_path);
+	sleep(3);
+	g_socket_connect(appshare->socket, address, NULL, &error);
+	g_assert_no_error(error);
+
+	appshare->channel = g_io_channel_unix_new(g_socket_get_fd(appshare->socket));
+	g_io_channel_set_encoding(appshare->channel, NULL, &error);
+	g_assert_no_error(error);
+	appshare->rdp_channel_readable_watch_id =
+			g_io_add_watch(appshare->channel, G_IO_IN | G_IO_HUP,
+				       rdp_channel_readable_cb, appshare);
+
+	sipe_media_stream_set_data(stream, appshare,
+				   (GDestroyNotify)sipe_appshare_free);
+
+	g_free(socket_path);
+}
+
+void
+sipe_core_share_application(struct sipe_core_public *sipe_public,
+			    const gchar *who)
+{
+	struct sipe_media_call *call;
+	struct sipe_media_stream *stream;
+
+	call = sipe_media_call_new(SIPE_CORE_PRIVATE, who, NULL,
+				   SIPE_ICE_RFC_5245,
+				   SIPE_MEDIA_CALL_INITIATOR |
+				   SIPE_MEDIA_CALL_NO_UI);
+
+	stream = sipe_media_stream_add(call, "applicationsharing",
+				       SIPE_MEDIA_APPLICATION,
+				       SIPE_ICE_RFC_5245, TRUE, 0);
+	if (!stream) {
+		sipe_backend_notify_error(sipe_public,
+				_("Application sharing error"),
+				_("Couldn't initialize application sharing"));
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+		return;
+	}
+
+	stream->candidate_pairs_established_cb = candidate_pairs_established_cb;
+	stream->read_cb = read_cb;
+
+	sipe_media_stream_add_extra_attribute(stream,
+					      "mid",
+					      "1");
+	sipe_media_stream_add_extra_attribute(stream,
+					      "x-applicationsharing-session-id",
+					      "1");
+	sipe_media_stream_add_extra_attribute(stream,
+					      "x-applicationsharing-role",
+					      "sharer");
+	sipe_media_stream_add_extra_attribute(stream,
+					      "x-applicationsharing-media-type",
+					      "rdp");
 }
 
 /*
