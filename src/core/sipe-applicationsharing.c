@@ -323,6 +323,11 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 
 	g_return_if_fail(sipe_strequal(stream->id, "applicationsharing"));
 
+	if (sipe_media_stream_get_data(stream)) {
+		// Shadow server has already been initialized.
+		return;
+	}
+
 	socket_path = build_socket_path(stream->call);
 
 	cmdline = g_strdup_printf("freerdp-shadow /ipc-socket:%s -auth",
