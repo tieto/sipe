@@ -625,8 +625,13 @@ gboolean sipe_svc_realminfo(struct sipe_core_private *sipe_private,
 			    sipe_svc_callback *callback,
 			    gpointer callback_data)
 {
+	/*
+	 * For some users RealmInfo response is different for authuser and
+	 * username. Use authuser, but only if it looks like "user@domain".
+	 */
 	gchar *realminfo_uri = g_strdup_printf("https://login.microsoftonline.com/getuserrealm.srf?login=%s&xml=1",
-					       sipe_private->username);
+					       sipe_private->authuser && strchr(sipe_private->authuser, '@') ?
+					       sipe_private->authuser : sipe_private->username);
 	gboolean ret = sipe_svc_https_request(sipe_private,
 					      session,
 					      realminfo_uri,

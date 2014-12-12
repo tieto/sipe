@@ -310,7 +310,7 @@ static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private
 					  gboolean next_method)
 {
 	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
-	static const struct autodiscover_method const methods[] = {
+	static const struct autodiscover_method methods[] = {
 		{ "https://Autodiscover.%s/Autodiscover/Autodiscover.xml", FALSE },
 		{ "http://Autodiscover.%s/Autodiscover/Autodiscover.xml",  TRUE  },
 		{ "http://Autodiscover.%s/Autodiscover/Autodiscover.xml",  FALSE },
