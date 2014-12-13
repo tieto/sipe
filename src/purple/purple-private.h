@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@ struct _PurpleChat;
 struct _PurpleConnection;
 struct _PurpleGroup;
 struct _PurpleMessage;
+struct _PurplePluginAction;
 struct _PurpleRoomlist;
 struct _PurpleStatus;
 struct _PurpleXfer;
@@ -129,6 +130,9 @@ void sipe_purple_group_buddy(struct _PurpleConnection *gc,
 			     const char *old_group_name,
 			     const char *new_group_name);
 GList *sipe_purple_buddy_menu(struct _PurpleBuddy *buddy);
+
+/* libpurple search callbacks */
+void sipe_purple_show_find_contact(struct _PurplePluginAction *action);
 
 /* libpurple status callbacks */
 void sipe_purple_set_status(struct _PurpleAccount *account,
