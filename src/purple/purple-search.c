@@ -176,6 +176,8 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 				surname = value;
 			} else if (strcmp(id, "email") == 0) {
 				email = value;
+			} else if (strcmp(id, "sipid") == 0) {
+				/* TBD */
 			} else if (strcmp(id, "company") == 0) {
 				company = value;
 			} else if (strcmp(id, "country") == 0) {
@@ -211,6 +213,8 @@ void sipe_purple_show_find_contact(PurplePluginAction *action)
 	field = purple_request_field_string_new("surname", _("Last name"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 	field = purple_request_field_string_new("email", _("Email"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("sipid", _("SIP ID"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 	field = purple_request_field_string_new("company", _("Company"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
