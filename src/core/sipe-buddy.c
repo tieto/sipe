@@ -1270,6 +1270,7 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *given_name,
 			    const gchar *surname,
 			    const gchar *email,
+			    SIPE_UNUSED_PARAMETER const gchar *sipid,
 			    const gchar *company,
 			    const gchar *country)
 {

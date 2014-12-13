@@ -159,6 +159,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 	const gchar *given_name = NULL;
 	const gchar *surname    = NULL;
 	const gchar *email      = NULL;
+	const gchar *sipid      = NULL;
 	const gchar *company    = NULL;
 	const gchar *country    = NULL;
 
@@ -177,7 +178,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 			} else if (strcmp(id, "email") == 0) {
 				email = value;
 			} else if (strcmp(id, "sipid") == 0) {
-				/* TBD */
+				sipid = value;
 			} else if (strcmp(id, "company") == 0) {
 				company = value;
 			} else if (strcmp(id, "country") == 0) {
@@ -193,6 +194,7 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 			       given_name,
 			       surname,
 			       email,
+			       sipid,
 			       company,
 			       country);
 }
