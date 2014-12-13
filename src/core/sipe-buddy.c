@@ -991,16 +991,23 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 
 	if (wsse_security) {
 		gchar *query = prepare_buddy_search_query(mdd->search_rows, TRUE);
+		gchar *search;
 
 		SIPE_DEBUG_INFO("ms_dlx_webticket: got ticket for %s",
 				base_uri);
+
+		search = g_strdup_printf("<ChangeSearch xmlns:q1=\"DistributionListExpander\" soapenc:arrayType=\"q1:AbEntryRequest.ChangeSearchQuery[%d]\">"
+					 " %s"
+					 "</ChangeSearch>",
+					 g_slist_length(mdd->search_rows) / 2,
+					 query);
+		g_free(query);
 
 		if (sipe_svc_ab_entry_request(sipe_private,
 					      mdd->session,
 					      auth_uri,
 					      wsse_security,
-					      query,
-					      g_slist_length(mdd->search_rows) / 2,
+					      search,
 					      mdd->max_returns,
 					      mdd->callback,
 					      mdd)) {
@@ -1011,7 +1018,7 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 			/* callback data passed down the line */
 			mdd = NULL;
 		}
-		g_free(query);
+		g_free(search);
 
 	} else {
 		/* no ticket: this will show the minmum information */

@@ -392,7 +392,6 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 				   const gchar *uri,
 				   const gchar *wsse_security,
 				   const gchar *search,
-				   guint entries,
 				   guint max_returns,
 				   sipe_svc_callback *callback,
 				   gpointer callback_data)
@@ -404,9 +403,7 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 					   " xmlns:soapenc=\"http://schemas.xmlsoap.org/soap/encoding/\""
 					   ">"
 					   " <AbEntryRequest>"
-					   "  <ChangeSearch xmlns:q1=\"DistributionListExpander\" soapenc:arrayType=\"q1:AbEntryRequest.ChangeSearchQuery[%d]\">"
-					   "   %s"
-					   "  </ChangeSearch>"
+					   "  %s"
 					   "  <Metadata>"
 					   "   <FromDialPad>false</FromDialPad>"
 					   "   <MaxResultNum>%d</MaxResultNum>"
@@ -414,7 +411,6 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 					   "  </Metadata>"
 					   " </AbEntryRequest>"
 					   "</SearchAbEntry>",
-					   entries,
 					   search,
 					   max_returns);
 
