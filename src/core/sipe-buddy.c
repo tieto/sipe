@@ -936,17 +936,31 @@ static gchar * prepare_buddy_search_query(GSList *query_rows, gboolean use_dlx) 
 	while (query_rows) {
 		gchar *attr;
 		gchar *value;
+		gchar *tmp = NULL;
 
 		attr = query_rows->data;
 		query_rows = g_slist_next(query_rows);
 		value = query_rows->data;
 		query_rows = g_slist_next(query_rows);
 
-		if (!attr || !value)
+		if (!value)
 			break;
+
+		/*
+		 * Special value for SIP ID
+		 *
+		 * Active Directory seems only to be able to search for
+		 * SIP URIs. Make sure search string starts with "sip:".
+		 */
+		if (!attr) {
+			attr = "msRTCSIP-PrimaryUserAddress";
+			if (!use_dlx)
+				value = tmp = sip_uri(value);
+		}
 
 		attrs[i++] = g_markup_printf_escaped(use_dlx ? DLX_SEARCH_ITEM : SIPE_SOAP_SEARCH_ROW,
 						     attr, value);
+		g_free(tmp);
 	}
 	attrs[i] = NULL;
 
@@ -1270,7 +1284,7 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *given_name,
 			    const gchar *surname,
 			    const gchar *email,
-			    SIPE_UNUSED_PARAMETER const gchar *sipid,
+			    const gchar *sipid,
 			    const gchar *company,
 			    const gchar *country)
 {
@@ -1285,6 +1299,8 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 	ADD_QUERY_ROW("givenName", given_name);
 	ADD_QUERY_ROW("sn",        surname);
 	ADD_QUERY_ROW("mail",      email);
+	/* special value NULL indicates SIP ID */
+	ADD_QUERY_ROW(NULL,        sipid);
 	ADD_QUERY_ROW("company",   company);
 	ADD_QUERY_ROW("c",         country);
 
