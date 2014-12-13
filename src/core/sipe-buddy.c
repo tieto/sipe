@@ -990,18 +990,30 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 	struct ms_dlx_data *mdd = callback_data;
 
 	if (wsse_security) {
-		gchar *query = prepare_buddy_search_query(mdd->search_rows, TRUE);
+		guint length = g_slist_length(mdd->search_rows);
 		gchar *search;
 
 		SIPE_DEBUG_INFO("ms_dlx_webticket: got ticket for %s",
 				base_uri);
 
-		search = g_strdup_printf("<ChangeSearch xmlns:q1=\"DistributionListExpander\" soapenc:arrayType=\"q1:AbEntryRequest.ChangeSearchQuery[%d]\">"
-					 " %s"
-					 "</ChangeSearch>",
-					 g_slist_length(mdd->search_rows) / 2,
-					 query);
-		g_free(query);
+		if (length > 0) {
+			/* complex search */
+			gchar *query = prepare_buddy_search_query(mdd->search_rows, TRUE);
+			search = g_strdup_printf("<ChangeSearch xmlns:q1=\"DistributionListExpander\" soapenc:arrayType=\"q1:AbEntryRequest.ChangeSearchQuery[%d]\">"
+						 " %s"
+						 "</ChangeSearch>",
+						 length / 2,
+						 query);
+			g_free(query);
+		} else {
+			/* simple search */
+			search = g_strdup_printf("<BasicSearch>"
+						 " <SearchList>c,company,displayName,givenName,mail,mailNickname,msRTCSIP-PrimaryUserAddress,sn</SearchList>"
+						 " <Value>%s</Value>"
+						 " <Verb>BeginsWith</Verb>"
+						 "</BasicSearch>",
+						 mdd->other);
+		}
 
 		if (sipe_svc_ab_entry_request(sipe_private,
 					      mdd->session,
@@ -1013,6 +1025,7 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 					      mdd)) {
 
 			/* keep webticket security token for potential further use */
+			g_free(mdd->wsse_security);
 			mdd->wsse_security = g_strdup(wsse_security);
 
 			/* callback data passed down the line */
@@ -1082,12 +1095,28 @@ static void search_ab_entry_response(struct sipe_core_private *sipe_private,
 		/* any matches? */
 		node = sipe_xml_child(soap_body, "Body/SearchAbEntryResponse/SearchAbEntryResult/Items/AbEntry");
 		if (!node) {
-			SIPE_DEBUG_ERROR_NOFORMAT("search_ab_entry_response: no matches");
-			sipe_backend_search_failed(SIPE_CORE_PUBLIC,
-						   mdd->token,
-						   _("No contacts found"));
-			ms_dlx_free(mdd);
-			return;
+			/* try again with simple search, if possible */
+			if (mdd->other && mdd->search_rows) {
+				SIPE_DEBUG_INFO_NOFORMAT("search_ab_entry_response: no matches, retrying with simple search");
+
+				/* throw away original search query */
+				free_search_rows(mdd->search_rows);
+				mdd->search_rows = NULL;
+
+				ms_dlx_webticket_request(sipe_private, mdd);
+
+				/* callback data passed down the line */
+				return;
+
+			} else {
+				SIPE_DEBUG_ERROR_NOFORMAT("search_ab_entry_response: no matches");
+
+				sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+							   mdd->token,
+							   _("No contacts found"));
+				ms_dlx_free(mdd);
+				return;
+			}
 		}
 
 		/* OK, we found something - show the results to the user */
@@ -1291,12 +1320,13 @@ static void search_ab_entry_failed(struct sipe_core_private *sipe_private,
 				   struct ms_dlx_data *mdd)
 {
 	/* error using [MS-DLX] server, retry using Active Directory */
-	search_soap_request(sipe_private,
-			    NULL,
-			    mdd->token,
-			    100,
-			    process_search_contact_response,
-			    mdd->search_rows);
+	if (mdd->search_rows)
+		search_soap_request(sipe_private,
+				    NULL,
+				    mdd->token,
+				    100,
+				    process_search_contact_response,
+				    mdd->search_rows);
 	ms_dlx_free(mdd);
 }
 
@@ -1310,11 +1340,15 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *country)
 {
 	GSList *query_rows = NULL;
+	guint count        = 0;
+	const gchar *simple;
 
 #define ADD_QUERY_ROW(attr, val)                                               \
 	if (val) {                                                             \
 		query_rows = g_slist_append(query_rows, g_strdup(attr));       \
 		query_rows = g_slist_append(query_rows, g_strdup(val));        \
+		simple = val;                                                  \
+		count++;                                                       \
 	}
 
 	ADD_QUERY_ROW("givenName", given_name);
@@ -1330,6 +1364,9 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
 			mdd->search_rows     = query_rows;
+			/* user entered only one search string, remember that one */
+			if (count == 1)
+				mdd->other   = g_strdup(simple);
 			mdd->max_returns     = 100;
 			mdd->callback        = search_ab_entry_response;
 			mdd->failed_callback = search_ab_entry_failed;
