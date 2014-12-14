@@ -39,6 +39,7 @@
 #include "sipe-ews-autodiscover.h"
 #include "sipe-group.h"
 #include "sipe-http.h"
+#include "sipe-nls.h"
 #include "sipe-subscriptions.h"
 #include "sipe-ucs.h"
 #include "sipe-utils.h"
@@ -291,6 +292,129 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 				   sipe_ucs_get_user_photo_response,
 				   payload))
 		g_free(payload);
+}
+
+static void sipe_ucs_search_response(struct sipe_core_private *sipe_private,
+				     SIPE_UNUSED_PARAMETER struct sipe_ucs_transaction *trans,
+				     const sipe_xml *body,
+				     gpointer callback_data)
+{
+	const sipe_xml *persona_node;
+	struct sipe_backend_search_results *results = NULL;
+	guint match_count = 0;
+
+	for (persona_node = sipe_xml_child(body,
+					   "FindPeopleResponse/People/Persona");
+	     persona_node;
+	     persona_node = sipe_xml_twin(persona_node)) {
+		const sipe_xml *address = sipe_xml_child(persona_node,
+							 "ImAddress");
+
+		/* only display Persona nodes which have an "ImAddress" node */
+		if (address) {
+			gchar *uri;
+			gchar *displayname;
+			gchar *company;
+			gchar *email;
+
+			/* OK, we found something - show the results to the user */
+			match_count++;
+			if (!results) {
+				results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC,
+									    callback_data);
+				if (!results) {
+					SIPE_DEBUG_ERROR_NOFORMAT("sipe_ucs_search_response: Unable to display the search results.");
+					sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+								   callback_data,
+								   _("Unable to display the search results"));
+					return;
+				}
+			}
+
+			uri         = sipe_xml_data(address);
+			displayname = sipe_xml_data(sipe_xml_child(persona_node,
+								   "DisplayName"));
+			company     = sipe_xml_data(sipe_xml_child(persona_node,
+								   "CompanyName"));
+			email       = sipe_xml_data(sipe_xml_child(persona_node,
+								   "EmailAddress/EmailAddress"));
+
+			sipe_backend_search_results_add(SIPE_CORE_PUBLIC,
+							results,
+							sipe_get_no_sip_uri(uri),
+							displayname,
+							company,
+							NULL,
+							email);
+
+			g_free(email);
+			g_free(company);
+			g_free(displayname);
+			g_free(uri);
+		}
+	}
+
+	if (match_count > 0)
+		sipe_buddy_search_contacts_finalize(sipe_private,
+						    results,
+						    match_count,
+						    FALSE);
+	else
+		sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+					   callback_data,
+					   _("No contacts found"));
+}
+
+void sipe_ucs_search(struct sipe_core_private *sipe_private,
+		     struct sipe_backend_search_token *token,
+		     const gchar *given_name,
+		     SIPE_UNUSED_PARAMETER const gchar *surname,
+		     SIPE_UNUSED_PARAMETER const gchar *email,
+		     SIPE_UNUSED_PARAMETER const gchar *sipid,
+		     SIPE_UNUSED_PARAMETER const gchar *company,
+		     SIPE_UNUSED_PARAMETER const gchar *country)
+{
+	/* search GAL for matching entries */
+	gchar *body = g_markup_printf_escaped("<m:FindPeople>"
+					      " <m:PersonaShape>"
+					      "  <t:BaseShape>IdOnly</t:BaseShape>"
+					      "  <t:AdditionalProperties>"
+					      "   <t:FieldURI FieldURI=\"persona:CompanyName\"/>"
+					      "   <t:FieldURI FieldURI=\"persona:DisplayName\"/>"
+					      "   <t:FieldURI FieldURI=\"persona:EmailAddress\"/>"
+					      "   <t:FieldURI FieldURI=\"persona:ImAddress\"/>"
+					      /* Locations doesn't seem to work
+					      "   <t:FieldURI FieldURI=\"persona:Locations\"/>"
+					      */
+					      "  </t:AdditionalProperties>"
+					      " </m:PersonaShape>"
+					      " <m:IndexedPageItemView BasePoint=\"Beginning\" MaxEntriesReturned=\"100\" Offset=\"0\"/>"
+					      /*
+					       * I have no idea why Exchnage doesn't accept this
+					       * FieldURI for restrictions. Without it the search
+					       * will return users that don't have an ImAddress
+					       * and we need to filter them out ourselves :-(
+					      " <m:Restriction>"
+					      "  <t:Exists>"
+					      "   <t:FieldURI FieldURI=\"persona:ImAddress\"/>"
+					      "  </t:Exists>"
+					      " </m:Restriction>"
+					      */
+					      " <m:ParentFolderId>"
+					      "  <t:DistinguishedFolderId Id=\"directory\"/>"
+					      " </m:ParentFolderId>"
+					      " <m:QueryString>%s</m:QueryString>"
+					      "</m:FindPeople>",
+					      given_name);
+
+	if (!sipe_ucs_http_request(sipe_private,
+				   NULL,
+				   body,
+				   sipe_ucs_search_response,
+				   token))
+		sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+					   token,
+					   _("Contact search failed"));
 }
 
 static void sipe_ucs_ignore_response(struct sipe_core_private *sipe_private,

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -22,6 +22,7 @@
  */
 
 /* Forward declarations */
+struct sipe_backend_search_token;
 struct sipe_buddy;
 struct sipe_core_private;
 struct sipe_group;
@@ -37,6 +38,29 @@ struct sipe_ucs_transaction;
  */
 void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 			const gchar *uri);
+
+/**
+ * Search EWS contact list
+ *
+ * This is not directly related to UCS, but we can reuse the code.
+ *
+ * @param sipe_private SIPE core private data
+ * @param token        opaque search token provided by backend
+ * @param given_name   search parameters provided by the user...
+ * @param surname
+ * @param email
+ * @param sipid
+ * @param company
+ * @param country
+ */
+void sipe_ucs_search(struct sipe_core_private *sipe_private,
+		     struct sipe_backend_search_token *token,
+		     const gchar *given_name,
+		     const gchar *surname,
+		     const gchar *email,
+		     const gchar *sipid,
+		     const gchar *company,
+		     const gchar *country);
 
 /**
  * Has contact list been migrated to UCS?

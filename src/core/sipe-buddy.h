@@ -21,6 +21,7 @@
  */
 
 /* Forward declarations */
+struct sipe_backend_search_results;
 struct sipe_cal_working_hours;
 struct sipe_core_private;
 struct sipe_group;
@@ -247,6 +248,19 @@ void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
  * @param sipe_private SIPE core data
  */
 void sipe_buddy_refresh_photos(struct sipe_core_private *sipe_private);
+
+/**
+ * Finalize the search results and display results to user.
+ *
+ * @param sipe_private SIPE core data
+ * @param results      opaque results handle for backend
+ * @param match_count  number of matches found
+ * @param more         @c TRUE if there are more matches available
+ */
+void sipe_buddy_search_contacts_finalize(struct sipe_core_private *sipe_private,
+					 struct sipe_backend_search_results *results,
+					 guint match_count,
+					 gboolean more);
 
 /**
  * Number of buddies

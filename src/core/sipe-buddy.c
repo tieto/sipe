@@ -1058,10 +1058,10 @@ static void ms_dlx_webticket_request(struct sipe_core_private *sipe_private,
 	}
 }
 
-static void search_contacts_finalize(struct sipe_core_private *sipe_private,
-				     struct sipe_backend_search_results *results,
-				     guint match_count,
-				     gboolean more)
+void sipe_buddy_search_contacts_finalize(struct sipe_core_private *sipe_private,
+					 struct sipe_backend_search_results *results,
+					 guint match_count,
+					 gboolean more)
 {
 	gchar *secondary = g_strdup_printf(
 		dngettext(PACKAGE_NAME,
@@ -1201,9 +1201,9 @@ static void search_ab_entry_response(struct sipe_core_private *sipe_private,
 			g_free(sip_uri);
 		}
 
-		search_contacts_finalize(sipe_private, results,
-					 g_hash_table_size(found),
-					 FALSE);
+		sipe_buddy_search_contacts_finalize(sipe_private, results,
+						    g_hash_table_size(found),
+						    FALSE);
 		g_hash_table_destroy(found);
 		ms_dlx_free(mdd);
 
@@ -1289,7 +1289,7 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 		g_free(data);
 	}
 
-	search_contacts_finalize(sipe_private, results, match_count, more);
+	sipe_buddy_search_contacts_finalize(sipe_private, results, match_count, more);
 	sipe_xml_free(searchResults);
 
 	return(TRUE);
@@ -1339,56 +1339,73 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *company,
 			    const gchar *country)
 {
-	GSList *query_rows = NULL;
-	guint count        = 0;
-	const gchar *simple;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-#define ADD_QUERY_ROW(attr, val)                                               \
-	if (val) {                                                             \
-		query_rows = g_slist_append(query_rows, g_strdup(attr));       \
-		query_rows = g_slist_append(query_rows, g_strdup(val));        \
-		simple = val;                                                  \
-		count++;                                                       \
-	}
+	/* Lync 2013 or newer: use UCS if contacts are migrated */
+	if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) &&
+	    sipe_ucs_is_migrated(sipe_private)) {
 
-	ADD_QUERY_ROW("givenName", given_name);
-	ADD_QUERY_ROW("sn",        surname);
-	ADD_QUERY_ROW("mail",      email);
-	/* prepare_buddy_search_query() interprets NULL as SIP ID */
-	ADD_QUERY_ROW(NULL,        sipid);
-	ADD_QUERY_ROW("company",   company);
-	ADD_QUERY_ROW("c",         country);
+		sipe_ucs_search(sipe_private,
+				token,
+				given_name,
+				surname,
+				email,
+				sipid,
+				company,
+				country);
 
-	if (query_rows) {
-		if (SIPE_CORE_PRIVATE->dlx_uri != NULL) {
-			struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+	} else {
+		GSList *query_rows = NULL;
+		guint count        = 0;
+		const gchar *simple;
 
-			mdd->search_rows     = query_rows;
-			/* user entered only one search string, remember that one */
-			if (count == 1)
-				mdd->other   = g_strdup(simple);
-			mdd->max_returns     = 100;
-			mdd->callback        = search_ab_entry_response;
-			mdd->failed_callback = search_ab_entry_failed;
-			mdd->session         = sipe_svc_session_start();
-			mdd->token           = token;
-
-			ms_dlx_webticket_request(SIPE_CORE_PRIVATE, mdd);
-
-		} else {
-			/* no [MS-DLX] server, use Active Directory search instead */
-			search_soap_request(SIPE_CORE_PRIVATE,
-					    NULL,
-					    token,
-					    100,
-					    process_search_contact_response,
-					    query_rows);
-			free_search_rows(query_rows);
+#define ADD_QUERY_ROW(attr, val)                                                 \
+		if (val) {                                                       \
+			query_rows = g_slist_append(query_rows, g_strdup(attr)); \
+			query_rows = g_slist_append(query_rows, g_strdup(val));  \
+			simple = val;                                            \
+			count++;                                                 \
 		}
-	} else
-		sipe_backend_search_failed(sipe_public,
-					   token,
-					   _("Invalid contact search query"));
+
+		ADD_QUERY_ROW("givenName", given_name);
+		ADD_QUERY_ROW("sn",        surname);
+		ADD_QUERY_ROW("mail",      email);
+		/* prepare_buddy_search_query() interprets NULL as SIP ID */
+		ADD_QUERY_ROW(NULL,        sipid);
+		ADD_QUERY_ROW("company",   company);
+		ADD_QUERY_ROW("c",         country);
+
+		if (query_rows) {
+			if (sipe_private->dlx_uri != NULL) {
+				struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+
+				mdd->search_rows     = query_rows;
+				/* user entered only one search string, remember that one */
+				if (count == 1)
+					mdd->other   = g_strdup(simple);
+				mdd->max_returns     = 100;
+				mdd->callback        = search_ab_entry_response;
+				mdd->failed_callback = search_ab_entry_failed;
+				mdd->session         = sipe_svc_session_start();
+				mdd->token           = token;
+
+				ms_dlx_webticket_request(sipe_private, mdd);
+
+			} else {
+				/* no [MS-DLX] server, use Active Directory search instead */
+				search_soap_request(sipe_private,
+						    NULL,
+						    token,
+						    100,
+						    process_search_contact_response,
+						    query_rows);
+				free_search_rows(query_rows);
+			}
+		} else
+			sipe_backend_search_failed(sipe_public,
+						   token,
+						   _("Invalid contact search query"));
+	}
 }
 
 static void get_info_finalize(struct sipe_core_private *sipe_private,
