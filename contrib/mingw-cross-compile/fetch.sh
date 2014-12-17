@@ -11,7 +11,7 @@
 # Check these page for latest MinGW/Pidgin URLs if you get fetch errors!
 #
 # update Pidgin version here
-export PIDGIN_VERSION=2.10.10
+export PIDGIN_VERSION=2.10.11
 
 # must be absolute path
 export PIDGIN_DEV_ROOT=$(pwd -P)/build-${PIDGIN_VERSION}
@@ -30,9 +30,9 @@ mkdir -p ${MINGW_DIR}
 
 echo 1>&2 fetching mingw...
 cd ${SOURCES_DIR}
-#wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/binutils-2.20/binutils-2.20-1-mingw32-bin.tar.gz
-wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/mingw-rt/mingwrt-3.20/mingwrt-3.20-mingw32-dev.tar.gz
-wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/mingw-rt/mingwrt-3.20/mingwrt-3.20-mingw32-dll.tar.gz
+#wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/binutils/binutils-2.23.1/binutils-2.23.1-1-mingw32-bin.tar.lzma
+wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/mingw-rt/mingwrt-3.20/mingwrt-3.20-2-mingw32-dev.tar.lzma
+wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/mingw-rt/mingwrt-3.20/mingwrt-3.20-2-mingw32-dll.tar.lzma
 wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/w32api/w32api-3.17/w32api-3.17-2-mingw32-dev.tar.lzma
 wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/gmp/gmp-5.0.1-1/gmp-5.0.1-1-mingw32-dev.tar.lzma
 wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/libiconv/libiconv-1.14-2/libiconv-1.14-2-mingw32-dev.tar.lzma
@@ -43,7 +43,6 @@ wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/gcc/Version4/gcc
 
 echo 1>&2 unpacking mingw...
 cd ${MINGW_DIR}
-for file in ${SOURCES_DIR}/*tar.gz ; do tar xzf ${file} ; done
 for file in ${SOURCES_DIR}/*tar.lzma ; do tar xf ${file} ; done
 
 echo 1>&2 fetching pidgin dev stuff...
