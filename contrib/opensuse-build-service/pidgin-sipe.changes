@@ -1,7 +1,15 @@
 -------------------------------------------------------------------
-Sat Oct 18 14:26:00 UTC 2014 - chemobejk@gmail.com
+Tue Nov 11 07:53:25 UTC 2014 - jozef.koval03@gmail.com
 
 - Update to version 1.18.4:
+  + ADFS fails when user and login name differ.
+  + Adium: SIPE doesn't auto- or re-connect.
+  + Fixed memory leaks.
+  + Fixed processing of presence publish event response.
+  + Fixed a longstanding issue that the Pidgin user status
+    sometimes didn't switch back to "Available" after the end of a
+    meeting.
+  + Bugs fixed: sf#263, sf#264.
 
 -------------------------------------------------------------------
 Sat Aug 16 20:54:45 UTC 2014 - dimstar@opensuse.org
@@ -19,8 +27,8 @@ Sat Jul 12 13:49:48 UTC 2014 - dimstar@opensuse.org
 - Update to version 1.18.2:
   + ews: extract settings also from type EXPR.
   + ucs: honor user specified email URL.
-  +	adium: fix compilation on OS X 10.7.
-  +	Updated Transifex URLs.
+  + adium: fix compilation on OS X 10.7.
+  + Updated Transifex URLs.
   + Bugs fixed: sf#210, sf#241, sf#245, sf#248, sf#255.
   + Updated translations.
 
