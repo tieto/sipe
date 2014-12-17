@@ -21,10 +21,14 @@ PROTOCOLS_22 = \
 PROTOCOLS_48 = \
 		48/sipe.png
 
+PROTOCOLS_scalable = \
+		scalable/sipe.svg
+
 nobase_dist_pidginpixmap_DATA = \
 		$(PROTOCOLS_16) \
 		$(PROTOCOLS_22) \
 		$(PROTOCOLS_48) \
+		$(PROTOCOLS_scalable) \
 
 .PHONY: install
 

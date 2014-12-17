@@ -59,6 +59,8 @@ SetOutPath "$INSTDIR\pixmaps\pidgin\protocols\22"
 File "${MINGW_DATADIR}\pixmaps\pidgin\protocols\22\sipe.png"
 SetOutPath "$INSTDIR\pixmaps\pidgin\protocols\48"
 File "${MINGW_DATADIR}\pixmaps\pidgin\protocols\48\sipe.png"
+SetOutPath "$INSTDIR\pixmaps\pidgin\protocols\scalable"
+File "${MINGW_DATADIR}\pixmaps\pidgin\protocols\scalable\sipe.svg"
 ;;; INSTALL_FILES_LOCALE
 
 ;Create uninstaller
@@ -90,6 +92,7 @@ Delete "$INSTDIR\pidgin-${PIDGIN_VERSION}-dbgsym\plugins\libsipe.dll.dbgsym"
 Delete "$INSTDIR\pixmaps\pidgin\protocols\16\sipe.png"
 Delete "$INSTDIR\pixmaps\pidgin\protocols\22\sipe.png"
 Delete "$INSTDIR\pixmaps\pidgin\protocols\48\sipe.png"
+Delete "$INSTDIR\pixmaps\pidgin\protocols\scalable\sipe.svg"
 ;;; DELETE_FILES_LOCALE
 
 SectionEnd
