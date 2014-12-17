@@ -1355,9 +1355,9 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 				country);
 
 	} else {
-		GSList *query_rows = NULL;
-		guint count        = 0;
-		const gchar *simple;
+		GSList *query_rows  = NULL;
+		guint count         = 0;
+		const gchar *simple = NULL;
 
 #define ADD_QUERY_ROW(attr, val)                                                 \
 		if (val) {                                                       \
