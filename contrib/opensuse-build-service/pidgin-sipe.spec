@@ -3,7 +3,7 @@
 #
 # It has support for:
 #
-#     RedHat family (CentOS, Fedora, RHEL)
+#     RedHat family (CentOS, Fedora, RHEL, ScientificLinux)
 #     Mandriva
 #     SUSE family (openSUSE, SLED, SLES)
 #     Windows (mingw32, mingw64)
@@ -78,6 +78,7 @@
 %define ktp_files        ktp-accounts-kcm-sipe
 
 
+%define has_pidgin 1
 %define purple_develname libpurple-devel
 
 %if 0%{?mdkversion} >= 200910
@@ -110,8 +111,8 @@
 %if 0%{?suse_version} || 0%{?sles_version}
 %define pkg_group Productivity/Networking/Instant Messenger
 %endif
+
 %if 0%{?fedora}
-%define pkg_group Applications/Internet
 %if 0%{?fedora} >= 11
 %define has_libnice 1
 %if 0%{?fedora} >= 15
@@ -126,6 +127,19 @@
 %endif
 %endif
 %endif
+
+%if 0%{?centos_version} || 0%{?scientificlinux_version}
+%define rhel_base_version %{?centos_version}%{?scientificlinux_version}
+%if %{rhel_base_version} >= 600
+%define has_gstreamer 1
+%define has_libnice 1
+%if %{rhel_base_version} >= 700
+# pidgin has been removed, but libpurple still exists
+%define has_pidgin 0
+%endif
+%endif
+%endif
+
 %if 0%{?mdkversion}
 %define pkg_group Networking/Instant messaging
 %else
@@ -207,11 +221,14 @@ BuildRequires:  krb5-devel
 %endif
 
 # For directory ownership
+%if %{has_pidgin}
 BuildRequires:  pidgin
+Requires:       pidgin
+%endif
 %if 0%{?build_telepathy:1}
 BuildRequires:  empathy
 %endif
-Requires:       pidgin
+
 %if 0%{?sles_version} == 10
 BuildRequires:  gnome-keyring-devel
 %endif
@@ -480,6 +497,10 @@ rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
 rm -f \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/32/sipe.png
+%if !%{has_pidgin}
+# We don't have Pidgin, so we can't package icons at all
+rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin
+%endif
 %if 0%{?build_telepathy:1}
 %if !0%{?build_ktp:1}
 rm -r %{buildroot}%{_datadir}/telepathy
@@ -542,10 +563,12 @@ rm -rf %{buildroot}
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 %else
+%if %{has_pidgin}
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 # SLES11 defines suse_version = 1110
 %if !0%{?suse_version} || 0%{?suse_version} >= 1120
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
+%endif
 %endif
 %endif
 
@@ -558,6 +581,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Dec 18 2014 J. D. User <jduser@noreply.com> 1.18.4-*git*
+- improve support for CentOS & Scientific Linux
+
 * Sat Oct 18 2014 J. D. User <jduser@noreply.com> 1.18.4
 - update to 1.18.4
 
