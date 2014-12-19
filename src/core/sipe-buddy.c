@@ -912,9 +912,14 @@ struct ms_dlx_data {
 				struct ms_dlx_data *mdd);
 };
 
+static void free_search_rows(GSList *search_rows)
+{
+	sipe_utils_slist_free_full(search_rows, g_free);
+}
+
 static void ms_dlx_free(struct ms_dlx_data *mdd)
 {
-	sipe_utils_slist_free_full(mdd->search_rows, g_free);
+	free_search_rows(mdd->search_rows);
 	sipe_svc_session_close(mdd->session);
 	g_free(mdd->other);
 	g_free(mdd->wsse_security);
@@ -936,17 +941,31 @@ static gchar * prepare_buddy_search_query(GSList *query_rows, gboolean use_dlx) 
 	while (query_rows) {
 		gchar *attr;
 		gchar *value;
+		gchar *tmp = NULL;
 
 		attr = query_rows->data;
 		query_rows = g_slist_next(query_rows);
 		value = query_rows->data;
 		query_rows = g_slist_next(query_rows);
 
-		if (!attr || !value)
+		if (!value)
 			break;
+
+		/*
+		 * Special value for SIP ID
+		 *
+		 * Active Directory seems only to be able to search for
+		 * SIP URIs. Make sure search string starts with "sip:".
+		 */
+		if (!attr) {
+			attr = "msRTCSIP-PrimaryUserAddress";
+			if (!use_dlx)
+				value = tmp = sip_uri(value);
+		}
 
 		attrs[i++] = g_markup_printf_escaped(use_dlx ? DLX_SEARCH_ITEM : SIPE_SOAP_SEARCH_ROW,
 						     attr, value);
+		g_free(tmp);
 	}
 	attrs[i] = NULL;
 
@@ -971,28 +990,48 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 	struct ms_dlx_data *mdd = callback_data;
 
 	if (wsse_security) {
-		gchar *query = prepare_buddy_search_query(mdd->search_rows, TRUE);
+		guint length = g_slist_length(mdd->search_rows);
+		gchar *search;
 
 		SIPE_DEBUG_INFO("ms_dlx_webticket: got ticket for %s",
 				base_uri);
+
+		if (length > 0) {
+			/* complex search */
+			gchar *query = prepare_buddy_search_query(mdd->search_rows, TRUE);
+			search = g_strdup_printf("<ChangeSearch xmlns:q1=\"DistributionListExpander\" soapenc:arrayType=\"q1:AbEntryRequest.ChangeSearchQuery[%d]\">"
+						 " %s"
+						 "</ChangeSearch>",
+						 length / 2,
+						 query);
+			g_free(query);
+		} else {
+			/* simple search */
+			search = g_strdup_printf("<BasicSearch>"
+						 " <SearchList>c,company,displayName,givenName,mail,mailNickname,msRTCSIP-PrimaryUserAddress,sn</SearchList>"
+						 " <Value>%s</Value>"
+						 " <Verb>BeginsWith</Verb>"
+						 "</BasicSearch>",
+						 mdd->other);
+		}
 
 		if (sipe_svc_ab_entry_request(sipe_private,
 					      mdd->session,
 					      auth_uri,
 					      wsse_security,
-					      query,
-					      g_slist_length(mdd->search_rows) / 2,
+					      search,
 					      mdd->max_returns,
 					      mdd->callback,
 					      mdd)) {
 
 			/* keep webticket security token for potential further use */
+			g_free(mdd->wsse_security);
 			mdd->wsse_security = g_strdup(wsse_security);
 
 			/* callback data passed down the line */
 			mdd = NULL;
 		}
-		g_free(query);
+		g_free(search);
 
 	} else {
 		/* no ticket: this will show the minmum information */
@@ -1019,10 +1058,10 @@ static void ms_dlx_webticket_request(struct sipe_core_private *sipe_private,
 	}
 }
 
-static void search_contacts_finalize(struct sipe_core_private *sipe_private,
-				     struct sipe_backend_search_results *results,
-				     guint match_count,
-				     gboolean more)
+void sipe_buddy_search_contacts_finalize(struct sipe_core_private *sipe_private,
+					 struct sipe_backend_search_results *results,
+					 guint match_count,
+					 gboolean more)
 {
 	gchar *secondary = g_strdup_printf(
 		dngettext(PACKAGE_NAME,
@@ -1056,12 +1095,28 @@ static void search_ab_entry_response(struct sipe_core_private *sipe_private,
 		/* any matches? */
 		node = sipe_xml_child(soap_body, "Body/SearchAbEntryResponse/SearchAbEntryResult/Items/AbEntry");
 		if (!node) {
-			SIPE_DEBUG_ERROR_NOFORMAT("search_ab_entry_response: no matches");
-			sipe_backend_search_failed(SIPE_CORE_PUBLIC,
-						   mdd->token,
-						   _("No contacts found"));
-			ms_dlx_free(mdd);
-			return;
+			/* try again with simple search, if possible */
+			if (mdd->other && mdd->search_rows) {
+				SIPE_DEBUG_INFO_NOFORMAT("search_ab_entry_response: no matches, retrying with simple search");
+
+				/* throw away original search query */
+				free_search_rows(mdd->search_rows);
+				mdd->search_rows = NULL;
+
+				ms_dlx_webticket_request(sipe_private, mdd);
+
+				/* callback data passed down the line */
+				return;
+
+			} else {
+				SIPE_DEBUG_ERROR_NOFORMAT("search_ab_entry_response: no matches");
+
+				sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+							   mdd->token,
+							   _("No contacts found"));
+				ms_dlx_free(mdd);
+				return;
+			}
 		}
 
 		/* OK, we found something - show the results to the user */
@@ -1146,9 +1201,9 @@ static void search_ab_entry_response(struct sipe_core_private *sipe_private,
 			g_free(sip_uri);
 		}
 
-		search_contacts_finalize(sipe_private, results,
-					 g_hash_table_size(found),
-					 FALSE);
+		sipe_buddy_search_contacts_finalize(sipe_private, results,
+						    g_hash_table_size(found),
+						    FALSE);
 		g_hash_table_destroy(found);
 		ms_dlx_free(mdd);
 
@@ -1234,25 +1289,29 @@ static gboolean process_search_contact_response(struct sipe_core_private *sipe_p
 		g_free(data);
 	}
 
-	search_contacts_finalize(sipe_private, results, match_count, more);
+	sipe_buddy_search_contacts_finalize(sipe_private, results, match_count, more);
 	sipe_xml_free(searchResults);
 
 	return(TRUE);
 }
 
 static void search_soap_request(struct sipe_core_private *sipe_private,
-				struct sipe_backend_search_token *token,
+				GDestroyNotify destroy,
+				void *data,
+				guint max,
+				SoapTransCallback callback,
 				GSList *search_rows)
 {
 	gchar *query = prepare_buddy_search_query(search_rows, FALSE);
 	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
 
-	payload->data = token;
+	payload->destroy = destroy;
+	payload->data    = data;
 
 	sip_soap_directory_search(sipe_private,
-				  100,
+				  max,
 				  query,
-				  process_search_contact_response,
+				  callback,
 				  payload);
 	g_free(query);
 }
@@ -1261,7 +1320,13 @@ static void search_ab_entry_failed(struct sipe_core_private *sipe_private,
 				   struct ms_dlx_data *mdd)
 {
 	/* error using [MS-DLX] server, retry using Active Directory */
-	search_soap_request(sipe_private, mdd->token, mdd->search_rows);
+	if (mdd->search_rows)
+		search_soap_request(sipe_private,
+				    NULL,
+				    mdd->token,
+				    100,
+				    process_search_contact_response,
+				    mdd->search_rows);
 	ms_dlx_free(mdd);
 }
 
@@ -1270,45 +1335,77 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *given_name,
 			    const gchar *surname,
 			    const gchar *email,
+			    const gchar *sipid,
 			    const gchar *company,
 			    const gchar *country)
 {
-	GSList *query_rows = NULL;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
-#define ADD_QUERY_ROW(attr, val)                                               \
-	if (val) {                                                             \
-		query_rows = g_slist_append(query_rows, g_strdup(attr));       \
-		query_rows = g_slist_append(query_rows, g_strdup(val));        \
-	}
+	/* Lync 2013 or newer: use UCS if contacts are migrated */
+	if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) &&
+	    sipe_ucs_is_migrated(sipe_private)) {
 
-	ADD_QUERY_ROW("givenName", given_name);
-	ADD_QUERY_ROW("sn",        surname);
-	ADD_QUERY_ROW("mail",      email);
-	ADD_QUERY_ROW("company",   company);
-	ADD_QUERY_ROW("c",         country);
+		sipe_ucs_search(sipe_private,
+				token,
+				given_name,
+				surname,
+				email,
+				sipid,
+				company,
+				country);
 
-	if (query_rows) {
-		if (SIPE_CORE_PRIVATE->dlx_uri != NULL) {
-			struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+	} else {
+		GSList *query_rows  = NULL;
+		guint count         = 0;
+		const gchar *simple = NULL;
 
-			mdd->search_rows     = query_rows;
-			mdd->max_returns     = 100;
-			mdd->callback        = search_ab_entry_response;
-			mdd->failed_callback = search_ab_entry_failed;
-			mdd->session         = sipe_svc_session_start();
-			mdd->token           = token;
-
-			ms_dlx_webticket_request(SIPE_CORE_PRIVATE, mdd);
-
-		} else {
-			/* no [MS-DLX] server, use Active Directory search instead */
-			search_soap_request(SIPE_CORE_PRIVATE, token, query_rows);
-			sipe_utils_slist_free_full(query_rows, g_free);
+#define ADD_QUERY_ROW(attr, val)                                                 \
+		if (val) {                                                       \
+			query_rows = g_slist_append(query_rows, g_strdup(attr)); \
+			query_rows = g_slist_append(query_rows, g_strdup(val));  \
+			simple = val;                                            \
+			count++;                                                 \
 		}
-	} else
-		sipe_backend_search_failed(sipe_public,
-					   token,
-					   _("Invalid contact search query"));
+
+		ADD_QUERY_ROW("givenName", given_name);
+		ADD_QUERY_ROW("sn",        surname);
+		ADD_QUERY_ROW("mail",      email);
+		/* prepare_buddy_search_query() interprets NULL as SIP ID */
+		ADD_QUERY_ROW(NULL,        sipid);
+		ADD_QUERY_ROW("company",   company);
+		ADD_QUERY_ROW("c",         country);
+
+		if (query_rows) {
+			if (sipe_private->dlx_uri != NULL) {
+				struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
+
+				mdd->search_rows     = query_rows;
+				/* user entered only one search string, remember that one */
+				if (count == 1)
+					mdd->other   = g_strdup(simple);
+				mdd->max_returns     = 100;
+				mdd->callback        = search_ab_entry_response;
+				mdd->failed_callback = search_ab_entry_failed;
+				mdd->session         = sipe_svc_session_start();
+				mdd->token           = token;
+
+				ms_dlx_webticket_request(sipe_private, mdd);
+
+			} else {
+				/* no [MS-DLX] server, use Active Directory search instead */
+				search_soap_request(sipe_private,
+						    NULL,
+						    token,
+						    100,
+						    process_search_contact_response,
+						    query_rows);
+				free_search_rows(query_rows);
+			}
+		} else
+			sipe_backend_search_failed(sipe_public,
+						   token,
+						   _("Invalid contact search query"));
+	}
 }
 
 static void get_info_finalize(struct sipe_core_private *sipe_private,
@@ -1618,34 +1715,33 @@ static void get_info_ab_entry_failed(struct sipe_core_private *sipe_private,
 				     struct ms_dlx_data *mdd)
 {
 	/* error using [MS-DLX] server, retry using Active Directory */
-	gchar *query = prepare_buddy_search_query(mdd->search_rows, FALSE);
-	struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
-
-	payload->destroy = g_free;
-	payload->data = mdd->other;
+	search_soap_request(sipe_private,
+			    g_free,
+			    mdd->other,
+			    1,
+			    process_get_info_response,
+			    mdd->search_rows);
 	mdd->other = NULL;
-
-	sip_soap_directory_search(sipe_private,
-							  1,
-							  query,
-							  process_get_info_response,
-							  payload);
-
 	ms_dlx_free(mdd);
-	g_free(query);
+}
+
+static GSList *search_rows_for_uri(const gchar *uri)
+{
+	/* prepare_buddy_search_query() interprets NULL as SIP ID */
+	GSList *l = g_slist_append(NULL, NULL);
+	return(g_slist_append(l, g_strdup(uri)));
 }
 
 void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 			      const gchar *who)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	GSList *search_rows = search_rows_for_uri(who);
 
 	if (sipe_private->dlx_uri) {
 		struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
-		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup("msRTCSIP-PrimaryUserAddress"));
-		mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup(who));
-
+		mdd->search_rows     = search_rows;
 		mdd->other           = g_strdup(who);
 		mdd->max_returns     = 1;
 		mdd->callback        = get_info_ab_entry_response;
@@ -1656,23 +1752,13 @@ void sipe_core_buddy_get_info(struct sipe_core_public *sipe_public,
 
 	} else {
 		/* no [MS-DLX] server, use Active Directory search instead */
-		gchar *row = g_markup_printf_escaped(SIPE_SOAP_SEARCH_ROW,
-						     "msRTCSIP-PrimaryUserAddress",
-						     who);
-		struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
-
-		SIPE_DEBUG_INFO("sipe_core_buddy_get_info: row: %s",
-				row ? row : "");
-
-		payload->destroy = g_free;
-		payload->data = g_strdup(who);
-
-		sip_soap_directory_search(sipe_private,
-					  1,
-					  row,
-					  process_get_info_response,
-					  payload);
-		g_free(row);
+		search_soap_request(sipe_private,
+				    g_free,
+				    g_strdup(who),
+				    1,
+				    process_get_info_response,
+				    search_rows);
+		free_search_rows(search_rows);
 	}
 }
 
@@ -1857,9 +1943,7 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 			   sipe_private->addressbook_uri) {
 			struct ms_dlx_data *mdd = g_new0(struct ms_dlx_data, 1);
 
-			mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup("msRTCSIP-PrimaryUserAddress"));
-			mdd->search_rows = g_slist_append(mdd->search_rows, g_strdup(uri));
-
+			mdd->search_rows     = search_rows_for_uri(uri);
 			mdd->other           = g_strdup(uri);
 			mdd->max_returns     = 1;
 			mdd->callback        = get_photo_ab_entry_response;

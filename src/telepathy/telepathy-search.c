@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -495,7 +495,7 @@ static void search_channel_search(TpSvcChannelTypeContactSearch *channel,
 
 		sipe_core_buddy_search(telepathy_private->public,
 				       (struct sipe_backend_search_token *) self,
-				       first, last, email, company, country);
+				       first, last, email, NULL, company, country);
 		g_strfreev(split);
 
 		/* only switch to "in progress" if the above didn't fail */

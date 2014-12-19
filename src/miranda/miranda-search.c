@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -109,7 +109,7 @@ HANDLE sipe_miranda_SearchByEmail( SIPPROTO *pr, const PROTOCHAR* email )
 	mail = mir_t2a(email);
 
 	LOCK;
-	sipe_core_buddy_search(pr->sip, NULL, NULL, NULL, NULL, NULL, mail);
+	sipe_core_buddy_search(pr->sip, NULL, NULL, NULL, mail, NULL, NULL, NULL);
 	UNLOCK;
 
 	mir_free(mail);
@@ -128,7 +128,7 @@ HANDLE sipe_miranda_SearchByName( SIPPROTO *pr, const PROTOCHAR* nick, const PRO
 	surname = mir_t2a(lastName);
 
 	LOCK;
-	sipe_core_buddy_search(pr->sip, NULL, given_name, surname, NULL, NULL, NULL);
+	sipe_core_buddy_search(pr->sip, NULL, given_name, surname, NULL, NULL, NULL, NULL);
 	UNLOCK;
 
 	mir_free(given_name);

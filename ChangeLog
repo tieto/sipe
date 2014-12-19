@@ -1,6 +1,10 @@
-version 1.19.0 "???" (2014-XX-XX)
+version 1.19.0 "Auto Authentication, Search Improvements" (2015-XX-XX)
+	- Feature #78: Support searching for SIP ID (Stefan Becker)
 	- Feature #73: Support buddy photos from contactCard (Stefan Becker)
 	- Feature #65: Fall back from Kerberos to NTLM (Stefan Becker)
+	- Fixed #276: Redundant "const" breaks build with clang (Stefan Becker)
+	- Fixed #240: Corrupted HTTP response crashes SIPE (Stefan Becker)
+	- fall back to [MS-DLX] BasicSearch to improve search experience (Stefan Becker, various)
 	- support for libnice TCP mode (Youness Alaoul, Jakub Adam)
 	- refactor CCCP request code (Jakub Adam)
 
