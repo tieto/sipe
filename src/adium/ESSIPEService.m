@@ -97,31 +97,40 @@
 	//
 	[allowedCharacters addCharactersInString:@"@:._-~"];
 	returnSet = [allowedCharacters immutableCopy];
-
+    [allowedCharacters release];
+    
 	return [returnSet autorelease];
 }
 
 #pragma mark Statuses
 - (void)registerStatuses{
+    
+    NSNumber *awayStatus, *availableStatus, *invisibleStatus, *offlineStatus;
+    
+    awayStatus = [NSNumber numberWithInt:AIAwayStatusType];
+    availableStatus = [NSNumber numberWithInt:AIAvailableStatusType];
+    invisibleStatus = [NSNumber numberWithInt:AIInvisibleStatusType];
+    offlineStatus = [NSNumber numberWithInt:AIOfflineStatusType];
+    
     NSDictionary *statuses =
     [NSDictionary dictionaryWithObjectsAndKeys:
-     AIAvailableStatusType, STATUS_NAME_AVAILABLE,
-     AIAwayStatusType,      STATUS_NAME_AWAY,
-     AIAwayStatusType,      STATUS_NAME_BUSY,
-     AIInvisibleStatusType, STATUS_NAME_INVISIBLE,
-     AIAwayStatusType,      STATUS_NAME_BRB,
-     AIAwayStatusType,      STATUS_NAME_DND,
-     AIAwayStatusType,      STATUS_NAME_LUNCH,
-     AIOfflineStatusType,   STATUS_NAME_OFFLINE,
-     AIAwayStatusType,      STATUS_NAME_PHONE,
-     AIAwayStatusType,      STATUS_NAME_NOT_AT_DESK,
-     AIAwayStatusType,      STATUS_NAME_NOT_IN_OFFICE,
-     AIAwayStatusType,      STATUS_NAME_AWAY_FRIENDS_ONLY,
+     availableStatus, STATUS_NAME_AVAILABLE,
+     awayStatus,      STATUS_NAME_AWAY,
+     awayStatus,      STATUS_NAME_BUSY,
+     invisibleStatus, STATUS_NAME_INVISIBLE,
+     awayStatus,      STATUS_NAME_BRB,
+     awayStatus,      STATUS_NAME_DND,
+     awayStatus,      STATUS_NAME_LUNCH,
+     offlineStatus,   STATUS_NAME_OFFLINE,
+     awayStatus,      STATUS_NAME_PHONE,
+     awayStatus,      STATUS_NAME_NOT_AT_DESK,
+     awayStatus,      STATUS_NAME_NOT_IN_OFFICE,
+     awayStatus,      STATUS_NAME_AWAY_FRIENDS_ONLY,
      nil
      ];
 
     for (NSString* key in statuses) {
-        AIStatusType value = [statuses objectForKey:key];
+        AIStatusType value = [[statuses objectForKey:key] intValue];
 
         [adium.statusController
          registerStatus:key

@@ -10,8 +10,6 @@
 //#import <Adium/AIService.h>
 #import <AdiumLibpurple/PurpleService.h>
 
-// Testing changing to inherit from PurpleService
-// @interface ESSIPEService : AIService {
 @interface ESSIPEService : PurpleService {
     
 }

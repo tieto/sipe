@@ -36,12 +36,6 @@ extern void purple_init_sipe_plugin(void);
 	[ESSIPEService registerService];
 }
 
-- (void)dealloc
-{
-	[ESSIPEService release];
-	[super dealloc];
-}
-
 #pragma mark Plugin Metadata
 - (NSString *)libpurplePluginPath
 {

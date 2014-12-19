@@ -12,6 +12,8 @@
 #import <Adium/AIStatus.h>
 #import <Adium/AIStatusControllerProtocol.h>
 #import <ESDebugAILog.h>
+#import <Adium/AIListContact.h>
+#import "AIContactController.h"
 
 #import "ESPurpleSIPEAccount.h"
 #import "ESSIPEService.h"
@@ -208,7 +210,7 @@
  */
 - (NSString *)statusNameForPurpleBuddy:(PurpleBuddy *)buddy
 {
-    NSString *statusName = [super statusNameForPurpleBuddy:buddy];
+    NSString *statusName;
     PurplePresence  *presence = purple_buddy_get_presence(buddy);
     PurpleStatus    *status = purple_presence_get_active_status(presence);
     NSString        *purpleStatusID = [NSString stringWithUTF8String:purple_status_get_id(status)];
@@ -232,9 +234,6 @@
  {
      const gchar    *statusID;
      NSString		*statusName = statusState.statusName;
-     NSString		*statusMessageString = [statusState statusMessageString];
-
-     if (!statusMessageString) statusMessageString = @"";
      
      if ( adium_to_sipe_status[statusName] )
          statusID = [adium_to_sipe_status[statusName] UTF8String];
@@ -245,6 +244,37 @@
      
      return statusID;
  }
+
+
+// Improve the formatting of displayed names
+ - (AIListContact *)contactWithUID:(NSString *)sourceUID
+{
+    // give the inherited implementation a whack at finding a contact
+    AIListContact *contact = [super contactWithUID:sourceUID];
+    
+    NSRange sipURI = [sourceUID rangeOfString:@"sip:"];
+    if (sipURI.location != NSNotFound) {
+        // sourceUID is of the form "sip:<username>@<domain>".
+        // strip out the sip: part, and try find a contact with the nice display name
+        NSString *displayName = [sourceUID substringFromIndex:sipURI.location + sipURI.length];
+        
+        // check to see if we have a contact already with the non-sip'ified username
+        if([adium.contactController existingContactWithService:service account:self UID:displayName])
+        {
+            // if we do, lets return it!
+            contact = [adium.contactController existingContactWithService:service account:self UID:displayName];
+        }
+        else
+        {
+            // otherwise, return the contact from super, setting formattedUID with "sip:" chopped
+            [contact setFormattedUID:displayName notify:NotifyNow];
+        }
+        
+        
+    }
+    
+    return contact;
+}
 
 
 @end

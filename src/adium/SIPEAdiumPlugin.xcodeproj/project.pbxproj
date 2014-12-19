@@ -598,7 +598,7 @@
 		089C1669FE841209C02AAC07 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0450;
+				LastUpgradeCheck = 0610;
 			};
 			buildConfigurationList = 1DEB913E08733D840010E9CD /* Build configuration list for PBXProject "SIPEAdiumPlugin" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -826,6 +826,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 			};
 			name = Debug;
 		};
@@ -833,6 +834,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 			};
 			name = Release;
 		};
@@ -840,6 +842,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB93183AA0BD004351FF /* Debug.xcconfig */;
 			buildSettings = {
+				ONLY_ACTIVE_ARCH = YES;
 			};
 			name = Debug;
 		};
@@ -861,6 +864,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 			};
 			name = "Debug-Release";
 		};
@@ -868,6 +872,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 			};
 			name = "Debug-Release";
 		};
@@ -875,6 +880,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 			};
 			name = Debug;
 		};
@@ -882,6 +888,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB94183AA0BD004351FF /* libpidgin-sipe.xcconfig */;
 			buildSettings = {
+				COMBINE_HIDPI_IMAGES = YES;
 			};
 			name = Release;
 		};
