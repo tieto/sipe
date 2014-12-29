@@ -542,27 +542,27 @@ static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *s
 						     const gchar *cmd)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	struct sip_dialog *dialog = NULL;
 	struct sipe_groupchat_msg *msg = NULL;
 
-	if (groupchat && groupchat->session) {
-		dialog = sipe_dialog_find(groupchat->session, groupchat->session->with);
-	}
+	if (groupchat->session) {
+		struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
+							     groupchat->session->with);
 
-	if (dialog) {
-		struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
-		struct transaction *trans;
+		if (dialog) {
+			struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+			struct transaction *trans;
 
-		msg = generate_xccos_message(groupchat, cmd);
-		trans = sip_transport_info(sipe_private,
-					   "Content-Type: text/plain\r\n",
-					   msg->xccos,
-					   dialog,
-					   chatserver_command_response);
+			msg = generate_xccos_message(groupchat, cmd);
+			trans = sip_transport_info(sipe_private,
+						   "Content-Type: text/plain\r\n",
+						   msg->xccos,
+						   dialog,
+						   chatserver_command_response);
 
-		payload->destroy = sipe_groupchat_msg_remove;
-		payload->data    = msg;
-		trans->payload   = payload;
+			payload->destroy = sipe_groupchat_msg_remove;
+			payload->data    = msg;
+			trans->payload   = payload;
+		}
 	}
 
 	return(msg);
