@@ -542,9 +542,12 @@ static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *s
 						     const gchar *cmd)
 {
 	struct sipe_groupchat *groupchat = sipe_private->groupchat;
-	struct sip_dialog *dialog = sipe_dialog_find(groupchat->session,
-						     groupchat->session->with);
+	struct sip_dialog *dialog = NULL;
 	struct sipe_groupchat_msg *msg = NULL;
+
+	if (groupchat && groupchat->session) {
+		dialog = sipe_dialog_find(groupchat->session, groupchat->session->with);
+	}
 
 	if (dialog) {
 		struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
