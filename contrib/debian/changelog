@@ -1,3 +1,15 @@
+pidgin-sipe (1.18.5-1) unstable; urgency=low
+
+  * New upstream version 1.18.5 "Bug Fixes V" (2014-12-29)
+	- Fixed #276: Redundant "const" breaks build with clang (Stefan Becker)
+	- Fixed #269: purple idle-away converted to Away (Stefan Becker)
+	- svc: use authuser for RealmInfo request (Stefan Becker)
+	- adium: add release checking script (Stefan Becker)
+	- mingw: update fetch script to Pidgin 2.10.11 (Stefan Becker)
+	- updated translations: Italian (it), Swedish (sv)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Mon, 29 Dec 2014 21:04:00 +0200
+
 pidgin-sipe (1.18.4-1) unstable; urgency=low
 
   * New upstream version 1.18.4 "Bug Fixes IV" (2014-10-18)

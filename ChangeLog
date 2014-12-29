@@ -1,3 +1,11 @@
+version 1.18.5 "Bug Fixes V" (2014-12-29)
+	- Fixed #276: Redundant "const" breaks build with clang (Stefan Becker)
+	- Fixed #269: purple idle-away converted to Away (Stefan Becker)
+	- svc: use authuser for RealmInfo request (Stefan Becker)
+	- adium: add release checking script (Stefan Becker)
+	- mingw: update fetch script to Pidgin 2.10.11 (Stefan Becker)
+	- updated translations: Italian (it), Swedish (sv)
+
 version 1.18.4 "Bug Fixes IV" (2014-10-18)
 	- Fixed #263: ADFS fails when user and login name differ (Stefan Becker)
 	- Fixed #262: Adium: SIPE doesn't auto- or re-connect (Stefan Becker)
