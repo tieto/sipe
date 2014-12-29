@@ -20,6 +20,7 @@
 
 #include "sipe-core.h"
 #include "sipe-backend.h"
+#include "../core/sipe-core-private.h"
 #include "purple-private.h"
 
 @class AICoreComponentLoader;
@@ -276,5 +277,43 @@
     return contact;
 }
 
+#pragma mark Multiuser chat
+/*!
+ * @brief A chat will be joined
+ *
+ * This gives the account a chance to update any information in the chat's creation dictionary if desired.
+ *
+ * @result The final chat creation dictionary to use.
+ */
+- (NSDictionary *)willJoinChatUsingDictionary:(NSDictionary *)chatCreationDictionary
+{
+	// Store URI in persistentChatPool_uri
+	PurpleConnection* gc = purple_account_get_connection([self purpleAccount]);
+	struct sipe_core_public* sipe_public = purple_connection_get_protocol_data(gc); // PURPLE_GC_TO_SIPE_CORE_PUBLIC
+	struct sipe_core_private* sipe_private = SIPE_CORE_PRIVATE;
+	if (sipe_private->persistentChatPool_uri) {
+		g_free(sipe_private->persistentChatPool_uri);
+	}
+	sipe_private->persistentChatPool_uri = g_strdup([[chatCreationDictionary valueForKey:@"uri"] UTF8String]);
+
+	return chatCreationDictionary;
+}
+
+/*!
+ * @brief Re-create the chat's join options.
+ */
+- (NSDictionary *)extractChatCreationDictionaryFromConversation:(PurpleConversation *)conv
+{
+	NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+	PurpleConnection* gc = purple_account_get_connection([self purpleAccount]);
+	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	if (sipe_private && sipe_private->persistentChatPool_uri) {
+		[dict setObject:[NSString stringWithUTF8String:sipe_private->persistentChatPool_uri] forKey:@"uri"];
+	}
+
+	return dict;
+}
 
 @end
