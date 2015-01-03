@@ -4,6 +4,7 @@ version 1.19.0 "Auto Authentication, Search Improvements" (2015-XX-XX)
 	- Feature #65: Fall back from Kerberos to NTLM (Stefan Becker)
 	- Fixed #240: Corrupted HTTP response crashes SIPE (Stefan Becker)
 	- fall back to [MS-DLX] BasicSearch to improve search experience (Stefan Becker, various)
+	- implement search functionality for UCS (Stefan Becker)
 	- support for libnice TCP mode (Youness Alaoul, Jakub Adam)
 	- refactor CCCP request code (Jakub Adam)
 

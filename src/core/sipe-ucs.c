@@ -376,53 +376,84 @@ static void sipe_ucs_search_response(struct sipe_core_private *sipe_private,
 void sipe_ucs_search(struct sipe_core_private *sipe_private,
 		     struct sipe_backend_search_token *token,
 		     const gchar *given_name,
-		     SIPE_UNUSED_PARAMETER const gchar *surname,
-		     SIPE_UNUSED_PARAMETER const gchar *email,
-		     SIPE_UNUSED_PARAMETER const gchar *sipid,
-		     SIPE_UNUSED_PARAMETER const gchar *company,
-		     SIPE_UNUSED_PARAMETER const gchar *country)
+		     const gchar *surname,
+		     const gchar *email,
+		     const gchar *sipid,
+		     const gchar *company,
+		     const gchar *country)
 {
-	/* search GAL for matching entries */
-	gchar *body = g_markup_printf_escaped("<m:FindPeople>"
-					      " <m:PersonaShape>"
-					      "  <t:BaseShape>IdOnly</t:BaseShape>"
-					      "  <t:AdditionalProperties>"
-					      "   <t:FieldURI FieldURI=\"persona:CompanyName\"/>"
-					      "   <t:FieldURI FieldURI=\"persona:DisplayName\"/>"
-					      "   <t:FieldURI FieldURI=\"persona:EmailAddress\"/>"
-					      "   <t:FieldURI FieldURI=\"persona:ImAddress\"/>"
-					      /* Locations doesn't seem to work
-					      "   <t:FieldURI FieldURI=\"persona:Locations\"/>"
-					      */
-					      "  </t:AdditionalProperties>"
-					      " </m:PersonaShape>"
-					      " <m:IndexedPageItemView BasePoint=\"Beginning\" MaxEntriesReturned=\"100\" Offset=\"0\"/>"
-					      /*
-					       * I have no idea why Exchnage doesn't accept this
-					       * FieldURI for restrictions. Without it the search
-					       * will return users that don't have an ImAddress
-					       * and we need to filter them out ourselves :-(
-					      " <m:Restriction>"
-					      "  <t:Exists>"
-					      "   <t:FieldURI FieldURI=\"persona:ImAddress\"/>"
-					      "  </t:Exists>"
-					      " </m:Restriction>"
-					      */
-					      " <m:ParentFolderId>"
-					      "  <t:DistinguishedFolderId Id=\"directory\"/>"
-					      " </m:ParentFolderId>"
-					      " <m:QueryString>%s</m:QueryString>"
-					      "</m:FindPeople>",
-					      given_name);
+	guint count    = 0;
+	GString *query = g_string_new(NULL);
 
-	if (!sipe_ucs_http_request(sipe_private,
-				   NULL,
-				   body,
-				   sipe_ucs_search_response,
-				   token))
+	/*
+	 * Search GAL for matching entries
+	 *
+	 * QueryString should support field properties and quoting ("")
+	 * according to the specification. But in my trials I couldn't get
+	 * them to work. Concatenate all query words to a single string.
+	 * Only items that match ALL words will be returned by this query.
+	 */
+#define ADD_QUERY_VALUE(val)			       \
+	if (val) {				       \
+		if (count++)			       \
+			g_string_append_c(query, ' '); \
+		g_string_append(query, val);	       \
+	}
+
+	ADD_QUERY_VALUE(given_name);
+	ADD_QUERY_VALUE(surname);
+	ADD_QUERY_VALUE(email);
+	ADD_QUERY_VALUE(sipid);
+	ADD_QUERY_VALUE(company);
+	ADD_QUERY_VALUE(country);
+
+	if (count > 0) {
+		gchar *body = g_markup_printf_escaped("<m:FindPeople>"
+						      " <m:PersonaShape>"
+						      "  <t:BaseShape>IdOnly</t:BaseShape>"
+						      "  <t:AdditionalProperties>"
+						      "   <t:FieldURI FieldURI=\"persona:CompanyName\"/>"
+						      "   <t:FieldURI FieldURI=\"persona:DisplayName\"/>"
+						      "   <t:FieldURI FieldURI=\"persona:EmailAddress\"/>"
+						      "   <t:FieldURI FieldURI=\"persona:ImAddress\"/>"
+						      /* Locations doesn't seem to work
+						      "   <t:FieldURI FieldURI=\"persona:Locations\"/>"
+						      */
+						      "  </t:AdditionalProperties>"
+						      " </m:PersonaShape>"
+						      " <m:IndexedPageItemView BasePoint=\"Beginning\" MaxEntriesReturned=\"100\" Offset=\"0\"/>"
+						      /*
+						       * I have no idea why Exchnage doesn't accept this
+						       * FieldURI for restrictions. Without it the search
+						       * will return users that don't have an ImAddress
+						       * and we need to filter them out ourselves :-(
+						      " <m:Restriction>"
+						      "  <t:Exists>"
+						      "   <t:FieldURI FieldURI=\"persona:ImAddress\"/>"
+						      "  </t:Exists>"
+						      " </m:Restriction>"
+						      */
+						      " <m:ParentFolderId>"
+						      "  <t:DistinguishedFolderId Id=\"directory\"/>"
+						      " </m:ParentFolderId>"
+						      " <m:QueryString>%s</m:QueryString>"
+						      "</m:FindPeople>",
+						      query->str);
+
+		if (!sipe_ucs_http_request(sipe_private,
+					   NULL,
+					   body,
+					   sipe_ucs_search_response,
+					   token))
+			sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+						   token,
+						   _("Contact search failed"));
+	} else
 		sipe_backend_search_failed(SIPE_CORE_PUBLIC,
 					   token,
-					   _("Contact search failed"));
+					   _("Invalid contact search query"));
+
+	g_string_free(query, TRUE);
 }
 
 static void sipe_ucs_ignore_response(struct sipe_core_private *sipe_private,
