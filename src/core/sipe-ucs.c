@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,6 +23,14 @@
  *
  * Implementation for Unified Contact Store [MS-OXWSCOS]
  *  <http://msdn.microsoft.com/en-us/library/jj194130.aspx>
+ * EWS Reference
+ *  <http://msdn.microsoft.com/en-us/library/office/bb204119.aspx>
+ * Photo Web Service Protocol [MS-OXWSPHOTO]
+ *  <http://msdn.microsoft.com/en-us/library/jj194353.aspx>
+ * GetUserPhoto operation
+ *  <http://msdn.microsoft.com/en-us/library/office/jj900502.aspx>
+ * FindPeople operation
+ *  <http://msdn.microsoft.com/en-us/library/office/jj191039.aspx>
  */
 
 #include <string.h>
