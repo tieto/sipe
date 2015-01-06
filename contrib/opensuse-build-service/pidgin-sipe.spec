@@ -105,6 +105,9 @@
 %define build_ktp 1
 %if 0%{?fedora} >= 20
 %define nice_gstreamer libnice-gstreamer
+%if 0%{?fedora} >= 21
+%define has_gssntlmssp 1
+%endif
 %endif
 %endif
 
@@ -192,6 +195,10 @@ BuildRequires:  glib2-devel >= 2.28.0
 # Configurable components
 %if !0%{?_without_kerberos:1}
 BuildRequires:  krb5-devel
+%if 0%{?has_gssntlmssp}
+BuildRequires:  gssntlmssp-devel >= 0.5.0
+Requires:       gssntlmssp >= 0.5.0
+%endif
 %endif
 
 # For directory ownership
@@ -528,6 +535,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Jan 06 2015 J. D. User <jduser@noreply.com> 1.18.5-*git*
+- add dependency on gssntlmssp(-devel) >= 0.5.0 for F21+
+
 * Mon Jan 05 2015 J. D. User <jduser@noreply.com> 1.18.5-*git*
 - remove support for obsolete distributions
     - Fedora < 19
