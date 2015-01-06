@@ -1,7 +1,14 @@
 -------------------------------------------------------------------
-Mon Dec 29 19:12:00 UTC 2014 - chemobejk@gmail.com
+Wed Dec 31 09:36:53 UTC 2014 - jozef.koval03@gmail.com
 
 - Update to version 1.18.5:
+  + Redundant "const" breaks build with clang.
+  + Purple idle-away converted to Away.
+  + Svc: use authuser for RealmInfo request.
+  + Adium: add release checking script.
+  + Mingw: update fetch script to Pidgin 2.10.11.
+  + Bugs fixed: sf#269, sf#276.
+  + Updated translations.
 
 -------------------------------------------------------------------
 Tue Nov 11 07:53:25 UTC 2014 - jozef.koval03@gmail.com
