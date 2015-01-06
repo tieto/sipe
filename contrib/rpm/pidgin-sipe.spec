@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20140308git949b574
+%define git       20150106gitced3e52
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -50,13 +50,13 @@ BuildRequires:  pkgconfig(nss)
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  gettext-devel
-# Use "--with vv" to enable Voice & Video features
-%if 0%{?_with_vv:1}
+# Use "--without vv" to disable Voice & Video features
+%if !0%{?_without_vv:1}
 BuildRequires:  pkgconfig(purple) >= 2.8.0
 BuildRequires:  pkgconfig(nice) >= 0.1.0
 %if 0%{?fedora} >= 20
 # Dependency required when gstreamer support is split into two packages
-Requires:       libnice-gstreamer
+%define         requires_libnice_gstreamer 1
 %endif
 BuildRequires:  pkgconfig(gstreamer-0.10)
 %endif
@@ -73,6 +73,10 @@ BuildRequires:  pkgconfig(dbus-glib-1)
 # Use "--without kerberos" to disable krb5
 %if !0%{?_without_kerberos:1}
 BuildRequires:  krb5-devel
+%if 0%{?fedora} >= 21
+BuildRequires:  gssntlmssp-devel >= 0.5.0
+%define         requires_gssntlmssp 1
+%endif
 %endif
 
 Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
@@ -100,6 +104,13 @@ Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
 License:        GPL-2.0+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
+
+%if 0%{?requires_libnice_gstreamer}
+Requires:       libnice-gstreamer
+%endif
+%if 0%{?requires_gssntlmssp}
+Requires:       gssntlmssp >= 0.5.0
+%endif
 
 %description -n %{purple_plugin}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
@@ -162,6 +173,14 @@ Group:          %{pkg_group}
 License:        GPL-2.0+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
+%if 0%{?requires_libnice_gstreamer}
+# @TODO: remove comment when telepathy plugin supports Voice & Video features
+#Requires:       libnice-gstreamer
+%endif
+%if 0%{?requires_gssntlmssp}
+Requires:       gssntlmssp >= 0.5.0
+%endif
+
 %description -n %{telepathy_plugin}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
@@ -202,6 +221,9 @@ This package provides common files for the SIPE protocol plugins:
 ./autogen.sh
 %endif
 %configure \
+%if 0%{?_without_vv:1}
+	--without-vv \
+%endif
 	--enable-purple \
 %if !0%{?_without_telepathy:1}
 	--enable-telepathy
@@ -266,6 +288,11 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Jan 06 2015 J. D. User <jduser@noreply.com> 1.18.5-*git*
+- add dependency on gssntlmssp(-devel) >= 0.5.0 for F21+
+- enable Voice & Video features by default
+- move dependency on libnice-gstreamer to correct packages
+
 * Mon Dec 29 2014 J. D. User <jduser@noreply.com> 1.18.5
 - update to 1.18.5
 
