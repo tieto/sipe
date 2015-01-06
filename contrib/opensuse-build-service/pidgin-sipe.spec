@@ -4,7 +4,6 @@
 # It has support for:
 #
 #     RedHat family (CentOS, Fedora, RHEL, ScientificLinux)
-#     Mandriva
 #     SUSE family (openSUSE, SLED, SLES)
 #     Windows (mingw32, mingw64)
 #
@@ -17,7 +16,7 @@
 # Manually add this repository to your private OBS project:
 #
 #  <repository name="mingw32">
-#    <path repository="openSUSE_11.4" project="windows:mingw:win32"/>
+#    <path repository="openSUSE_13.2" project="windows:mingw:win32"/>
 #    <arch>i586</arch>
 #  </repository>
 #
@@ -46,7 +45,7 @@
 # Manually add this repository to your private OBS project:
 #
 #  <repository name="mingw64">
-#    <path repository="openSUSE_11.4" project="windows:mingw:win64"/>
+#    <path repository="openSUSE_13.2" project="windows:mingw:win64"/>
 #    <arch>i586</arch>
 #  </repository>
 #
@@ -79,30 +78,15 @@
 
 
 %define has_pidgin 1
-%define purple_develname libpurple-devel
-
-%if 0%{?mdkversion} >= 200910
-%ifarch x86_64
-%define purple_develname lib64purple-devel
-%endif
-%if 0%{?mdkversion} >= 201000
-%ifnarch x86_64
-%define has_libnice 1
-%endif
-%endif
-%endif
 
 %if 0%{?suse_version}
 %define nss_develname mozilla-nss-devel
-%if 0%{?suse_version} >= 1120
+# SLES11 defines suse_version = 1110
+%if 0%{?suse_version} > 1110
 %define has_libnice 1
-%if 0%{?suse_version} > 1140
 %define has_gstreamer 1
-%if 0%{?suse_version} > 1210
 %define build_telepathy 1
 %define nice_gstreamer gstreamer-0_10-libnice
-%endif
-%endif
 %endif
 %else
 %define nss_develname nss-devel
@@ -110,21 +94,17 @@
 
 %if 0%{?suse_version} || 0%{?sles_version}
 %define pkg_group Productivity/Networking/Instant Messenger
+%else
+%define pkg_group Applications/Internet
 %endif
 
 %if 0%{?fedora}
-%if 0%{?fedora} >= 11
 %define has_libnice 1
-%if 0%{?fedora} >= 15
 %define has_gstreamer 1
-%if 0%{?fedora} >= 17
 %define build_telepathy 1
 %define build_ktp 1
 %if 0%{?fedora} >= 20
 %define nice_gstreamer libnice-gstreamer
-%endif
-%endif
-%endif
 %endif
 %endif
 
@@ -138,12 +118,6 @@
 %define has_pidgin 0
 %endif
 %endif
-%endif
-
-%if 0%{?mdkversion}
-%define pkg_group Networking/Instant messaging
-%else
-%define pkg_group Applications/Internet
 %endif
 
 %if 0%{?purple_sipe_mingw32}
@@ -193,7 +167,7 @@ BuildRequires:  %{mingw_prefix}pidgin
 #
 # Standard Linux build setup
 #
-BuildRequires:  %{purple_develname} >= 2.4.0
+BuildRequires:  libpurple-devel >= 2.4.0
 BuildRequires:  libxml2-devel
 BuildRequires:  %{nss_develname}
 BuildRequires:  gettext-devel
@@ -227,27 +201,6 @@ Requires:       pidgin
 %endif
 %if 0%{?build_telepathy:1}
 BuildRequires:  empathy
-%endif
-
-%if 0%{?sles_version} == 10
-BuildRequires:  gnome-keyring-devel
-%endif
-
-# For OBS's "have choice for" for Fedora 11 (only)
-%if 0%{?fedora_version} == 11
-BuildRequires:  libproxy-mozjs
-BuildRequires:  PolicyKit-gnome
-%endif
-
-# For OBS's "have choice for" for Mandriva 2010.1 (and up?)
-%if 0%{?mdkversion} >= 201010
-BuildRequires:  polkit-gnome
-%endif
-
-# For OBS's "have choice for" for Mandriva 2011 (and up?)
-%if 0%{?mdkversion} >= 201100
-BuildRequires:  packagekit-gstreamer-plugin
-BuildRequires:  gnome-packagekit-common
 %endif
 
 # End Windows cross-compilation/Linux build setup
@@ -426,12 +379,6 @@ autoreconf --verbose --install --force
 #
 # Standard Linux build
 #
-%if 0%{?sles_version} == 10
-export CFLAGS="%optflags -I%{_includedir}/gssapi"
-%endif
-%if 0%{?mdkversion}
-autoreconf --verbose --install --force
-%endif
 %configure \
 	--enable-purple \
 %if 0%{?build_telepathy:1}
@@ -581,6 +528,12 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Jan 05 2015 J. D. User <jduser@noreply.com> 1.18.5-*git*
+- remove support for obsolete distributions
+    - Fedora < 19
+    - Mandriva
+    - OpenSUSE < 13.x
+
 * Mon Dec 29 2014 J. D. User <jduser@noreply.com> 1.18.5
 - update to 1.18.5
 
