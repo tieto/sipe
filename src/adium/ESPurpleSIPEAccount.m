@@ -277,4 +277,17 @@
 }
 
 
+// generate group chat's creation dictionary from purple conversation, e.g. for bookmarking
+- (NSDictionary *)extractChatCreationDictionaryFromConversation:(PurpleConversation *)conv
+{
+	NSMutableDictionary *dict = [NSMutableDictionary dictionary];
+	PurpleConnection* gc = purple_account_get_connection([self purpleAccount]);
+    const gchar *uri = sipe_core_chat_id(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+                                         (struct sipe_chat_session *) conv);
+
+    [dict setObject:[NSString stringWithUTF8String:uri] forKey:@"uri"];
+
+	return dict;
+}
+
 @end
