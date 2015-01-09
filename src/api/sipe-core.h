@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -320,6 +320,12 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
  * @return server host name (may be @c NULL if not fully connected yet)
  */
 const gchar *sipe_core_transport_sip_server_name(struct sipe_core_public *sipe_public);
+
+/**
+ * Get chat ID, f.ex. group chat URI
+ */
+const gchar *sipe_core_chat_id(struct sipe_core_public *sipe_public,
+			       struct sipe_chat_session *chat_session);
 
 /**
  * Invite to chat

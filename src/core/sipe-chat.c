@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -91,6 +91,12 @@ void sipe_chat_destroy(void)
 				chat_session->title, chat_session->id);
 		sipe_chat_remove_session(chat_session);
 	}
+}
+
+const gchar *sipe_core_chat_id(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+			       struct sipe_chat_session *chat_session)
+{
+	return(chat_session->id);
 }
 
 void sipe_core_chat_invite(struct sipe_core_public *sipe_public,
