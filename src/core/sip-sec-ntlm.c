@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009, 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
@@ -1703,8 +1703,8 @@ sip_sec_ntlm_message_describe(SipSecBuffer *buff,
 /* Security context for NTLM */
 typedef struct _context_ntlm {
 	struct sip_sec_context common;
-	const gchar *domain;
-	const gchar *username;
+	gchar *domain;
+	gchar *username;
 	const gchar *password;
 	guchar *client_sign_key;
 	guchar *server_sign_key;
@@ -1718,7 +1718,7 @@ typedef struct _context_ntlm {
 
 static gboolean
 sip_sec_acquire_cred__ntlm(SipSecContext context,
-			   const gchar *domain,
+			   SIPE_UNUSED_PARAMETER const gchar *domain,
 			   const gchar *username,
 			   const gchar *password)
 {
@@ -1727,16 +1727,31 @@ sip_sec_acquire_cred__ntlm(SipSecContext context,
 	/*
 	 * Our NTLM implementation does not support Single Sign-On.
 	 * Thus username & password are required.
-	 * NULL or empty domain is OK.
 	 */
-	if (is_empty(username) || is_empty(password))
+	if (is_empty(username) || is_empty(password)) {
+		SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__ntlm: no valid authentication information provided");
 		return FALSE;
+	}
 
 	/* this is the first time we are allowed to set private flags */
 	context->flags |= SIP_SEC_FLAG_NTLM_INITIAL;
 
-	ctx->domain   = domain ? domain : "";
-	ctx->username = username;
+	if (SIP_SEC_USERNAME_IS_ENTERPRISE) {
+		/* use username as-is, just replace enterprise marker with @ */
+		ctx->username = sipe_utils_str_replace(username,
+						       SIP_SEC_USERNAME_ENTERPRISE_STRING,
+						       "@");
+	} else {
+		SIP_SEC_USERNAME_SPLIT_START;
+		if (SIP_SEC_USERNAME_HAS_DOMAIN) {
+			ctx->domain   = g_strdup(SIP_SEC_USERNAME_DOMAIN);
+			ctx->username = g_strdup(SIP_SEC_USERNAME_ACCOUNT);
+		} else {
+			ctx->username = g_strdup(username);
+		}
+		SIP_SEC_USERNAME_SPLIT_END;
+	}
+
 	ctx->password = password;
 
 	return TRUE;
@@ -1810,7 +1825,7 @@ sip_sec_init_sec_context__ntlm(SipSecContext context,
 					      ctx->username,
 					      ctx->password,
 					      (tmp = g_ascii_strup(g_get_host_name(), -1)),
-					      ctx->domain,
+					      ctx->domain ? ctx->domain : "",
 					      server_challenge,
 					      time_val,
 					      target_info,
@@ -1910,6 +1925,8 @@ sip_sec_destroy_sec_context__ntlm(SipSecContext context)
 	g_free(ctx->server_sign_key);
 	g_free(ctx->client_seal_key);
 	g_free(ctx->server_seal_key);
+	g_free(ctx->domain);
+	g_free(ctx->username);
 	g_free(ctx);
 }
 
