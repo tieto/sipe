@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -90,3 +90,13 @@ struct sip_sec_context {
 #define SIP_SEC_FLAG_COMMON_SSO   0x00000001
 #define SIP_SEC_FLAG_COMMON_HTTP  0x00000002
 #define SIP_SEC_FLAG_COMMON_READY 0x00000004
+
+/**
+ * Helper macro for parsing username into domain & account parts
+ */
+#define SIP_SEC_USERNAME_IS_ENTERPRISE (strstr(username, "\\@") != NULL)
+#define SIP_SEC_USERNAME_SPLIT_START   gchar **_domain_user = g_strsplit_set(username, "/\\", 2)
+#define SIP_SEC_USERNAME_SPLIT_END     g_strfreev(_domain_user)
+#define SIP_SEC_USERNAME_DOMAIN        _domain_user[0]
+#define SIP_SEC_USERNAME_ACCOUNT       _domain_user[1]
+#define SIP_SEC_USERNAME_HAS_DOMAIN    (SIP_SEC_USERNAME_ACCOUNT != NULL)

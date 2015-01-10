@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -275,7 +275,7 @@ static void drop_gssapi_context(SipSecContext context)
 
 static gboolean
 sip_sec_acquire_cred__gssapi(SipSecContext context,
-			     const gchar *domain,
+			     SIPE_UNUSED_PARAMETER const gchar *domain,
 			     const gchar *username,
 			     const gchar *password)
 {
@@ -291,7 +291,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 	/* With SSO we use the default credentials */
 	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
 #ifdef HAVE_GSSAPI_PASSWORD_SUPPORT
-		gchar *username_new;
+		gchar *username_new = NULL;
 		OM_uint32 ret;
 		OM_uint32 minor, minor_ignore;
 		gss_OID_set mechs_set;
@@ -300,7 +300,7 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 		gss_name_t user_name;
 
 		/* Without SSO we need user name and password */
-		if (!username || !password) {
+		if (is_empty(username) || is_empty(password)) {
 			SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__gssapi: no valid authentication information provided");
 			return(FALSE);
 		}
@@ -309,46 +309,54 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 		if (mechs_set == GSS_C_NO_OID_SET)
 			return(FALSE);
 
-		/* Construct user name to acquire credentials for */
-		if (!is_empty(domain)) {
-			/* User specified a domain */
-			gchar *realm = g_ascii_strup(domain, -1);
+		if (!SIP_SEC_USERNAME_IS_ENTERPRISE) {
+			SIP_SEC_USERNAME_SPLIT_START;
 
-			username_new = g_strdup_printf("%s@%s",
-						       username,
-						       realm);
-			g_free(realm);
+			/* Construct user name to acquire credentials for */
+			if (SIP_SEC_USERNAME_HAS_DOMAIN) {
+				/* User specified a domain */
+				gchar *realm = g_ascii_strup(SIP_SEC_USERNAME_DOMAIN,
+							     -1);
 
-		} else if (strchr(username, '@')) {
-			/* No domain, username matches XXX@YYY */
-			gchar **user_realm = g_strsplit(username, "@", 2);
-			gchar *realm       = g_ascii_strup(user_realm[1], -1);
+				username_new = g_strdup_printf("%s@%s",
+							       SIP_SEC_USERNAME_ACCOUNT,
+							       realm);
+				g_free(realm);
 
-			/*
-			 * We should escape the "@" to generate a enterprise
-			 * principal, i.e. XXX\@YYY
-			 *
-			 * But krb5 libraries currently don't support this:
-			 *
-			 * http://krbdev.mit.edu/rt/Ticket/Display.html?id=7729
-			 *
-			 * username_new = g_strdup_printf("%s\\@%s",
-			 */
-			username_new = g_strdup_printf("%s@%s",
-						       user_realm[0],
-						       realm);
-			g_free(realm);
-			g_strfreev(user_realm);
-		} else {
-			/* Otherwise use username as is */
-			username_new = g_strdup(username);
+			} else if (strchr(username, '@')) {
+				/* No domain, username matches XXX@YYY */
+				gchar **user_realm = g_strsplit(username, "@", 2);
+				gchar *realm       = g_ascii_strup(user_realm[1], -1);
+
+				/*
+				 * We should escape the "@" to generate a enterprise
+				 * principal, i.e. XXX\@YYY
+				 *
+				 * But krb5 libraries currently don't support this:
+				 *
+				 * http://krbdev.mit.edu/rt/Ticket/Display.html?id=7729
+				 *
+				 * username_new = g_strdup_printf("%s\\@%s",
+				 */
+				username_new = g_strdup_printf("%s@%s",
+							       user_realm[0],
+							       realm);
+				g_free(realm);
+				g_strfreev(user_realm);
+			}
+
+			SIP_SEC_USERNAME_SPLIT_END;
 		}
+
+		if (username_new)
+			username = username_new;
+
 		SIPE_DEBUG_INFO("sip_sec_acquire_cred__gssapi: username '%s'",
-				username_new);
+				username);
 
 		/* Import user name into GSS format */
-		input_name_buffer.value  = (void *) username_new;
-		input_name_buffer.length = strlen(username_new) + 1;
+		input_name_buffer.value  = (void *) username;
+		input_name_buffer.length = strlen(username) + 1;
 
 		ret = gss_import_name(&minor,
 				      &input_name_buffer,
@@ -391,7 +399,6 @@ sip_sec_acquire_cred__gssapi(SipSecContext context,
 		 * non-SSO support requires gss_acquire_cred_with_password()
 		 * which is not available on older GSSAPI releases.
 		 */
-		(void) domain;   /* keep compiler happy */
 		(void) username; /* keep compiler happy */
 		(void) password; /* keep compiler happy */
 		(void) ctx;      /* keep compiler happy */
