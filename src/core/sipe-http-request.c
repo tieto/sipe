@@ -66,7 +66,6 @@ struct sipe_http_request {
 	gchar *content_type;   /* NULL if body == NULL */
 	gchar *authorization;
 
-	const gchar *domain;   /* not copied */
 	const gchar *user;     /* not copied */
 	const gchar *password; /* not copied */
 
@@ -566,7 +565,6 @@ struct sipe_http_request *sipe_http_request_new(struct sipe_core_private *sipe_p
 	/* default authentication */
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(SSO))
 		sipe_http_request_authentication(req,
-						 sipe_private->authdomain,
 						 sipe_private->authuser,
 						 sipe_private->password);
 
@@ -624,12 +622,10 @@ void sipe_http_request_allow_redirect(struct sipe_http_request *request)
 }
 
 void sipe_http_request_authentication(struct sipe_http_request *request,
-				      const gchar *domain,
 				      const gchar *user,
 				      const gchar *password)
 {
 	request->flags   |= SIPE_HTTP_REQUEST_FLAG_AUTHDATA;
-	request->domain   = domain;
 	request->user     = user;
 	request->password = password;
 }

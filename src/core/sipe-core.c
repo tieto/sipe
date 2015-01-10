@@ -445,7 +445,6 @@ void sipe_core_email_authentication(struct sipe_core_private *sipe_private,
 {
 	if (sipe_private->email_authuser) {
 		sipe_http_request_authentication(request,
-						 sipe_private->email_authdomain,
 						 sipe_private->email_authuser,
 						 sipe_private->email_password);
 	}
