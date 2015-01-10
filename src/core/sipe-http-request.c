@@ -3,7 +3,7 @@
 *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -332,7 +332,6 @@ static gboolean sipe_http_request_response_unauthorized(struct sipe_core_private
 			conn_public->context = sip_sec_create_context(type,
 								      !valid, /* Single Sign-On flag */
 								      TRUE,   /* connection-based for HTTP */
-								      valid ? req->domain   : NULL,
 								      valid ? req->user     : NULL,
 								      valid ? req->password : NULL);
 		}

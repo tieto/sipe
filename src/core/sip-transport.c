@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -313,7 +313,6 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		auth->gssapi_context = sip_sec_create_context(auth->type,
 							      SIPE_CORE_PRIVATE_FLAG_IS(SSO),
 							      FALSE, /* connection-less for SIP */
-							      sipe_private->authdomain ? sipe_private->authdomain : "",
 							      sipe_private->authuser,
 							      password);
 

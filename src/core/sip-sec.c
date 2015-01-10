@@ -122,7 +122,6 @@ SipSecContext
 sip_sec_create_context(guint type,
 		       gboolean sso,
 		       gboolean http,
-		       SIPE_UNUSED_PARAMETER const gchar *domain,
 		       const gchar *username,
 		       const gchar *password)
 {
