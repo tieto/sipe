@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -329,46 +329,22 @@ static void connect_to_core(PurpleConnection *gc,
 	const gchar *transport = purple_account_get_string(account, "transport", "auto");
 	struct sipe_core_public *sipe_public;
 	gchar **username_split;
-	gchar *login_domain = NULL;
-	gchar *login_account = NULL;
 	const gchar *errmsg;
 	guint transport_type;
 	struct sipe_backend_private *purple_private;
-	gboolean sso = get_sso_flag(account);
 
 	/* username format: <username>,[<optional login>] */
 	SIPE_DEBUG_INFO("sipe_purple_login: username '%s'", username);
 	username_split = g_strsplit(username, ",", 2);
 
-	/* login name is ignored when SSO has been selected */
-	if (!sso) {
-		/* login name specified? */
-		if (username_split[1] && strlen(username_split[1])) {
-			/* Allowed domain-account separators are / or \ */
-			gchar **domain_user = g_strsplit_set(username_split[1], "/\\", 2);
-			gboolean has_domain = domain_user[1] != NULL;
-			SIPE_DEBUG_INFO("sipe_purple_login: login '%s'", username_split[1]);
-			login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
-			login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
-			SIPE_DEBUG_INFO("sipe_purple_login: auth domain '%s' user '%s'",
-					login_domain ? login_domain : "",
-					login_account);
-			g_strfreev(domain_user);
-		} else {
-			/* No -> duplicate username */
-			login_account = g_strdup(username_split[0]);
-		}
-	}
-
 	sipe_public = sipe_core_allocate(username_split[0],
-					 sso,
-					 login_domain, login_account,
+					 get_sso_flag(account),
+					 NULL,
+					 username_split[1],
 					 password,
 					 email,
 					 email_url,
 					 &errmsg);
-	g_free(login_domain);
-	g_free(login_account);
 	g_strfreev(username_split);
 
 	if (!sipe_public) {
