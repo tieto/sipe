@@ -38,7 +38,6 @@ typedef SipSecContext
 
 typedef gboolean
 (*sip_sec_acquire_cred_func)(SipSecContext context,
-			     const gchar *domain,
 			     const gchar *username,
 			     const gchar *password);
 

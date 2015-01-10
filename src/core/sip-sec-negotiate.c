@@ -81,7 +81,6 @@ static gboolean sip_sec_negotiate_ntlm_fallback(context_negotiate context)
 	sip_sec_negotiate_copy_flags(context, context->ntlm);
 
 	return(context->ntlm->acquire_cred_func(context->ntlm,
-						NULL,
 						context->username,
 						context->password));
 }
@@ -90,7 +89,6 @@ static gboolean sip_sec_negotiate_ntlm_fallback(context_negotiate context)
 
 static gboolean
 sip_sec_acquire_cred__negotiate(SipSecContext context,
-				SIPE_UNUSED_PARAMETER const gchar *domain,
 				const gchar *username,
 				const gchar *password)
 {
@@ -105,7 +103,6 @@ sip_sec_acquire_cred__negotiate(SipSecContext context,
 	context = ctx->krb5;
 	sip_sec_negotiate_copy_flags(ctx, context);
 	ret = context->acquire_cred_func(context,
-					 NULL,
 					 username,
 					 password);
 	if (!ret) {

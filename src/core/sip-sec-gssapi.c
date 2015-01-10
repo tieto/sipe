@@ -275,7 +275,6 @@ static void drop_gssapi_context(SipSecContext context)
 
 static gboolean
 sip_sec_acquire_cred__gssapi(SipSecContext context,
-			     SIPE_UNUSED_PARAMETER const gchar *domain,
 			     const gchar *username,
 			     const gchar *password)
 {

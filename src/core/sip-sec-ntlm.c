@@ -1718,7 +1718,6 @@ typedef struct _context_ntlm {
 
 static gboolean
 sip_sec_acquire_cred__ntlm(SipSecContext context,
-			   SIPE_UNUSED_PARAMETER const gchar *domain,
 			   const gchar *username,
 			   const gchar *password)
 {

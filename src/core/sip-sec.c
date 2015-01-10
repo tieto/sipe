@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -122,7 +122,7 @@ SipSecContext
 sip_sec_create_context(guint type,
 		       gboolean sso,
 		       gboolean http,
-		       const gchar *domain,
+		       SIPE_UNUSED_PARAMETER const gchar *domain,
 		       const gchar *username,
 		       const gchar *password)
 {
@@ -156,7 +156,7 @@ sip_sec_create_context(guint type,
 		if (http)
 			context->flags |= SIP_SEC_FLAG_COMMON_HTTP;
 
-		if (!(*context->acquire_cred_func)(context, domain, username, password)) {
+		if (!(*context->acquire_cred_func)(context, username, password)) {
 			SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_create_context: failed to acquire credentials.");
 			(*context->destroy_context_func)(context);
 			context = NULL;

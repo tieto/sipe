@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -59,7 +59,6 @@ typedef struct _context_tls_dsk {
 
 static gboolean
 sip_sec_acquire_cred__tls_dsk(SipSecContext context,
-			      SIPE_UNUSED_PARAMETER const gchar *domain,
 			      SIPE_UNUSED_PARAMETER const gchar *username,
 			      const gchar *password)
 {

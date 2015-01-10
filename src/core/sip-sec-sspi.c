@@ -133,7 +133,6 @@ sip_sec_destroy_sspi_context(context_sspi context)
 
 static gboolean
 sip_sec_acquire_cred__sspi(SipSecContext context,
-			   SIPE_UNUSED_PARAMETER const gchar *domain,
 			   const gchar *username,
 			   const gchar *password)
 {
