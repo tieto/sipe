@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -634,7 +634,6 @@ void sipe_miranda_login(SIPPROTO *pr) {
 	gchar *login = sipe_miranda_getString(pr, "login");
 	gchar *email = sipe_miranda_getString(pr, "email");
 	gchar *email_url = sipe_miranda_getString(pr, "email_url");
-	gchar **domain_user = g_strsplit_set(login, "/\\", 2);
 	const gchar *errmsg;
 	gchar *password;
 	gchar *tmp = (char*)mir_calloc(1024);
@@ -655,7 +654,8 @@ void sipe_miranda_login(SIPPROTO *pr) {
 //	/* @TODO: is this correct?
 //	   "sso" is only available when SSPI/Kerberos support is compiled in */
 				     sipe_miranda_getBool(pr, "sso", FALSE),
-				     domain_user[0], domain_user[0] != NULL ? domain_user[1] : "",
+				     NULL,
+				     login,
 				     password,
 				     email,
 				     email_url,
@@ -668,7 +668,6 @@ void sipe_miranda_login(SIPPROTO *pr) {
 	mir_free(login);
 	mir_free(email);
 	mir_free(email_url);
-	g_strfreev(domain_user);
 	g_free(password);
 
 	if (!pr->sip) {
