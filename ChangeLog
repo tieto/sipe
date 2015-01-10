@@ -1,4 +1,5 @@
 version 1.19.0 "Auto Authentication, Search Improvements" (2015-XX-XX)
+	- Feature #80: Move parsing of login name (Stefan Becker)
 	- Feature #79: support for Adium group chat bookmarks (David Matz, Stefan Becker)
 	- Feature #78: Support searching for SIP ID (Stefan Becker)
 	- Feature #73: Support buddy photos from contactCard (Stefan Becker)
