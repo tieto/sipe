@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -236,9 +236,10 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		return NULL;
 	}
 
-	/* ensure that Login & Password are valid when SSO is not selected */
-	if (!sso && (is_empty(login_account) || is_empty(password))) {
-		*errmsg = _("Login and password are required when Single Sign-On is not enabled");
+
+	/* ensure that Password is valid when SSO is not selected */
+	if (!sso && is_empty(password)) {
+		*errmsg = _("Password is required when Single Sign-On is not enabled");
 		return NULL;
 	}
 
@@ -278,6 +279,10 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		}
 		g_free(tmp);
 	}
+
+	/* re-use sign-in name if login is empty */
+	if (is_empty(login_account))
+		login_account = signin_name;
 
 	sipe_private = g_new0(struct sipe_core_private, 1);
 	SIPE_CORE_PRIVATE_FLAG_UNSET(SUBSCRIBED_BUDDIES);
