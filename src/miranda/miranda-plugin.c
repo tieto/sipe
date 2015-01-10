@@ -654,7 +654,6 @@ void sipe_miranda_login(SIPPROTO *pr) {
 //	/* @TODO: is this correct?
 //	   "sso" is only available when SSPI/Kerberos support is compiled in */
 				     sipe_miranda_getBool(pr, "sso", FALSE),
-				     NULL,
 				     login,
 				     password,
 				     email,

@@ -339,7 +339,6 @@ static void connect_to_core(PurpleConnection *gc,
 
 	sipe_public = sipe_core_allocate(username_split[0],
 					 get_sso_flag(account),
-					 NULL,
 					 username_split[1],
 					 password,
 					 email,

@@ -282,7 +282,6 @@ void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
  */
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    gboolean sso,
-					    const gchar *login_domain,
 					    const gchar *login_account,
 					    const gchar *password,
 					    const gchar *email,

@@ -149,7 +149,6 @@ static gboolean connect_to_core(SipeConnection *self,
 
 	sipe_public = sipe_core_allocate(self->account,
 					 self->sso,
-					 NULL,
 					 self->login,
 					 self->password,
 					 NULL, /* @TODO: email     */

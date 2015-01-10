@@ -210,7 +210,6 @@ gchar *sipe_core_about(void)
 
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    gboolean sso,
-					    const gchar *login_domain,
 					    const gchar *login_account,
 					    const gchar *password,
 					    const gchar *email,
@@ -292,7 +291,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		SIPE_CORE_PRIVATE_FLAG_SET(SSO);
 	sipe_private->username   = g_strdup(signin_name);
 	sipe_private->email      = is_empty(email) ? g_strdup(signin_name) : g_strdup(email);
-	sipe_private->authdomain = sso             ? NULL                  : g_strdup(login_domain);
+	sipe_private->authdomain = NULL;
 	sipe_private->authuser   = sso             ? NULL                  : g_strdup(login_account);
 	sipe_private->password   = sso             ? NULL                  : g_strdup(password);
 	sipe_private->public.sip_name   = g_strdup(user_domain[0]);
