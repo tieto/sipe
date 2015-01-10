@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,11 +59,9 @@ struct sipe_core_private {
 
 	/* Account information */
 	gchar *username;
-	gchar *authdomain; /* NULL when SSO is enabled */
 	gchar *authuser;   /* NULL when SSO is enabled */
 	gchar *password;   /* NULL when SSO is enabled */
 	gchar *email;
-	gchar *email_authdomain;
 	gchar *email_authuser;   /* NULL -> use default authentication */
 	gchar *email_password;
 

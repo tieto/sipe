@@ -291,7 +291,6 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		SIPE_CORE_PRIVATE_FLAG_SET(SSO);
 	sipe_private->username   = g_strdup(signin_name);
 	sipe_private->email      = is_empty(email) ? g_strdup(signin_name) : g_strdup(email);
-	sipe_private->authdomain = NULL;
 	sipe_private->authuser   = sso             ? NULL                  : g_strdup(login_account);
 	sipe_private->password   = sso             ? NULL                  : g_strdup(password);
 	sipe_private->public.sip_name   = g_strdup(user_domain[0]);
@@ -319,15 +318,9 @@ void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
 	/* user specified email login? */
 	value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
 	if (!is_empty(value)) {
-		/* Allowed domain-account separators are / or \ */
-		gchar **domain_user = g_strsplit_set(value, "/\\", 2);
-		gboolean has_domain = domain_user[1] != NULL;
-
-		sipe_private->email_authdomain = has_domain ? g_strdup(domain_user[0]) : NULL;
-		sipe_private->email_authuser   = g_strdup(domain_user[has_domain ? 1 : 0]);
-		sipe_private->email_password   = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
-									       SIPE_SETTING_EMAIL_PASSWORD));
-		g_strfreev(domain_user);
+		sipe_private->email_authuser = g_strdup(value);
+		sipe_private->email_password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
+									     SIPE_SETTING_EMAIL_PASSWORD));
 	}
 }
 
@@ -406,10 +399,8 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->username);
 	g_free(sipe_private->email_password);
 	g_free(sipe_private->email_authuser);
-	g_free(sipe_private->email_authdomain);
 	g_free(sipe_private->email);
 	g_free(sipe_private->password);
-	g_free(sipe_private->authdomain);
 	g_free(sipe_private->authuser);
 	g_free(sipe_private->status);
 	g_free(sipe_private->note);
