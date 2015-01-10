@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -63,7 +63,6 @@ struct sipe_calendar {
 	int is_domino_disabled;
 	int is_updated;
 	gboolean retry;
-	gboolean ews_autodiscover_triggered;
 
 	char *as_url;
 	char *oof_url;
