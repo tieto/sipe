@@ -157,23 +157,26 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		memset(&auth_identity, 0, sizeof(auth_identity));
 		auth_identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
 
-		{
+		if (SIP_SEC_USERNAME_IS_ENTERPRISE) {
+			/* use username as-is, just replace enterprise marker with @ */
+			user_tmp = sipe_utils_str_replace(username,
+							  SIP_SEC_USERNAME_ENTERPRISE_STRING,
+							  "@");
+		} else {
 			SIP_SEC_USERNAME_SPLIT_START;
 			if (SIP_SEC_USERNAME_HAS_DOMAIN) {
 				domain_tmp                 = g_strdup(SIP_SEC_USERNAME_DOMAIN);
 				user_tmp                   = g_strdup(SIP_SEC_USERNAME_ACCOUNT);
-				auth_identity.Domain       = (unsigned char*)domain_tmp;
+				auth_identity.Domain       = (unsigned char *)domain_tmp;
 				auth_identity.DomainLength = strlen(domain_tmp);
-				auth_identity.User         = (unsigned char*)user_tmp;
-				auth_identity.UserLength   = strlen(user_tmp);
-			} else {
-				auth_identity.User         = (unsigned char*)username;
-				auth_identity.UserLength   = strlen(username);
 			}
 			SIP_SEC_USERNAME_SPLIT_END;
 		}
 
-		auth_identity.Password = (unsigned char*)password;
+		auth_identity.User           = (unsigned char *)(user_tmp ? user_tmp : username);
+		auth_identity.UserLength     = strlen((char *) auth_identity.User);
+
+		auth_identity.Password       = (unsigned char *)password;
 		auth_identity.PasswordLength = strlen(password);
 	}
 
