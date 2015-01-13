@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -272,7 +272,15 @@ sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 		/* TCP case */
 		SIPE_DEBUG_INFO_NOFORMAT("using TCP");
 
-		if ((transport->proxy = purple_proxy_connect(gc, account,
+		/*
+		 * NOTE: during shutdown libpurple calls
+		 *
+		 *    purple_proxy_connect_cancel_with_handle(gc);
+		 *
+		 * before our cleanup code. Therefore we can't use "gc" as
+		 * handle. We are not using it for anything thus NULL is fine.
+		 */
+		if ((transport->proxy = purple_proxy_connect(NULL, account,
 							     setup->server_name,
 							     setup->server_port,
 							     transport_tcp_connected,
