@@ -559,9 +559,6 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 				/* forget ADFS URI */
 				g_free(webticket->webticket_adfs_uri);
 				webticket->webticket_adfs_uri = NULL;
-
-				/* force retry */
-				wcd->tried_fedbearer = FALSE;
 			}
 
 			if (!wcd->tried_fedbearer) {
@@ -709,6 +706,7 @@ static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
 
 	if (sipe_private->webticket->retrieved_realminfo) {
 		/* skip retrieval and go to authentication */
+		wcd->tried_fedbearer = TRUE;
 		success = fedbearer_authentication(sipe_private, wcd);
 	} else {
 		success = sipe_svc_realminfo(sipe_private,
@@ -716,8 +714,6 @@ static gboolean initiate_fedbearer(struct sipe_core_private *sipe_private,
 					     realminfo,
 					     wcd);
 	}
-
-	wcd->tried_fedbearer = TRUE;
 
 	return(success);
 }
