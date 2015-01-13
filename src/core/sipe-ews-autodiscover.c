@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -266,7 +266,7 @@ static void sipe_ews_autodiscover_redirect_response(struct sipe_core_private *si
 						    gpointer data)
 {
 	struct sipe_ews_autodiscover *sea = data;
-	gboolean failed = TRUE;
+	gboolean failed = (status != (guint) SIPE_HTTP_STATUS_ABORTED);
 
 	sea->request = NULL;
 
