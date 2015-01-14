@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@ struct _PurpleAccount;
 struct _PurpleBuddy;
 struct _PurpleChat;
 struct _PurpleConnection;
+struct _PurpleConversation;
 struct _PurpleGroup;
 struct _PurpleMessage;
 struct _PurplePluginAction;
@@ -87,6 +88,7 @@ struct _PurpleXfer *sipe_purple_ft_new_xfer(struct _PurpleConnection *gc,
 /* libpurple chat callbacks */
 #define SIPE_PURPLE_COMPONENT_KEY_CONVERSATION "_conv"
 
+struct sipe_chat_session *sipe_purple_chat_get_session(struct _PurpleConversation *conv);
 void sipe_purple_chat_setup_rejoin(struct sipe_backend_private *purple_private);
 void sipe_purple_chat_destroy_rejoin(struct sipe_backend_private *purple_private);
 void sipe_purple_chat_invite(struct _PurpleConnection *gc,

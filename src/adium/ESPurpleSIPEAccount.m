@@ -281,10 +281,14 @@
 - (NSDictionary *)extractChatCreationDictionaryFromConversation:(PurpleConversation *)conv
 {
     NSMutableDictionary *dict = [NSMutableDictionary dictionary];
-    const gchar *uri = sipe_core_chat_id(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
-                                         (struct sipe_chat_session *) conv);
+    struct sipe_chat_session *session = sipe_purple_chat_get_session(conv);
 
-    [dict setObject:[NSString stringWithUTF8String:uri] forKey:@"uri"];
+    if (session) {
+        const gchar *uri = sipe_core_chat_id(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
+                                             session);
+
+        [dict setObject:[NSString stringWithUTF8String:uri] forKey:@"uri"];
+    }
 
     return dict;
 }

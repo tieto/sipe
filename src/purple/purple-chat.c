@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -155,7 +155,7 @@
 
 #define SIPE_PURPLE_KEY_CHAT_SESSION "sipe"
 
-static struct sipe_chat_session *sipe_purple_chat_get_session(PurpleConversation *conv)
+struct sipe_chat_session *sipe_purple_chat_get_session(PurpleConversation *conv)
 {
 	return(
 #if PURPLE_VERSION_CHECK(3,0,0)
