@@ -282,7 +282,7 @@
 // generate group chat's creation dictionary from purple conversation, e.g. for bookmarking
 - (NSDictionary *)extractChatCreationDictionaryFromConversation:(PurpleConversation *)conv
 {
-    NSMutableDictionary *dict = nil;
+    NSDictionary *dict = nil;
     struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
     // called during purple_serv_got_joined_chat()?
     struct sipe_chat_session *session = sipe_public->backend_private->adium_chat_session;
@@ -293,8 +293,8 @@
 
     if (session) {
         const gchar *uri = sipe_core_chat_id(sipe_public, session);
-        dict = [NSMutableDictionary dictionaryWithObjectsAndKeys:
-                @"uri", [NSString stringWithUTF8String:uri],
+        dict = [NSDictionary dictionaryWithObjectsAndKeys:
+                [NSString stringWithUTF8String:uri], @"uri",
                 nil
                ];
     } else {
