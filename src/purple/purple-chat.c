@@ -358,13 +358,21 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 #if PURPLE_VERSION_CHECK(3,0,0)
-	PurpleChatConversation *conv =
+	PurpleChatConversation *conv;
 #else
-	PurpleConversation *conv =
+	PurpleConversation *conv;
 #endif
-		purple_serv_got_joined_chat(purple_private->gc,
-					    sipe_purple_chat_id(purple_private->gc),
-					    title);
+
+	/*
+	 * Adium calls back into SIPE code during execution of the following
+	 * libpurple API. That code needs access to "session". As "conv" is
+	 * still being initialized we can't use sipe_purple_chat_get_session().
+	 */
+	purple_private->adium_chat_session = session;
+	conv = purple_serv_got_joined_chat(purple_private->gc,
+					   sipe_purple_chat_id(purple_private->gc),
+					   title);
+	purple_private->adium_chat_session = NULL;
 #if PURPLE_VERSION_CHECK(3,0,0)
 	g_object_set_data(G_OBJECT(conv),
 #else

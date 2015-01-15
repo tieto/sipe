@@ -23,6 +23,7 @@
 #include "version.h"
 
 /* Forward declarations */
+struct sipe_chat_session;
 struct sipe_core_public;
 struct _PurpleAccount;
 struct _PurpleBuddy;
@@ -45,6 +46,8 @@ struct sipe_backend_private {
 	struct _PurpleConnection *gc;
 	struct _PurpleAccount *account;
 	struct _PurpleRoomlist *roomlist;
+	/* see sipe_backend_chat_create() */
+	struct sipe_chat_session *adium_chat_session;
 	GHashTable *roomlist_map; /* name -> uri */
 	GList *rejoin_chats;
 	GSList *transports;
