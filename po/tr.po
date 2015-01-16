@@ -13,7 +13,7 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2014-01-06 09:46+0000\n"
+"PO-Revision-Date: 2015-01-16 19:34+0000\n"
 "Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: Turkish (http://www.transifex.com/projects/p/pidgin-sipe/language/tr/)\n"
 "MIME-Version: 1.0\n"
@@ -22,152 +22,159 @@ msgstr ""
 "Language: tr\n"
 "Plural-Forms: nplurals=2; plural=(n > 1);\n"
 
-#: ../src/core/sip-transport.c:235 ../src/core/sip-transport.c:297
+#: ../src/core/sip-transport.c:232
 msgid "Failed to authenticate to server"
 msgstr "Sunucuda kimlik doğrulaması yapılamadı"
 
-#: ../src/core/sip-transport.c:255
+#: ../src/core/sip-transport.c:290
 #, c-format
 msgid "Can't request certificate from %s"
 msgstr "%s'den sertifika istenemiyor "
 
-#: ../src/core/sip-transport.c:265
+#: ../src/core/sip-transport.c:300
 msgid "No URI for certificate provisioning service provided"
 msgstr "Sertifika sağlama servisi için URI belirtilmedi"
 
-#: ../src/core/sip-transport.c:1211
+#: ../src/core/sip-transport.c:1257
 msgid "Authentication failed"
 msgstr "Kimlik doğrulaması başarısız oldu"
 
-#: ../src/core/sip-transport.c:1219
+#: ../src/core/sip-transport.c:1314
 msgid "Incompatible authentication scheme chosen"
 msgstr "Seçilen kimlik doğrulama düzeni uygun değildir"
 
-#: ../src/core/sip-transport.c:1236 ../src/core/sipe-notify.c:1067
+#: ../src/core/sip-transport.c:1331 ../src/core/sipe-notify.c:1105
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Sunucu tarafından reddedildiniz: %s"
 
-#: ../src/core/sip-transport.c:1237 ../src/core/sip-transport.c:1253
-#: ../src/core/sip-transport.c:1277 ../src/core/sip-transport.c:1301
-#: ../src/core/sipe-conf.c:249 ../src/core/sipe-notify.c:1067
+#: ../src/core/sip-transport.c:1332 ../src/core/sip-transport.c:1348
+#: ../src/core/sip-transport.c:1372 ../src/core/sip-transport.c:1396
+#: ../src/core/sipe-conf.c:238 ../src/core/sipe-notify.c:1105
 msgid "no reason given"
 msgstr "bir neden bildirilmedi"
 
-#: ../src/core/sip-transport.c:1252
+#: ../src/core/sip-transport.c:1347
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Bulunamadı: %s. Lütfen yöneticinize başvurun"
 
-#: ../src/core/sip-transport.c:1254
+#: ../src/core/sip-transport.c:1349
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP, hedef URI için etkin değil veya mevcut değil"
 
-#: ../src/core/sip-transport.c:1277 ../src/core/sip-transport.c:1301
+#: ../src/core/sip-transport.c:1372 ../src/core/sip-transport.c:1396
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Servis kullanılamıyor: %s"
 
-#: ../src/core/sip-transport.c:1663
+#: ../src/core/sip-transport.c:1742
+msgid "Corrupted message received"
+msgstr ""
+
+#: ../src/core/sip-transport.c:1766
 msgid "Invalid message signature received"
 msgstr "Geçersiz ileti imzası alındı"
 
-#: ../src/core/sipe-buddy.c:819
+#: ../src/core/sipe-buddy.c:536 ../src/core/sipe-buddy.c:2157
+msgid "Mobile"
+msgstr "Cep"
+
+#: ../src/core/sipe-buddy.c:823
 msgid "Status"
 msgstr "Durum"
 
-#: ../src/core/sipe-buddy.c:822
+#: ../src/core/sipe-buddy.c:826
 msgid "Calendar"
 msgstr "Takvim"
 
-#: ../src/core/sipe-buddy.c:827
+#: ../src/core/sipe-buddy.c:831
 msgid "Meeting in"
 msgstr "Toplantı yeri"
 
-#: ../src/core/sipe-buddy.c:831
+#: ../src/core/sipe-buddy.c:835
 msgid "Meeting about"
 msgstr "Toplantı konusu"
 
-#: ../src/core/sipe-buddy.c:836
+#: ../src/core/sipe-buddy.c:840
 msgid "Out of office note"
 msgstr "\"Ofis dışında\" notu"
 
-#: ../src/core/sipe-buddy.c:836
+#: ../src/core/sipe-buddy.c:840
 msgid "Note"
 msgstr "Not"
 
-#: ../src/core/sipe-buddy.c:841 ../src/core/sipe-buddy.c:2095
-#: ../src/purple/purple-buddy.c:615
+#: ../src/core/sipe-buddy.c:845 ../src/core/sipe-buddy.c:2202
+#: ../src/purple/purple-buddy.c:632
 msgid "Access level"
 msgstr "Erişim düzeyi"
 
-#: ../src/core/sipe-buddy.c:1025
+#: ../src/core/sipe-buddy.c:1068
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "%d kişi bulundu%s:\n%d kişi bulundu%s:"
 msgstr[1] "%d kişi bulundu%s:\n%d kişi bulundu%s:"
 
-#: ../src/core/sipe-buddy.c:1027
+#: ../src/core/sipe-buddy.c:1070
 msgid " (more matched your query)"
 msgstr "(aramanız daha fazla sonuç verdi)"
 
-#: ../src/core/sipe-buddy.c:1058 ../src/core/sipe-buddy.c:1195
+#: ../src/core/sipe-buddy.c:1116 ../src/core/sipe-buddy.c:1254
+#: ../src/core/sipe-ucs.c:373
 msgid "No contacts found"
 msgstr "Aranan kişi bulunamadı"
 
-#: ../src/core/sipe-buddy.c:1070 ../src/core/sipe-buddy.c:1208
+#: ../src/core/sipe-buddy.c:1129 ../src/core/sipe-buddy.c:1267
+#: ../src/core/sipe-ucs.c:337
 msgid "Unable to display the search results"
 msgstr "Arama sonuçları görüntülenemiyor"
 
-#: ../src/core/sipe-buddy.c:1173 ../src/core/sipe-buddy.c:1185
+#: ../src/core/sipe-buddy.c:1232 ../src/core/sipe-buddy.c:1244
+#: ../src/core/sipe-ucs.c:450
 msgid "Contact search failed"
 msgstr "Kişi araması başarısız oldu"
 
-#: ../src/core/sipe-buddy.c:1307
+#: ../src/core/sipe-buddy.c:1407 ../src/core/sipe-ucs.c:454
 msgid "Invalid contact search query"
 msgstr "Hatalı  kişi arama sorgusu"
 
-#: ../src/core/sipe-buddy.c:1987
+#: ../src/core/sipe-buddy.c:2094
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "'%s' adlı kişiyi lider yap"
 
-#: ../src/core/sipe-buddy.c:2000
+#: ../src/core/sipe-buddy.c:2107
 #, c-format
 msgid "Remove from '%s'"
 msgstr "'%s'den çıkar"
 
-#: ../src/core/sipe-buddy.c:2014
+#: ../src/core/sipe-buddy.c:2121
 #, c-format
 msgid "Invite to '%s'"
 msgstr "'%s'e davet et"
 
-#: ../src/core/sipe-buddy.c:2030
+#: ../src/core/sipe-buddy.c:2137
 msgid "New chat"
 msgstr "Yeni sohbet"
 
-#: ../src/core/sipe-buddy.c:2043
+#: ../src/core/sipe-buddy.c:2150
 msgid "Work"
 msgstr "İş"
 
-#: ../src/core/sipe-buddy.c:2050
-msgid "Mobile"
-msgstr "Cep"
-
-#: ../src/core/sipe-buddy.c:2058
+#: ../src/core/sipe-buddy.c:2165
 msgid "Home"
 msgstr "Ev"
 
-#: ../src/core/sipe-buddy.c:2066
+#: ../src/core/sipe-buddy.c:2173
 msgid "Other"
 msgstr "Diğer"
 
-#: ../src/core/sipe-buddy.c:2074
+#: ../src/core/sipe-buddy.c:2181
 msgid "Custom1"
 msgstr "Özel1"
 
-#: ../src/core/sipe-buddy.c:2084
+#: ../src/core/sipe-buddy.c:2191
 msgid "Send email..."
 msgstr "E-posta gönder..."
 
@@ -237,52 +244,52 @@ msgid "Web ticket request to %s failed"
 msgstr "%s için web bileti isteği başarısız oldu"
 
 #. Generate next ID
-#: ../src/core/sipe-chat.c:231
+#: ../src/core/sipe-chat.c:237
 #, c-format
 msgid "Chat #%d"
 msgstr "Sohbet #%d"
 
-#: ../src/core/sipe-conf.c:248 ../src/core/sipe-conf.c:370
+#: ../src/core/sipe-conf.c:237 ../src/core/sipe-conf.c:361
 msgid "Failed to join the conference"
 msgstr "Konferansa katılım yapılamadı"
 
-#: ../src/core/sipe-conf.c:367
+#: ../src/core/sipe-conf.c:358
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
 msgstr "\"%s\" geçerli bir konferans URI değil"
 
-#: ../src/core/sipe-conf.c:898
+#: ../src/core/sipe-conf.c:868
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
 msgstr "\n\nBu program ses desteği olmadan derlenmiş olduğundan, eğer kabul ederseniz, diğer kişilerle sadece mesajlaşarak iletişim kurabileceksiniz."
 
-#: ../src/core/sipe-conf.c:906
+#: ../src/core/sipe-conf.c:876
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
 msgstr "%s sizi %s konferans görüşmesine davet etmek istiyor"
 
-#: ../src/core/sipe-conf.c:920
+#: ../src/core/sipe-conf.c:890
 msgid "Accept"
 msgstr "Kabul et"
 
-#: ../src/core/sipe-conf.c:921
+#: ../src/core/sipe-conf.c:891
 msgid "Decline"
 msgstr "Reddet"
 
-#: ../src/core/sipe-conf.c:1135
+#: ../src/core/sipe-conf.c:1105
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
 msgstr "Bu görüşme artık kilitli değil. Başkaları da katılabilir. "
 
-#: ../src/core/sipe-conf.c:1139
+#: ../src/core/sipe-conf.c:1109
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
 msgstr "Bu görüşme kilitli. Görüşme kilitli olduğu sürece başka kimse katılamaz."
 
-#: ../src/core/sipe-conf.c:1172
+#: ../src/core/sipe-conf.c:1142
 msgid "You have been disconnected from this conference."
 msgstr "Bu görüşmeyle bağlantınız kesildi."
 
@@ -355,11 +362,11 @@ msgstr "Yazarlar"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Orijinal metinler İngilizce (en): SIPE geliştiricileri"
 
-#: ../src/core/sipe-core.c:227
+#: ../src/core/sipe-core.c:226
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "SIP Exchange kullanıcı adı geçersiz karakterler içeriyor"
 
-#: ../src/core/sipe-core.c:235 ../src/purple/purple-buddy.c:464
+#: ../src/core/sipe-core.c:234 ../src/purple/purple-buddy.c:484
 #: ../src/telepathy/telepathy-protocol.c:89
 #: ../src/telepathy/telepathy-protocol.c:191
 #, c-format
@@ -369,8 +376,8 @@ msgid ""
 msgstr "Kullanıcı adı geçerli bir SIP URI olmalıdır\nÖrnek: kullanıcı@firma.com"
 
 #: ../src/core/sipe-core.c:241
-msgid "Login and password are required when Single Sign-On is not enabled"
-msgstr "Tek yerden oturum açma etkin değilken giriş adı ve şifre gereklidir "
+msgid "Password is required when Single Sign-On is not enabled"
+msgstr ""
 
 #: ../src/core/sipe-core.c:251
 msgid ""
@@ -443,9 +450,9 @@ msgstr "Dosya aktarımı kimlik doğrulaması başarısız oldu."
 msgid "Out of memory"
 msgstr "Bellek yetersiz"
 
-#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1081
-#: ../src/core/sipe-notify.c:1108 ../src/core/sipe-notify.c:1212
-#: ../src/purple/purple-search.c:125
+#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1119
+#: ../src/core/sipe-notify.c:1146 ../src/core/sipe-notify.c:1250
+#: ../src/purple/purple-search.c:128
 msgid "Other Contacts"
 msgstr "Diğer Kişiler"
 
@@ -463,16 +470,16 @@ msgstr "Grup Sohbet Proxy ayarı hatalı:\n\n»%s\n\nLütfen hesabınızı günc
 msgid "Couldn't find Group Chat server!"
 msgstr "Grup Sohbet sunucusu bulunamadı!"
 
-#: ../src/core/sipe-groupchat.c:506
+#: ../src/core/sipe-groupchat.c:508
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
 msgstr "Bu mesaj '%s' sohbet odasına iletilemedi"
 
-#: ../src/core/sipe-groupchat.c:604
+#: ../src/core/sipe-groupchat.c:609
 msgid "Error retrieving room list"
 msgstr "Oda listesi alınırken hata oluştu"
 
-#: ../src/core/sipe-groupchat.c:708
+#: ../src/core/sipe-groupchat.c:713
 msgid "Error joining chat room"
 msgstr "Sohbet odasına katılırken hata oluştu"
 
@@ -487,103 +494,111 @@ msgstr "%s davet edilemedi"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "%s adresinden tanınmayan içerikli bir mesaj alındı"
 
-#: ../src/core/sipe-media.c:574 ../src/core/sipe-media.c:904
-#: ../src/core/sipe-media.c:914 ../src/core/sipe-media.c:1201
-#: ../src/core/sipe-media.c:1213
+#: ../src/core/sipe-media.c:673 ../src/core/sipe-media.c:1011
+#: ../src/core/sipe-media.c:1021 ../src/core/sipe-media.c:1310
+#: ../src/core/sipe-media.c:1330
 msgid "Unable to establish a call"
 msgstr "Çağrı yapılamıyor"
 
-#: ../src/core/sipe-media.c:575 ../src/core/sipe-media.c:1202
+#: ../src/core/sipe-media.c:674 ../src/core/sipe-media.c:1311
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr "Karşı tarafın şifreleme ayarları bizimkiyle uyumsuz."
 
-#: ../src/core/sipe-media.c:770 ../src/core/sipe-media.c:783
-#: ../src/core/sipe-media.c:851 ../src/core/sipe-media.c:1212
+#: ../src/core/sipe-media.c:883 ../src/core/sipe-media.c:894
+#: ../src/core/sipe-media.c:960 ../src/core/sipe-media.c:1329
 msgid "Error occured"
 msgstr "Hata oluştu"
 
-#: ../src/core/sipe-media.c:771 ../src/core/sipe-media.c:852
+#: ../src/core/sipe-media.c:884 ../src/core/sipe-media.c:961
 msgid "Error creating audio stream"
 msgstr "Ses akışını gerçekleştirirken hata oluştu"
 
-#: ../src/core/sipe-media.c:784
+#: ../src/core/sipe-media.c:895
 msgid "Error creating video stream"
 msgstr "Video akışını gerçekleştirirken hata oluştu"
 
-#: ../src/core/sipe-media.c:905
+#: ../src/core/sipe-media.c:923 ../src/purple/purple-chat.c:305
+msgid "Join conference call"
+msgstr "Konferans çağrısına katıl"
+
+#: ../src/core/sipe-media.c:924
+msgid "Conference calls are not supported on this server."
+msgstr ""
+
+#: ../src/core/sipe-media.c:1012
 msgid "Invalid phone number"
 msgstr "Geçersiz telefon numarası"
 
-#: ../src/core/sipe-media.c:915
+#: ../src/core/sipe-media.c:1022
 msgid "Audio Test Service is not available."
 msgstr "Ses Test Servisi mevcut değil."
 
-#: ../src/core/sipe-media.c:1166
+#: ../src/core/sipe-media.c:1274
 msgid "User unavailable"
 msgstr "Kullanıcıya ulaşılamıyor"
 
-#: ../src/core/sipe-media.c:1169
+#: ../src/core/sipe-media.c:1277
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr "%s rahatsız edilmek istemiyor"
 
-#: ../src/core/sipe-media.c:1171
+#: ../src/core/sipe-media.c:1279
 #, c-format
 msgid "User %s is not available"
 msgstr "%s adlı kullanıcıya ulaşılamıyor"
 
-#: ../src/core/sipe-media.c:1176
+#: ../src/core/sipe-media.c:1284
 msgid "Call rejected"
 msgstr "Çağrı reddedildi"
 
-#: ../src/core/sipe-media.c:1177
+#: ../src/core/sipe-media.c:1285
 #, c-format
 msgid "User %s rejected call"
 msgstr "%s adlı kullanıcı çağrıyı reddetti"
 
-#: ../src/core/sipe-media.c:1185
+#: ../src/core/sipe-media.c:1293
 msgid "Unsupported media type"
 msgstr "Desteklenmeyen ortam türü"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe-notify.c:1059
+#: ../src/core/sipe-notify.c:1097
 msgid "you are already signed in at another location"
 msgstr "başka bir yerden oturum açmış durumdasınız"
 
-#: ../src/core/sipe-notify.c:1061
+#: ../src/core/sipe-notify.c:1099
 msgid "user disabled"
 msgstr "kullanıcı devre dışı"
 
-#: ../src/core/sipe-notify.c:1063
+#: ../src/core/sipe-notify.c:1101
 msgid "user moved"
 msgstr "kullanıcı taşınmış"
 
-#: ../src/core/sipe-ocs2007.c:458 ../src/purple/purple-buddy.c:622
-#: ../src/purple/purple-buddy.c:629
+#: ../src/core/sipe-ocs2007.c:458 ../src/purple/purple-buddy.c:639
+#: ../src/purple/purple-buddy.c:646
 msgid "Blocked"
 msgstr "Bloke edilmiş"
 
-#: ../src/core/sipe-ocs2007.c:459 ../src/purple/purple-buddy.c:618
-#: ../src/purple/purple-buddy.c:625
+#: ../src/core/sipe-ocs2007.c:459 ../src/purple/purple-buddy.c:635
+#: ../src/purple/purple-buddy.c:642
 msgid "Personal"
 msgstr "Kişisel"
 
 #. index 0
-#: ../src/core/sipe-ocs2007.c:460 ../src/purple/purple-buddy.c:619
-#: ../src/purple/purple-buddy.c:626
+#: ../src/core/sipe-ocs2007.c:460 ../src/purple/purple-buddy.c:636
+#: ../src/purple/purple-buddy.c:643
 msgid "Team"
 msgstr "Takım"
 
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
 #: ../src/core/sipe-ocs2007.c:461 ../src/purple/purple-buddy.c:75
-#: ../src/purple/purple-buddy.c:620 ../src/purple/purple-buddy.c:627
-#: ../src/purple/purple-plugin.c:868 ../src/purple/purple-search.c:63
+#: ../src/purple/purple-buddy.c:637 ../src/purple/purple-buddy.c:644
+#: ../src/purple/purple-search.c:66 ../src/purple/purple-search.c:223
 msgid "Company"
 msgstr "Şirket"
 
-#: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:621
-#: ../src/purple/purple-buddy.c:628
+#: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:638
+#: ../src/purple/purple-buddy.c:645
 msgid "Public"
 msgstr "Genel"
 
@@ -592,42 +607,41 @@ msgid "Unknown"
 msgstr "Bilinmeyen"
 
 #. Translators: remove (clear) previously assigned access level
-#: ../src/core/sipe-ocs2007.c:2539
+#: ../src/core/sipe-ocs2007.c:2541
 msgid "Unspecify"
 msgstr "Belirtme"
 
-#: ../src/core/sipe-ocs2007.c:2558
+#: ../src/core/sipe-ocs2007.c:2560
 msgid "People in my company"
 msgstr "Şirketimdeki kişiler"
 
-#: ../src/core/sipe-ocs2007.c:2568
+#: ../src/core/sipe-ocs2007.c:2570
 msgid "People in domains connected with my company"
 msgstr "Şirketime bağlı alanlardaki kişiler"
 
-#: ../src/core/sipe-ocs2007.c:2577
+#: ../src/core/sipe-ocs2007.c:2579
 msgid "People in public domains"
 msgstr "Genel alanlardaki kişiler"
 
-#: ../src/core/sipe-ocs2007.c:2587
+#: ../src/core/sipe-ocs2007.c:2589
 #, c-format
 msgid "People at %s"
 msgstr "%s konumundaki kişiler"
 
-#: ../src/core/sipe-ocs2007.c:2612
+#: ../src/core/sipe-ocs2007.c:2614
 msgid "Add new domain..."
 msgstr "Yeni alan ekle..."
 
-#: ../src/core/sipe-ocs2007.c:2641
+#: ../src/core/sipe-ocs2007.c:2643
 msgid "Online help..."
 msgstr "Çevrimiçi yardım..."
 
-#: ../src/core/sipe-ocs2007.c:2649
+#: ../src/core/sipe-ocs2007.c:2651
 msgid "Access groups"
 msgstr "Erişim grupları"
 
 #. * This has nothing to do with Availability numbers, like 3500 (online).
 #. * Just a mapping of Communicator Activities to tokens/translations
-#. 
 #. @TODO: NULL means "default translation from Pidgin"?
 #. *        What about other backends?
 #. SIPE_ACTIVITY_UNSET
@@ -742,8 +756,8 @@ msgstr "Ofis"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
-#: ../src/purple/purple-buddy.c:72 ../src/purple/purple-plugin.c:870
-#: ../src/purple/purple-search.c:66
+#: ../src/purple/purple-buddy.c:72 ../src/purple/purple-search.c:69
+#: ../src/purple/purple-search.c:225
 msgid "Country"
 msgstr "Ülke"
 
@@ -786,42 +800,38 @@ msgstr "Cihaz"
 msgid "you"
 msgstr "sen"
 
-#: ../src/purple/purple-buddy.c:563
+#: ../src/purple/purple-buddy.c:583
 msgid ""
 "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
-#: ../src/purple/purple-buddy.c:608
+#: ../src/purple/purple-buddy.c:625
 msgid "Domain"
 msgstr "Alan"
 
-#: ../src/purple/purple-buddy.c:637 ../src/purple/purple-buddy.c:638
+#: ../src/purple/purple-buddy.c:654 ../src/purple/purple-buddy.c:655
 msgid "Add new domain"
 msgstr "Yeni alan ekle"
 
-#: ../src/purple/purple-buddy.c:639
+#: ../src/purple/purple-buddy.c:656
 msgid "Add"
 msgstr "Ekle"
 
-#: ../src/purple/purple-buddy.c:640
+#: ../src/purple/purple-buddy.c:657
 msgid "Cancel"
 msgstr "İptal et"
 
-#: ../src/purple/purple-buddy.c:791
+#: ../src/purple/purple-buddy.c:809
 msgid "Copy to"
 msgstr "Kopyala"
 
-#: ../src/purple/purple-chat.c:275
+#: ../src/purple/purple-chat.c:286
 msgid "Lock"
 msgstr "Kilitle"
 
-#: ../src/purple/purple-chat.c:280
+#: ../src/purple/purple-chat.c:291
 msgid "Unlock"
 msgstr "Kilidi kaldır"
-
-#: ../src/purple/purple-chat.c:294
-msgid "Join conference call"
-msgstr "Konferans çağrısına katıl"
 
 #: ../src/purple/purple-groupchat.c:53
 msgid "_URI:"
@@ -847,7 +857,7 @@ msgstr "Sistem günlüğü"
 msgid "Description"
 msgstr "Açıklama"
 
-#: ../src/purple/purple-im.c:84
+#: ../src/purple/purple-im.c:86
 #, c-format
 msgid "Conversation subject: %s"
 msgstr "Görüşme konusu: %s"
@@ -858,78 +868,48 @@ msgstr "Görüşme konusu: %s"
 msgid "Message"
 msgstr "Mesaj"
 
-#: ../src/purple/purple-plugin.c:399
+#: ../src/purple/purple-plugin.c:377
 msgid "Connecting"
 msgstr "Bağlanıyor"
 
-#: ../src/purple/purple-plugin.c:426
+#: ../src/purple/purple-plugin.c:407
 msgid "Password required"
 msgstr "Şifre gerekiyor"
 
-#: ../src/purple/purple-plugin.c:589
+#: ../src/purple/purple-plugin.c:583
 msgid "user@company.com"
 msgstr "kullanıcı@firma.com"
 
-#: ../src/purple/purple-plugin.c:862
-msgid "First name"
-msgstr "Ad"
-
-#: ../src/purple/purple-plugin.c:864
-msgid "Last name"
-msgstr "Soyad"
-
-#: ../src/purple/purple-plugin.c:866 ../src/purple/purple-search.c:69
-msgid "Email"
-msgstr "E-posta"
-
-#: ../src/purple/purple-plugin.c:874
-msgid "Search"
-msgstr "Ara"
-
-#: ../src/purple/purple-plugin.c:875
-msgid "Search for a contact"
-msgstr "Bir kişiyi ara"
-
-#: ../src/purple/purple-plugin.c:876
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr "Bulmak istediğiniz kişiyle ilgili bilgileri girin. Boş alanlar göz ardı edilecektir."
-
-#: ../src/purple/purple-plugin.c:878
-msgid "_Search"
-msgstr "_Ara"
-
-#: ../src/purple/purple-plugin.c:879 ../src/purple/purple-plugin.c:947
-#: ../src/purple/purple-plugin.c:992
-msgid "_Cancel"
-msgstr "_İptal et"
-
-#: ../src/purple/purple-plugin.c:938
+#: ../src/purple/purple-plugin.c:848
 msgid "Phone number"
 msgstr "Telefon numarası"
 
-#: ../src/purple/purple-plugin.c:942 ../src/purple/purple-plugin.c:943
+#: ../src/purple/purple-plugin.c:852 ../src/purple/purple-plugin.c:853
 msgid "Call a phone number"
 msgstr "Bir telefon numarası ara"
 
-#: ../src/purple/purple-plugin.c:946
+#: ../src/purple/purple-plugin.c:856
 msgid "_Call"
 msgstr "_Ara"
 
-#: ../src/purple/purple-plugin.c:977
+#: ../src/purple/purple-plugin.c:857 ../src/purple/purple-plugin.c:899
+#: ../src/purple/purple-search.c:234
+msgid "_Cancel"
+msgstr "_İptal et"
+
+#: ../src/purple/purple-plugin.c:884
 msgid "Meeting location"
 msgstr "Toplantı yeri"
 
-#: ../src/purple/purple-plugin.c:981
+#: ../src/purple/purple-plugin.c:888
 msgid "Join conference"
 msgstr "Konferansa katıl"
 
-#: ../src/purple/purple-plugin.c:982
+#: ../src/purple/purple-plugin.c:889
 msgid "Join scheduled conference"
 msgstr "Planlanmış konferansa katıl"
 
-#: ../src/purple/purple-plugin.c:983
+#: ../src/purple/purple-plugin.c:890
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
@@ -940,39 +920,39 @@ msgid ""
 "https://meet.company.com/someone/abcdef1234"
 msgstr "Davetiyede almış olduğunuz toplantı yeri dizinini giriniz.\n\nGeçerli toplantı yeri şu şekilde olacaktır:\nmeet:sip:kişi@firma.com;gruu;opaque=app:conf:focus:id:abcdef1234\nconf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nveya\nhttps://meet.firma.com/kişi/abcdef1234"
 
-#: ../src/purple/purple-plugin.c:991
+#: ../src/purple/purple-plugin.c:898
 msgid "_Join"
 msgstr "_Katıl"
 
-#: ../src/purple/purple-plugin.c:1008 ../src/purple/purple-plugin.c:1022
+#: ../src/purple/purple-plugin.c:915 ../src/purple/purple-plugin.c:929
 msgid "Publishing of calendar information has been disabled"
 msgstr "Takvim bilgisinin yayımlanması durdurulmuştur"
 
-#: ../src/purple/purple-plugin.c:1035
+#: ../src/purple/purple-plugin.c:942
 msgid "About SIPE plugin..."
 msgstr "SIPE eklentisi hakkında..."
 
-#: ../src/purple/purple-plugin.c:1038
+#: ../src/purple/purple-plugin.c:945
 msgid "Contact search..."
 msgstr "Kişi araması..."
 
-#: ../src/purple/purple-plugin.c:1042
+#: ../src/purple/purple-plugin.c:949
 msgid "Call a phone number..."
 msgstr "Bir telefon numarası ara..."
 
-#: ../src/purple/purple-plugin.c:1045
+#: ../src/purple/purple-plugin.c:952
 msgid "Test call"
 msgstr "Test çağrısı"
 
-#: ../src/purple/purple-plugin.c:1049
+#: ../src/purple/purple-plugin.c:956
 msgid "Join scheduled conference..."
 msgstr "Planlanmış konferansa katıl..."
 
-#: ../src/purple/purple-plugin.c:1052
+#: ../src/purple/purple-plugin.c:959
 msgid "Republish Calendar"
 msgstr "Takvimi tekrar yayımla"
 
-#: ../src/purple/purple-plugin.c:1055
+#: ../src/purple/purple-plugin.c:962
 msgid "Reset status"
 msgstr "Durumu yenile"
 
@@ -982,33 +962,32 @@ msgstr "Durumu yenile"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#. 
-#: ../src/purple/purple-plugin.c:1113
+#: ../src/purple/purple-plugin.c:1020
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr "Giriş Adı\nkullanıcı veya ALAN\\kullanıcı veya\nkullanıcı@firma.com"
 
-#: ../src/purple/purple-plugin.c:1117
+#: ../src/purple/purple-plugin.c:1024
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr "Sunucu[:Bağlantı noktası]\n(otomatik-bulma için boş bırakın)"
 
-#: ../src/purple/purple-plugin.c:1120
+#: ../src/purple/purple-plugin.c:1027
 msgid "Connection type"
 msgstr "Bağlantı türü"
 
-#: ../src/purple/purple-plugin.c:1121
+#: ../src/purple/purple-plugin.c:1028 ../src/purple/purple-plugin.c:1040
 msgid "Auto"
 msgstr "Otomatik"
 
-#: ../src/purple/purple-plugin.c:1122
+#: ../src/purple/purple-plugin.c:1029
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:1123
+#: ../src/purple/purple-plugin.c:1030
 msgid "TCP"
 msgstr "TCP"
 
@@ -1016,23 +995,23 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:1129
+#: ../src/purple/purple-plugin.c:1036
 msgid "User Agent"
 msgstr "Kullanıcı Aracısı"
 
-#: ../src/purple/purple-plugin.c:1132
+#: ../src/purple/purple-plugin.c:1039
 msgid "Authentication scheme"
 msgstr "Kimlik doğrulama düzeni"
 
-#: ../src/purple/purple-plugin.c:1133
+#: ../src/purple/purple-plugin.c:1041
 msgid "NTLM"
 msgstr "NTLM"
 
-#: ../src/purple/purple-plugin.c:1135
+#: ../src/purple/purple-plugin.c:1043
 msgid "Kerberos"
 msgstr "Kerberos"
 
-#: ../src/purple/purple-plugin.c:1137
+#: ../src/purple/purple-plugin.c:1045
 msgid "TLS-DSK"
 msgstr "TLS-DSK"
 
@@ -1048,25 +1027,23 @@ msgstr "TLS-DSK"
 #. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
 #. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
 #. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
-#. 
-#: ../src/purple/purple-plugin.c:1155
+#: ../src/purple/purple-plugin.c:1063
 msgid "Use Single Sign-On"
 msgstr "Tek yerden oturum açmayı kullan"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#. 
-#: ../src/purple/purple-plugin.c:1162
+#: ../src/purple/purple-plugin.c:1070
 msgid "Don't publish my calendar information"
 msgstr "Takvim bilgimi yayımlama"
 
-#: ../src/purple/purple-plugin.c:1165
+#: ../src/purple/purple-plugin.c:1073
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr "E-posta hizmetleri URL'si\n(otomatik-bulma için boş bırakın)"
 
-#: ../src/purple/purple-plugin.c:1168
+#: ../src/purple/purple-plugin.c:1076
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1074,14 +1051,13 @@ msgstr "E-posta adresi\n(Kullanıcı Adı ile aynı değilse)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#. 
-#: ../src/purple/purple-plugin.c:1174
+#: ../src/purple/purple-plugin.c:1082
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr "E-posta girişi\n(Giriş Adı ile aynı değilse)"
 
-#: ../src/purple/purple-plugin.c:1177
+#: ../src/purple/purple-plugin.c:1085
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1089,21 +1065,54 @@ msgstr "E-posta şifresi\n(Şifre ile aynı değilse)"
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#. 
-#: ../src/purple/purple-plugin.c:1184
+#: ../src/purple/purple-plugin.c:1092
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
 "(leave empty to determine from Username)"
 msgstr "Grup Sohbet Proxy'si\nfirma.com veya kullanıcı@firma.com\n(Kullanıcı Adı üzerinden belirlemek için boş bırakın)"
 
-#: ../src/purple/purple-search.c:57
+#: ../src/purple/purple-search.c:60
 msgid "User name"
 msgstr "Kullanıcı adı"
 
-#: ../src/purple/purple-search.c:60
+#: ../src/purple/purple-search.c:63
 msgid "Name"
 msgstr "İsim"
+
+#: ../src/purple/purple-search.c:72 ../src/purple/purple-search.c:219
+msgid "Email"
+msgstr "E-posta"
+
+#: ../src/purple/purple-search.c:215
+msgid "First name"
+msgstr "Ad"
+
+#: ../src/purple/purple-search.c:217
+msgid "Last name"
+msgstr "Soyad"
+
+#: ../src/purple/purple-search.c:221
+msgid "SIP ID"
+msgstr ""
+
+#: ../src/purple/purple-search.c:229
+msgid "Search"
+msgstr "Ara"
+
+#: ../src/purple/purple-search.c:230
+msgid "Search for a contact"
+msgstr "Bir kişiyi ara"
+
+#: ../src/purple/purple-search.c:231
+msgid ""
+"Enter the information for the person you wish to find. Empty fields will be "
+"ignored."
+msgstr "Bulmak istediğiniz kişiyle ilgili bilgileri girin. Boş alanlar göz ardı edilecektir."
+
+#: ../src/purple/purple-search.c:233
+msgid "_Search"
+msgstr "_Ara"
 
 #: ../src/purple/purple-transport.c:131
 msgid "Read error"
@@ -1122,10 +1131,10 @@ msgstr "Bağlanamadı"
 msgid "Could not create SSL context"
 msgstr "SSL ortamı oluşturulamadı"
 
-#: ../src/purple/purple-transport.c:281
+#: ../src/purple/purple-transport.c:289
 msgid "Could not create socket"
 msgstr "Soket oluşturulamadı"
 
-#: ../src/purple/purple-transport.c:372
+#: ../src/purple/purple-transport.c:380
 msgid "Write error"
 msgstr "Yazma hatası"
