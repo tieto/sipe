@@ -2,6 +2,8 @@ version 1.19.0 "Auto Authentication, Search Improvements" (2015-XX-XX)
 	- Feature #80: Move parsing of login name (Stefan Becker)
 	- Feature #79: support for Adium group chat bookmarks (David Matz, Stefan Becker)
 	- Feature #78: Support searching for SIP ID (Stefan Becker)
+	- Feature #76: ADFS can't always be used (Stefan Becker)
+	  * for accounts that have Multi-Factor Authentication (MFA) enabled
 	- Feature #73: Support buddy photos from contactCard (Stefan Becker)
 	- Feature #65: Fall back from Kerberos to NTLM (Stefan Becker)
 	- Fixed #240: Corrupted HTTP response crashes SIPE (Stefan Becker)
