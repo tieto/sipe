@@ -1,3 +1,22 @@
+pidgin-sipe (1.19.0-1) unstable; urgency=low
+
+  * New upstream version 1.19.0 "Auto Authentication, MFA & Search Improvements" (2015-02-XX)
+	- Feature #80: Move parsing of login name (Stefan Becker)
+	- Feature #79: support for Adium group chat bookmarks (David Matz, Stefan Becker)
+	- Feature #78: Support searching for SIP ID (Stefan Becker)
+	- Feature #76: ADFS can't always be used (Stefan Becker)
+	  * for accounts that have Multi-Factor Authentication (MFA) enabled
+	- Feature #73: Support buddy photos from contactCard (Stefan Becker)
+	- Feature #65: Fall back from Kerberos to NTLM (Stefan Becker)
+	- Fixed #240: Corrupted HTTP response crashes SIPE (Stefan Becker)
+	- fix calendar state machine when EWS URL is set (Stefan Becker)
+	- fall back to [MS-DLX] BasicSearch to improve search experience (Stefan Becker, various)
+	- implement search functionality for UCS (Stefan Becker)
+	- support for libnice TCP mode (Youness Alaoul, Jakub Adam)
+	- refactor CCCP request code (Jakub Adam)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Fri, 16 Jan 2015 22:12:00 +0200
+
 pidgin-sipe (1.18.5-1) unstable; urgency=low
 
   * New upstream version 1.18.5 "Bug Fixes V" (2014-12-29)
