@@ -12,9 +12,14 @@
 
 @class AICompletingTextField;
 
-@interface DCPurpleSIPEJoinChatViewController : DCJoinChatViewController {
+@interface DCPurpleSIPEJoinChatViewController : DCJoinChatViewController <NSComboBoxDataSource> {
     
-	IBOutlet		NSTextField		*textField_URI;
+	IBOutlet	NSComboBox			*combo_rooms;
+	IBOutlet	NSProgressIndicator *progress_fetch;
+
+	NSTimer							*timer;
+	NSMutableDictionary				*room_dict;
+	struct _PurpleRoomlist			*room_list;
 }
 
 @end
