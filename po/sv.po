@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Göran Uddeborg <goeran@uddeborg.se>, 2014
+# Göran Uddeborg <goeran@uddeborg.se>, 2014-2015
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2015-01-16 19:34+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2015-01-16 21:45+0000\n"
+"Last-Translator: Göran Uddeborg <goeran@uddeborg.se>\n"
 "Language-Team: Swedish (http://www.transifex.com/projects/p/pidgin-sipe/language/sv/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -69,7 +69,7 @@ msgstr "Tjänsten är ej tillgänglig: %s"
 
 #: ../src/core/sip-transport.c:1742
 msgid "Corrupted message received"
-msgstr ""
+msgstr "Ett trasigt meddelande togs emot"
 
 #: ../src/core/sip-transport.c:1766
 msgid "Invalid message signature received"
@@ -376,7 +376,7 @@ msgstr "Användarnamnet måste vara ett giltigt SIP URI\nExempel: user@company.c
 
 #: ../src/core/sipe-core.c:241
 msgid "Password is required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Lösenord krävs när Single Sign-on inte är aktiverat"
 
 #: ../src/core/sipe-core.c:251
 msgid ""
@@ -522,7 +522,7 @@ msgstr "Anslut till konferenssamtal"
 
 #: ../src/core/sipe-media.c:924
 msgid "Conference calls are not supported on this server."
-msgstr ""
+msgstr "Konferenssamtal stödjs inte av denna servern"
 
 #: ../src/core/sipe-media.c:1012
 msgid "Invalid phone number"
@@ -1093,7 +1093,7 @@ msgstr "Efternamn"
 
 #: ../src/purple/purple-search.c:221
 msgid "SIP ID"
-msgstr ""
+msgstr "SIP ID"
 
 #: ../src/purple/purple-search.c:229
 msgid "Search"

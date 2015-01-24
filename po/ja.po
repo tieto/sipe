@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Matthew Duggan <matthew@guarana.org>, 2011
+# Matthew Duggan <matthew@guarana.org>, 2011,2015
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2015-01-16 19:34+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2015-01-17 00:39+0000\n"
+"Last-Translator: Matthew Duggan <matthew@guarana.org>\n"
 "Language-Team: Japanese (http://www.transifex.com/projects/p/pidgin-sipe/language/ja/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -23,7 +23,7 @@ msgstr ""
 
 #: ../src/core/sip-transport.c:232
 msgid "Failed to authenticate to server"
-msgstr ""
+msgstr "サーバーに認証できませんでした"
 
 #: ../src/core/sip-transport.c:290
 #, c-format
@@ -121,7 +121,7 @@ msgstr " (クエリに一致したものが他にもあります)"
 #: ../src/core/sipe-buddy.c:1116 ../src/core/sipe-buddy.c:1254
 #: ../src/core/sipe-ucs.c:373
 msgid "No contacts found"
-msgstr ""
+msgstr "連絡先は見つかりませんでした"
 
 #: ../src/core/sipe-buddy.c:1129 ../src/core/sipe-buddy.c:1267
 #: ../src/core/sipe-ucs.c:337
@@ -485,7 +485,7 @@ msgstr "チャットに参加するのを失敗しました"
 #: ../src/core/sipe-im.c:197
 #, c-format
 msgid "Failed to invite %s"
-msgstr ""
+msgstr "%sを招待できませんでした"
 
 #: ../src/core/sipe-incoming.c:749
 #, c-format
@@ -740,7 +740,7 @@ msgstr ""
 #. SIPE_BUDDY_INFO_CITY
 #: ../src/purple/purple-buddy.c:68
 msgid "City"
-msgstr ""
+msgstr "市"
 
 #. SIPE_BUDDY_INFO_STATE
 #: ../src/purple/purple-buddy.c:69
@@ -833,19 +833,19 @@ msgstr "ロック解除"
 
 #: ../src/purple/purple-groupchat.c:53
 msgid "_URI:"
-msgstr ""
+msgstr "_URI:"
 
 #: ../src/purple/purple-groupchat.c:157
 msgid "Users"
-msgstr ""
+msgstr "ユーザー"
 
 #: ../src/purple/purple-groupchat.c:160
 msgid "Invite"
-msgstr ""
+msgstr "招待"
 
 #: ../src/purple/purple-groupchat.c:163
 msgid "Private"
-msgstr ""
+msgstr "非公開"
 
 #: ../src/purple/purple-groupchat.c:166
 msgid "Log"
@@ -853,7 +853,7 @@ msgstr "ログ"
 
 #: ../src/purple/purple-groupchat.c:169
 msgid "Description"
-msgstr ""
+msgstr "説明"
 
 #: ../src/purple/purple-im.c:86
 #, c-format
@@ -872,7 +872,7 @@ msgstr "接続中です"
 
 #: ../src/purple/purple-plugin.c:407
 msgid "Password required"
-msgstr ""
+msgstr "パースワードが必要"
 
 #: ../src/purple/purple-plugin.c:583
 msgid "user@company.com"
@@ -880,7 +880,7 @@ msgstr "user@company.com"
 
 #: ../src/purple/purple-plugin.c:848
 msgid "Phone number"
-msgstr ""
+msgstr "電話番号"
 
 #: ../src/purple/purple-plugin.c:852 ../src/purple/purple-plugin.c:853
 msgid "Call a phone number"
@@ -888,7 +888,7 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:856
 msgid "_Call"
-msgstr ""
+msgstr "通話(_C)"
 
 #: ../src/purple/purple-plugin.c:857 ../src/purple/purple-plugin.c:899
 #: ../src/purple/purple-search.c:234
@@ -940,7 +940,7 @@ msgstr ""
 
 #: ../src/purple/purple-plugin.c:952
 msgid "Test call"
-msgstr ""
+msgstr "試験通話"
 
 #: ../src/purple/purple-plugin.c:956
 msgid "Join scheduled conference..."
@@ -1033,7 +1033,7 @@ msgstr "シングルサインオンを利用する"
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #: ../src/purple/purple-plugin.c:1070
 msgid "Don't publish my calendar information"
-msgstr ""
+msgstr "カレンダーを公表しない"
 
 #: ../src/purple/purple-plugin.c:1073
 msgid ""
@@ -1092,7 +1092,7 @@ msgstr "氏"
 
 #: ../src/purple/purple-search.c:221
 msgid "SIP ID"
-msgstr ""
+msgstr "SIP ID"
 
 #: ../src/purple/purple-search.c:229
 msgid "Search"

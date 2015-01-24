@@ -7,15 +7,15 @@
 # Translators:
 # Anibal Avelar <debianmx@gmail.com>, 2012
 # Bruno Martins <inactive+skorzen@transifex.com>, 2012
-# Bruno Queiros <bqueiros@gmail.com>, 2014
-# Filipe Boleto <fboleto@gmail.com>, 2011
+# Bruno Queiros <bqueiros@gmail.com>, 2014-2015
+# Filipe Boleto <fboleto@gmail.com>, 2011,2015
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2015-01-16 19:34+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2015-01-17 00:10+0000\n"
+"Last-Translator: Bruno Queiros <bqueiros@gmail.com>\n"
 "Language-Team: Portuguese (http://www.transifex.com/projects/p/pidgin-sipe/language/pt/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -25,7 +25,7 @@ msgstr ""
 
 #: ../src/core/sip-transport.c:232
 msgid "Failed to authenticate to server"
-msgstr "Falhou a autenticação ao servidor"
+msgstr "Falha ao autenticar no servidor"
 
 #: ../src/core/sip-transport.c:290
 #, c-format
@@ -34,7 +34,7 @@ msgstr "Não é possível solicitar o certificado de %s"
 
 #: ../src/core/sip-transport.c:300
 msgid "No URI for certificate provisioning service provided"
-msgstr "Não URI para o serviço de provisionamento certificado previsto"
+msgstr "Nenhum URI fornecido para o serviço de provisionamento"
 
 #: ../src/core/sip-transport.c:1257
 msgid "Authentication failed"
@@ -47,7 +47,7 @@ msgstr "O método de autenticação escolhido é incompatível"
 #: ../src/core/sip-transport.c:1331 ../src/core/sipe-notify.c:1105
 #, c-format
 msgid "You have been rejected by the server: %s"
-msgstr "O pedido foi rejeitado pelo servidor: %s"
+msgstr "Você foi rejeitado pelo servidor: %s"
 
 #: ../src/core/sip-transport.c:1332 ../src/core/sip-transport.c:1348
 #: ../src/core/sip-transport.c:1372 ../src/core/sip-transport.c:1396
@@ -58,7 +58,7 @@ msgstr "nenhuma razão apresentada"
 #: ../src/core/sip-transport.c:1347
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr "Não encontrado: %s. Por favor contacte o seu administrador "
+msgstr "Não encontrado: %s. Por favor contacte o seu Administrador "
 
 #: ../src/core/sip-transport.c:1349
 msgid "SIP is either not enabled for the destination URI or it does not exist"
@@ -71,7 +71,7 @@ msgstr "Serviço indisponível: %s"
 
 #: ../src/core/sip-transport.c:1742
 msgid "Corrupted message received"
-msgstr ""
+msgstr "Mensagem corrompida recebida"
 
 #: ../src/core/sip-transport.c:1766
 msgid "Invalid message signature received"
@@ -99,7 +99,7 @@ msgstr "Reunião sobre"
 
 #: ../src/core/sipe-buddy.c:840
 msgid "Out of office note"
-msgstr "nota de fora do escritório"
+msgstr "Nota de fora do escritório"
 
 #: ../src/core/sipe-buddy.c:840
 msgid "Note"
@@ -134,7 +134,7 @@ msgstr "Impossivel de apresentar resultados da pesquisa "
 #: ../src/core/sipe-buddy.c:1232 ../src/core/sipe-buddy.c:1244
 #: ../src/core/sipe-ucs.c:450
 msgid "Contact search failed"
-msgstr "Busca contato falhou"
+msgstr "Pesquisa por contato falhou"
 
 #: ../src/core/sipe-buddy.c:1407 ../src/core/sipe-ucs.c:454
 msgid "Invalid contact search query"
@@ -378,7 +378,7 @@ msgstr "Nome do utilizador deve ser um URI SIP\nExemplo: user@company.com"
 
 #: ../src/core/sipe-core.c:241
 msgid "Password is required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Palavra passe é necessária quando o Single Sign-on não está activo"
 
 #: ../src/core/sipe-core.c:251
 msgid ""
@@ -524,7 +524,7 @@ msgstr "Entrar em chamada de conferência"
 
 #: ../src/core/sipe-media.c:924
 msgid "Conference calls are not supported on this server."
-msgstr ""
+msgstr "Chamadas de conferência não são suportadas neste servidor"
 
 #: ../src/core/sipe-media.c:1012
 msgid "Invalid phone number"
@@ -1095,7 +1095,7 @@ msgstr "Sobrenome"
 
 #: ../src/purple/purple-search.c:221
 msgid "SIP ID"
-msgstr ""
+msgstr "ID de SIP"
 
 #: ../src/purple/purple-search.c:229
 msgid "Search"
