@@ -2,13 +2,13 @@
 //  ESSIPELibpurpleServicePlugin.m
 //  SIPEAdiumPlugin
 //
+//  Copyright (C) 2015 SIPE Project <http://sipe.sourceforge.net/>
+//
 //  Created by Matt Meissner on 10/30/09.
 //  Modified by Michael Lamb on 2/27/13
 //  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
 //
 
-#import <ESDebugAILog.h>
-#import <libpurple/debug.h>
 #import "ESSIPEService.h"
 #import "ESSIPELibpurpleServicePlugin.h"
 
@@ -23,11 +23,6 @@ extern void purple_init_sipe_plugin(void);
 
 - (void)loadLibpurplePlugin 
 {
-    if(AIDebugLoggingIsEnabled()) {
-        purple_debug_set_enabled(true);
-        purple_debug_set_verbose(true);
-    }
-    
 }
 
 - (void)installPlugin
