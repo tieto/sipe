@@ -32,6 +32,30 @@ void sipe_backend_debug_literal(sipe_debug_level level,
 {
 	if (purple_debug_is_enabled()) {
 
+#ifdef ADIUM
+		/*
+		 * libpurple uses g_print() and PurpleDebugUiOps->debug()
+		 * which are both redirected by Adium to AILog(). Hence
+		 * each debug message is logged twice :-(
+		 *
+		 * For Adium we therefore use the PurpleDebugUiOps instead.
+		 */
+		PurpleDebugUiOps *ops = purple_debug_get_ui_ops();
+
+		if (ops && ops->print) {
+			switch (level) {
+			case SIPE_DEBUG_LEVEL_INFO:
+				ops->print(PURPLE_DEBUG_INFO, "sipe", msg);
+				break;
+			case SIPE_DEBUG_LEVEL_WARNING:
+				ops->print(PURPLE_DEBUG_WARNING, "sipe", msg);
+				break;
+			case SIPE_DEBUG_LEVEL_ERROR:
+				ops->print(PURPLE_DEBUG_ERROR, "sipe", msg);
+				break;
+			}
+		}
+#else
 		/* purple_debug doesn't have a vprintf-like API call :-( */
 		switch (level) {
 		case SIPE_DEBUG_LEVEL_INFO:
@@ -44,6 +68,7 @@ void sipe_backend_debug_literal(sipe_debug_level level,
 			purple_debug_error("sipe", "%s\n", msg);
 			break;
 		}
+#endif
 	}
 }
 

@@ -11,6 +11,7 @@ version 1.19.0 "Auto Authentication, MFA & Search Improvements" (2015-02-XX)
 	- fall back to [MS-DLX] BasicSearch to improve search experience (Stefan Becker, various)
 	- implement search functionality for UCS (Stefan Becker)
 	- adium: add chat room list UI (David Matz)
+	- adium: fix duplicate debug log messages (Stefan Becker)
 	- support for libnice TCP mode (Youness Alaoul, Jakub Adam)
 	- refactor CCCP request code (Jakub Adam)
 
