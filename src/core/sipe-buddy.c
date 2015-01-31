@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -542,7 +542,8 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 		g_string_append(status, sbuddy->note);
 	}
 
-	return(g_string_free(status, FALSE));
+	/* return NULL instead of empty status text */
+	return(g_string_free(status, status->len ? FALSE : TRUE));
 }
 
 gchar *sipe_buddy_get_alias(struct sipe_core_private *sipe_private,
