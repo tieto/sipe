@@ -288,7 +288,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Fri Jan 16 2015 J. D. User <jduser@noreply.com> 1.19.0
+* Sat Feb 07 2015 J. D. User <jduser@noreply.com> 1.19.0
 - update to 1.19.0
 
 * Tue Jan 06 2015 J. D. User <jduser@noreply.com> 1.18.5-*git*
