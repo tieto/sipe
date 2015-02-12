@@ -1,3 +1,6 @@
+version 1.20.0 "???" (XXXX-XX-XX)
+	- Fixed #278: 488 error after libnice upgrade (Jakub Adam)
+
 version 1.19.0 "Auto Authentication, MFA & Search Improvements" (2015-02-07)
 	- Feature #80: Move parsing of login name (Stefan Becker)
 	- Feature #79: support for Adium group chat bookmarks (David Matz, Stefan Becker)

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -191,6 +191,56 @@ sdpcodec_compare(gconstpointer a, gconstpointer b)
 	       ((const struct sdpcodec *)b)->id;
 }
 
+static GList *
+remove_wrong_farstream_0_1_tcp_candidates(GList *candidates)
+{
+	GList *i = candidates;
+	GHashTable *foundation_to_candidate = g_hash_table_new_full(g_str_hash,
+								    g_str_equal,
+								    g_free,
+								    NULL);
+
+	while (i) {
+		GList *next = i->next;
+		struct sipe_backend_candidate *c1 = i->data;
+
+		if (sipe_backend_candidate_get_protocol(c1) == SIPE_NETWORK_PROTOCOL_UDP) {
+			gchar *foundation                 = sipe_backend_candidate_get_foundation(c1);
+			struct sipe_backend_candidate *c2 = g_hash_table_lookup(foundation_to_candidate,
+										foundation);
+
+			if (c2) {
+				g_free(foundation);
+
+				if (sipe_backend_candidate_get_port(c1) ==
+				    sipe_backend_candidate_get_port(c2) ||
+				    (sipe_backend_candidate_get_type(c1) !=
+				     SIPE_CANDIDATE_TYPE_HOST &&
+				     sipe_backend_candidate_get_base_port(c1) ==
+				     sipe_backend_candidate_get_base_port(c2))) {
+					/*
+					 * We assume that RTP+RTCP UDP pairs
+					 * that share the same port are
+					 * actually mistagged TCP candidates.
+					 */
+					candidates = g_list_remove(candidates, c2);
+					candidates = g_list_delete_link(candidates, i);
+					sipe_backend_candidate_free(c1);
+					sipe_backend_candidate_free(c2);
+				}
+			} else
+				/* hash table takes ownership of "foundation" */
+				g_hash_table_insert(foundation_to_candidate, foundation, c1);
+		}
+
+		i = next;
+	}
+
+	g_hash_table_destroy(foundation_to_candidate);
+
+	return candidates;
+}
+
 static void
 fill_zero_tcp_act_ports_from_tcp_pass(GSList *candidates)
 {
@@ -315,9 +365,11 @@ backend_stream_to_sdpmedia(struct sipe_backend_media *backend_media,
 	// Otherwise send all available local candidates.
 	candidates = sipe_backend_media_get_active_local_candidates(backend_media,
 								    backend_stream);
-	if (!candidates)
+	if (!candidates) {
 		candidates = sipe_backend_get_local_candidates(backend_media,
 							       backend_stream);
+		candidates = remove_wrong_farstream_0_1_tcp_candidates(candidates);
+	}
 
 	media->candidates = backend_candidates_to_sdpcandidate(candidates);
 	fill_zero_tcp_act_ports_from_tcp_pass(media->candidates);
