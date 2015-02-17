@@ -1097,8 +1097,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					transport->reauthenticate_set = TRUE;
 				}
 
-				sipe_backend_connection_completed(SIPE_CORE_PUBLIC);
-
 				uuid = get_uuid(sipe_private);
 
 				// There can be multiple Contact headers (one per location where the user is logged in) so
@@ -1161,6 +1159,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					}
                                         hdr = g_slist_next(hdr);
                                 }
+
+				sipe_backend_connection_completed(SIPE_CORE_PUBLIC);
 
 				/* rejoin open chats to be able to use them by continue to send messages */
 				sipe_backend_chat_rejoin_all(SIPE_CORE_PUBLIC);
