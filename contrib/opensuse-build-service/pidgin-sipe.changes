@@ -1,7 +1,24 @@
 -------------------------------------------------------------------
-Sat Feb  7 11:48:00 UTC 2015 - chemobejk@gmail.com
+Fri Feb 13 21:22:20 UTC 2015 - zaitor@opensuse.org
 
 - Update to version 1.19.0:
+  + Move parsing of login name.
+  + Support for Adium group chat bookmarks.
+  + Support searching for SIP ID.
+  + ADFS can't always be used for accounts that have Multi-Factor
+    Authentication (MFA) enabled.
+  + Support buddy photos from contactCard.
+  + Fall back from Kerberos to NTLM.
+  + Raised contact names.
+  + Corrupted HTTP response crashes SIPE.
+  + Fix calendar state machine when EWS URL is set.
+  + Fall back to [MS-DLX] BasicSearch to improve search experience.
+  + Implement search functionality for UCS.
+  + adium:
+    - Add chat room list UI.
+    - Fix duplicate debug log messages.
+  + Support for libnice TCP mode.
+  + Refactor CCCP request code.
 
 -------------------------------------------------------------------
 Wed Dec 31 09:36:53 UTC 2014 - jozef.koval03@gmail.com
