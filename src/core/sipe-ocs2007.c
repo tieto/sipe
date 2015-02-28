@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1705,12 +1705,10 @@ void sipe_ocs2007_presence_publish(struct sipe_core_private *sipe_private,
 		event = sipe_cal_get_event(cal->cal_events, time(NULL));
 	}
 
-	if (!event) {
-		SIPE_DEBUG_INFO_NOFORMAT("publish_calendar_status_self: current event is NULL");
+	if (event) {
+		sipe_cal_event_debug(event, "publish_calendar_status_self: current event is:\n");
 	} else {
-		char *desc = sipe_cal_event_describe(event);
-		SIPE_DEBUG_INFO("publish_calendar_status_self: current event is:\n%s", desc ? desc : "");
-		g_free(desc);
+		SIPE_DEBUG_INFO_NOFORMAT("publish_calendar_status_self: current event is NULL");
 	}
 
 	/* Logic

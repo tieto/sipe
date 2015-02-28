@@ -107,12 +107,11 @@ char *
 sipe_cal_event_hash(struct sipe_cal_event* event);
 
 /**
- * Describes Calendar event in human readable form.
- *
- * Must be g_free()'d after use.
+ * Dump calendar event in human readable form to debug log.
  */
-char *
-sipe_cal_event_describe(struct sipe_cal_event* cal_event);
+void
+sipe_cal_event_debug(const struct sipe_cal_event *cal_event,
+		     const gchar *label);
 
 /**
  * Converts struct tm to Epoch time_t considering timezone.

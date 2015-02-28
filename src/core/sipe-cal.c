@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -215,8 +215,9 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private)
 }
 
 
-char *
-sipe_cal_event_describe(struct sipe_cal_event* cal_event)
+void
+sipe_cal_event_debug(const struct sipe_cal_event *cal_event,
+		     const gchar *label)
 {
 	GString* str = g_string_new(NULL);
 	const char *status = "";
@@ -238,7 +239,8 @@ sipe_cal_event_describe(struct sipe_cal_event* cal_event)
 	g_string_append_printf(str, "\t%s: %s\n", "location  ",  cal_event->location ? cal_event->location : "");
 	g_string_append_printf(str, "\t%s: %s\n", "is_meeting",  cal_event->is_meeting ? "TRUE" : "FALSE");
 
-	return g_string_free(str, FALSE);
+	SIPE_DEBUG_INFO("%s%s", label, str->str);
+	g_string_free(str, TRUE);
 }
 
 char *
