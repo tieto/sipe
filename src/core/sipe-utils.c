@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 #include <glib.h>
 
@@ -393,6 +394,22 @@ sipe_utils_time_to_str(time_t timestamp)
 {
 	GTimeVal time = { timestamp, 0 };
 	return g_time_val_to_iso8601(&time);
+}
+
+const gchar *sipe_utils_time_to_debug_str(const struct tm *tm)
+{
+	gchar *buffer = asctime(tm);
+	size_t length;
+
+	if (!buffer)
+		return("");
+
+	/* asctime() appends "\n" to the resulting string -> strip it */
+	length = strlen(buffer);
+	if (length)
+		buffer[length - 1] = '\0';
+
+	return(buffer);
 }
 
 size_t

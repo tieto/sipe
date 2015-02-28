@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  *
  *
@@ -231,7 +231,7 @@ static void sipe_domino_process_calendar_response(struct sipe_core_private *sipe
 						cal_event->end_time = time_val;
 					}
 
-					SIPE_DEBUG_INFO("\t\tdatetime=%s", asctime(gmtime(&time_val)));
+					SIPE_DEBUG_INFO("\t\tdatetime=%s", sipe_utils_time_to_debug_str(gmtime(&time_val)));
 					g_free(tmp);
 				} else if (sipe_strequal(name, VIEWENTITY_TEXT_LIST)) {
 					int i = 0;

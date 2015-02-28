@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-15 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -245,9 +245,9 @@ gboolean sipe_status_changed_by_user(struct sipe_core_private *sipe_private)
 	time_t now = time(NULL);
 
 	SIPE_DEBUG_INFO("sipe_status_changed_by_user: sipe_private->idle_switch : %s",
-			asctime(localtime(&(sipe_private->idle_switch))));
-	SIPE_DEBUG_INFO("sipe_status_changed_by_user: now              : %s",
-			asctime(localtime(&now)));
+			sipe_utils_time_to_debug_str(localtime(&(sipe_private->idle_switch))));
+	SIPE_DEBUG_INFO("sipe_status_changed_by_user: now                       : %s",
+			sipe_utils_time_to_debug_str(localtime(&now)));
 
 	res = ((now - SIPE_IDLE_SET_DELAY * 2) >= sipe_private->idle_switch);
 
@@ -261,8 +261,8 @@ void sipe_core_status_idle(struct sipe_core_public *sipe_public)
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
 	sipe_private->idle_switch = time(NULL);
-	SIPE_DEBUG_INFO("sipe_core_status_idle: sipe_private->idle_switch : %s",
-			asctime(localtime(&(sipe_private->idle_switch))));
+	SIPE_DEBUG_INFO("sipe_core_status_idle: sipe_private->idle_switch       : %s",
+			sipe_utils_time_to_debug_str(localtime(&(sipe_private->idle_switch))));
 }
 
 /*

@@ -715,9 +715,9 @@ static void schedule_publish_update(struct sipe_core_private *sipe_private,
 	time_t next_start = ((time_t)((int)((int)calculate_from)/interval + 1)*interval);
 
 	SIPE_DEBUG_INFO("sipe_sched_calendar_status_self_publish: calculate_from time: %s",
-			asctime(localtime(&calculate_from)));
+			sipe_utils_time_to_debug_str(localtime(&calculate_from)));
 	SIPE_DEBUG_INFO("sipe_sched_calendar_status_self_publish: next start time    : %s",
-			asctime(localtime(&next_start)));
+			sipe_utils_time_to_debug_str(localtime(&next_start)));
 
 	sipe_schedule_seconds(sipe_private,
 			      "<+2007-cal-status>",

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -328,6 +328,15 @@ sipe_utils_str_to_time(const gchar *timestamp);
  */
 gchar *
 sipe_utils_time_to_str(time_t timestamp);
+
+/**
+ * Converts struct tm to human readable string
+ *
+ * Example: Sat Feb 28 11:07:35 2015
+ *
+ * @return pointer to static buffer. Will never return @c NULL.
+ */
+const gchar *sipe_utils_time_to_debug_str(const struct tm *tm);
 
 struct sipnameval {
 	gchar *name;
