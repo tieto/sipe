@@ -1058,10 +1058,13 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	/* End of - Calendar: string calculations */
 }
 
-#define UPDATE_CALENDAR_INTERVAL	30*60	/* 30 min */
+#define UPDATE_CALENDAR_INTERVAL (15*60) /* 15 min, default granularity for Exchange */
+#define UPDATE_CALENDAR_OFFSET       30  /* 30 seconds before next interval starts */
 
 void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 {
+	time_t now, offset;
+
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
 
 	/* Do in parallel.
@@ -1074,11 +1077,19 @@ void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 	sipe_domino_update_calendar(SIPE_CORE_PRIVATE);
 #endif
 
-	/* schedule repeat */
+	/* how long, in seconds, until the next calendar interval starts? */
+	now    = time(NULL);
+	offset = (now / UPDATE_CALENDAR_INTERVAL + 1) * UPDATE_CALENDAR_INTERVAL - now;
+
+	/* delay update for one interval if next interval starts soon */
+	if (offset <= UPDATE_CALENDAR_OFFSET)
+		offset += UPDATE_CALENDAR_INTERVAL;
+
+	/* schedule next update */
 	sipe_schedule_seconds(SIPE_CORE_PRIVATE,
 			      "<+update-calendar>",
 			      NULL,
-			      UPDATE_CALENDAR_INTERVAL,
+			      offset - UPDATE_CALENDAR_OFFSET,
 			      (sipe_schedule_action)sipe_core_update_calendar,
 			      NULL);
 
