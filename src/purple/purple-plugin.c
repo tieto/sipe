@@ -103,7 +103,11 @@
 #define PURPLE_SIPE_SSO_AND_KERBEROS 0
 #endif
 
-/* Sipe core activity <-> Purple status mapping */
+/*
+ * SIPE core activity <-> Purple status mapping
+ *
+ * NOTE: this needs to be kept in sync with sipe_purple_status_types()
+ */
 static const gchar * const activity_to_purple_map[SIPE_ACTIVITY_NUM_TYPES] = {
 /* SIPE_ACTIVITY_UNSET       */ "unset",     /* == purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET) */
 /* SIPE_ACTIVITY_AVAILABLE   */ "available", /* == purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) */
@@ -122,6 +126,7 @@ static const gchar * const activity_to_purple_map[SIPE_ACTIVITY_NUM_TYPES] = {
 /* SIPE_ACTIVITY_IN_MEETING  */ "in-a-meeting",
 /* SIPE_ACTIVITY_OOF         */ "out-of-office",
 /* SIPE_ACTIVITY_URGENT_ONLY */ "urgent-interruptions-only",
+/* SIPE_ACTIVIY_NUM_TYPES == 17 -> compare to sipe_purple_status_types() */
 };
 
 GHashTable *purple_token_map;
@@ -193,68 +198,127 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	PurpleStatusType *type;
 	GList *types = NULL;
 
-	/* Macros to reduce code repetition.
+	/* Macro to reduce code repetition
 	   Translators: noun */
-#define SIPE_ADD_STATUS(prim,id,name,user) type = purple_status_type_new_with_attrs( \
-		prim, id, name,             \
+#define SIPE_ADD_STATUS(prim,activity,user) type = purple_status_type_new_with_attrs( \
+		prim, \
+		sipe_purple_activity_to_token(activity), \
+		sipe_core_activity_description(activity), \
 		TRUE, user, FALSE,          \
 		SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING), \
 		NULL);                      \
 	types = g_list_append(types, type);
 
-	/* Online */
+	/*
+	 * NOTE: needs to be kept in sync with activity_to_purple_map[],
+	 *       i.e. for each SIPE_ACTIVITY_xxx value there must be an
+	 *       entry on this list.
+	 *
+	 * NOTE: the following code is sorted by purple primitive type not
+	 *       by SIPE_ACTIVITY_xxx value.
+	 */
+
+	/*  1: Unset - special case: no entry needed */
+
+	/*
+	 * Status list entries for primitive type AVAILABLE
+	 *
+	 *  2: Available */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
-			NULL,
-			NULL,
+			SIPE_ACTIVITY_AVAILABLE,
 			TRUE);
 
-	/* Busy */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_BUSY),
-			sipe_core_activity_description(SIPE_ACTIVITY_BUSY),
-			TRUE);
-
-	/* Do Not Disturb */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_DND),
-			NULL,
-			TRUE);
-
-	/* In a call */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_ON_PHONE),
-			sipe_core_activity_description(SIPE_ACTIVITY_ON_PHONE),
+	/*  3: Online */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
+			SIPE_ACTIVITY_ONLINE,
 			FALSE);
 
-	/* In a conference call  */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_IN_CONF),
-			sipe_core_activity_description(SIPE_ACTIVITY_IN_CONF),
+	/*  4: Inactive (Idle) */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
+			SIPE_ACTIVITY_INACTIVE,
 			FALSE);
 
-	/* Away */
-	/* Goes first in the list as
-	 * purple picks the first status with the AWAY type
-	 * for idle.
+	/*
+	 * Status list entries for primitive type UNAVAILABLE
+	 *
+	 *  5: Busy */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_BUSY,
+			TRUE);
+
+	/*  6: Busy-Idle */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_BUSYIDLE,
+			FALSE);
+
+	/*  7: Do Not Disturb */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_DND,
+			TRUE);
+
+	/*  8: In a call */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_ON_PHONE,
+			FALSE);
+
+	/*  9: In a conference call */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_IN_CONF,
+			FALSE);
+
+	/* 10: In a meeting */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_IN_MEETING,
+			FALSE);
+
+	/* 11: Urgent interruptions only */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_URGENT_ONLY,
+			FALSE);
+
+	/*
+	 * Status list entries for primitive type AWAY
+	 *
+	 * 12: Away - special case: needs to go first in the list as purple
+	 *            picks the first status with primitive type AWAY for idle
 	 */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			NULL,
-			NULL,
+			SIPE_ACTIVITY_AWAY,
 			TRUE);
 
-	/* Be Right Back */
+	/* 13: Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_BRB),
-			sipe_core_activity_description(SIPE_ACTIVITY_BRB),
+			SIPE_ACTIVITY_BRB,
 			TRUE);
 
-	/* Appear Offline */
+	/* 14: Out to lunch */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
+			SIPE_ACTIVITY_LUNCH,
+			FALSE);
+
+	/*
+	 * Status list entries for primitive type EXTENDED_AWAY
+	 *
+	 * 15: Out of office */
+	SIPE_ADD_STATUS(PURPLE_STATUS_EXTENDED_AWAY,
+			SIPE_ACTIVITY_OOF,
+			FALSE);
+
+	/*
+	 * Status list entries for primitive type INVISIBLE
+	 *
+	 * 16: Appear Offline */
 	SIPE_ADD_STATUS(PURPLE_STATUS_INVISIBLE,
-			NULL,
-			NULL,
+			SIPE_ACTIVITY_INVISIBLE,
 			TRUE);
 
-	/* Offline */
+	/*
+	 * Status list entries for primitive type OFFLINE
+	 *
+	 * NOTE: this is always the last entry. Compare the number
+	 *       with the comment in activity_to_purple_map[].
+	 *
+	 * 17: Offline - special case: no message text */
 	type = purple_status_type_new(PURPLE_STATUS_OFFLINE,
 				      NULL,
 				      NULL,
