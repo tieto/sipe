@@ -1081,11 +1081,11 @@ void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 	now    = time(NULL);
 	offset = (now / UPDATE_CALENDAR_INTERVAL + 1) * UPDATE_CALENDAR_INTERVAL - now;
 
-	/* delay update for one interval if next interval starts soon */
-	if (offset <= UPDATE_CALENDAR_OFFSET)
+	/* ensure that the update after the initial one is not too soon */
+	if (offset <= (UPDATE_CALENDAR_INTERVAL / 2))
 		offset += UPDATE_CALENDAR_INTERVAL;
 
-	/* schedule next update */
+	/* schedule next update before a new calendar interval starts */
 	sipe_schedule_seconds(SIPE_CORE_PRIVATE,
 			      "<+update-calendar>",
 			      NULL,
