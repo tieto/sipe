@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-15 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -149,10 +149,7 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 					activity,
 					sipe_private->note)) {
 		/* status has changed */
-		sipe_private->do_not_publish[activity] = time(NULL);
-		SIPE_DEBUG_INFO("sipe_status_and_note: do_not_publish[%s]=%d [now]",
-				status_id,
-				(int) sipe_private->do_not_publish[activity]);
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_status_and_note: updating backend status");
 
 		/* update backend status */
 		sipe_backend_status_and_note(SIPE_CORE_PUBLIC,
@@ -182,32 +179,7 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *action_name;
 	gchar *tmp;
-	time_t now = time(NULL);
 	const gchar *status_id = sipe_status_activity_to_token(activity);
-	gboolean do_not_publish = ((now - sipe_private->do_not_publish[activity]) <= 2);
-
-	/* when other point of presence clears note, but we are keeping
-	 * state if OOF note.
-	 */
-	if (do_not_publish &&
-	    !note &&
-	    sipe_private->calendar &&
-	    sipe_private->calendar->oof_note) {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_core_status_set: enabling publication as OOF note keepers.");
-		do_not_publish = FALSE;
-	}
-
-	SIPE_DEBUG_INFO("sipe_core_status_set: was: sipe_private->do_not_publish[%s]=%d [?] now(time)=%d",
-			status_id, (int)sipe_private->do_not_publish[activity], (int)now);
-
-	sipe_private->do_not_publish[activity] = 0;
-	SIPE_DEBUG_INFO("sipe_core_status_set: set: sipe_private->do_not_publish[%s]=%d [0]",
-			status_id, (int)sipe_private->do_not_publish[activity]);
-
-	if (do_not_publish) {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_core_status_set: publication was switched off, exiting.");
-		return;
-	}
 
 	sipe_status_set_token(sipe_private, status_id);
 
