@@ -52,6 +52,7 @@ struct sipe_backend_private {
 	GList *rejoin_chats;
 	GSList *transports;
 	GSList *dns_queries;
+	gboolean status_changed_by_core; /* status changed by core */
 };
 
 struct sipe_backend_fd {

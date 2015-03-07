@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -569,6 +569,16 @@ guint sipe_backend_status(struct sipe_core_public *sipe_public);
 gboolean sipe_backend_status_changed(struct sipe_core_public *sipe_public,
 				     guint activity,
 				     const gchar *message);
+
+/**
+ * Update user client with new status and note received from server
+ *
+ * NOTE: this must *NOT* trigger a call to @c sipe_core_status_set()!
+ *
+ * @param sipe_public   The handle representing the protocol instance
+ * @param activity      New activity
+ * @param message       New note text
+ */
 void sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 				  guint activity,
 				  const gchar *message);

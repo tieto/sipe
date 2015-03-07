@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,23 +105,32 @@ void sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 	}
 
 	/* Set the status for each account */
+	purple_private->status_changed_by_core = TRUE;
 	purple_savedstatus_activate(saved_status);
 }
 
 void sipe_purple_set_status(PurpleAccount *account,
 			    PurpleStatus *status)
 {
-	SIPE_DEBUG_INFO("sipe_purple_set_status[CB]: status=%s",
-			purple_status_get_id(status));
+	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	const gchar *status_id = purple_status_get_id(status);
+
+	if (purple_private->status_changed_by_core) {
+		SIPE_DEBUG_INFO("sipe_purple_set_status[CB]: '%s' triggered by core - ignoring", status_id);
+		purple_private->status_changed_by_core = FALSE;
+		return;
+	}
+
+	SIPE_DEBUG_INFO("sipe_purple_set_status[CB]: '%s'", status_id);
 
 	if (!purple_status_is_active(status))
 		return;
 
 	if (purple_account_get_connection(account)) {
-		const gchar *status_id = purple_status_get_id(status);
-		const gchar *note      = purple_status_get_attr_string(status,
-								       SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE);
-		sipe_core_status_set(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
+		const gchar *note = purple_status_get_attr_string(status,
+								  SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE);
+		sipe_core_status_set(sipe_public,
 				     sipe_purple_token_to_activity(status_id),
 				     note);
 	}
