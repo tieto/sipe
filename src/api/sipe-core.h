@@ -523,7 +523,6 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			  gboolean set_by_user,
 			  guint activity,
 			  const gchar *note);
-void sipe_core_status_idle(struct sipe_core_public *sipe_public);
 
 #ifdef __cplusplus
 }

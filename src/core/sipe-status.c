@@ -221,10 +221,6 @@ gboolean sipe_status_changed_by_user(struct sipe_core_private *sipe_private)
 	return(sipe_private->status_set_by_user);
 }
 
-void sipe_core_status_idle(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
-{
-}
-
 /*
   Local Variables:
   mode: c
