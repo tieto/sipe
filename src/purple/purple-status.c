@@ -189,9 +189,9 @@ void sipe_purple_set_status(PurpleAccount *account,
 
 			purple_private->deferred_status_note     = g_strdup(note);
 			purple_private->deferred_status_activity = activity;
-			purple_private->deferred_status_timeout  = purple_timeout_add(100, /* milliseconds */
-										      sipe_purple_status_timeout,
-										      purple_private);
+			purple_private->deferred_status_timeout  = purple_timeout_add_seconds(1,
+											      sipe_purple_status_timeout,
+											      purple_private);
 		}
 
 		/* reset flags */
