@@ -81,7 +81,7 @@ struct sipe_core_private {
 	gchar *status;
 	gchar *note;
 	time_t note_since;
-	time_t idle_switch;
+	gboolean status_set_by_user;
 
 	/* [MS-SIP] deltaNum counters */
 	guint deltanum_contacts;

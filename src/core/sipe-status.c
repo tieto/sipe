@@ -173,7 +173,7 @@ void sipe_status_update(struct sipe_core_private *sipe_private,
 }
 
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
-			  SIPE_UNUSED_PARAMETER gboolean set_by_user,
+			  gboolean set_by_user,
 			  guint activity,
 			  const gchar *note)
 {
@@ -181,6 +181,8 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 	gchar *action_name;
 	gchar *tmp;
 	const gchar *status_id = sipe_status_activity_to_token(activity);
+
+	sipe_private->status_set_by_user = set_by_user;
 
 	sipe_status_set_token(sipe_private, status_id);
 
@@ -214,28 +216,13 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
  */
 gboolean sipe_status_changed_by_user(struct sipe_core_private *sipe_private)
 {
-	gboolean res;
-	time_t now = time(NULL);
-
-	SIPE_DEBUG_INFO("sipe_status_changed_by_user: sipe_private->idle_switch : %s",
-			sipe_utils_time_to_debug_str(localtime(&(sipe_private->idle_switch))));
-	SIPE_DEBUG_INFO("sipe_status_changed_by_user: now                       : %s",
-			sipe_utils_time_to_debug_str(localtime(&now)));
-
-	res = ((now - SIPE_IDLE_SET_DELAY * 2) >= sipe_private->idle_switch);
-
-	SIPE_DEBUG_INFO("sipe_status_changed_by_user: res  = %s",
-			res ? "USER" : "MACHINE");
-	return res;
+	SIPE_DEBUG_INFO("sipe_status_changed_by_user: %s",
+			sipe_private->status_set_by_user ? "USER" : "MACHINE");
+	return(sipe_private->status_set_by_user);
 }
 
-void sipe_core_status_idle(struct sipe_core_public *sipe_public)
+void sipe_core_status_idle(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-
-	sipe_private->idle_switch = time(NULL);
-	SIPE_DEBUG_INFO("sipe_core_status_idle: sipe_private->idle_switch       : %s",
-			sipe_utils_time_to_debug_str(localtime(&(sipe_private->idle_switch))));
 }
 
 /*
