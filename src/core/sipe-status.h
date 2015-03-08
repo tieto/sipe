@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -40,7 +40,6 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 			  const gchar *status_id);
 void sipe_status_update(struct sipe_core_private *sipe_private,
 			gpointer unused);
-gboolean sipe_status_changed_by_user(struct sipe_core_private *sipe_private);
 
 /*
   Local Variables:

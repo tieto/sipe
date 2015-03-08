@@ -336,7 +336,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 
 	/* User State */
 	if (!do_reset_status) {
-		if (sipe_status_changed_by_user(sipe_private) &&
+		if (sipe_private->status_set_by_user &&
 		    !do_publish_calendar &&
 		    SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH)) {
 			const gchar *activity_token;
@@ -373,7 +373,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 		g_free(free_busy_base64);
 	}
 
-	user_input = (sipe_status_changed_by_user(sipe_private) ||
+	user_input = (sipe_private->status_set_by_user ||
 		      sipe_is_user_available(sipe_private)) ?
 		"active" : "idle";
 
