@@ -41,8 +41,6 @@
 #include "sipe-status.h"
 #include "sipe-utils.h"
 
-#define SIPE_IDLE_SET_DELAY 1 /* seconds */
-
 static struct
 {
 	const gchar *status_id;
@@ -158,8 +156,7 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 	}
 }
 
-void sipe_status_update(struct sipe_core_private *sipe_private,
-			SIPE_UNUSED_PARAMETER gpointer unused)
+void sipe_status_update(struct sipe_core_private *sipe_private)
 {
 	guint activity = sipe_backend_status(SIPE_CORE_PUBLIC);
 
@@ -178,7 +175,6 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			  const gchar *note)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	gchar *action_name;
 	gchar *tmp;
 	const gchar *status_id = sipe_status_activity_to_token(activity);
 
@@ -198,15 +194,7 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 	}
 	g_free(tmp);
 
-	/* schedule 2 sec to capture idle flag */
-	action_name = g_strdup("<+set-status>");
-	sipe_schedule_seconds(sipe_private,
-			      action_name,
-			      NULL,
-			      SIPE_IDLE_SET_DELAY,
-			      sipe_status_update,
-			      NULL);
-	g_free(action_name);
+	sipe_status_update(sipe_private);
 }
 
 /*
