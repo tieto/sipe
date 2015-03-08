@@ -117,7 +117,7 @@ void sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
  *      -> user changed state
  *
  * (2) client detects that user is idle
- *      sipe_purple_set_status()
+ *      sipe_purple_set_status()      [sometimes omitted?!?!?]
  *      sipe_purple_set_idle( != 0 )
  *      -> machine changed state
  *
@@ -214,7 +214,8 @@ void sipe_purple_set_idle(PurpleConnection *gc,
 
 		if (!purple_private->user_is_not_idle) {
 			/* timeout not expired -> state changed by machine */
-			purple_timeout_remove(purple_private->deferred_status_timeout);
+			if (purple_private->deferred_status_timeout)
+				purple_timeout_remove(purple_private->deferred_status_timeout);
 			sipe_purple_status_deferred_update(purple_private, FALSE);
 		}
 	}
