@@ -109,39 +109,115 @@ void sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 	purple_savedstatus_activate(saved_status);
 }
 
+/**
+ * Work around broken libpurple idle notification
+ *
+ * (1) user changes the status
+ *      sipe_purple_set_status()
+ *      -> user changed state
+ *
+ * (2) client detects that user is idle
+ *      sipe_purple_set_status()
+ *      sipe_purple_set_idle( != 0 )
+ *      -> machine changed state
+ *
+ * (3) client detects that user is no longer idle
+ *      sipe_purple_set_idle(0)
+ *      sipe_purple_set_status()
+ *      -> user changed state
+ *
+ * (4) core sends a status change
+ *      sipe_backend_status_and_note()
+ *      purple_savedstatus_activate()
+ *      sipe_purple_set_status()
+ *      -> status change must be ignored
+ *
+ * Cases (1) and (2) can only be differentiated by deferring the update.
+ */
+static void sipe_purple_status_deferred_update(struct sipe_backend_private *purple_private,
+					       gboolean changed_by_user)
+{
+	gchar *note = purple_private->deferred_status_note;
+
+	purple_private->deferred_status_note    = NULL;
+	purple_private->deferred_status_timeout = 0;
+
+	sipe_core_status_set(purple_private->public,
+			     changed_by_user,
+			     purple_private->deferred_status_activity,
+			     note);
+	g_free(note);
+}
+
+static gboolean sipe_purple_status_timeout(gpointer data)
+{
+	/* timeout expired -> no idle indication -> state changed by user */
+	sipe_purple_status_deferred_update(data, TRUE);
+	return(FALSE);
+}
+
 void sipe_purple_set_status(PurpleAccount *account,
 			    PurpleStatus *status)
 {
-	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
-	struct sipe_backend_private *purple_private = sipe_public->backend_private;
-	const gchar *status_id = purple_status_get_id(status);
-
-	if (purple_private->status_changed_by_core) {
-		SIPE_DEBUG_INFO("sipe_purple_set_status[CB]: '%s' triggered by core - ignoring", status_id);
-		purple_private->status_changed_by_core = FALSE;
-		return;
-	}
-
-	SIPE_DEBUG_INFO("sipe_purple_set_status[CB]: '%s'", status_id);
-
-	if (!purple_status_is_active(status))
-		return;
-
-	if (purple_account_get_connection(account)) {
+	if (purple_account_get_connection(account) &&
+	    purple_status_is_active(status)) {
+		struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
+		struct sipe_backend_private *purple_private = sipe_public->backend_private;
+		const gchar *status_id = purple_status_get_id(status);
+		guint activity = sipe_purple_token_to_activity(status_id);
 		const gchar *note = purple_status_get_attr_string(status,
 								  SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE);
-		sipe_core_status_set(sipe_public,
-				     TRUE,
-				     sipe_purple_token_to_activity(status_id),
-				     note);
+
+		SIPE_DEBUG_INFO("sipe_purple_set_status[CB]: '%s'",
+				status_id);
+
+		if (purple_private->status_changed_by_core) {
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_set_status[CB]: triggered by core - ignoring");
+
+		} else if (purple_private->user_is_not_idle) {
+			sipe_core_status_set(sipe_public,
+					     TRUE,
+					     activity,
+					     note);
+
+		} else {
+			if (purple_private->deferred_status_timeout)
+				purple_timeout_remove(purple_private->deferred_status_timeout);
+			g_free(purple_private->deferred_status_note);
+
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_set_status[CB]: defer status update");
+
+			purple_private->deferred_status_note     = g_strdup(note);
+			purple_private->deferred_status_activity = activity;
+			purple_private->deferred_status_timeout  = purple_timeout_add(100, /* milliseconds */
+										      sipe_purple_status_timeout,
+										      purple_private);
+		}
+
+		/* reset flags */
+		purple_private->status_changed_by_core = FALSE;
+		purple_private->user_is_not_idle       = FALSE;
 	}
 }
 
 void sipe_purple_set_idle(PurpleConnection *gc,
 			  int interval)
 {
-	SIPE_DEBUG_INFO("sipe_purple_set_idle[CB]: interval=%d", interval);
-	if (gc) sipe_core_status_idle(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	if (gc) {
+		struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
+		struct sipe_backend_private *purple_private = sipe_public->backend_private;
+
+		purple_private->user_is_not_idle = interval == 0;
+
+		SIPE_DEBUG_INFO("sipe_purple_set_idle[CB]: user is %sidle",
+				purple_private->user_is_not_idle ? "not " : "");
+
+		if (!purple_private->user_is_not_idle) {
+			/* timeout not expired -> state changed by machine */
+			purple_timeout_remove(purple_private->deferred_status_timeout);
+			sipe_purple_status_deferred_update(purple_private, FALSE);
+		}
+	}
 }
 
 /*

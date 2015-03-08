@@ -52,7 +52,15 @@ struct sipe_backend_private {
 	GList *rejoin_chats;
 	GSList *transports;
 	GSList *dns_queries;
+
+	/* work around broken libpurple idle notification */
+	gchar *deferred_status_note;
+	guint  deferred_status_activity;
+	guint  deferred_status_timeout;
+
+	/* flags */
 	gboolean status_changed_by_core; /* status changed by core */
+	gboolean user_is_not_idle;       /* user came back online */
 };
 
 struct sipe_backend_fd {
