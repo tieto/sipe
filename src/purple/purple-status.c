@@ -131,6 +131,7 @@ void sipe_purple_set_status(PurpleAccount *account,
 		const gchar *note = purple_status_get_attr_string(status,
 								  SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE);
 		sipe_core_status_set(sipe_public,
+				     TRUE,
 				     sipe_purple_token_to_activity(status_id),
 				     note);
 	}

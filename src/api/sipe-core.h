@@ -515,10 +515,12 @@ void sipe_core_buddy_menu_free(struct sipe_core_public *sipe_public);
  * NOTE: must *NEVER* be triggered by @c sipe_backend_status_and_note()!
  *
  * @param sipe_public   The handle representing the protocol instance
+ * @param set_by_user   @c TRUE if status has been changed by user
  * @param activity      New activity
  * @param message       New note text
  */
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
+			  gboolean set_by_user,
 			  guint activity,
 			  const gchar *note);
 void sipe_core_status_idle(struct sipe_core_public *sipe_public);

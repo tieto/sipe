@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -68,7 +68,7 @@ int sipe_miranda_SetStatus( SIPPROTO *pr, int iNewStatus )
 			LOCK;
 			if (pr->proto.m_iStatus != ID_STATUS_OFFLINE) {
 				gchar *note = sipe_miranda_getString(pr, "note");
-				sipe_core_status_set(pr->sip, MirandaStatusToSipe(iNewStatus), note);
+				sipe_core_status_set(pr->sip, TRUE, MirandaStatusToSipe(iNewStatus), note);
 				mir_free(note);
 			}
 			UNLOCK;
