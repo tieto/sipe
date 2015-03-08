@@ -156,19 +156,6 @@ void sipe_status_and_note(struct sipe_core_private *sipe_private,
 	}
 }
 
-void sipe_status_update(struct sipe_core_private *sipe_private)
-{
-	guint activity = sipe_backend_status(SIPE_CORE_PUBLIC);
-
-	if (activity == SIPE_ACTIVITY_UNSET) return;
-
-	SIPE_DEBUG_INFO("sipe_status_update: status: %s (%s)",
-			sipe_status_activity_to_token(activity),
-			sipe_private->status_set_by_user ? "USER" : "MACHINE");
-
-	sipe_cal_presence_publish(sipe_private, FALSE);
-}
-
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			  gboolean set_by_user,
 			  guint activity,
@@ -177,6 +164,10 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *tmp;
 	const gchar *status_id = sipe_status_activity_to_token(activity);
+
+	SIPE_DEBUG_INFO("sipe_core_status_set: status: %s (%s)",
+			status_id,
+			set_by_user ? "USER" : "MACHINE");
 
 	sipe_private->status_set_by_user = set_by_user;
 
@@ -194,7 +185,7 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 	}
 	g_free(tmp);
 
-	sipe_status_update(sipe_private);
+	sipe_cal_presence_publish(sipe_private, FALSE);
 }
 
 /*

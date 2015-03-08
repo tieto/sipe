@@ -38,7 +38,6 @@ void sipe_status_set_activity(struct sipe_core_private *sipe_private,
 			      guint activity);
 void sipe_status_and_note(struct sipe_core_private *sipe_private,
 			  const gchar *status_id);
-void sipe_status_update(struct sipe_core_private *sipe_private);
 
 /*
   Local Variables:
