@@ -346,7 +346,11 @@ AS_IF([test "x$enable_purple" != xno],
 		 dnl check whether enable voice and video support
 		 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
 		       [test "x$with_vv" = xcheck],  dnl autodetect
-			 [AC_MSG_CHECKING(for purple voice and video support)
+			 [dnl Let purple pkgconfig correct our assumptions about GStreamer
+			  purple_gst=`$PKG_CONFIG --variable=gstreamer $purple_pkgconfig`
+			  AS_IF([test "x$purple_gst" != "x"],
+				[gstreamer_pkgconfig=gstreamer-$purple_gst])
+			  AC_MSG_CHECKING(for purple voice and video support)
 			  AC_RUN_IFELSE(
 				[AC_LANG_PROGRAM([[
 #include <media.h>
