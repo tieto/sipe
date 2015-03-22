@@ -46,6 +46,9 @@
  * this module (!) Like headers: Via, Route, Contact, Authorization, etc.
  * It's all irrelevant to higher layer responsibilities.
  *
+ * Specification references:
+ *
+ *   - [MS-SIPAE]:    http://msdn.microsoft.com/en-us/library/cc431510.aspx
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1056,6 +1059,9 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				const gchar *server_hdr = sipmsg_find_header(msg, "Server");
 
 				if (!transport->reregister_set) {
+					/* Schedule re-register 30 seconds before expiration */
+					if (expires > 30)
+						expires -= 30;
 					sip_transport_set_reregister(sipe_private,
 								     expires);
 					transport->reregister_set = TRUE;
@@ -1075,19 +1081,37 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				}
 
 				if (!transport->reauthenticate_set) {
+					/* [MS-SIPAE] Section 3.2.2 Timers
+					 *
+					 * When the ... authentication handshake completes
+					 * and the SA enters the "established" state, the
+					 * SIP protocol client MUST start an SA expiration
+					 * timer.
+					 * ...
+					 * The expiration timer value is the lesser of
+					 *
+					 *   - Kerberos: the service ticket expiry time
+					 *   - TLS-DSK:  the certificate expiration time
+					 *
+					 * and eight hours, further reduced by some buffer
+					 * time.
+					 * ...
+					 * The protocol client MUST choose a sufficient
+					 * buffer time to allow for the ... authentication
+					 * handshake that reestablishes the SA to complete
+					 * ... This value SHOULD be five (5) minutes or
+					 * longer.
+					 */
 					guint reauth_timeout = transport->registrar.expires;
 
 					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
 
-					/* Does authentication scheme provide valid expiration time? */
-					if (reauth_timeout == 0) {
-						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: no expiration time - using default of 8 hours");
+					if ((reauth_timeout == 0) ||
+					    (reauth_timeout >  8 * 60 * 60))
 						reauth_timeout = 8 * 60 * 60;
-					}
-
-					/* schedule reauthentication 5 minutes before expiration */
 					if (reauth_timeout > 5 * 60)
 						reauth_timeout -= 5 * 60;
+
 					sipe_schedule_seconds(sipe_private,
 							      "<+reauthentication>",
 							      NULL,

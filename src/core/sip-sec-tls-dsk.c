@@ -93,18 +93,8 @@ sip_sec_init_sec_context__tls_dsk(SipSecContext context,
 			ctx->server_key = g_memdup(state->server_key,
 						   state->key_length);
 
-			/* [MS-SIPAE] Section 3.2.2 Timers
-			 *
-			 * ... For an SA established using the TLS-DSK
-			 * authentication protocol, the client MUST
-			 * retrieve the expiration time of its certificate.
-			 * The expiration timer value is the lesser of the
-			 * interval to the certificate expiration and eight
-			 * hours, ...
-			 */
+			/* extract certicate expiration time */
 			ctx->common.expires = sipe_tls_expires(state);
-			if (ctx->common.expires > (8 * 60 * 60))
-				ctx->common.expires = 8 * 60 * 60;
 
 			SIPE_DEBUG_INFO("sip_sec_init_sec_context__tls_dsk: handshake completed, algorithm %d, key length %" G_GSIZE_FORMAT ", expires %d",
 					ctx->algorithm, ctx->key_length, ctx->common.expires);
