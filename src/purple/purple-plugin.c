@@ -733,6 +733,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* add_buddies_with_invite */
 #elif PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* get_max_message_size */
+	NULL,					/* media_send_dtmf */
 #endif
 #endif
 #endif
