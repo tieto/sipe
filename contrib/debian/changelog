@@ -1,3 +1,11 @@
+pidgin-sipe (1.19.1-1) unstable; urgency=low
+
+  * New upstream version 1.19.1 "Bug Fixes I" (2015-04-04)
+	- Fixed #278: 488 error after libnice upgrade (Jakub Adam)
+	- fix SIP re-authentication timeout to be max. 8 hours (Stefan Becker)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 04 Apr 2015 17:05:00 +0300
+
 pidgin-sipe (1.19.0-1) unstable; urgency=low
 
   * New upstream version 1.19.0 "Auto Authentication, MFA & Search Improvements" (2015-02-07)
