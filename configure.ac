@@ -121,7 +121,7 @@ AS_IF([test "x$enable_quality_check" = xyes],
 			[AC_MSG_RESULT(yes)
 			 QUALITY_CFLAGS="$QUALITY_CFLAGS $newflag"],
 			[AC_MSG_RESULT(no)]
-	 	 )
+		 )
 		 CFLAGS=$ac_save_CFLAGS
 	 done
 	])
@@ -328,13 +328,16 @@ AC_ARG_ENABLE([purple],
 	[enable_purple=yes])
 with_purple_vv=no
 AS_IF([test "x$enable_purple" != xno],
-	AS_IF([test "x$enable_purple" == "xyes" -o "x$enable_purple" == "x2"],
-		   [purple_pkgconfig=purple; gstreamer_pkgconfig=gstreamer-0.10],
-		  [test "x$enable_purple" == "x3"],
-		   [purple_pkgconfig=purple-3; gstreamer_pkgconfig=gstreamer-1.0])
+	[PKG_CHECK_MODULES(PURPLE, [purple-3],
+		[purple_pkgconfig=purple-3],
+		[PKG_CHECK_MODULES(PURPLE, [purple >= 2.4.0],
+			[purple_pkgconfig=purple],
+			[enable_purple=no])])
 
-	[PKG_CHECK_MODULES(PURPLE, [$purple_pkgconfig >= 2.4.0],
-		[dnl unfortunately PURPLE_MAJOR_VERSION is not exported by purple.m4
+	 AS_IF([test "x$enable_purple" != xno],
+		[AC_MSG_NOTICE([using package "$purple_pkgconfig".])
+
+		 dnl unfortunately PURPLE_MAJOR_VERSION is not exported by purple.m4
 		 PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion $purple_pkgconfig | cut -d. -f 1`
 		 AC_SUBST(PURPLE_MAJOR_VERSION)
 
@@ -346,22 +349,27 @@ AS_IF([test "x$enable_purple" != xno],
 		 dnl check whether enable voice and video support
 		 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
 		       [test "x$with_vv" = xcheck],  dnl autodetect
-			 [dnl Let purple pkgconfig correct our assumptions about GStreamer
-			  purple_gst=`$PKG_CONFIG --variable=gstreamer $purple_pkgconfig`
-			  AS_IF([test "x$purple_gst" != "x"],
-				[gstreamer_pkgconfig=gstreamer-$purple_gst])
-			  AC_MSG_CHECKING(for purple voice and video support)
+			 [AC_MSG_CHECKING(for purple voice and video support)
 			  AC_RUN_IFELSE(
 				[AC_LANG_PROGRAM([[
 #include <media.h>
 					]],
 					[[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]]
-			  	)],
+				)],
 				[AC_MSG_RESULT(ok)
 				 PKG_CHECK_MODULES(NICE, [nice >= 0.1.0],
 					dnl sipe-media.c uses g_slist_free_full()
 					[PKG_CHECK_MODULES(_SIPE_MEDIA_RECHECK_PLEASE_IGNORE, [$purple_pkgconfig >= 2.8.0],
-						[PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
+						dnl check purple pkgconfig for gstreamer version
+						[gstreamer_pkgconfig=`$PKG_CONFIG --variable=gstreamer $purple_pkgconfig`
+						AS_IF([test "x$gstreamer_pkgconfig" != x],
+							[gstreamer_pkgconfig=gstreamer-$gstreamer_pkgconfig],
+							[AS_IF([test "x$purple_pkgconfig" == xpurple-3],
+								     [gstreamer_pkgconfig=gstreamer-1.0],
+								     [gstreamer_pkgconfig=gstreamer-0.10])])
+
+						AC_MSG_NOTICE([using package "$gstreamer_pkgconfig".])
+						PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
 							[with_purple_vv=yes],
 							[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
 						[AC_MSG_NOTICE(libpurple >= 2.8.0 required: disabling purple voice and video support)])],
@@ -375,19 +383,21 @@ AS_IF([test "x$enable_purple" != xno],
 			[
 			 AC_MSG_CHECKING(for TCP media transport)
 			 AC_COMPILE_IFELSE(
-	 			[AC_LANG_PROGRAM([[#include <media.h>]],[[return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE]])],
+				[AC_LANG_PROGRAM([[
+#include <media.h>
+					]],
+					[[return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE]]
+				)],
 				[
 				 with_purple_tcp=yes
 				 AC_DEFINE(HAVE_ICE_TCP, 1, [Define if we have support for TCP media transport.])
 				 AC_MSG_RESULT(yes)
 				],
-				[AC_MSG_RESULT(no)]
-	 		 )
+				[AC_MSG_RESULT(no)])
 			])
 
 		 CFLAGS=$ac_save_CFLAGS
-		 LIBS=$ac_save_LIBS],
-		[enable_purple=no])])
+		 LIBS=$ac_save_LIBS])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
 
 dnl build option: telepathy backend
