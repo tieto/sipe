@@ -57,7 +57,9 @@ rm checksums.txt
 
 # Overwrite those .dsc's that have support for telepathy
 for os in \
+    Debian_8.0 \
     Debian_7.0 \
+    xUbuntu_15.04 \
     xUbuntu_14.10 \
     xUbuntu_14.04 \
     xUbuntu_13.10 \
