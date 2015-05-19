@@ -25,6 +25,8 @@
 #include <gio/gio.h>
 #include <gio/gunixsocketaddress.h>
 
+#include <freerdp/server/shadow.h>
+
 #include <stdlib.h>
 
 #include "sipmsg.h"
@@ -43,6 +45,7 @@
 struct sipe_appshare {
 	struct sipe_media_call *media;
 	struct sipe_media_stream *stream;
+	rdpShadowServer *server;
 	GSocket *socket;
 	GIOChannel *channel;
 	guint rdp_channel_readable_watch_id;
@@ -66,6 +69,9 @@ sipe_appshare_free(struct sipe_appshare *appshare)
 {
 	GError *error = NULL;
 
+	/* We must close the shadow server socket before stopping the server
+	 * in order to prevent a deadlock. */
+
 	g_source_destroy(g_main_context_find_source_by_id(NULL,
 			appshare->rdp_channel_readable_watch_id));
 
@@ -74,6 +80,12 @@ sipe_appshare_free(struct sipe_appshare *appshare)
 
 	unlink_appshare_socket(appshare->socket);
 	g_object_unref(appshare->socket);
+
+	if (appshare->server) {
+		shadow_server_stop(appshare->server);
+		shadow_server_uninit(appshare->server);
+		shadow_server_free(appshare->server);
+	}
 
 	if (appshare->ask_ctx) {
 		sipe_user_close_ask(appshare->ask_ctx);
@@ -315,11 +327,12 @@ process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_privat
 static void
 candidate_pairs_established_cb(struct sipe_media_stream *stream)
 {
-	gchar *socket_path;
-	gchar *cmdline;
+	gchar *socket_path = NULL;
 	struct sipe_appshare *appshare;
 	GSocketAddress *address;
 	GError *error = NULL;
+	rdpShadowServer* server;
+	const gchar *server_error = NULL;
 
 	g_return_if_fail(sipe_strequal(stream->id, "applicationsharing"));
 
@@ -328,27 +341,39 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 		return;
 	}
 
-	socket_path = build_socket_path(stream->call);
+	server = shadow_server_new();
+	if(!server) {
+		server_error = _("Could not create RDP server.");
+	} else {
+		socket_path = build_socket_path(stream->call);
+		server->ipcSocket = g_strdup(socket_path);
+		server->authentication = FALSE;
 
-	cmdline = g_strdup_printf("freerdp-shadow /ipc-socket:%s -auth",
-				  socket_path);
-	g_spawn_command_line_async(cmdline, &error);
-	g_free(cmdline);
-
-	if (error) {
+		if(shadow_server_init(server) < 0) {
+			server_error = _("Could not initialize RDP server.");
+		} else if(shadow_server_start(server) < 0) {
+			server_error = _("Could not start RDP server.");
+		}
+	}
+	if (server_error) {
 		struct sipe_core_private *sipe_private =
 				sipe_media_get_sipe_core_private(stream->call);
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Application sharing error"),
-					  error->message);
+					  server_error);
 		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
 		g_free(socket_path);
+		if (server) {
+			shadow_server_uninit(server);
+			shadow_server_free(server);
+		}
 		return;
 	}
 
 	appshare = g_new0(struct sipe_appshare, 1);
 	appshare->media = stream->call;
 	appshare->stream = stream;
+	appshare->server = server;
 	appshare->socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
 					G_SOCKET_TYPE_STREAM,
 					G_SOCKET_PROTOCOL_DEFAULT,
