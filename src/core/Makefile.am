@@ -213,10 +213,21 @@ endif
 
 if SIPE_HAVE_XDATA
 libsipe_core_la_SOURCES += \
-	sipe-ft-lync.h sipe-ft-lync.c \
+	sipe-ft-lync.h sipe-ft-lync.c
+
+if SIPE_FREERDP
+libsipe_core_la_SOURCES += \
 	sipe-appshare.h sipe-appshare.c \
 	sipe-appshare-xfreerdp.h sipe-appshare-xfreerdp.c \
 	sipe-appshare-remmina.h sipe-appshare-remmina.c
+
+libsipe_core_la_CFLAGS += \
+	$(FREERDP_CFLAGS)
+
+libsipe_core_la_LIBADD = \
+	$(FREERDP_LIBS) \
+	-lfreerdp-shadow
+endif
 endif
 
 check_PROGRAMS =
@@ -231,6 +242,10 @@ sipe_xml_tests_LDADD = \
 	$(GLIB_LIBS) \
 	$(GIO_LIBS) \
 	$(GIO_UNIX_LIBS)
+if SIPE_FREERDP
+sipe_xml_tests_LDADD += \
+	$(FREERDP_LIBS)
+endif
 
 check_PROGRAMS += sip_sec_digest_tests
 sip_sec_digest_tests_SOURCES = sip-sec-digest-tests.c

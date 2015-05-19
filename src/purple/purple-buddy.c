@@ -664,6 +664,7 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 			      gc);
 }
 
+#ifdef HAVE_FREERDP
 static void sipe_purple_buddy_share_application_cb(PurpleBuddy *buddy,
 						   SIPE_UNUSED_PARAMETER gpointer parameter)
 {
@@ -673,6 +674,9 @@ static void sipe_purple_buddy_share_application_cb(PurpleBuddy *buddy,
 	sipe_core_share_application(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
 				    purple_buddy_get_name(buddy));
 }
+#else
+static void sipe_purple_buddy_share_application_cb() {}
+#endif
 
 typedef void (*buddy_menu_callback)(PurpleBuddy *buddy,
 				    gpointer parameter);
