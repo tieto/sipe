@@ -90,6 +90,15 @@ struct sipe_user_ask_ctx * sipe_user_ask(struct sipe_core_private *sipe_private,
 					 SipeUserAskCb decline_cb,
 					 gpointer data);
 
+typedef void (* SipeUserAskChoiceCb)(struct sipe_core_private *, gpointer data,
+				     guint choice_id);
+
+struct sipe_user_ask_ctx * sipe_user_ask_choice(struct sipe_core_private *sipe_private,
+						const gchar *message,
+						GSList *choices,
+						SipeUserAskChoiceCb callback,
+						gpointer data);
+
 /**
  * Closes the pending user query
  *
