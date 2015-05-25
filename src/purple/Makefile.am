@@ -127,6 +127,11 @@ libsipe_la_LIBADD             += \
 	$(NICE_LIBS) \
 	$(GSTREAMER_LIBS) \
 	$(FARSTREAM_LIBS)
+
+if SIPE_FREERDP
+libsipe_backend_vv_la_SOURCES += \
+	purple-applicationsharing.c
+endif
 endif
 
 if SIPE_HAVE_XDATA
