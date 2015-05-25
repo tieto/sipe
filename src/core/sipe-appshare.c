@@ -828,6 +828,23 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 	stream->candidate_pairs_established_cb = NULL;
 }
 
+void
+sipe_core_appshare_stop_presenting(struct sipe_media_call *call)
+{
+	struct sipe_media_stream *stream;
+
+	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
+	if (stream) {
+		struct sipe_appshare *appshare;
+
+		appshare = sipe_media_stream_get_data(stream);
+		if (appshare) {
+			appshare->ask_ctx = NULL;
+			sipe_backend_media_hangup(call->backend_private, TRUE);
+		}
+	}
+}
+
 static void
 monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 		    guint monitor_id)
@@ -835,6 +852,8 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 	struct sipe_media_call *call;
 	struct sipe_media_stream *stream;
 	struct sipe_appshare *appshare;
+	gchar *alias;
+	gchar *share_progress_msg;
 
 	if (monitor_id == SIPE_CHOICE_CANCELLED) {
 		g_free(with);
@@ -844,7 +863,6 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 	call = sipe_media_call_new(sipe_private, with, NULL, SIPE_ICE_RFC_5245,
 				   SIPE_MEDIA_CALL_INITIATOR |
 				   SIPE_MEDIA_CALL_NO_UI);
-	g_free(with);
 
 	stream = sipe_media_stream_add(call, "applicationsharing",
 				       SIPE_MEDIA_APPLICATION,
@@ -854,6 +872,7 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 				_("Application sharing error"),
 				_("Couldn't initialize application sharing"));
 		sipe_backend_media_hangup(call->backend_private, TRUE);
+		g_free(with);
 		return;
 	}
 
@@ -877,8 +896,22 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 	appshare->stream = stream;
 	appshare->monitor_id = monitor_id;
 
+	alias = sipe_buddy_get_alias(sipe_private, with);
+
+	share_progress_msg = g_strdup_printf("Sharing desktop with %s",
+					     alias ? alias : with);
+
+	appshare->ask_ctx =
+			sipe_backend_appshare_show_presenter_actions(SIPE_CORE_PUBLIC,
+								     share_progress_msg,
+								     call);
+
 	sipe_media_stream_set_data(stream, appshare,
 				   (GDestroyNotify)sipe_appshare_free);
+
+	g_free(share_progress_msg);
+	g_free(alias);
+	g_free(with);
 }
 
 static void

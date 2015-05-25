@@ -25,6 +25,7 @@ src/core/sipe-status.c
 src/core/sipe-subscriptions.c
 src/core/sipe-ucs.c
 src/core/sipe-user.c
+src/purple/purple-appshare.c
 src/purple/purple-buddy.c
 src/purple/purple-chat.c
 src/purple/purple-groupchat.c
