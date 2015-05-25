@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,6 +89,25 @@ struct sipe_user_ask_ctx * sipe_user_ask(struct sipe_core_private *sipe_private,
 					 const gchar *decline_label,
 					 SipeUserAskCb decline_cb,
 					 gpointer data);
+
+typedef void (* SipeUserAskChoiceCb)(struct sipe_core_private *, gpointer data,
+				     guint choice_id);
+
+/**
+ * Present a set of options to the user to choose from.
+ *
+ * @param sipe_core_private SIPE core private data
+ * @param message           text message to be shown to the user
+ * @param choices           list of choice options
+ * @param callback          callback function to be invoked after user makes
+ *                          a choice
+ * @param data              custom user data to pass to callback
+ */
+struct sipe_user_ask_ctx * sipe_user_ask_choice(struct sipe_core_private *sipe_private,
+						const gchar *message,
+						GSList *choices,
+						SipeUserAskChoiceCb callback,
+						gpointer data);
 
 /**
  * Closes the pending user query

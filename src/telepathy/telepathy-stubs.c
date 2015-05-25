@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -314,6 +314,10 @@ void sipe_backend_user_ask(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_p
 			   SIPE_UNUSED_PARAMETER const gchar *accept_label,
 			   SIPE_UNUSED_PARAMETER const gchar *decline_label,
 			   SIPE_UNUSED_PARAMETER gpointer key) {}
+void sipe_backend_user_ask_choice(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+				  SIPE_UNUSED_PARAMETER const gchar *message,
+				  SIPE_UNUSED_PARAMETER GSList *choices,
+				  SIPE_UNUSED_PARAMETER gpointer key) {}
 void sipe_backend_user_close_ask(SIPE_UNUSED_PARAMETER gpointer key) {}
 
 /*

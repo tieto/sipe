@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -61,6 +61,14 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 			   const gchar *accept_label,
 			   const gchar *decline_label,
 			   gpointer key)
+{
+	_NIF();
+}
+
+void sipe_backend_user_ask_choice(struct sipe_core_public *sipe_public,
+				  const gchar *message,
+				  GSList *choices,
+				  gpointer key)
 {
 	_NIF();
 }

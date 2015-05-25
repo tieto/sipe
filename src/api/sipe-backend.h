@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -695,6 +695,21 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 			   const gchar *accept_label,
 			   const gchar *decline_label,
 			   gpointer key);
+
+/**
+ * Present a set of options to the user to choose from.
+ *
+ * @param sipe_public (in) The handle representing the protocol instance
+ * @param message     (in) Text message to be shown to the user
+ * @param choices     (in) List of choice options
+ * @param key         (in) Opaque handle uniquely identifying the query. Backend
+ *                    should store it for the case SIPE core requests the query
+ *                    to be closed prematurely.
+ */
+void sipe_backend_user_ask_choice(struct sipe_core_public *sipe_public,
+				  const gchar *message,
+				  GSList *choices,
+				  gpointer key);
 
 /**
  * Closes the pending user query
