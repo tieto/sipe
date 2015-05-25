@@ -42,6 +42,7 @@ extern "C" {
 #endif
 
 /* Forward declarations */
+struct sipe_appshare;
 struct sipe_backend_chat_session;
 struct sipe_chat_session;
 struct sipe_core_public;
@@ -531,6 +532,11 @@ GList* sipe_backend_get_local_candidates(struct sipe_media_call *media,
 void sipe_backend_media_accept(struct sipe_backend_media *media, gboolean local);
 void sipe_backend_media_hangup(struct sipe_backend_media *media, gboolean local);
 void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local);
+
+struct sipe_user_ask_ctx *
+sipe_backend_applicationsharing_show_presenter_actions(struct sipe_core_public *sipe_public,
+						       const gchar *message,
+						       struct sipe_appshare *appshare);
 
 /** NETWORK ******************************************************************/
 

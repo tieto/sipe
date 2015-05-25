@@ -126,6 +126,11 @@ libsipe_la_LIBADD             += \
 	libsipe_backend_vv.la \
 	$(NICE_LIBS) \
 	$(GSTREAMER_LIBS)
+
+if SIPE_FREERDP
+libsipe_backend_vv_la_SOURCES += \
+	purple-applicationsharing.c
+endif
 endif
 
 TESTS = $(check_PROGRAMS)
