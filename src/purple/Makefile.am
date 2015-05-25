@@ -138,6 +138,8 @@ libsipe_la_LIBADD             += \
 	$(FARSTREAM_LIBS)
 
 if SIPE_HAVE_APPSHARE_SERVER
+libsipe_backend_vv_la_SOURCES += \
+	purple-appshare.c
 libsipe_la_LIBADD             += \
 	$(FREERDP_SHADOW_LIBS)
 endif

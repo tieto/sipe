@@ -544,6 +544,11 @@ void sipe_backend_media_accept(struct sipe_backend_media *media, gboolean local)
 void sipe_backend_media_hangup(struct sipe_backend_media *media, gboolean local);
 void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local);
 
+struct sipe_user_ask_ctx *
+sipe_backend_appshare_show_presenter_actions(struct sipe_core_public *sipe_public,
+					     const gchar *message,
+					     struct sipe_media_call *call);
+
 /** NETWORK ******************************************************************/
 
 struct sipe_backend_listendata;
