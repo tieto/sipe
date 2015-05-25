@@ -693,6 +693,11 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 			   const gchar *decline_label,
 			   gpointer key);
 
+void sipe_backend_user_ask_choice(struct sipe_core_public *sipe_public,
+				  const gchar *message,
+				  GSList *choices,
+				  gpointer key);
+
 /**
  * Closes the pending user query
  *
