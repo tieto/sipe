@@ -835,6 +835,47 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 }
 
 static void
+stop_presenting_cb(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+		   struct sipe_media_call *call)
+{
+	struct sipe_media_stream *stream;
+
+	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
+	if (stream) {
+		struct sipe_appshare *appshare;
+
+		appshare = sipe_media_stream_get_data(stream);
+		if (appshare) {
+			appshare->ask_ctx = NULL;
+			sipe_backend_media_hangup(call->backend_private, TRUE);
+		}
+	}
+}
+
+static struct sipe_user_ask_ctx *
+ask_end_presentation(struct sipe_core_private *sipe_private,
+		     const gchar *with,
+		     struct sipe_media_call *call)
+{
+	struct sipe_user_ask_ctx *ctx;
+	gchar *alias = sipe_buddy_get_alias(sipe_private, with);
+	gchar *ask_msg = g_strdup_printf(_("Sharing desktop with %s"),
+					 alias ? alias : with);
+
+	ctx = sipe_user_ask(sipe_private, ask_msg,
+			     _("Stop presenting"),
+			     (SipeUserAskCb)stop_presenting_cb,
+			     NULL,
+			     NULL,
+			     call);
+
+	g_free(ask_msg);
+	g_free(alias);
+
+	return ctx;
+}
+
+static void
 monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 		    guint monitor_id)
 {
@@ -850,7 +891,6 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 	call = sipe_media_call_new(sipe_private, with, NULL, SIPE_ICE_RFC_5245,
 				   SIPE_MEDIA_CALL_INITIATOR |
 				   SIPE_MEDIA_CALL_NO_UI);
-	g_free(with);
 
 	stream = sipe_media_stream_add(call, "applicationsharing",
 				       SIPE_MEDIA_APPLICATION,
@@ -860,6 +900,7 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 				_("Application sharing error"),
 				_("Couldn't initialize application sharing"));
 		sipe_backend_media_hangup(call->backend_private, TRUE);
+		g_free(with);
 		return;
 	}
 
@@ -883,8 +924,12 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 	appshare->stream = stream;
 	appshare->monitor_id = monitor_id;
 
+	appshare->ask_ctx = ask_end_presentation(sipe_private, with, call);
+
 	sipe_media_stream_set_data(stream, appshare,
 				   (GDestroyNotify)sipe_appshare_free);
+
+	g_free(with);
 }
 
 static void
