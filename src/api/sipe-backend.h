@@ -42,6 +42,7 @@ extern "C" {
 #endif
 
 /* Forward declarations */
+struct sipe_appshare;
 struct sipe_backend_chat_session;
 struct sipe_chat_session;
 struct sipe_core_public;
@@ -528,6 +529,11 @@ gint sipe_backend_media_write(struct sipe_media_call *call,
 			      struct sipe_media_stream *stream,
 			      guint8 *buffer, guint buffer_len,
 			      gboolean blocking);
+
+struct sipe_user_ask_ctx *
+sipe_backend_applicationsharing_show_presenter_actions(struct sipe_core_public *sipe_public,
+						       const gchar *message,
+						       struct sipe_appshare *appshare);
 
 /** NETWORK ******************************************************************/
 
