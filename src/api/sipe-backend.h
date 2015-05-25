@@ -697,6 +697,21 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 			   gpointer key);
 
 /**
+ * Present a set of options one of which the user is to choose.
+ *
+ * @param sipe_public (in) The handle representing the protocol instance
+ * @param message     (in) Text message to be shown to the user
+ * @param choices     (in) List of choice options
+ * @param key         (in) Opaque handle uniquely identifying the query. Backend
+ *                    should store it for the case SIPE core requests the query
+ *                    to be closed prematurely.
+ */
+void sipe_backend_user_ask_choice(struct sipe_core_public *sipe_public,
+				  const gchar *message,
+				  GSList *choices,
+				  gpointer key);
+
+/**
  * Closes the pending user query
  *
  * @param key Opaque handle uniquely identifying the query.

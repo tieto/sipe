@@ -20,6 +20,8 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include "sipe-nls.h"
+
 #include <glib.h>
 
 #include "server.h"
@@ -83,6 +85,57 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 void sipe_backend_user_close_ask(gpointer key)
 {
 	purple_request_close_with_handle(key);
+}
+
+static void ask_choice_accept_cb(gpointer key, PurpleRequestFields *fields)
+{
+	guint choice_id =
+			GPOINTER_TO_INT(purple_request_fields_get_choice(fields, "choice"));
+
+	sipe_core_user_ask_choice_cb(key, choice_id);
+}
+
+static void ask_choice_cancel_cb(gpointer key)
+{
+	sipe_core_user_ask_choice_cb(key, SIPE_CHOICE_CANCELLED);
+}
+
+
+void sipe_backend_user_ask_choice(struct sipe_core_public *sipe_public,
+				  const gchar *message,
+				  GSList *choices,
+				  gpointer key)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+
+	PurpleRequestFields *fields = purple_request_fields_new();
+	PurpleRequestFieldGroup *group = purple_request_field_group_new(NULL);
+	PurpleRequestField *field =
+			purple_request_field_choice_new("choice", message, 0);
+
+	guint i;
+	for (i = 0; i != g_slist_length(choices); ++i) {
+		purple_request_field_choice_add(field,
+						g_slist_nth_data(choices, i)
+#if PURPLE_VERSION_CHECK(3,0,0)
+						, GUINT_TO_POINTER(i)
+#endif
+						);
+	}
+
+	purple_request_field_group_add_field(group, field);
+	purple_request_fields_add_group(fields, group);
+
+	purple_request_fields(key, "Microsoft Lync",
+			      NULL, NULL, fields,
+			      _("OK"), (GCallback)ask_choice_accept_cb,
+			      _("Cancel"), (GCallback)ask_choice_cancel_cb,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      purple_request_cpar_from_account(purple_private->account),
+#else
+			      purple_private->account, NULL, NULL,
+#endif
+			      key);
 }
 
 /*

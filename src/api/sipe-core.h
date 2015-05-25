@@ -563,6 +563,10 @@ void sipe_core_user_feedback_typing(struct sipe_core_public *sipe_public,
 
 void sipe_core_user_ask_cb(gpointer key, gboolean accepted);
 
+static const guint SIPE_CHOICE_CANCELLED = G_MAXUINT;
+
+void sipe_core_user_ask_choice_cb(gpointer key, guint choice_id);
+
 /* groups */
 void sipe_core_group_rename(struct sipe_core_public *sipe_public,
 			    const gchar *old_name,

@@ -148,8 +148,8 @@ void sipe_core_user_feedback_typing(struct sipe_core_public *sipe_public,
 
 struct sipe_user_ask_ctx {
 	struct sipe_core_private *sipe_private;
-	SipeUserAskCb accept_cb;
-	SipeUserAskCb decline_cb;
+	gpointer accept_cb;
+	gpointer decline_cb;
 	gpointer data;
 };
 
@@ -179,9 +179,38 @@ void sipe_core_user_ask_cb(gpointer context, gboolean accepted)
 	struct sipe_user_ask_ctx *ctx = context;
 
 	if (accepted && ctx->accept_cb)
-		ctx->accept_cb(ctx->sipe_private, ctx->data);
+		((SipeUserAskCb)ctx->accept_cb)(ctx->sipe_private, ctx->data);
 	else if (ctx->decline_cb)
-		ctx->decline_cb(ctx->sipe_private, ctx->data);
+		((SipeUserAskCb)ctx->decline_cb)(ctx->sipe_private, ctx->data);
+
+	g_free(ctx);
+}
+
+struct sipe_user_ask_ctx * sipe_user_ask_choice(struct sipe_core_private *sipe_private,
+						const gchar *message,
+						GSList *choices,
+						SipeUserAskChoiceCb callback,
+						gpointer data)
+{
+	struct sipe_user_ask_ctx *ctx = g_new0(struct sipe_user_ask_ctx, 1);
+	ctx->sipe_private = sipe_private;
+	ctx->accept_cb = callback;
+	ctx->decline_cb = NULL;
+	ctx->data = data;
+
+	sipe_backend_user_ask_choice(SIPE_CORE_PUBLIC, message, choices, ctx);
+
+	return ctx;
+}
+
+void sipe_core_user_ask_choice_cb(gpointer context, guint choice_id)
+{
+	struct sipe_user_ask_ctx *ctx = context;
+
+	if (ctx->accept_cb) {
+		((SipeUserAskChoiceCb)ctx->accept_cb)(ctx->sipe_private,
+						      ctx->data, choice_id);
+	}
 
 	g_free(ctx);
 }
