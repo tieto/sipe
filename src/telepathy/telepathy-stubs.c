@@ -177,38 +177,35 @@ struct sipe_backend_media_relays * sipe_backend_media_relays_convert(SIPE_UNUSED
 								     SIPE_UNUSED_PARAMETER gchar *username,
 								     SIPE_UNUSED_PARAMETER gchar *password) { return(NULL); }
 void sipe_backend_media_relays_free(SIPE_UNUSED_PARAMETER struct sipe_backend_media_relays *media_relays) {}
-struct sipe_backend_stream *sipe_backend_media_add_stream(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-							  SIPE_UNUSED_PARAMETER const gchar *id,
-							  SIPE_UNUSED_PARAMETER const gchar *participant,
-							  SIPE_UNUSED_PARAMETER SipeMediaType type,
-							  SIPE_UNUSED_PARAMETER SipeIceVersion ice_version,
-							  SIPE_UNUSED_PARAMETER gboolean initiator,
-							  SIPE_UNUSED_PARAMETER struct sipe_backend_media_relays *media_relays) { return(NULL); }
-void sipe_backend_media_remove_stream(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-				      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) {}
-GSList *sipe_backend_media_get_streams(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) { return(NULL); }
-struct sipe_backend_stream *sipe_backend_media_get_stream_by_id(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-								SIPE_UNUSED_PARAMETER const gchar *id) { return(NULL); }
-void sipe_backend_media_add_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-					      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream,
+struct sipe_backend_media_stream *sipe_backend_media_add_stream(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+								SIPE_UNUSED_PARAMETER const gchar *id,
+								SIPE_UNUSED_PARAMETER const gchar *participant,
+								SIPE_UNUSED_PARAMETER SipeMediaType type,
+								SIPE_UNUSED_PARAMETER SipeIceVersion ice_version,
+								SIPE_UNUSED_PARAMETER gboolean initiator,
+								SIPE_UNUSED_PARAMETER struct sipe_backend_media_relays *media_relays) { return(NULL); }
+void sipe_backend_media_add_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+					      SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 					      SIPE_UNUSED_PARAMETER GList *candidates) {}
-gboolean sipe_backend_media_is_initiator(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-					 SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(FALSE); }
+gboolean sipe_backend_media_is_initiator(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+					 SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(FALSE); }
 gboolean sipe_backend_media_accepted(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) { return(FALSE); }
-gboolean sipe_backend_stream_initialized(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-					 SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(FALSE); }
-GList *sipe_backend_media_get_active_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-						      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(NULL); }
-GList *sipe_backend_media_get_active_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-						       SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(NULL); }
-const gchar *sipe_backend_stream_get_id(SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(""); }
-void sipe_backend_stream_hold(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-			      SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream,
+gboolean sipe_backend_stream_initialized(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+					 SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(FALSE); }
+GList *sipe_backend_media_get_active_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+						      SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
+GList *sipe_backend_media_get_active_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+						       SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
+void sipe_backend_stream_hold(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+			      SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 			      SIPE_UNUSED_PARAMETER gboolean local) {}
-void sipe_backend_stream_unhold(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-				SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream,
+void sipe_backend_stream_unhold(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+				SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 				SIPE_UNUSED_PARAMETER gboolean local) {}
-gboolean sipe_backend_stream_is_held(SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(FALSE); }
+gboolean sipe_backend_stream_is_held(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(FALSE); }
+void sipe_backend_media_stream_end(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+				   SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) {}
+void sipe_backend_media_stream_free(SIPE_UNUSED_PARAMETER struct sipe_backend_media_stream *stream) {}
 struct sipe_backend_codec *sipe_backend_codec_new(SIPE_UNUSED_PARAMETER int id,
 						  SIPE_UNUSED_PARAMETER const char *name,
 						  SIPE_UNUSED_PARAMETER SipeMediaType type,
@@ -221,11 +218,11 @@ void sipe_backend_codec_add_optional_parameter(SIPE_UNUSED_PARAMETER struct sipe
 					       SIPE_UNUSED_PARAMETER const gchar *name,
 					       SIPE_UNUSED_PARAMETER const gchar *value) {}
 GList *sipe_backend_codec_get_optional_parameters(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) { return(NULL); }
-gboolean sipe_backend_set_remote_codecs(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-					SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream,
+gboolean sipe_backend_set_remote_codecs(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+					SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 					SIPE_UNUSED_PARAMETER GList *codecs) { return(FALSE); }
-GList* sipe_backend_get_local_codecs(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-				     SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(NULL); }
+GList* sipe_backend_get_local_codecs(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+				     SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
 struct sipe_backend_candidate * sipe_backend_candidate_new(SIPE_UNUSED_PARAMETER const gchar *foundation,
 							   SIPE_UNUSED_PARAMETER SipeComponentType component,
 							   SIPE_UNUSED_PARAMETER SipeCandidateType type,
@@ -248,8 +245,8 @@ void sipe_backend_candidate_set_priority(SIPE_UNUSED_PARAMETER struct sipe_backe
 SipeComponentType sipe_backend_candidate_get_component_type(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(SIPE_COMPONENT_NONE); }
 SipeCandidateType sipe_backend_candidate_get_type(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(SIPE_CANDIDATE_TYPE_ANY); }
 SipeNetworkProtocol sipe_backend_candidate_get_protocol(SIPE_UNUSED_PARAMETER struct sipe_backend_candidate *candidate) { return(SIPE_NETWORK_PROTOCOL_TCP_ACTIVE); }
-GList* sipe_backend_get_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
-					 SIPE_UNUSED_PARAMETER struct sipe_backend_stream *stream) { return(NULL); }
+GList* sipe_backend_get_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+					 SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
 void sipe_backend_media_accept(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
 			       SIPE_UNUSED_PARAMETER gboolean local) {}
 void sipe_backend_media_hangup(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
