@@ -400,11 +400,10 @@ void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,
 			       const gchar *phone);
 
 /* media */
-struct sipe_media_call *call;
-
 void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 				   const char *participant,
 				   gboolean with_video);
+struct sipe_media_call;
 struct sipe_media_stream *
 sipe_core_media_get_stream_by_id(struct sipe_media_call *call, const gchar *id);
 
