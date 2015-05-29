@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2014-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
