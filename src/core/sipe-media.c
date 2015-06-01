@@ -328,6 +328,18 @@ fill_zero_tcp_act_ports_from_tcp_pass(GSList *candidates)
 	g_hash_table_destroy(ip_to_port);
 }
 
+static SipeEncryptionPolicy
+get_encryption_policy(struct sipe_core_private *sipe_private)
+{
+	SipeEncryptionPolicy result =
+			sipe_backend_media_get_encryption_policy(SIPE_CORE_PUBLIC);
+	if (result == SIPE_ENCRYPTION_POLICY_OBEY_SERVER) {
+		result = sipe_private->server_av_encryption_policy;
+	}
+
+	return result;
+}
+
 static struct sdpmedia *
 media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 			 struct sipe_media_stream_private *stream_private)
@@ -335,6 +347,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 	struct sdpmedia *sdpmedia = g_new0(struct sdpmedia, 1);
 	GList *codecs = sipe_backend_get_local_codecs(SIPE_MEDIA_CALL,
 						      SIPE_MEDIA_STREAM);
+	SipeEncryptionPolicy encryption_policy =
+			get_encryption_policy(call_private->sipe_private);
 	guint rtcp_port = 0;
 	SipeMediaType type;
 	GSList *attributes = NULL;
@@ -430,6 +444,13 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 								     SIPE_MEDIA_STREAM);
 	sdpmedia->remote_candidates = backend_candidates_to_sdpcandidate(candidates);
 	sipe_media_candidate_list_free(candidates);
+
+	// Set our key if encryption is enabled.
+	if (stream_private->encryption_key &&
+	    encryption_policy != SIPE_ENCRYPTION_POLICY_REJECTED) {
+		sdpmedia->encryption_key = g_memdup(stream_private->encryption_key,
+						    SIPE_SRTP_KEY_LEN);
+	}
 
 	return sdpmedia;
 }
@@ -931,7 +952,6 @@ sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
 	struct sipe_media_stream_private *stream_private;
 	struct sipe_backend_media_stream *backend_stream;
 	struct sipe_backend_media_relays *backend_media_relays;
-	int i;
 
 	backend_media_relays = sipe_backend_media_relays_convert(
 						sipe_private->media_relays,
@@ -952,10 +972,15 @@ sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
 	SIPE_MEDIA_STREAM->id = g_strdup(id);
 	SIPE_MEDIA_STREAM->backend_private = backend_stream;
 
-	stream_private->encryption_key = g_new0(guchar, SIPE_SRTP_KEY_LEN);
-	for (i = 0; i != SIPE_SRTP_KEY_LEN; ++i) {
-		stream_private->encryption_key[i] = rand() & 0xff;
+#ifdef HAVE_SRTP
+	{
+		int i;
+		stream_private->encryption_key = g_new0(guchar, SIPE_SRTP_KEY_LEN);
+		for (i = 0; i != SIPE_SRTP_KEY_LEN; ++i) {
+			stream_private->encryption_key[i] = rand() & 0xff;
+		}
 	}
+#endif
 
 	sipe_private->media_call->streams =
 			g_slist_append(sipe_private->media_call->streams,

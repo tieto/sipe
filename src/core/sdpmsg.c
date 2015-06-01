@@ -660,6 +660,8 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 	gchar *attributes_str = NULL;
 	gchar *credentials = NULL;
 
+	gchar *crypto = NULL;
+
 	gboolean uses_tcp_transport = FALSE;
 
 	if (media->port != 0) {
@@ -690,9 +692,17 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 						      c->username,
 						      c->password);
 		}
+
+		if (media->encryption_key) {
+			gchar *key_encoded = g_base64_encode(media->encryption_key, SIPE_SRTP_KEY_LEN);
+			crypto = g_strdup_printf("a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:%s|2^31\r\n",
+					key_encoded);
+			g_free(key_encoded);
+		}
 	}
 
 	media_str = g_strdup_printf("m=%s %d %sRTP/AVP%s\r\n"
+				    "%s"
 				    "%s"
 				    "%s"
 				    "%s"
@@ -702,6 +712,7 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 				    media->name, media->port, uses_tcp_transport ? "TCP/" : "", codec_ids_str,
 				    media_conninfo ? media_conninfo : "",
 				    candidates_str ? candidates_str : "",
+				    crypto ? crypto : "",
 				    remote_candidates_str ? remote_candidates_str : "",
 				    codecs_str ? codecs_str : "",
 				    attributes_str ? attributes_str : "",
@@ -714,6 +725,7 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 	g_free(remote_candidates_str);
 	g_free(attributes_str);
 	g_free(credentials);
+	g_free(crypto);
 
 	return media_str;
 }
