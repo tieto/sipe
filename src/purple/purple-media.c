@@ -399,7 +399,7 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 			append_relay(relay_info, relay->hostname, relay->udp_port,
 				     "udp", username, password);
 
-#ifdef HAVE_ICE_TCP
+#if PURPLE_VERSION_CHECK(2,10,12) || PURPLE_VERSION_CHECK(3,0,0)
 		if (relay->tcp_port != 0) {
 			gchar *type = "tcp";
 			if (relay->tcp_port == 443)
@@ -500,7 +500,7 @@ sipe_backend_media_add_remote_candidates(struct sipe_media_call *media,
 {
 	GList *udp_candidates = NULL;
 
-#ifndef HAVE_ICE_TCP
+#if !(PURPLE_VERSION_CHECK(2,10,12) || PURPLE_VERSION_CHECK(3,0,0))
 	while (candidates) {
 		PurpleMediaCandidate *candidate = candidates->data;
 		PurpleMediaNetworkProtocol proto;
@@ -978,7 +978,7 @@ static PurpleMediaNetworkProtocol
 sipe_network_protocol_to_purple(SipeNetworkProtocol proto)
 {
 	switch (proto) {
-#ifdef HAVE_ICE_TCP
+#if PURPLE_VERSION_CHECK(2,10,12) || PURPLE_VERSION_CHECK(3,0,0)
 		case SIPE_NETWORK_PROTOCOL_TCP_ACTIVE:
 			return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE;
 		case SIPE_NETWORK_PROTOCOL_TCP_PASSIVE:
@@ -1001,7 +1001,7 @@ static SipeNetworkProtocol
 purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto)
 {
 	switch (proto) {
-#ifdef HAVE_ICE_TCP
+#if PURPLE_VERSION_CHECK(2,10,12) || PURPLE_VERSION_CHECK(3,0,0)
 		case PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE:
 			return SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
 		case PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE:

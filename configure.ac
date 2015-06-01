@@ -378,24 +378,6 @@ AS_IF([test "x$enable_purple" != xno],
 				[AC_MSG_WARN([cross compiling: not checking])])
 			 ])
 
-		 dnl check if we have TCP media transport patches in libpurple
-		 AS_IF([test "x$with_purple_vv" != xno],
-			[
-			 AC_MSG_CHECKING(for TCP media transport)
-			 AC_COMPILE_IFELSE(
-				[AC_LANG_PROGRAM([[
-#include <media.h>
-					]],
-					[[return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE]]
-				)],
-				[
-				 with_purple_tcp=yes
-				 AC_DEFINE(HAVE_ICE_TCP, 1, [Define if we have support for TCP media transport.])
-				 AC_MSG_RESULT(yes)
-				],
-				[AC_MSG_RESULT(no)])
-			])
-
 		 CFLAGS=$ac_save_CFLAGS
 		 LIBS=$ac_save_LIBS])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
@@ -493,11 +475,7 @@ AS_IF([test "x$enable_purple" = xno],
 	 AS_ECHO_N("Voice and video: ")
 	 AS_IF([test "x$with_purple_vv" = xno],
 	  [AS_ECHO("disabled")],
-	  [
-	   AS_ECHO_N("enabled")
-	   AS_IF([test "x$with_purple_tcp" = xyes], [AS_ECHO_N(" with TCP transport")])
-	   AS_ECHO()
-	  ])
+	  [AS_ECHO("enabled")])
 	])
 AS_ECHO()
 AS_IF([test "x$enable_telepathy" = xno],
