@@ -344,6 +344,10 @@ static struct sdpmedia *
 media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 			 struct sipe_media_stream_private *stream_private)
 {
+	struct sip_session *session =
+			sipe_session_find_call(call_private->sipe_private,
+					       SIPE_MEDIA_CALL->with);
+	struct sip_dialog *dialog = session->dialogs->data;
 	struct sdpmedia *sdpmedia = g_new0(struct sdpmedia, 1);
 	GList *codecs = sipe_backend_get_local_codecs(SIPE_MEDIA_CALL,
 						      SIPE_MEDIA_STREAM);
@@ -460,6 +464,10 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 								     SIPE_MEDIA_STREAM);
 	sdpmedia->remote_candidates = backend_candidates_to_sdpcandidate(candidates);
 	sipe_media_candidate_list_free(candidates);
+
+	sdpmedia->encryption_active = stream_private->encryption_key &&
+				      call_private->encryption_compatible &&
+				      (dialog->cseq != 0 || call_private->invitation);
 
 	// Set our key if encryption is enabled.
 	if (stream_private->encryption_key &&
@@ -669,6 +677,12 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 		}
 
 		backend_codecs = g_list_append(backend_codecs, codec);
+	}
+
+	if (media->encryption_key && SIPE_MEDIA_STREAM_PRIVATE->encryption_key) {
+		sipe_backend_media_set_encryption_keys(SIPE_MEDIA_CALL, stream,
+				SIPE_MEDIA_STREAM_PRIVATE->encryption_key,
+				media->encryption_key);
 	}
 
 	result = sipe_backend_set_remote_codecs(SIPE_MEDIA_CALL, stream,

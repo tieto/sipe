@@ -67,6 +67,8 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 
 			media->name = g_strdup(parts[0]);
 			media->port = atoi(parts[1]);
+			media->encryption_active =
+					g_strstr_len(parts[2], -1, "/SAVP") != NULL;
 
 			g_strfreev(parts);
 
@@ -649,6 +651,8 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 {
 	gchar *media_str;
 
+	gchar *transport_profile = NULL;
+
 	gchar *media_conninfo = NULL;
 
 	gchar *codecs_str = NULL;
@@ -701,7 +705,11 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 		}
 	}
 
-	media_str = g_strdup_printf("m=%s %d %sRTP/AVP%s\r\n"
+	transport_profile = g_strdup_printf("%sRTP/%sAVP",
+					    uses_tcp_transport ? "TCP/" : "",
+					    media->encryption_active ? "S" : "");
+
+	media_str = g_strdup_printf("m=%s %d %s%s\r\n"
 				    "%s"
 				    "%s"
 				    "%s"
@@ -709,7 +717,7 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 				    "%s"
 				    "%s"
 				    "%s",
-				    media->name, media->port, uses_tcp_transport ? "TCP/" : "", codec_ids_str,
+				    media->name, media->port, transport_profile, codec_ids_str,
 				    media_conninfo ? media_conninfo : "",
 				    candidates_str ? candidates_str : "",
 				    crypto ? crypto : "",
@@ -718,6 +726,7 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 				    attributes_str ? attributes_str : "",
 				    credentials ? credentials : "");
 
+	g_free(transport_profile);
 	g_free(media_conninfo);
 	g_free(codecs_str);
 	g_free(codec_ids_str);
