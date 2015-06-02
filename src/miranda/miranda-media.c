@@ -368,6 +368,12 @@ sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local)
 	_NIF();
 }
 
+SipeEncryptionPolicy
+sipe_backend_media_get_encryption_policy(struct sipe_core_public *sipe_public)
+{
+	return SIPE_ENCRYPTION_POLICY_REJECTED;
+}
+
 /*
   Local Variables:
   mode: c
