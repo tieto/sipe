@@ -435,7 +435,23 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		g_free(tmp);
 	}
 
-	attributes = sipe_utils_nameval_add(attributes, "encryption", "rejected");
+	if (encryption_policy != call_private->sipe_private->server_av_encryption_policy) {
+		const gchar *encryption = NULL;
+		switch (encryption_policy) {
+			case SIPE_ENCRYPTION_POLICY_REJECTED:
+				encryption = "rejected";
+				break;
+			case SIPE_ENCRYPTION_POLICY_OPTIONAL:
+				encryption = "optional";
+				break;
+			case SIPE_ENCRYPTION_POLICY_REQUIRED:
+			default:
+				encryption = "required";
+				break;
+		}
+
+		attributes = sipe_utils_nameval_add(attributes, "encryption", encryption);
+	}
 
 	sdpmedia->attributes = attributes;
 
