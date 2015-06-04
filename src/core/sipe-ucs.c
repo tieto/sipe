@@ -718,6 +718,24 @@ void sipe_ucs_group_remove(struct sipe_core_private *sipe_private,
 			      NULL);
 }
 
+static void ucs_init_failure(struct sipe_core_private *sipe_private)
+{
+	/* Did the user specify any email settings? */
+	gboolean default_settings =
+		is_empty(sipe_backend_setting(SIPE_CORE_PUBLIC,
+					      SIPE_SETTING_EMAIL_URL))   &&
+		is_empty(sipe_backend_setting(SIPE_CORE_PUBLIC,
+					      SIPE_SETTING_EMAIL_LOGIN)) &&
+		is_empty(sipe_backend_setting(SIPE_CORE_PUBLIC,
+					      SIPE_SETTING_EMAIL_PASSWORD));
+
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				  _("UCS initialization failed!"),
+				  default_settings ?
+				  _("Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n\nYou'll need to provide Email settings in the account setup.") :
+				  _("Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n\nPlease correct your Email settings."));
+}
+
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
 					       SIPE_UNUSED_PARAMETER struct sipe_ucs_transaction *trans,
 					       const sipe_xml *body,
@@ -813,6 +831,9 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 			sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
 			sipe_subscribe_presence_initial(sipe_private);
 		}
+	} else if (sipe_private->ucs) {
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_ucs_get_im_item_list_response: query failed, contact list operations will not work!");
+		ucs_init_failure(sipe_private);
 	}
 }
 
@@ -844,18 +865,20 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 				    SIPE_UNUSED_PARAMETER gpointer callback_data)
 {
 	struct sipe_ucs *ucs = sipe_private->ucs;
-	const gchar *ews_url;
+	const gchar *ews_url = NULL;
 
-	if (!ucs || !ews_data)
+	if (!ucs)
 		return;
 
-	ews_url = ews_data->ews_url;
+	if (ews_data)
+		ews_url = ews_data->ews_url;
+
 	if (is_empty(ews_url)) {
 		SIPE_DEBUG_ERROR_NOFORMAT("ucs_ews_autodiscover_cb: can't detect EWS URL, contact list operations will not work!");
-		return;
+		ucs_init_failure(sipe_private);
+	} else {
+		ucs_set_ews_url(sipe_private, ews_url);
 	}
-
-	ucs_set_ews_url(sipe_private, ews_url);
 }
 
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private)
