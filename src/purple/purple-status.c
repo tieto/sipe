@@ -82,25 +82,26 @@ void sipe_backend_status_and_note(struct sipe_core_public *sipe_public,
 						status_id);
 	PurpleStatusPrimitive primitive = purple_status_type_get_primitive(acct_status_type);
 
+	/* code adapted from: pidgin/gtkstatusbox.c */
 	saved_status = purple_savedstatus_find_transient_by_type_and_message(primitive, message);
 	if (saved_status) {
 		purple_savedstatus_set_substatus(saved_status, account, acct_status_type, message);
-	}
-
-	/* If this type+message is unique then create a new transient saved status
-	 * Ref: gtkstatusbox.c
-	 */
-	if (!saved_status) {
-		GList *tmp;
+	} else {
+		/* This type+message is unique then create a new transient saved status */
+		GList *entry;
 		GList *active_accts = purple_accounts_get_all_active();
+
+		SIPE_DEBUG_INFO("sipe_backend_status_and_note: creating new saved status %s '%s'",
+				status_id, message ? message : "(null)");
 
 		saved_status = purple_savedstatus_new(NULL, primitive);
 		purple_savedstatus_set_message(saved_status, message);
 
-		for (tmp = active_accts; tmp != NULL; tmp = tmp->next) {
+		for (entry = active_accts; entry != NULL; entry = entry->next)
 			purple_savedstatus_set_substatus(saved_status,
-							 (PurpleAccount *)tmp->data, acct_status_type, message);
-		}
+							 (PurpleAccount *) entry->data,
+							 acct_status_type,
+							 message);
 		g_list_free(active_accts);
 	}
 
