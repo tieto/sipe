@@ -972,7 +972,8 @@ static gchar *sipe_publish_get_category_note(struct sipe_core_private *sipe_priv
 					     const char *note, /* html */
 					     const char *note_type,
 					     time_t note_start,
-					     time_t note_end)
+					     time_t note_end,
+					     gboolean force_publish)
 {
 	guint instance = sipe_strequal("OOF", note_type) ? sipe_get_pub_instance(sipe_private, SIPE_PUB_NOTE_OOF) : 0;
 	/* key is <category><instance><container> */
@@ -1001,7 +1002,7 @@ static gchar *sipe_publish_get_category_note(struct sipe_core_private *sipe_priv
 	g_free(key_note_400);
 
 	/* we even need to republish empty note */
-	if (sipe_strequal(n1, n2))
+	if (!force_publish && sipe_strequal(n1, n2))
 	{
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_publish_get_category_note: note has NOT changed. Exiting.");
 		g_free(n1);
@@ -1458,6 +1459,7 @@ static gchar *sipe_publish_get_category_device(struct sipe_core_private *sipe_pr
  * Must be g_free'd after use.
  */
 static gchar *sipe_publish_get_category_state(struct sipe_core_private *sipe_private,
+					      gboolean force_publish,
 					      gboolean is_user_state)
 {
 	int availability = sipe_ocs2007_availability_from_status(sipe_private->status, NULL);
@@ -1474,7 +1476,7 @@ static gchar *sipe_publish_get_category_state(struct sipe_core_private *sipe_pri
 	g_free(key_2);
 	g_free(key_3);
 
-	if (publication_2 && (publication_2->availability == availability))
+	if (!force_publish && publication_2 && (publication_2->availability == availability))
 	{
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_publish_get_category_state: state has NOT changed. Exiting.");
 		return NULL; /* nothing to update */
@@ -1493,18 +1495,20 @@ static gchar *sipe_publish_get_category_state(struct sipe_core_private *sipe_pri
  * Returns 'machineState' XML part for publication.
  * Must be g_free'd after use.
  */
-static gchar *sipe_publish_get_category_state_machine(struct sipe_core_private *sipe_private)
+static gchar *sipe_publish_get_category_state_machine(struct sipe_core_private *sipe_private,
+						      gboolean force_publish)
 {
-	return sipe_publish_get_category_state(sipe_private, FALSE);
+	return sipe_publish_get_category_state(sipe_private, force_publish, FALSE);
 }
 
 /**
  * Returns 'userState' XML part for publication.
  * Must be g_free'd after use.
  */
-static gchar *sipe_publish_get_category_state_user(struct sipe_core_private *sipe_private)
+static gchar *sipe_publish_get_category_state_user(struct sipe_core_private *sipe_private,
+						   gboolean force_publish)
 {
-	return sipe_publish_get_category_state(sipe_private, TRUE);
+	return sipe_publish_get_category_state(sipe_private, force_publish, TRUE);
 }
 
 static void send_publish_category_initial(struct sipe_core_private *sipe_private)
@@ -1515,7 +1519,8 @@ static void send_publish_category_initial(struct sipe_core_private *sipe_private
 
 	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_AVAILABLE);
 
-	pub_machine  = sipe_publish_get_category_state_machine(sipe_private);
+	pub_machine  = sipe_publish_get_category_state_machine(sipe_private,
+							       TRUE);
 	publications = g_strdup_printf("%s%s",
 				       pub_device,
 				       pub_machine ? pub_machine : "");
@@ -1630,7 +1635,7 @@ static gboolean process_send_presence_category_publish_response(struct sipe_core
 		if (has_device_publication) {
 			send_publish_category_initial(sipe_private);
 		} else {
-			sipe_ocs2007_category_publish(sipe_private);
+			sipe_ocs2007_category_publish(sipe_private, TRUE);
 		}
 	}
 	return TRUE;
@@ -1735,7 +1740,7 @@ void sipe_ocs2007_presence_publish(struct sipe_core_private *sipe_private,
 		oof_start = cal->oof_start;
 		oof_end = cal->oof_end;
 	}
-	pub_oof_note = sipe_publish_get_category_note(sipe_private, oof_note, "OOF", oof_start, oof_end);
+	pub_oof_note = sipe_publish_get_category_note(sipe_private, oof_note, "OOF", oof_start, oof_end, FALSE);
 
 	pub_cal_working_hours = sipe_publish_get_category_cal_working_hours(sipe_private);
 	pub_cal_free_busy = sipe_publish_get_category_cal_free_busy(sipe_private);
@@ -1764,32 +1769,45 @@ void sipe_ocs2007_presence_publish(struct sipe_core_private *sipe_private,
 	schedule_publish_update(sipe_private, time(NULL));
 }
 
-void sipe_ocs2007_category_publish(struct sipe_core_private *sipe_private)
+void sipe_ocs2007_category_publish(struct sipe_core_private *sipe_private,
+				   gboolean force_publish)
 {
-	gchar *pub_state = sipe_private->status_set_by_user ?
-				sipe_publish_get_category_state_user(sipe_private) :
-				sipe_publish_get_category_state_machine(sipe_private);
-	gchar *pub_note = sipe_publish_get_category_note(sipe_private,
-							 sipe_private->note,
-							 SIPE_CORE_PRIVATE_FLAG_IS(OOF_NOTE) ? "OOF" : "personal",
-							 0,
-							 0);
-	gchar *publications;
+	GString *publications = g_string_new("");
+	gchar *tmp;
 
-	if (!pub_state && !pub_note) {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_osc2007_category_publish: nothing has changed. Exiting.");
-		return;
+	if (force_publish || sipe_private->status_set_by_user) {
+		tmp = sipe_publish_get_category_state_user(sipe_private,
+							   force_publish);
+		if (tmp) {
+			g_string_append(publications, tmp);
+			g_free(tmp);
+		}
 	}
 
-	publications = g_strdup_printf("%s%s",
-				       pub_state ? pub_state : "",
-				       pub_note ? pub_note : "");
+	tmp = sipe_publish_get_category_state_machine(sipe_private,
+						      force_publish);
+	if (tmp) {
+		g_string_append(publications, tmp);
+		g_free(tmp);
+	}
 
-	g_free(pub_state);
-	g_free(pub_note);
+	tmp = sipe_publish_get_category_note(sipe_private,
+					     sipe_private->note,
+					     SIPE_CORE_PRIVATE_FLAG_IS(OOF_NOTE) ? "OOF" : "personal",
+					     0,
+					     0,
+					     force_publish);
+	if (tmp) {
+		g_string_append(publications, tmp);
+		g_free(tmp);
+	}
 
-	send_presence_publish(sipe_private, publications);
-	g_free(publications);
+	if (publications->len)
+		send_presence_publish(sipe_private, publications->str);
+	else
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_osc2007_category_publish: nothing has changed. Exiting.");
+
+	g_string_free(publications, TRUE);
 }
 
 void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)

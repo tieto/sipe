@@ -1103,7 +1103,7 @@ void sipe_cal_presence_publish(struct sipe_core_private *sipe_private,
 		if (do_publish_calendar)
 			sipe_ocs2007_presence_publish(sipe_private, NULL);
 		else
-			sipe_ocs2007_category_publish(sipe_private);
+			sipe_ocs2007_category_publish(sipe_private, FALSE);
 	} else {
 		sipe_ocs2005_presence_publish(sipe_private,
 					      do_publish_calendar);
