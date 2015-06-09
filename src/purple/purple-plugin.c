@@ -42,22 +42,12 @@
 
 #include "accountopt.h"
 #include "prpl.h"
-#include "version.h"
 
 #include "sipe-core.h"
 
 #define _PurpleMessageFlags PurpleMessageFlags
 #include "purple-private.h"
 
-#if PURPLE_VERSION_CHECK(3,0,0)
-static int sipe_purple_send_im(PurpleConnection *gc, PurpleMessage *msg)
-{
-	sipe_core_im_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
-			purple_message_get_recipient(msg),
-			purple_message_get_contents(msg));
-	return 1;
-}
-#else
 static int sipe_purple_send_im(PurpleConnection *gc,
 			       const char *who,
 			       const char *what,
@@ -66,7 +56,6 @@ static int sipe_purple_send_im(PurpleConnection *gc,
 	sipe_core_im_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who, what);
 	return 1;
 }
-#endif
 
 /*
  * Simplistic source upward compatibility path for newer libpurple APIs
@@ -89,9 +78,6 @@ static int sipe_purple_send_im(PurpleConnection *gc,
 #endif
 static PurplePluginProtocolInfo sipe_prpl_info =
 {
-#if PURPLE_VERSION_CHECK(3,0,0)
-	sizeof(PurplePluginProtocolInfo),       /* struct_size */
-#endif
 	SIPE_PURPLE_PROTOCOL_OPTIONS,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
@@ -127,16 +113,12 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* get_chat_name */
 	sipe_purple_chat_invite,		/* chat_invite */
 	sipe_purple_chat_leave,			/* chat_leave */
-#if !PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* chat_whisper */
-#endif
 	sipe_purple_chat_send,			/* chat_send */
 	NULL,					/* keepalive */
 	NULL,					/* register_user */
 	NULL,					/* get_cb_info */	// deprecated
-#if !PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* get_cb_away */	// deprecated
-#endif
 	sipe_purple_alias_buddy,		/* alias_buddy */
 	sipe_purple_group_buddy,		/* group_buddy */
 	sipe_purple_group_rename,		/* rename_group */
@@ -161,16 +143,14 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* unregister_user */
 	NULL,					/* send_attention */
 	NULL,					/* get_attention_types */
-#if !PURPLE_VERSION_CHECK(2,5,0) && !PURPLE_VERSION_CHECK(3,0,0)
+#if !PURPLE_VERSION_CHECK(2,5,0)
 	/* Backward compatibility when compiling against 2.4.x API */
 	(void (*)(void))			/* _purple_reserved4 */
 #endif
-#if !PURPLE_VERSION_CHECK(3,0,0)
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
-#endif
-#if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(2,5,0)
 	sipe_purple_get_account_text_table,	/* get_account_text_table */
-#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(2,6,0)
 #ifdef HAVE_VV
 	sipe_purple_initiate_media,		/* initiate_media */
 	sipe_purple_get_media_caps,		/* get_media_caps */
@@ -178,16 +158,13 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* initiate_media */
 	NULL,					/* get_media_caps */
 #endif
-#if PURPLE_VERSION_CHECK(2,7,0) || PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(2,7,0)
 	NULL,					/* get_moods */
 	NULL,					/* set_public_alias */
 	NULL,					/* get_public_alias */
 #if PURPLE_VERSION_CHECK(2,8,0)
 	NULL,					/* add_buddy_with_invite */
 	NULL,					/* add_buddies_with_invite */
-#elif PURPLE_VERSION_CHECK(3,0,0)
-	NULL,					/* get_max_message_size */
-	NULL,					/* media_send_dtmf */
 #endif
 #endif
 #endif
