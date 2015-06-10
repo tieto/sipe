@@ -47,7 +47,7 @@ endif
 libsipe_la_CFLAGS = $(libsipe_backend_la_CFLAGS)
 
 libsipe_la_LDFLAGS = \
-	-module -avoid-version -no-undefined
+	-module -avoid-version -no-undefined -Wl,-Bsymbolic-functions
 
 libsipe_la_LIBADD = \
 	../core/libsipe_core.la \
