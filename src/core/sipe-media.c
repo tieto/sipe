@@ -1263,7 +1263,7 @@ sipe_media_from_sipmsg(struct sipe_core_private *sipe_private,
 				   sipmsg_find_header(msg, "Call-ID"));
 }
 
-void
+struct sipe_media_call_private *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
@@ -1280,7 +1280,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		if (call && !is_media_session_msg(SIPE_MEDIA_CALL_PRIVATE, msg)) {
 			sip_transport_response(sipe_private, msg,
 					       486, "Busy Here", NULL);
-			return;
+			return NULL;
 		}
 	}
 
@@ -1291,7 +1291,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		if (sipe_strequal(SIPE_MEDIA_CALL->with, self)) {
 			g_free(self);
 			sip_transport_response(sipe_private, msg, 488, "Not Acceptable Here", NULL);
-			return;
+			return NULL;
 		}
 		g_free(self);
 	}
@@ -1300,8 +1300,10 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 	if (!smsg) {
 		sip_transport_response(sipe_private, msg,
 				       488, "Not Acceptable Here", NULL);
-		sipe_media_hangup(call_private);
-		return;
+		if (call_private) {
+			sipe_media_hangup(call_private);
+		}
+		return NULL;
 	}
 
 	if (!call_private) {
@@ -1350,6 +1352,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 
 		sdpmsg_free(smsg);
 	}
+
+	return call_private;
 }
 
 void process_incoming_cancel_call(struct sipe_media_call_private *call_private,
