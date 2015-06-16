@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -67,6 +67,7 @@ static struct
 /* SIPE_ACTIVITY_IN_MEETING  */ { "in-a-meeting",              N_("In a meeting")              },
 /* SIPE_ACTIVITY_OOF         */ { "out-of-office",             N_("Out of office")             },
 /* SIPE_ACTIVITY_URGENT_ONLY */ { "urgent-interruptions-only", N_("Urgent interruptions only") },
+/* SIPE_ACTIVITY_IN_PRES     */ { "in-presentation",           N_("Presenting")                },
 };
 
 static GHashTable *token_map;
