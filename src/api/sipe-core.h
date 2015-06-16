@@ -223,7 +223,8 @@ void sipe_core_change_access_level_for_domain(struct sipe_core_public *sipe_publ
 #define SIPE_ACTIVITY_IN_MEETING  14
 #define SIPE_ACTIVITY_OOF         15
 #define SIPE_ACTIVITY_URGENT_ONLY 16
-#define SIPE_ACTIVITY_NUM_TYPES   17 /* use to define array size */
+#define SIPE_ACTIVITY_IN_PRES     17
+#define SIPE_ACTIVITY_NUM_TYPES   18 /* use to define array size */
 
 const gchar *sipe_core_activity_description(guint type);
 
