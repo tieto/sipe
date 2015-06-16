@@ -1827,10 +1827,15 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 
 #ifdef HAVE_VV
 	if (g_hash_table_size(sipe_private->media_calls)) {
-		guint availability = 6500;
-		const gchar *token = sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE);
+		guint availability = 0;
+		const gchar *token = NULL;
 		GList *calls = g_hash_table_get_values(sipe_private->media_calls);
 		GList *i;
+
+		if (sipe_core_media_get_call(SIPE_CORE_PUBLIC)) {
+			availability = 6500;
+			token = sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE);
+		}
 
 		for (i = calls; i; i = i->next) {
 			if (sipe_media_is_conference_call(i->data)) {
@@ -1842,11 +1847,13 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 
 		g_list_free(calls);
 
-		publications = g_strdup_printf(SIPE_PUB_XML_STATE_PHONE,
-				instance, publication_2 ? publication_2->version : 0,
-				availability, token, availability,
-				instance, publication_3 ? publication_3->version : 0,
-				availability, token, availability);
+		if (token) {
+			publications = g_strdup_printf(SIPE_PUB_XML_STATE_PHONE,
+					instance, publication_2 ? publication_2->version : 0,
+					availability, token, availability,
+					instance, publication_3 ? publication_3->version : 0,
+					availability, token, availability);
+		}
 	} else
 #endif
 	{
@@ -1855,8 +1862,10 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 				instance, publication_3 ? publication_3->version : 0);
 	}
 
-	send_presence_publish(sipe_private, publications);
-	g_free(publications);
+	if (publications) {
+		send_presence_publish(sipe_private, publications);
+		g_free(publications);
+	}
 }
 
 static void sipe_publish_get_cat_state_user_to_clear(SIPE_UNUSED_PARAMETER const char *name,
