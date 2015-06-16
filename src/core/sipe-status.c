@@ -67,6 +67,7 @@ static struct
 /* SIPE_ACTIVITY_IN_MEETING  */ { "in-a-meeting",              N_("In a meeting")              },
 /* SIPE_ACTIVITY_OOF         */ { "out-of-office",             N_("Out of office")             },
 /* SIPE_ACTIVITY_URGENT_ONLY */ { "urgent-interruptions-only", N_("Urgent interruptions only") },
+/* SIPE_ACTIVITY_IN_PRES     */ { "in-presentation",           N_("Presenting")                },
 };
 
 static GHashTable *token_map;
