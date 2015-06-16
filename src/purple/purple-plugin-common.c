@@ -107,7 +107,8 @@ static const gchar * const activity_to_purple_map[SIPE_ACTIVITY_NUM_TYPES] = {
 /* SIPE_ACTIVITY_IN_MEETING  */ "in-a-meeting",
 /* SIPE_ACTIVITY_OOF         */ "out-of-office",
 /* SIPE_ACTIVITY_URGENT_ONLY */ "urgent-interruptions-only",
-/* SIPE_ACTIVIY_NUM_TYPES == 17 -> compare to sipe_purple_status_types() */
+/* SIPE_ACTIVITY_IN_PRES     */ "presenting",
+/* SIPE_ACTIVIY_NUM_TYPES -> compare to sipe_purple_status_types() */
 };
 
 GHashTable *purple_token_map;
@@ -254,6 +255,11 @@ GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	/* 11: Urgent interruptions only */
 	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
 			SIPE_ACTIVITY_URGENT_ONLY,
+			FALSE);
+
+	/* Presenting */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_IN_PRES,
 			FALSE);
 
 	/*
