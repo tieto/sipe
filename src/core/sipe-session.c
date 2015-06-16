@@ -90,23 +90,6 @@ sipe_session_add_call(struct sipe_core_private *sipe_private,
 	return session;
 }
 
-struct sip_session *
-sipe_session_find_call(struct sipe_core_private *sipe_private,
-		       const gchar *who)
-{
-	if (sipe_private == NULL || who == NULL) {
-		return NULL;
-	}
-
-	SIPE_SESSION_FOREACH {
-		if (session->is_call &&
-		    sipe_strcase_equal(who, session->with)) {
-			return session;
-		}
-	} SIPE_SESSION_FOREACH_END;
-	return NULL;
-}
-
 #endif
 
 struct sip_session *

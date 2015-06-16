@@ -128,18 +128,6 @@ struct sip_session *
 sipe_session_add_call(struct sipe_core_private *sipe_private,
 		      const gchar *who);
 
-/**
- * Find media call session
- *
- * @param sipe_private (in) SIPE core data. May be NULL.
- * @param who (in) remote partner.
- *
- * @return pointer to session or NULL
- */
-struct sip_session *
-sipe_session_find_call(struct sipe_core_private *sipe_private,
-		       const gchar *who);
-
 #endif
 
 /**
