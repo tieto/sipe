@@ -464,7 +464,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 
 	sdpmedia->encryption_active = stream_private->encryption_key &&
 				      call_private->encryption_compatible &&
-				      stream_private->remote_candidates_and_codecs_set;
+				      stream_private->remote_candidates_and_codecs_set &&
+				      encryption_policy != SIPE_ENCRYPTION_POLICY_REJECTED;
 
 	// Set our key if encryption is enabled.
 	if (stream_private->encryption_key &&
