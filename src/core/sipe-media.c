@@ -71,6 +71,7 @@ struct sipe_media_stream_private {
 	struct sipe_media_stream public;
 
 	guchar *encryption_key;
+	int encryption_key_id;
 	gboolean remote_candidates_and_codecs_set;
 };
 #define SIPE_MEDIA_STREAM         ((struct sipe_media_stream *) stream_private)
@@ -472,6 +473,7 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 	    encryption_policy != SIPE_ENCRYPTION_POLICY_REJECTED) {
 		sdpmedia->encryption_key = g_memdup(stream_private->encryption_key,
 						    SIPE_SRTP_KEY_LEN);
+		sdpmedia->encryption_key_id = stream_private->encryption_key_id;
 	}
 
 	return sdpmedia;
@@ -691,6 +693,7 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 		sipe_backend_media_set_encryption_keys(SIPE_MEDIA_CALL, stream,
 				SIPE_MEDIA_STREAM_PRIVATE->encryption_key,
 				media->encryption_key);
+		SIPE_MEDIA_STREAM_PRIVATE->encryption_key_id = media->encryption_key_id;
 	}
 
 	result = sipe_backend_set_remote_codecs(SIPE_MEDIA_CALL, stream,
@@ -1000,6 +1003,7 @@ sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
 		for (i = 0; i != SIPE_SRTP_KEY_LEN; ++i) {
 			stream_private->encryption_key[i] = rand() & 0xff;
 		}
+		stream_private->encryption_key_id = 1;
 	}
 #endif
 

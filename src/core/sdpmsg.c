@@ -326,12 +326,11 @@ parse_codecs(GSList *attrs, SipeMediaType type)
 	return codecs;
 }
 
-static guchar *
-parse_encryption_key(GSList *attrs)
+static void
+parse_encryption_key(GSList *attrs, guchar **key, int *key_id)
 {
 	int i = 0;
 	const gchar *attr;
-	guchar *result = NULL;
 
 	while ((attr = sipe_utils_nameval_find_instance(attrs, "crypto", i++))) {
 		gchar **tokens = g_strsplit_set(attr, " :|", 6);
@@ -341,21 +340,20 @@ parse_encryption_key(GSList *attrs)
 		    sipe_strequal(tokens[2], "inline") &&
 		    !tokens[5]) {
 			gsize key_len;
-			result = g_base64_decode(tokens[3], &key_len);
+			*key = g_base64_decode(tokens[3], &key_len);
 			if (key_len != SIPE_SRTP_KEY_LEN) {
-				g_free(result);
-				result = NULL;
+				g_free(*key);
+				*key = NULL;
 			}
+			*key_id = atoi(tokens[0]);
 		}
 
 		g_strfreev(tokens);
 
-		if (result) {
+		if (*key) {
 			break;
 		}
 	}
-
-	return result;
 }
 
 struct sdpmsg *
@@ -392,7 +390,8 @@ sdpmsg_parse_msg(gchar *msg)
 		}
 
 		media->codecs = parse_codecs(media->attributes, type);
-		media->encryption_key = parse_encryption_key(media->attributes);
+		parse_encryption_key(media->attributes, &media->encryption_key,
+				&media->encryption_key_id);
 	}
 
 	return smsg;
@@ -705,8 +704,8 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 
 		if (media->encryption_key) {
 			gchar *key_encoded = g_base64_encode(media->encryption_key, SIPE_SRTP_KEY_LEN);
-			crypto = g_strdup_printf("a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:%s|2^31\r\n",
-					key_encoded);
+			crypto = g_strdup_printf("a=crypto:%d AES_CM_128_HMAC_SHA1_80 inline:%s|2^31\r\n",
+					media->encryption_key_id, key_encoded);
 			g_free(key_encoded);
 		}
 	}
