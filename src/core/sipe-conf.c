@@ -51,6 +51,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-http.h"
 #include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
@@ -334,34 +335,75 @@ parse_lync_join_url(const gchar *uri)
 	return focus_uri;
 }
 
+static void sipe_conf_error(struct sipe_core_private *sipe_private,
+			    const gchar *uri)
+{
+	gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
+				       uri ? uri : "");
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				  _("Failed to join the conference"),
+				  error);
+	g_free(error);
+}
+
+static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
+				  SIPE_UNUSED_PARAMETER guint status,
+				  SIPE_UNUSED_PARAMETER GSList *headers,
+				  SIPE_UNUSED_PARAMETER const gchar *body,
+				  gpointer callback_data)
+{
+	gchar *uri       = callback_data;
+	gchar *focus_uri = parse_lync_join_url(uri);
+
+	if (focus_uri) {
+		sipe_conf_create(sipe_private, NULL, focus_uri);
+		g_free(focus_uri);
+	} else {
+		sipe_conf_error(sipe_private, uri);
+	}
+
+	g_free(uri);
+}
+
+static gboolean sipe_conf_check_for_lync_url(struct sipe_core_private *sipe_private,
+					     gchar *uri)
+{
+	if (!(g_str_has_prefix(uri, "https://") ||
+	      g_str_has_prefix(uri, "http://")))
+		return(FALSE);
+
+	/* URL points to a HTML page with the conference focus URI */
+	return(sipe_http_request_get(sipe_private,
+				     uri,
+				     NULL,
+				     sipe_conf_lync_url_cb,
+				     uri)
+	       != NULL);
+}
+
 void sipe_core_conf_create(struct sipe_core_public *sipe_public,
 			   const gchar *uri)
 {
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *uri_ue = sipe_utils_uri_unescape(uri);
-	gchar *focus_uri;
 
 	SIPE_DEBUG_INFO("sipe_core_conf_create: URI '%s' unescaped '%s'",
 			uri    ? uri    : "<UNDEFINED>",
 			uri_ue ? uri_ue : "<UNDEFINED>");
 
-	focus_uri = parse_ocs_focus_uri(uri_ue);
-	if (!focus_uri) {
-		focus_uri = parse_lync_join_url(uri_ue);
-	}
+	/* takes ownership of "uri_ue" if successful */
+	if (!sipe_conf_check_for_lync_url(sipe_private, uri_ue)) {
+		gchar *focus_uri = parse_ocs_focus_uri(uri_ue);
 
-	if (focus_uri) {
-		sipe_conf_create(SIPE_CORE_PRIVATE, NULL, focus_uri);
-		g_free(focus_uri);
-	} else {
-		gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
-					       uri ? uri : "");
-		sipe_backend_notify_error(sipe_public,
-					  _("Failed to join the conference"),
-					  error);
-		g_free(error);
-	}
+		if (focus_uri) {
+			sipe_conf_create(sipe_private, NULL, focus_uri);
+			g_free(focus_uri);
+		} else {
+			sipe_conf_error(sipe_private, uri);
+		}
 
-	g_free(uri_ue);
+		g_free(uri_ue);
+	}
 }
 
 /** Create new session with Focus URI */
