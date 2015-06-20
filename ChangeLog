@@ -1,5 +1,7 @@
 version 1.20.0 "???" (2015-XX-XX)
 	- Feature #82: Parse HTML from Lync conference URL (Stefan Becker)
+	- Feature #69: SRTP Support (Jakub Adam)
+	  * requires libpurple >= 3.0.0
 
 version 1.19.1 "Bug Fixes I" (2015-04-04)
 	- Fixed #278: 488 error after libnice upgrade (Jakub Adam)
