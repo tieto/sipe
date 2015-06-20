@@ -27,10 +27,6 @@ sed -i.ORIG -e 's/libnss3-dev, //' debian/control
 touch -r debian/control.ORIG debian/control
 rm debian/control.ORIG
 
-# Add Lintian override file
-mkdir -p debian/source
-cp -p lintian-overrides debian/source/
-
 # Have the contents changed?
 if tar 2>/dev/null -df pidgin-sipe_${version}-1.debian.tar.gz; then
     echo "contrib/debian is unchanged - not updating .debian.tar.gz."
@@ -59,17 +55,15 @@ done >checksums.txt
 for d in *.dsc; do cat checksums.txt >>${d}; done
 rm checksums.txt
 
+# All current platforms currently support telepathy - use only default .dsc
+cp pidgin-sipe-telepathy.dsc pidgin-sipe.dsc
 # Overwrite those .dsc's that have support for telepathy
-for os in \
-    Debian_8.0 \
-    Debian_7.0 \
-    xUbuntu_15.04 \
-    xUbuntu_14.10 \
-    xUbuntu_14.04 \
-    xUbuntu_12.04; \
-do \
-    cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
-done
+#for os in \
+#    Debian_x.y \
+#    xUbuntu_xx.yy; \
+#do \
+#    cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
+#done
 
 # Update SHA-2 256 checksum in Arch Linux PKGBUILD
 sed -i -e "s/@@SHA256SUM@@/$(sha256sum pidgin-sipe-${version}.tar.gz | cut -d' ' -f1)/" PKGBUILD
