@@ -347,19 +347,64 @@ static void sipe_conf_error(struct sipe_core_private *sipe_private,
 }
 
 static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
-				  SIPE_UNUSED_PARAMETER guint status,
+				  guint status,
 				  SIPE_UNUSED_PARAMETER GSList *headers,
-				  SIPE_UNUSED_PARAMETER const gchar *body,
+				  const gchar *body,
 				  gpointer callback_data)
 {
-	gchar *uri       = callback_data;
-	gchar *focus_uri = parse_lync_join_url(uri);
+	gchar *uri = callback_data;
 
-	if (focus_uri) {
-		sipe_conf_create(sipe_private, NULL, focus_uri);
-		g_free(focus_uri);
-	} else {
-		sipe_conf_error(sipe_private, uri);
+	if (status != (guint) SIPE_HTTP_STATUS_ABORTED) {
+		gchar *focus_uri = NULL;
+
+		if (body) {
+			/*
+			 * Extract focus URI from HTML, e.g.
+			 *
+			 *  <a ... href="conf&#58;sip&#58;...ABCDEF&#37;3Frequired..." ... >
+			 */
+			const gchar *start = g_strstr_len(body,
+							  -1,
+							  "href=\"conf");
+			if (start) {
+				const gchar *end;
+
+				start += 6;
+				end = strchr(start, '"');
+
+				if (end) {
+					gchar *html = g_strndup(start,
+								end - start);
+
+					/* decode HTML entities */
+					gchar *html_unescaped = sipe_backend_markup_strip_html(html);
+					g_free(html);
+
+					if (!is_empty(html_unescaped)) {
+						gchar *uri_unescaped = sipe_utils_uri_unescape(html_unescaped);
+						SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: found focus URI '%s'",
+								uri_unescaped);
+						focus_uri = parse_ocs_focus_uri(uri_unescaped);
+						g_free(uri_unescaped);
+					}
+					g_free(html_unescaped);
+				}
+			}
+		}
+
+		/* If we can't find a focus URI then fall back to URL parser */
+		if (!focus_uri) {
+			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI found. Falling back to parsing Lync URL '%s'",
+					uri);
+			focus_uri = parse_lync_join_url(uri);
+		}
+
+		if (focus_uri) {
+			sipe_conf_create(sipe_private, NULL, focus_uri);
+			g_free(focus_uri);
+		} else {
+			sipe_conf_error(sipe_private, uri);
+		}
 	}
 
 	g_free(uri);

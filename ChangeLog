@@ -1,3 +1,6 @@
+version 1.20.0 "???" (2015-XX-XX)
+	- Feature #82: Parse HTML from Lync conference URL (Stefan Becker)
+
 version 1.19.1 "Bug Fixes I" (2015-04-04)
 	- Fixed #278: 488 error after libnice upgrade (Jakub Adam)
 	- fix SIP re-authentication timeout to be max. 8 hours (Stefan Becker)
