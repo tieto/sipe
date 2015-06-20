@@ -1,0 +1,2 @@
+# OBS .dsc file names must contain OS name but source file doesn't
+pidgin-sipe source: source-field-does-not-match-pkg-name *

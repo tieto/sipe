@@ -27,6 +27,10 @@ sed -i.ORIG -e 's/libnss3-dev, //' debian/control
 touch -r debian/control.ORIG debian/control
 rm debian/control.ORIG
 
+# Add Lintian override file
+mkdir -p debian/source
+cp -p lintian-overrides debian/source/
+
 # Have the contents changed?
 if tar 2>/dev/null -df pidgin-sipe_${version}-1.debian.tar.gz; then
     echo "contrib/debian is unchanged - not updating .debian.tar.gz."
@@ -62,9 +66,6 @@ for os in \
     xUbuntu_15.04 \
     xUbuntu_14.10 \
     xUbuntu_14.04 \
-    xUbuntu_13.10 \
-    xUbuntu_13.04 \
-    xUbuntu_12.10 \
     xUbuntu_12.04; \
 do \
     cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
