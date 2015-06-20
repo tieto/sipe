@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -334,13 +334,11 @@ parse_lync_join_url(const gchar *uri)
 	return focus_uri;
 }
 
-struct sip_session *
-sipe_core_conf_create(struct sipe_core_public *sipe_public,
-		      const gchar *uri)
+void sipe_core_conf_create(struct sipe_core_public *sipe_public,
+			   const gchar *uri)
 {
 	gchar *uri_ue = sipe_utils_uri_unescape(uri);
 	gchar *focus_uri;
-	struct sip_session *session = NULL;
 
 	SIPE_DEBUG_INFO("sipe_core_conf_create: URI '%s' unescaped '%s'",
 			uri    ? uri    : "<UNDEFINED>",
@@ -352,7 +350,7 @@ sipe_core_conf_create(struct sipe_core_public *sipe_public,
 	}
 
 	if (focus_uri) {
-		session = sipe_conf_create(SIPE_CORE_PRIVATE, NULL, focus_uri);
+		sipe_conf_create(SIPE_CORE_PRIVATE, NULL, focus_uri);
 		g_free(focus_uri);
 	} else {
 		gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
@@ -364,8 +362,6 @@ sipe_core_conf_create(struct sipe_core_public *sipe_public,
 	}
 
 	g_free(uri_ue);
-
-	return session;
 }
 
 /** Create new session with Focus URI */
