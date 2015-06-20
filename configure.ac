@@ -127,6 +127,32 @@ AS_IF([test "x$enable_quality_check" = xyes],
 	])
 AC_SUBST(QUALITY_CFLAGS)
 
+dnl check for availability of addition linker flags
+for newflag in \
+	"-Wl,-Bsymbolic-functions" \
+; do
+	ac_save_LDLAGS=$LDLAGS
+	AC_MSG_CHECKING([if $CC supports $newflag])
+	LDFLAGS="$ADDITIONAL_LDFLAGS $newflag"
+	AC_LINK_IFELSE(
+		[AC_LANG_SOURCE([[
+int main(int argc, char *argv[])
+{
+	return(0);
+}
+		 ]])],
+		[AC_MSG_RESULT(yes)
+		 ADDITIONAL_LDFLAGS="$ADDITIONAL_LDFLAGS $newflag"],
+		[AC_MSG_RESULT(no)]
+	)
+	LDFLAGS=$ac_save_LDFLAGS
+done
+AC_SUBST(ADDITIONAL_LDFLAGS)
+
+AC_MSG_CHECKING([that sizeof(uuid_t) is 16])
+ac_save_CFLAGS=$CFLAGS
+CFLAGS="$GLIB_CFLAGS $QUALITY_CFLAGS"
+
 dnl Check for pkg-config before using it
 PKG_PROG_PKG_CONFIG
 
