@@ -149,10 +149,6 @@ int main(int argc, char *argv[])
 done
 AC_SUBST(ADDITIONAL_LDFLAGS)
 
-AC_MSG_CHECKING([that sizeof(uuid_t) is 16])
-ac_save_CFLAGS=$CFLAGS
-CFLAGS="$GLIB_CFLAGS $QUALITY_CFLAGS"
-
 dnl Check for pkg-config before using it
 PKG_PROG_PKG_CONFIG
 
