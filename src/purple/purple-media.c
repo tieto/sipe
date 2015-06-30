@@ -263,9 +263,7 @@ on_candidate_pair_established_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 	}
 #endif
 
-	if (stream->candidate_pairs_established_cb) {
-		stream->candidate_pairs_established_cb(stream);
-	}
+	sipe_core_media_stream_candidate_pair_established(stream);
 }
 
 struct sipe_backend_media *

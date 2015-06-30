@@ -420,6 +420,15 @@ struct sipe_media_call;
 struct sipe_media_stream *
 sipe_core_media_get_stream_by_id(struct sipe_media_call *call, const gchar *id);
 
+/**
+ * Called by media backend after a candidate pair for a media stream component
+ * has been established.
+ *
+ * @param stream (in) SIPE media stream data.
+ */
+void
+sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stream);
+
 void
 sipe_core_media_stream_readable(struct sipe_media_stream *stream);
 
