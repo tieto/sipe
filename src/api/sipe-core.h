@@ -462,6 +462,9 @@ void sipe_core_media_phone_call(struct sipe_core_public *sipe_public,
  */
 void sipe_core_media_test_call(struct sipe_core_public *sipe_public);
 
+void sipe_core_media_candidate_pair_established(struct sipe_media_call *call,
+						struct sipe_media_stream *stream);
+
 /* file transfer */
 struct sipe_file_transfer *
 sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public);

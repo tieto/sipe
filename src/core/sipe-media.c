@@ -1505,38 +1505,17 @@ sipe_media_send_final_ack(struct sipe_core_private *sipe_private,
 	return TRUE;
 }
 
-static void
-reinvite_on_candidate_pair_cb(struct sipe_core_public *sipe_public,
-			      struct sipe_media_call_private *media_call)
+void
+sipe_core_media_candidate_pair_established(struct sipe_media_call *call,
+					   struct sipe_media_stream *stream)
 {
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	GSList *streams;
-
-	if (!media_call)
-		return;
-
-	streams = media_call->streams;
-
-	for (; streams; streams = streams->next) {
-		struct sipe_media_stream *s = streams->data;
-		GList *remote_candidates =  sipe_backend_media_get_active_remote_candidates(&media_call->public, s);
-		guint components = g_list_length(remote_candidates);
-
-		sipe_media_candidate_list_free(remote_candidates);
-
-		// We must have candidates for both (RTP + RTCP) components ready
-		if (components < 2) {
-			sipe_schedule_mseconds(sipe_private,
-					       "<+media-reinvite-on-candidate-pair>",
-					       media_call,
-					       500,
-					       (sipe_schedule_action) reinvite_on_candidate_pair_cb,
-					       NULL);
-			return;
-		}
+	if (sipe_backend_media_is_initiator(call, stream)) {
+		sipe_invite_call(SIPE_MEDIA_CALL_PRIVATE, sipe_media_send_final_ack);
 	}
 
-	sipe_invite_call(media_call, sipe_media_send_final_ack);
+	if (call->candidate_pair_established_cb) {
+		call->candidate_pair_established_cb(call, stream);
+	}
 }
 
 static gboolean
@@ -1685,9 +1664,10 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	sdpmsg_free(smsg);
 
 	sipe_media_send_ack(sipe_private, msg, trans);
-	reinvite_on_candidate_pair_cb(SIPE_CORE_PUBLIC, call_private);
 
 	return TRUE;
+
+	// Waits until sipe_core_media_candidate_pair_established() is invoked.
 }
 
 gboolean is_media_session_msg(struct sipe_media_call_private *call_private,
