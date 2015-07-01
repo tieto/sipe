@@ -671,7 +671,7 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 
 	gchar *crypto = NULL;
 
-	gboolean uses_tcp_transport = FALSE;
+	gboolean uses_tcp_transport = TRUE;
 
 	if (media->port != 0) {
 		if (!sipe_strequal(msg->ip, media->ip)) {
@@ -689,6 +689,15 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE ||
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE ||
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_SO;
+		} else {
+			GSList *candidates = media->candidates;
+			for (; candidates; candidates = candidates->next) {
+				struct sdpcandidate *c = candidates->data;
+				if (c->protocol == SIPE_NETWORK_PROTOCOL_UDP) {
+					uses_tcp_transport = FALSE;
+					break;
+				}
+			}
 		}
 
 		attributes_str = attributes_to_string(media->attributes);
