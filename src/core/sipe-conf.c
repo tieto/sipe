@@ -1413,6 +1413,21 @@ void sipe_core_conf_remove_from(struct sipe_core_public *sipe_public,
 	sipe_conf_delete_user(sipe_private, session, buddy_name);
 }
 
+gchar *
+sipe_conf_build_uri(const gchar *focus_uri, const gchar *session_type)
+{
+	gchar **parts = g_strsplit(focus_uri, ":focus:", 2);
+	gchar *result = NULL;
+
+	if (g_strv_length(parts) == 2) {
+		result = g_strconcat(parts[0], ":", session_type, ":", parts[1],
+				     NULL);
+	}
+
+	g_strfreev(parts);
+	return result;
+}
+
 static gchar *
 access_numbers_info(struct sipe_core_public *sipe_public)
 {

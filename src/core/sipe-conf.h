@@ -127,6 +127,17 @@ sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
 			    struct sipmsg *msg);
 
 /**
+ * Creates URI for given session type within a conference specified by its
+ * focus URI.
+ *
+ * @param focus_uri conference focus URI
+ * @param session_type type of session for which to build the URI,
+ *                     e.g. "audio-video"
+ */
+gchar *
+sipe_conf_build_uri(const gchar *focus_uri, const gchar *session_type);
+
+/**
  * Invokes when we leave conversation.
  * Usually by closing chat wingow.
  */

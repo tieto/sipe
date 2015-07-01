@@ -1153,7 +1153,6 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	struct sipe_media_call_private *call_private;
 	struct sip_session *session;
 	SipeIceVersion ice_version;
-	gchar **parts;
 	gchar *av_uri;
 
 	if (!sipe_conf_supports_mcu_type(sipe_private, "audio-video")) {
@@ -1168,11 +1167,12 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 		return;
 	}
 
-	session->is_call = TRUE;
+	av_uri = sipe_conf_build_uri(chat_session->id, "audio-video");
+	if (!av_uri) {
+		return;
+	}
 
-	parts = g_strsplit(chat_session->id, "app:conf:focus:", 2);
-	av_uri = g_strjoinv("app:conf:audio-video:", parts);
-	g_strfreev(parts);
+	session->is_call = TRUE;
 
 	ice_version = SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) ? SIPE_ICE_RFC_5245 :
 							    SIPE_ICE_DRAFT_6;
