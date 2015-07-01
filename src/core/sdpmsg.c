@@ -169,11 +169,11 @@ parse_append_candidate_rfc_5245(gchar **tokens, GSList *candidates)
 	candidate->foundation = g_strdup(tokens[0]);
 	candidate->component = parse_component(tokens[1]);
 
-	if (sipe_strequal(tokens[2], "UDP"))
+	if (sipe_strcase_equal(tokens[2], "UDP"))
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_UDP;
-	else if (sipe_strequal(tokens[2], "TCP-ACT"))
+	else if (sipe_strcase_equal(tokens[2], "TCP-ACT"))
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
-	else if (sipe_strequal(tokens[2], "TCP-PASS"))
+	else if (sipe_strcase_equal(tokens[2], "TCP-PASS"))
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
 	else {
 		sdpcandidate_free(candidate);
@@ -184,13 +184,13 @@ parse_append_candidate_rfc_5245(gchar **tokens, GSList *candidates)
 	candidate->ip = g_strdup(tokens[4]);
 	candidate->port = atoi(tokens[5]);
 
-	if (sipe_strequal(tokens[7], "host"))
+	if (sipe_strcase_equal(tokens[7], "host"))
 		candidate->type = SIPE_CANDIDATE_TYPE_HOST;
-	else if (sipe_strequal(tokens[7], "relay"))
+	else if (sipe_strcase_equal(tokens[7], "relay"))
 		candidate->type = SIPE_CANDIDATE_TYPE_RELAY;
-	else if (sipe_strequal(tokens[7], "srflx"))
+	else if (sipe_strcase_equal(tokens[7], "srflx"))
 		candidate->type = SIPE_CANDIDATE_TYPE_SRFLX;
-	else if (sipe_strequal(tokens[7], "prflx"))
+	else if (sipe_strcase_equal(tokens[7], "prflx"))
 		candidate->type = SIPE_CANDIDATE_TYPE_PRFLX;
 	else {
 		sdpcandidate_free(candidate);
