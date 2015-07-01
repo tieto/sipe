@@ -1117,7 +1117,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 				   sipe_private->media_call->ice_version,
 				   TRUE)) {
 		sipe_backend_notify_error(sipe_public,
-					  _("Error occured"),
+					  _("Error occurred"),
 					  _("Error creating audio stream"));
 		sipe_media_hangup(sipe_private->media_call);
 		sipe_private->media_call = NULL;
