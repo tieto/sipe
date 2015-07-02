@@ -358,21 +358,26 @@ sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname)
 	"farsight-send-profile=audioconvert ! audioresample ! audioconvert ! alawenc ! rtppcmapay min-ptime=20000000 max-ptime=20000000\n" \
 	"\n" \
 	"[audio/PCMU]\n" \
-	"farsight-send-profile=audioconvert ! audioresample ! audioconvert ! mulawenc ! rtppcmupay min-ptime=20000000 max-ptime=20000000\n";
+	"farsight-send-profile=audioconvert ! audioresample ! audioconvert ! mulawenc ! rtppcmupay min-ptime=20000000 max-ptime=20000000\n" \
+	"\n" \
+	"[application/X-DATA]\n" \
+	"id=127\n"
 
 static void
 ensure_codecs_conf()
 {
 	gchar *filename;
+	const gchar *fs_codecs_conf = FS_CODECS_CONF;
+	GError *error = NULL;
+
 	filename = g_build_filename(purple_user_dir(), "fs-codec.conf", NULL);
 
-	if (!g_file_test(filename, G_FILE_TEST_EXISTS)) {
-		int fd = g_open(filename, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
-		gchar *fs_codecs_conf = FS_CODECS_CONF;
-		if ((fd < 0) || write(fd, fs_codecs_conf, strlen(fs_codecs_conf)) == -1)
-			SIPE_DEBUG_ERROR_NOFORMAT("Can not create fs-codec.conf!");
-		if (fd >= 0)
-			close(fd);
+	g_file_set_contents(filename, fs_codecs_conf, strlen(fs_codecs_conf),
+			    &error);
+	if (error) {
+		SIPE_DEBUG_ERROR("Couldn't create fs-codec.conf: %s",
+				 error->message);
+		g_error_free(error);
 	}
 
 	g_free(filename);
