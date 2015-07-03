@@ -956,6 +956,8 @@ struct conf_accept_ctx {
 
 	ConfAcceptCb accept_cb;
 	ConfAcceptCb decline_cb;
+
+	gpointer user_data;
 };
 
 static void
@@ -1057,7 +1059,8 @@ ask_accept_invitation(struct sipe_core_private *sipe_private,
 		      const gchar *question_text,
 		      struct sipmsg *msg,
 		      ConfAcceptCb accept_cb,
-		      ConfAcceptCb decline_cb)
+		      ConfAcceptCb decline_cb,
+		      gpointer user_data)
 {
 	gchar **parts;
 	gchar *alias;
@@ -1081,6 +1084,7 @@ ask_accept_invitation(struct sipe_core_private *sipe_private,
 	ctx->msg = msg ? sipmsg_copy(msg) : NULL;
 	ctx->accept_cb = accept_cb;
 	ctx->decline_cb = decline_cb;
+	ctx->user_data = user_data;
 	ctx->ask_ctx = sipe_user_ask(sipe_private, question,
 				     _("Accept"), accept_invitation_cb,
 				     _("Decline"), decline_invitation_cb,
@@ -1111,7 +1115,7 @@ ask_accept_voice_conference(struct sipe_core_private *sipe_private,
 				     "to a conference call%s"), novv_note);
 
 	ask_accept_invitation(sipe_private, focus_uri, question, msg,
-			      accept_cb, decline_cb);
+			      accept_cb, decline_cb, NULL);
 
 	g_free(question);
 }
