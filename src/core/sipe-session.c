@@ -211,6 +211,7 @@ sipe_session_remove(struct sipe_core_private *sipe_private,
 	g_free(session->callid);
 	g_free(session->im_mcu_uri);
 	g_free(session->subject);
+	g_free(session->presentation_callid);
 	g_free(session);
 }
 
