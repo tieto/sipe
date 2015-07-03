@@ -1120,6 +1120,26 @@ ask_accept_voice_conference(struct sipe_core_private *sipe_private,
 	g_free(question);
 }
 
+static void
+presentation_accepted_cb(struct sipe_core_private *sipe_private,
+			 struct conf_accept_ctx *ctx)
+{
+	struct sipe_chat_session *chat_session = ctx->user_data;
+
+	sipe_core_connect_applicationsharing(SIPE_CORE_PUBLIC, chat_session);
+}
+
+static void
+ask_accept_conf_presentation(struct sipe_core_private *sipe_private,
+			     const gchar *focus_uri,
+			     struct sipe_chat_session *chat_session)
+{
+	ask_accept_invitation(sipe_private, focus_uri,
+			      _("wants to start presenting"), NULL,
+			      presentation_accepted_cb, NULL,
+			      chat_session);
+}
+
 void
 process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
@@ -1212,9 +1232,8 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	const gchar *focus_uri;
 	struct sip_session *session;
 	gboolean just_joined = FALSE;
-#ifdef HAVE_VV
 	gboolean audio_was_added = FALSE;
-#endif
+	gboolean presentation_was_added = FALSE;
 
 	if (msg->response != 0 && msg->response != 200) return;
 
@@ -1344,6 +1363,18 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 								       self,
 								       session);
 #endif
+				} else if (sipe_strequal("applicationsharing", session_type)) {
+					if (!session->presentation_callid) {
+						gchar *media_state =
+								sipe_xml_data(sipe_xml_child(endpoint, "media/media-state"));
+						gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "media/status"));
+						if (sipe_strequal(media_state, "connected") &&
+						    sipe_strequal(status, "sendonly")) {
+							presentation_was_added = TRUE;
+						}
+						g_free(media_state);
+						g_free(status);
+					}
 				}
 			}
 			if (!is_in_im_mcu) {
@@ -1363,6 +1394,9 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		ask_accept_voice_conference(sipe_private, focus_uri, NULL,
 					    call_accept_cb,
 					    NULL);
+	}
+	if (presentation_was_added) {
+		ask_accept_conf_presentation(sipe_private, focus_uri, session->chat_session);
 	}
 #endif
 
