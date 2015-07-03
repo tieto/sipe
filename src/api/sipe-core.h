@@ -406,6 +406,10 @@ void sipe_core_conf_remove_from(struct sipe_core_public *sipe_public,
 				gpointer parameter,
 				const gchar *buddy_name);
 
+struct sipe_media_call *
+sipe_core_conf_get_presentation_media_call(struct sipe_core_public *sipe_public,
+					   struct sipe_chat_session *chat_session);
+
 gchar *
 sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
 			  struct sipe_chat_session *chat_session);
