@@ -944,10 +944,18 @@ accept_incoming_invite_conf(struct sipe_core_private *sipe_private,
 	session->is_call = audio;
 }
 
+struct conf_accept_ctx *ctx;
+
+typedef void (* ConfAcceptCb)(struct sipe_core_private *sipe_private,
+			      struct conf_accept_ctx *ctx);
+
 struct conf_accept_ctx {
 	gchar *focus_uri;
 	struct sipmsg *msg;
 	struct sipe_user_ask_ctx *ask_ctx;
+
+	ConfAcceptCb accept_cb;
+	ConfAcceptCb decline_cb;
 };
 
 static void
@@ -963,24 +971,15 @@ conf_accept_ctx_free(struct conf_accept_ctx *ctx)
 static void
 conf_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
 {
-	sipe_private->sessions_to_accept =
-			g_slist_remove(sipe_private->sessions_to_accept, ctx);
-
 	accept_incoming_invite_conf(sipe_private, ctx->focus_uri, TRUE, ctx->msg);
-	conf_accept_ctx_free(ctx);
 }
 
 static void
 conf_decline_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
 {
-	sipe_private->sessions_to_accept =
-			g_slist_remove(sipe_private->sessions_to_accept, ctx);
-
 	sip_transport_response(sipe_private,
 			       ctx->msg,
 			       603, "Decline", NULL);
-
-	conf_accept_ctx_free(ctx);
 }
 
 void
@@ -1023,32 +1022,53 @@ sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
 }
 
 static void
-ask_accept_voice_conference(struct sipe_core_private *sipe_private,
-			    const gchar *focus_uri,
-			    struct sipmsg *msg,
-			    SipeUserAskCb accept_cb,
-			    SipeUserAskCb decline_cb)
+accept_invitation_cb(struct sipe_core_private *sipe_private, gpointer data)
+{
+	struct conf_accept_ctx *ctx = data;
+
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	if (ctx->accept_cb) {
+		ctx->accept_cb(sipe_private, ctx);
+	}
+
+	conf_accept_ctx_free(ctx);
+}
+
+static void
+decline_invitation_cb(struct sipe_core_private *sipe_private, gpointer data)
+{
+	struct conf_accept_ctx *ctx = data;
+
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	if (ctx->decline_cb) {
+		ctx->decline_cb(sipe_private, ctx);
+	}
+
+	conf_accept_ctx_free(ctx);
+}
+
+static void
+ask_accept_invitation(struct sipe_core_private *sipe_private,
+		      const gchar *focus_uri,
+		      const gchar *question_text,
+		      struct sipmsg *msg,
+		      ConfAcceptCb accept_cb,
+		      ConfAcceptCb decline_cb)
 {
 	gchar **parts;
 	gchar *alias;
-	gchar *ask_msg;
-	const gchar *novv_note;
+	gchar *question;
 	struct conf_accept_ctx *ctx;
-
-#ifdef HAVE_VV
-	novv_note = "";
-#else
-	novv_note = _("\n\nAs this client was not compiled with voice call "
-		      "support, if you accept, you will be able to contact "
-		      "the other participants only via IM session.");
-#endif
 
 	parts = g_strsplit(focus_uri, ";", 2);
 	alias = sipe_buddy_get_alias(sipe_private, parts[0]);
 
-	ask_msg = g_strdup_printf(_("%s wants to invite you "
-				  "to the conference call%s"),
-				  alias ? alias : parts[0], novv_note);
+	question = g_strdup_printf(_("%s %s"),
+				   alias ? alias : parts[0], question_text);
 
 	g_free(alias);
 	g_strfreev(parts);
@@ -1059,12 +1079,41 @@ ask_accept_voice_conference(struct sipe_core_private *sipe_private,
 
 	ctx->focus_uri = g_strdup(focus_uri);
 	ctx->msg = msg ? sipmsg_copy(msg) : NULL;
-	ctx->ask_ctx = sipe_user_ask(sipe_private, ask_msg,
-				     _("Accept"), accept_cb,
-				     _("Decline"), decline_cb,
+	ctx->accept_cb = accept_cb;
+	ctx->decline_cb = decline_cb;
+	ctx->ask_ctx = sipe_user_ask(sipe_private, question,
+				     _("Accept"), accept_invitation_cb,
+				     _("Decline"), decline_invitation_cb,
 				     ctx);
 
-	g_free(ask_msg);
+	g_free(question);
+}
+
+static void
+ask_accept_voice_conference(struct sipe_core_private *sipe_private,
+			    const gchar *focus_uri,
+			    struct sipmsg *msg,
+			    ConfAcceptCb accept_cb,
+			    ConfAcceptCb decline_cb)
+{
+	gchar *question;
+	const gchar *novv_note;
+
+#ifdef HAVE_VV
+	novv_note = "";
+#else
+	novv_note = _("\n\nAs this client was not compiled with voice call "
+		      "support, if you accept, you will be able to contact "
+		      "the other participants only via IM session.");
+#endif
+
+	question = g_strdup_printf(_("wants to invite you "
+				     "to a conference call%s"), novv_note);
+
+	ask_accept_invitation(sipe_private, focus_uri, question, msg,
+			      accept_cb, decline_cb);
+
+	g_free(question);
 }
 
 void
@@ -1084,8 +1133,8 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 	if (audio) {
 		sip_transport_response(sipe_private, msg, 180, "Ringing", NULL);
 		ask_accept_voice_conference(sipe_private, focus_uri, msg,
-					    (SipeUserAskCb) conf_accept_cb,
-					    (SipeUserAskCb) conf_decline_cb);
+					    conf_accept_cb,
+					    conf_decline_cb);
 
 	} else {
 		accept_incoming_invite_conf(sipe_private, focus_uri, FALSE, msg);
@@ -1141,24 +1190,10 @@ call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *c
 	struct sip_session *session;
 	session = sipe_session_find_conference(sipe_private, ctx->focus_uri);
 
-	sipe_private->sessions_to_accept =
-			g_slist_remove(sipe_private->sessions_to_accept, ctx);
-
 	if (session) {
 		sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
 						   session->chat_session);
 	}
-
-	conf_accept_ctx_free(ctx);
-}
-
-static void
-call_decline_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
-{
-	sipe_private->sessions_to_accept =
-			g_slist_remove(sipe_private->sessions_to_accept, ctx);
-
-	conf_accept_ctx_free(ctx);
 }
 
 #endif // HAVE_VV
@@ -1322,8 +1357,8 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	if (audio_was_added) {
 		session->is_call = TRUE;
 		ask_accept_voice_conference(sipe_private, focus_uri, NULL,
-					    (SipeUserAskCb) call_accept_cb,
-					    (SipeUserAskCb) call_decline_cb);
+					    call_accept_cb,
+					    NULL);
 	}
 #endif
 
