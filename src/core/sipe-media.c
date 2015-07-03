@@ -1623,7 +1623,6 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 
 		if (   media->port != 0
 		    && !sipe_core_media_get_stream_by_id(SIPE_MEDIA_CALL, id)) {
-			struct sipe_media_stream *stream;
 			guint32 ssrc_count = 0;
 
 			if (sipe_strequal(id, "audio"))
@@ -1638,18 +1637,9 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			else
 				continue;
 
-			stream = sipe_media_stream_add(SIPE_MEDIA_CALL, id, type,
-						       smsg->ice_version, FALSE,
-						       ssrc_count);
-
-			if (sipe_strequal(id, "applicationsharing")) {
-				sipe_media_stream_add_extra_attribute(stream,
-						"x-applicationsharing-session-id", "1");
-				sipe_media_stream_add_extra_attribute(stream,
-						"x-applicationsharing-role", "viewer");
-				sipe_media_stream_add_extra_attribute(stream,
-						"x-applicationsharing-media-type", "rdp");
-			}
+			sipe_media_stream_add(SIPE_MEDIA_CALL, id, type,
+					      smsg->ice_version, FALSE,
+					      ssrc_count);
 
 			has_new_media = TRUE;
 		}

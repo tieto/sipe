@@ -35,12 +35,15 @@ extern int X11_ShadowSubsystemEntry(RDP_SHADOW_ENTRY_POINTS* pEntryPoints);
 #include "sipe-applicationsharing.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
+#include "sipe-chat.h"
 #include "sipe-common.h"
+#include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-media.h"
 #include "sipe-nls.h"
+#include "sipe-session.h"
 #include "sipe-user.h"
 #include "sipe-utils.h"
 
@@ -294,6 +297,32 @@ ask_accept_applicationsharing(struct sipe_core_private *sipe_private,
 	g_free(from);
 }
 
+static struct sipe_appshare *
+initialize_incoming_appshare(struct sipe_media_call *call,
+			     struct sipe_media_stream *stream)
+{
+	struct sipe_appshare *appshare;
+
+	appshare = g_new0(struct sipe_appshare, 1);
+	appshare->media = call;
+	appshare->stream = stream;
+
+	sipe_media_stream_add_extra_attribute(stream,
+			"x-applicationsharing-session-id", "1");
+	sipe_media_stream_add_extra_attribute(stream,
+			"x-applicationsharing-role", "viewer");
+	sipe_media_stream_add_extra_attribute(stream,
+			"x-applicationsharing-media-type", "rdp");
+
+	sipe_media_stream_set_data(stream, appshare,
+				   (GDestroyNotify)sipe_appshare_free);
+
+	call->writable_cb = writable_cb;
+	stream->read_cb = read_cb;
+
+	return appshare;
+}
+
 void
 process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_private,
 					   struct sipmsg *msg)
@@ -313,18 +342,9 @@ process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_privat
 		return;
 	}
 
-	appshare = g_new0(struct sipe_appshare, 1);
-	appshare->media = call;
-	appshare->stream = stream;
+	appshare = initialize_incoming_appshare(call, stream);
 
 	ask_accept_applicationsharing(sipe_private, msg, appshare);
-
-	sipe_media_stream_set_data(stream, appshare,
-				   (GDestroyNotify)sipe_appshare_free);
-
-	stream->read_cb = read_cb;
-
-	call->writable_cb = writable_cb;
 }
 
 static void
@@ -567,6 +587,45 @@ sipe_applicationsharing_is_presenting(struct sipe_media_call *call)
 	}
 
 	return FALSE;
+}
+
+void
+sipe_core_connect_applicationsharing(struct sipe_core_public *sipe_public,
+				     struct sipe_chat_session *chat_session)
+{
+	struct sipe_media_call *call;
+	struct sipe_media_stream *stream;
+	struct sip_session *session;
+	gchar * uri;
+
+	uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+
+	call = sipe_media_call_new(SIPE_CORE_PRIVATE, uri, NULL,
+				   SIPE_ICE_RFC_5245,
+				   SIPE_MEDIA_CALL_INITIATOR |
+				   SIPE_MEDIA_CALL_NO_UI);
+
+	g_free(uri);
+
+	stream = sipe_media_stream_add(call, "applicationsharing",
+			   SIPE_MEDIA_APPLICATION, SIPE_ICE_RFC_5245, TRUE, 0);
+	if (!stream) {
+		sipe_backend_notify_error(sipe_public,
+					  _("Error occurred"),
+					  _("Error connecting to application sharing"));
+		sipe_backend_media_hangup(call->backend_private, FALSE);
+	}
+
+	session = sipe_session_find_chat(SIPE_CORE_PRIVATE, chat_session);
+	session->presentation_callid =
+			g_strdup(sipe_media_get_sip_dialog(call)->callid);
+
+	sipe_media_stream_add_extra_attribute(stream,
+			"connection", "new");
+	sipe_media_stream_add_extra_attribute(stream,
+			"setup", "active");
+
+	initialize_incoming_appshare(call, stream);
 }
 
 /*
