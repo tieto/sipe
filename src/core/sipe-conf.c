@@ -1535,6 +1535,33 @@ sipe_conf_build_uri(const gchar *focus_uri, const gchar *session_type)
 	return result;
 }
 
+struct sipe_media_call *
+sipe_core_conf_get_appshare_media_call(struct sipe_core_public *sipe_public,
+				       struct sipe_chat_session *chat_session)
+{
+	gchar *mcu_uri;
+	GList *calls;
+	struct sipe_media_call *result = NULL;
+
+	g_return_val_if_fail(chat_session, result);
+
+	mcu_uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+
+	calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
+	for (; calls; calls = g_list_delete_link(calls, calls)) {
+		struct sipe_media_call *call = calls->data;
+		if (sipe_strequal(call->with, mcu_uri)) {
+			result = call;
+			break;
+		}
+	}
+
+	g_list_free(calls);
+	g_free(mcu_uri);
+
+	return result;
+}
+
 static gchar *
 access_numbers_info(struct sipe_core_public *sipe_public)
 {
