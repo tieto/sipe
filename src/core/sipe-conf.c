@@ -1569,6 +1569,20 @@ sipe_conf_build_uri(const gchar *focus_uri, const gchar *session_type)
 	return result;
 }
 
+struct sipe_media_call *
+sipe_core_conf_get_presentation_media_call(struct sipe_core_public *sipe_public,
+					   struct sipe_chat_session *chat_session)
+{
+	struct sip_session *session =
+			sipe_session_find_chat(SIPE_CORE_PRIVATE, chat_session);
+	if (!session || !session->presentation_callid) {
+		return NULL;
+	}
+
+	return g_hash_table_lookup(SIPE_CORE_PRIVATE->media_calls,
+				   session->presentation_callid);
+}
+
 static gchar *
 access_numbers_info(struct sipe_core_public *sipe_public)
 {
