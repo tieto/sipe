@@ -1047,32 +1047,22 @@ decline_invitation_cb(struct sipe_core_private *sipe_private, gpointer data)
 }
 
 static void
-ask_accept_voice_conference(struct sipe_core_private *sipe_private,
-			    const gchar *focus_uri,
-			    struct sipmsg *msg,
-			    SipeUserAskCb accept_cb,
-			    SipeUserAskCb decline_cb)
+ask_accept_invitation(struct sipe_core_private *sipe_private,
+		      const gchar *focus_uri,
+		      const gchar *question,
+		      struct sipmsg *msg,
+		      SipeUserAskCb accept_cb,
+		      SipeUserAskCb decline_cb)
 {
 	gchar **parts;
 	gchar *alias;
-	gchar *ask_msg;
-	const gchar *novv_note;
+	gchar *question_str;
 	struct conf_accept_ctx *ctx;
-
-#ifdef HAVE_VV
-	novv_note = "";
-#else
-	novv_note = _("\n\nAs this client was not compiled with voice call "
-		      "support, if you accept, you will be able to contact "
-		      "the other participants only via IM session.");
-#endif
 
 	parts = g_strsplit(focus_uri, ";", 2);
 	alias = sipe_buddy_get_alias(sipe_private, parts[0]);
 
-	ask_msg = g_strdup_printf(_("%s wants to invite you "
-				  "to the conference call%s"),
-				  alias ? alias : parts[0], novv_note);
+	question_str = g_strdup_printf("%s %s", alias ? alias : parts[0], question);
 
 	g_free(alias);
 	g_strfreev(parts);
@@ -1085,12 +1075,39 @@ ask_accept_voice_conference(struct sipe_core_private *sipe_private,
 	ctx->msg = msg ? sipmsg_copy(msg) : NULL;
 	ctx->accept_cb = accept_cb;
 	ctx->decline_cb = decline_cb;
-	ctx->ask_ctx = sipe_user_ask(sipe_private, ask_msg,
+	ctx->ask_ctx = sipe_user_ask(sipe_private, question_str,
 				     _("Accept"), accept_invitation_cb,
 				     _("Decline"), decline_invitation_cb,
 				     ctx);
 
-	g_free(ask_msg);
+	g_free(question_str);
+}
+
+static void
+ask_accept_voice_conference(struct sipe_core_private *sipe_private,
+			    const gchar *focus_uri,
+			    struct sipmsg *msg,
+			    SipeUserAskCb accept_cb,
+			    SipeUserAskCb decline_cb)
+{
+	gchar *question;
+	const gchar *novv_note;
+
+#ifdef HAVE_VV
+	novv_note = "";
+#else
+	novv_note = _("\n\nAs this client was not compiled with voice call "
+		      "support, if you accept, you will be able to contact "
+		      "the other participants only via IM session.");
+#endif
+
+	question = g_strdup_printf(_("wants to invite you "
+				     "to a conference call%s"), novv_note);
+
+	ask_accept_invitation(sipe_private, focus_uri, question, msg,
+			      accept_cb, decline_cb);
+
+	g_free(question);
 }
 
 void
