@@ -266,6 +266,19 @@ static void sipe_purple_chat_menu_join_call_cb(SIPE_UNUSED_PARAMETER PurpleChat 
 	sipe_core_media_connect_conference(sipe_public, chat_session);
 }
 
+static void sipe_purple_chat_menu_show_presentation_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
+						       PurpleConversation *conv)
+{
+	if (sipe_core_conf_get_presentation_media_call(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+						       sipe_purple_chat_get_session(conv))) {
+		// Presentation already connected.
+		return;
+	}
+
+	sipe_core_connect_applicationsharing(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+					     sipe_purple_chat_get_session(conv));
+}
+
 #endif
 
 static void sipe_purple_chat_menu_entry_info_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
@@ -316,6 +329,13 @@ sipe_purple_chat_menu(PurpleChat *chat)
 						     conv, NULL);
 			if (act)
 				menu = g_list_prepend(menu, act);
+		}
+		if (!sipe_core_conf_get_presentation_media_call(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+								sipe_purple_chat_get_session(conv))) {
+			act = purple_menu_action_new(_("Show presentation"),
+						     PURPLE_CALLBACK(sipe_purple_chat_menu_show_presentation_cb),
+						     conv, NULL);
+			menu = g_list_prepend(menu, act);
 		}
 #endif
 		act = purple_menu_action_new(_("Meeting entry info"),
