@@ -553,6 +553,22 @@ sipe_core_share_application(struct sipe_core_public *sipe_public,
 	present_monitor_choice(sipe_public, who);
 }
 
+gboolean
+sipe_applicationsharing_is_presenting(struct sipe_media_call *call)
+{
+	struct sipe_media_stream *stream;
+
+	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
+	if (stream) {
+		struct sipe_appshare *appshare;
+
+		appshare = sipe_media_stream_get_data(stream);
+		return appshare && appshare->server;
+	}
+
+	return FALSE;
+}
+
 /*
   Local Variables:
   mode: c
