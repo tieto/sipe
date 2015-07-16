@@ -88,6 +88,11 @@ gchar *sdpmsg_to_string(const struct sdpmsg *msg);
 void sdpmsg_free(struct sdpmsg *msg);
 
 /**
+ * Deallocates @c sdpcandidate.
+ */
+void sdpcandidate_free(struct sdpcandidate *candidate);
+
+/**
  * Deallocates @c sdpcodec.
  */
 void sdpcodec_free(struct sdpcodec *codec);

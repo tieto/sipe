@@ -93,7 +93,6 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 }
 
 static struct sdpcandidate * sdpcandidate_copy(struct sdpcandidate *candidate);
-static void sdpcandidate_free(struct sdpcandidate *candidate);
 
 static SipeComponentType
 parse_component(const gchar *str)
@@ -802,7 +801,7 @@ sdpcandidate_copy(struct sdpcandidate *candidate)
 		return NULL;
 }
 
-static void
+void
 sdpcandidate_free(struct sdpcandidate *candidate)
 {
 	if (candidate) {

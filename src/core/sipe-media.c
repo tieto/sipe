@@ -272,7 +272,7 @@ remove_wrong_farstream_0_1_tcp_candidates(GList *candidates)
 }
 
 static void
-fill_zero_tcp_act_ports_from_tcp_pass(GSList *candidates)
+fill_zero_tcp_act_ports_from_tcp_pass(GSList *candidates, GSList *all_candidates)
 {
 	GSList *i;
 	GHashTable *ip_to_port = g_hash_table_new(g_str_hash, g_str_equal);
@@ -281,17 +281,11 @@ fill_zero_tcp_act_ports_from_tcp_pass(GSList *candidates)
 		struct sdpcandidate *c = i->data;
 		GSList *j;
 
-		if (c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE &&
-		    c->type == SIPE_CANDIDATE_TYPE_HOST) {
-			g_hash_table_insert(ip_to_port, c->ip,
-					&c->port);
-		}
-
 		if (c->protocol != SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) {
 			continue;
 		}
 
-		for (j = candidates; j; j = j->next) {
+		for (j = all_candidates; j; j = j->next) {
 			struct sdpcandidate *passive = j->data;
 			if (passive->protocol != SIPE_NETWORK_PROTOCOL_TCP_PASSIVE ||
 			    c->type != passive->type) {
@@ -309,6 +303,15 @@ fill_zero_tcp_act_ports_from_tcp_pass(GSList *candidates)
 				}
 				break;
 			}
+		}
+	}
+
+	for (i = all_candidates; i; i = i->next) {
+		struct sdpcandidate *c = i->data;
+
+		if (c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE &&
+		    c->type == SIPE_CANDIDATE_TYPE_HOST) {
+			g_hash_table_insert(ip_to_port, c->ip, &c->port);
 		}
 	}
 
@@ -354,6 +357,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 	guint rtcp_port = 0;
 	SipeMediaType type;
 	GSList *attributes = NULL;
+	GSList *sdpcandidates;
+	GSList *all_sdpcandidates;
 	GList *candidates;
 	GList *i;
 
@@ -409,16 +414,27 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 	// Otherwise send all available local candidates.
 	candidates = sipe_backend_media_get_active_local_candidates(SIPE_MEDIA_CALL,
 								    SIPE_MEDIA_STREAM);
-	if (!candidates) {
-		candidates = sipe_backend_get_local_candidates(SIPE_MEDIA_CALL,
-							       SIPE_MEDIA_STREAM);
-		candidates = remove_wrong_farstream_0_1_tcp_candidates(candidates);
+	sdpcandidates = backend_candidates_to_sdpcandidate(candidates);
+	sipe_media_candidate_list_free(candidates);
+
+	candidates = sipe_backend_get_local_candidates(SIPE_MEDIA_CALL,
+						       SIPE_MEDIA_STREAM);
+	candidates = remove_wrong_farstream_0_1_tcp_candidates(candidates);
+	all_sdpcandidates = backend_candidates_to_sdpcandidate(candidates);
+	sipe_media_candidate_list_free(candidates);
+
+	if (!sdpcandidates) {
+		sdpcandidates = all_sdpcandidates;
 	}
 
-	sdpmedia->candidates = backend_candidates_to_sdpcandidate(candidates);
-	fill_zero_tcp_act_ports_from_tcp_pass(sdpmedia->candidates);
+	fill_zero_tcp_act_ports_from_tcp_pass(sdpcandidates, all_sdpcandidates);
 
-	sipe_media_candidate_list_free(candidates);
+	sdpmedia->candidates = sdpcandidates;
+
+	if (all_sdpcandidates != sdpcandidates) {
+		sipe_utils_slist_free_full(all_sdpcandidates,
+					   (GDestroyNotify)sdpcandidate_free);
+	}
 
 	get_stream_ip_and_ports(sdpmedia->candidates, &sdpmedia->ip, &sdpmedia->port,
 				&rtcp_port, SIPE_CANDIDATE_TYPE_HOST);
