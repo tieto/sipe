@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- * TLS Protocol Version 1.0/1.1 - Handshake Messages
+ * TLS Protocol Version 1.0/1.1/1.2 - Handshake Messages
  *
  * TLS-DSK uses the handshake messages during authentication and session key
  * exchange. This module *ONLY* implements this part of the TLS specification!
@@ -100,6 +100,7 @@ struct tls_internal_state {
 
 #define TLS_PROTOCOL_VERSION_1_0 0x0301
 #define TLS_PROTOCOL_VERSION_1_1 0x0302
+#define TLS_PROTOCOL_VERSION_1_2 0x0303
 
 /* CipherSuites */
 #define TLS_RSA_EXPORT_WITH_RC4_40_MD5 0x0003
@@ -890,6 +891,9 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 			break;
 		case TLS_PROTOCOL_VERSION_1_1:
 			version_str = "1.1 (RFC4346)";
+			break;
+		case TLS_PROTOCOL_VERSION_1_2:
+			version_str = "1.2 (RFC5246)";
 			break;
 		default:
 			version_str = "<future protocol version>";
