@@ -861,6 +861,12 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 	gsize record_length;
 	gboolean success = TRUE;
 
+	/* reject empty incoming messages */
+	if (incoming && (length == 0)) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: empty TLS message received");
+		return(FALSE);
+	}
+
 	debug_printf(state, "TLS MESSAGE %s\n", incoming ? "INCOMING" : "OUTGOING");
 
 	/* Collect parser data for incoming messages */
