@@ -103,9 +103,12 @@ struct tls_internal_state {
 #define TLS_PROTOCOL_VERSION_1_2 0x0303
 
 /* CipherSuites */
-#define TLS_RSA_EXPORT_WITH_RC4_40_MD5 0x0003
-#define TLS_RSA_WITH_RC4_128_MD5       0x0004
-#define TLS_RSA_WITH_RC4_128_SHA       0x0005
+#define TLS_RSA_EXPORT_WITH_RC4_40_MD5       0x0003
+#define TLS_RSA_WITH_RC4_128_MD5             0x0004
+#define TLS_RSA_WITH_RC4_128_SHA             0x0005
+#define TLS_DHE_DSS_WITH_AES_256_CBC_SHA     0x0038
+#define TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA   0xC014
+#define TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA 0xC00A
 
 /* CompressionMethods */
 #define TLS_COMP_METHOD_NULL 0
@@ -204,7 +207,7 @@ struct tls_compile_sessionid {
 
 struct tls_compile_cipher {
 	gsize elements; /* VECTOR */
-	guint suites[3];
+	guint suites[6];
 };
 
 struct tls_compile_compression {
@@ -1217,6 +1220,16 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		break;
 
+	case TLS_DHE_DSS_WITH_AES_256_CBC_SHA:
+	case TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA:
+	case TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA:
+		state->mac_length = SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		state->key_length = 256 / 8;
+		state->mac_func   = sipe_digest_hmac_sha1;
+		label             = "SHA-1";
+		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
+		break;
+
 	default:
 		SIPE_DEBUG_ERROR("check_cipher_suite: unsupported cipher suite %d",
 				 cipher_suite->value);
@@ -1552,10 +1565,13 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 		{ TLS_PROTOCOL_VERSION_1_0 },
 		{ 0, { 0 } },
 		{ 0 /* empty SessionID */ },
-		{ 3,
+		{ 6,
 		  {
 			  TLS_RSA_WITH_RC4_128_MD5,
 			  TLS_RSA_WITH_RC4_128_SHA,
+			  TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,
+			  TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,
+			  TLS_DHE_DSS_WITH_AES_256_CBC_SHA,
 			  TLS_RSA_EXPORT_WITH_RC4_40_MD5
 		  }
 		},
