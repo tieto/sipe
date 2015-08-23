@@ -277,6 +277,9 @@ static void debug_hex(struct tls_internal_state *state,
 #define debug_printf(state, format, ...) \
 	if (state->debug) g_string_append_printf(state->debug, format, __VA_ARGS__)
 
+/* Analyzer only needs the debugging functions */
+#ifndef _SIPE_COMPILING_ANALYZER
+
 static void debug_secrets(struct tls_internal_state *state,
 			  const gchar *label,
 			  const guchar *secret,
@@ -472,6 +475,8 @@ static guchar *sipe_tls_prf(SIPE_UNUSED_PARAMETER struct tls_internal_state *sta
 	return(md5);
 }
 
+#endif /* !_SIPE_COMPILING_ANALYZER */
+
 /*
  * TLS data parsers
  *
@@ -540,6 +545,10 @@ static gboolean parse_array(struct tls_internal_state *state,
 		return(FALSE);
 	debug_printf(state, "%s/ARRAY[%" G_GSIZE_FORMAT "]\n",
 		     desc->label, desc->max);
+#ifdef _SIPE_COMPILING_ANALYZER
+	if (desc->max)
+		debug_hex(state, desc->max);
+#endif
 	if (state->data) {
 		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
 							  desc->max);
@@ -568,6 +577,10 @@ static gboolean parse_vector(struct tls_internal_state *state,
 		return(FALSE);
 	}
 	debug_printf(state, "%s/VECTOR<%d>\n", desc->label, length);
+#ifdef _SIPE_COMPILING_ANALYZER
+	if (length)
+		debug_hex(state, length);
+#endif
 	if (state->data) {
 		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
 							  length);
@@ -867,7 +880,9 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 		return(FALSE);
 	}
 
+#ifndef _SIPE_COMPILING_ANALYZER
 	debug_printf(state, "TLS MESSAGE %s\n", incoming ? "INCOMING" : "OUTGOING");
+#endif
 
 	/* Collect parser data for incoming messages */
 	if (incoming)
@@ -921,6 +936,8 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 		state->msg_current   = (guchar *) bytes + TLS_RECORD_HEADER_LENGTH;
 		state->msg_remainder = record_length - TLS_RECORD_HEADER_LENGTH;
 
+/* Analyzer only needs the debugging functions */
+#ifndef _SIPE_COMPILING_ANALYZER
 		/* Add incoming message contents to digest contexts */
 		if (incoming) {
 			sipe_digest_md5_update(state->md5_context,
@@ -930,6 +947,7 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 						state->msg_current,
 						state->msg_remainder);
 		}
+#endif /* !_SIPE_COMPILING_ANALYZER */
 
 		switch (bytes[TLS_RECORD_OFFSET_TYPE]) {
 		case TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC:
@@ -967,6 +985,9 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 
 	return(success);
 }
+
+/* Analyzer only needs the debugging functions */
+#ifndef _SIPE_COMPILING_ANALYZER
 
 /*
  * TLS message compiler
@@ -1791,6 +1812,8 @@ void sipe_tls_free(struct sipe_tls_state *state)
 		g_free(state);
 	}
 }
+
+#endif /* !_SIPE_COMPILING_ANALYZER */
 
 /*
   Local Variables:
