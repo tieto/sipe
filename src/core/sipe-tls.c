@@ -129,6 +129,7 @@ struct tls_internal_state {
 #define TLS_HANDSHAKE_TYPE_CLIENT_HELLO         1
 #define TLS_HANDSHAKE_TYPE_SERVER_HELLO         2
 #define TLS_HANDSHAKE_TYPE_CERTIFICATE         11
+#define TLS_HANDSHAKE_TYPE_SERVER_KEY_EXCHANGE 12
 #define TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ     13
 #define TLS_HANDSHAKE_TYPE_SERVER_HELLO_DONE   14
 #define TLS_HANDSHAKE_TYPE_CERTIFICATE_VERIFY  15
@@ -729,13 +730,22 @@ static const struct msg_descriptor Certificate_m = {
 	&ServerHello_m, "Certificate", Certificate_l, TLS_HANDSHAKE_TYPE_CERTIFICATE
 };
 
+/* we only support ECDHE */
+static const struct layout_descriptor ServerKeyExchange_l[] = {
+	{ "EC Curve Type", parse_integer, NULL, 0,  1, 0 },
+	TLS_LAYOUT_DESCRIPTOR_END
+};
+static const struct msg_descriptor ServerKeyExchange_m = {
+	&Certificate_m, "Server Key Exchange", ServerKeyExchange_l, TLS_HANDSHAKE_TYPE_SERVER_KEY_EXCHANGE
+};
+
 static const struct layout_descriptor CertificateRequest_l[] = {
 	{ "CertificateType",         parse_vector, NULL, 1, TLS_VECTOR_MAX8,  0 },
 	{ "DistinguishedName",       parse_vector, NULL, 0, TLS_VECTOR_MAX16, 0 },
 	TLS_LAYOUT_DESCRIPTOR_END
 };
 static const struct msg_descriptor CertificateRequest_m = {
-	&Certificate_m, "Certificate Request", CertificateRequest_l, TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ
+	&ServerKeyExchange_m, "Certificate Request", CertificateRequest_l, TLS_HANDSHAKE_TYPE_CERTIFICATE_REQ
 };
 
 static const struct layout_descriptor ServerHelloDone_l[] = {
