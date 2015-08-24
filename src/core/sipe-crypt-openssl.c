@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -149,13 +149,15 @@ gboolean sipe_crypt_verify_rsa(gpointer public,
 			  public));
 }
 
-static gpointer openssl_rc4_init(const guchar *key, gsize key_length)
+static gpointer openssl_EVP_init(const EVP_CIPHER *(*evp)(),
+				 const guchar *key,
+				 gsize key_length)
 {
 	EVP_CIPHER_CTX *ctx = g_malloc(sizeof(EVP_CIPHER_CTX));
 
 	/* initialize context */
 	EVP_CIPHER_CTX_init(ctx);
-	EVP_EncryptInit_ex(ctx, EVP_rc4(), NULL, key, NULL);
+	EVP_EncryptInit_ex(ctx, (*evp)(), NULL, key, NULL);
 
 	/* set encryption parameters */
 	EVP_CIPHER_CTX_set_key_length(ctx, key_length);
@@ -167,7 +169,7 @@ static gpointer openssl_rc4_init(const guchar *key, gsize key_length)
 /* Stream RC4 cipher for file transfer with fixed-length 128-bit key */
 gpointer sipe_crypt_ft_start(const guchar *key)
 {
-	return(openssl_rc4_init(key, 16));
+	return(openssl_EVP_init(EVP_rc4, key, 16));
 }
 
 void sipe_crypt_ft_stream(gpointer context,
@@ -184,10 +186,41 @@ void sipe_crypt_ft_destroy(gpointer context)
 	g_free(context);
 }
 
-/* Stream RC4 cipher for TLS with variable key length */
-gpointer sipe_crypt_tls_start(const guchar *key, gsize key_length)
+/* Stream cipher for TLS with variable key length */
+gpointer sipe_crypt_tls_start(guint type, const guchar *key, gsize key_length)
 {
-	return(openssl_rc4_init(key, key_length));
+	gpointer result = NULL;
+
+	switch (type) {
+	case SIPE_CRYPT_STREAM_RC4:
+		result = openssl_EVP_init(EVP_rc4, key, key_length);
+		break;
+
+	case SIPE_CRYPT_STREAM_AES_CBC:
+		switch (key_length) {
+		case 16:
+			result = openssl_EVP_init(EVP_aes_128_cbc, key, key_length);
+			break;
+		case 24:
+			result = openssl_EVP_init(EVP_aes_192_cbc, key, key_length);
+			break;
+		case 32:
+			result = openssl_EVP_init(EVP_aes_256_cbc, key, key_length);
+			break;
+		default:
+			SIPE_DEBUG_ERROR("sipe_crypt_tls_start: unsupported key length %" G_GSIZE_FORMAT " bytes for AES CBC",
+					 key_length);
+			break;
+		}
+		break;
+
+	default:
+		SIPE_DEBUG_ERROR("sipe_crypt_tls_start: unknown cipher type '%d'",
+				 type);
+		break;
+	}
+
+	return(result);
 }
 
 void sipe_crypt_tls_stream(gpointer context,

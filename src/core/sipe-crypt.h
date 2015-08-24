@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,8 +59,12 @@ void sipe_crypt_ft_stream(gpointer context,
 			  guchar *out);
 void sipe_crypt_ft_destroy(gpointer context);
 
-/* Stream RC4 cipher for TLS */
-gpointer sipe_crypt_tls_start(const guchar *key, gsize key_length);
+/* Stream cipher for TLS */
+#define SIPE_CRYPT_STREAM_UNKNOWN 0
+#define SIPE_CRYPT_STREAM_RC4     1
+#define SIPE_CRYPT_STREAM_AES_CBC 2
+
+gpointer sipe_crypt_tls_start(guint type, const guchar *key, gsize key_length);
 void sipe_crypt_tls_stream(gpointer context,
 			   const guchar *in, gsize length,
 			   guchar *out);

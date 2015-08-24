@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -247,13 +247,31 @@ sipe_crypt_ft_destroy(gpointer context)
 }
 
 /*
- * Stream RC4 cipher for TLS
+ * Stream cipher for TLS
  *
  * basically the same as for FT, but with variable key length
  */
-gpointer sipe_crypt_tls_start(const guchar *key, gsize key_length)
+gpointer sipe_crypt_tls_start(guint type, const guchar *key, gsize key_length)
 {
-	return sipe_crypt_ctx_create(CKM_RC4, key, key_length);
+	CK_MECHANISM_TYPE mech;
+
+	switch (type) {
+	case SIPE_CRYPT_STREAM_RC4:
+		mech = CKM_RC4;
+		break;
+
+	case SIPE_CRYPT_STREAM_AES_CBC:
+		mech = CKM_AES_CBC;
+		break;
+
+	default:
+		SIPE_DEBUG_ERROR("sipe_crypt_tls_start: unknown cipher type '%d'",
+				 type);
+		return(NULL);
+		break;
+	}
+
+	return sipe_crypt_ctx_create(mech, key, key_length);
 }
 
 void sipe_crypt_tls_stream(gpointer context,

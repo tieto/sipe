@@ -66,6 +66,7 @@ struct tls_internal_state {
 	gsize msg_remainder;
 	GHashTable *data;
 	GString *debug;
+	guint cipher_type;
 	gpointer md5_context;
 	gpointer sha1_context;
 	gpointer server_certificate;
@@ -1202,6 +1203,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_func   = sipe_digest_hmac_md5;
 		label             = "MD5";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
+		state->cipher_type      = SIPE_CRYPT_STREAM_RC4;
 		break;
 
 	case TLS_RSA_WITH_RC4_128_MD5:
@@ -1210,6 +1212,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_func   = sipe_digest_hmac_md5;
 		label             = "MD5";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
+		state->cipher_type      = SIPE_CRYPT_STREAM_RC4;
 		break;
 
 	case TLS_RSA_WITH_RC4_128_SHA:
@@ -1218,6 +1221,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_func   = sipe_digest_hmac_sha1;
 		label             = "SHA-1";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
+		state->cipher_type      = SIPE_CRYPT_STREAM_RC4;
 		break;
 
 	case TLS_DHE_DSS_WITH_AES_256_CBC_SHA:
@@ -1228,6 +1232,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_func   = sipe_digest_hmac_sha1;
 		label             = "SHA-1";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
+		state->cipher_type      = SIPE_CRYPT_STREAM_AES_CBC;
 		break;
 
 	default:
@@ -1317,7 +1322,8 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 	state->server_write_secret     = state->key_block + 2 * state->mac_length + state->key_length;
 
 	/* initialize cipher context */
-	state->cipher_context = sipe_crypt_tls_start(state->client_write_secret,
+	state->cipher_context = sipe_crypt_tls_start(state->cipher_type,
+						     state->client_write_secret,
 						     state->key_length);
 }
 
