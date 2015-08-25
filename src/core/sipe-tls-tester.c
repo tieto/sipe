@@ -180,6 +180,8 @@ static guchar *read_tls_record(int fd,
 static void tls_handshake(struct sipe_tls_state *state,
 			  int fd)
 {
+	gboolean success = FALSE;
+
 	printf("TLS handshake starting...\n");
 
 	/* generate next handshake message */
@@ -188,7 +190,7 @@ static void tls_handshake(struct sipe_tls_state *state,
 
 		/* handshake completed? */
 		if (!state->out_buffer) {
-			printf("Handshake completed.\n");
+			success = TRUE;
 			break;
 		}
 
@@ -215,7 +217,7 @@ static void tls_handshake(struct sipe_tls_state *state,
 		}
 	}
 
-	printf("TLS handshake done.\n");
+	printf("TLS handshake %s.\n", success ? "SUCCESSFUL" : "FAILED");
 }
 
 
