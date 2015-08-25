@@ -1299,7 +1299,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_func         = sipe_digest_hmac_md5;
 		state->stream_cipher    = TRUE;
 		label_mac               = "MD5";
-		label_cipher            = "RC4";
+		label_cipher            = "RC4 stream";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		break;
 
@@ -1309,7 +1309,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_func         = sipe_digest_hmac_md5;
 		state->stream_cipher    = TRUE;
 		label_mac               = "MD5";
-		label_cipher            = "RC4";
+		label_cipher            = "RC4 stream";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		break;
 
@@ -1319,7 +1319,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_func         = sipe_digest_hmac_sha1;
 		state->stream_cipher    = TRUE;
 		label_mac               = "SHA-1";
-		label_cipher            = "RC4";
+		label_cipher            = "RC4 stream";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		break;
 
@@ -1329,7 +1329,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_func         = sipe_digest_hmac_sha1;
 		state->stream_cipher    = FALSE;
 		label_mac               = "SHA-1";
-		label_cipher            = "AES-CBC";
+		label_cipher            = "AES-CBC block";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		break;
 
@@ -1339,7 +1339,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_func         = sipe_digest_hmac_sha1;
 		state->stream_cipher    = FALSE;
 		label_mac               = "SHA-1";
-		label_cipher            = "AES-CBC";
+		label_cipher            = "AES-CBC block";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		break;
 
@@ -1350,7 +1350,7 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 	}
 
 	if (label_cipher && label_mac)
-		SIPE_DEBUG_INFO("check_cipher_suite: KEY(stream cipher %s) %" G_GSIZE_FORMAT ", MAC(%s) %" G_GSIZE_FORMAT,
+		SIPE_DEBUG_INFO("check_cipher_suite: KEY(%s cipher) %" G_GSIZE_FORMAT ", MAC(%s) %" G_GSIZE_FORMAT,
 				label_cipher, state->key_length,
 				label_mac, state->mac_length);
 
