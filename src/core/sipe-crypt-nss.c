@@ -95,9 +95,10 @@ sipe_crypt_ctx_create(CK_MECHANISM_TYPE cipherMech, const guchar *key, gsize key
 
 	/* Parameter for crypto context */
 	ivItem.type = siBuffer;
-	ivItem.data = NULL;
-	ivItem.len = 0;
+	ivItem.data = g_malloc0(key_length);
+	ivItem.len = key_length;
 	SecParam = PK11_ParamFromIV(cipherMech, &ivItem);
+	g_free(ivItem.data);
 
 	EncContext = PK11_CreateContextBySymKey(cipherMech, CKA_ENCRYPT, SymKey, SecParam);
 
