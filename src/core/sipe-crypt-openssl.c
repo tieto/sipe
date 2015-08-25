@@ -149,19 +149,20 @@ gboolean sipe_crypt_verify_rsa(gpointer public,
 			  public));
 }
 
-static gpointer openssl_EVP_init(const EVP_CIPHER *(*evp)(),
+static gpointer openssl_EVP_init(const EVP_CIPHER *type,
 				 const guchar *key,
-				 gsize key_length)
+				 gsize key_length,
+				 const guchar *iv)
 {
 	EVP_CIPHER_CTX *ctx = g_malloc(sizeof(EVP_CIPHER_CTX));
 
 	/* initialize context */
 	EVP_CIPHER_CTX_init(ctx);
-	EVP_EncryptInit_ex(ctx, (*evp)(), NULL, key, NULL);
+	EVP_EncryptInit_ex(ctx, type, NULL, key, iv);
 
 	/* set encryption parameters */
 	EVP_CIPHER_CTX_set_key_length(ctx, key_length);
-	EVP_EncryptInit_ex(ctx, NULL, NULL, key, NULL);
+	EVP_EncryptInit_ex(ctx, NULL, NULL, key, iv);
 
 	return(ctx);
 }
@@ -169,7 +170,7 @@ static gpointer openssl_EVP_init(const EVP_CIPHER *(*evp)(),
 /* Stream RC4 cipher for file transfer with fixed-length 128-bit key */
 gpointer sipe_crypt_ft_start(const guchar *key)
 {
-	return(openssl_EVP_init(EVP_rc4, key, 16));
+	return(openssl_EVP_init(EVP_rc4(), key, 16, NULL));
 }
 
 void sipe_crypt_ft_stream(gpointer context,
@@ -186,41 +187,10 @@ void sipe_crypt_ft_destroy(gpointer context)
 	g_free(context);
 }
 
-/* Stream cipher for TLS with variable key length */
-gpointer sipe_crypt_tls_start(guint type, const guchar *key, gsize key_length)
+/* Stream RC4 cipher for TLS with variable key length */
+gpointer sipe_crypt_tls_start(const guchar *key, gsize key_length)
 {
-	gpointer result = NULL;
-
-	switch (type) {
-	case SIPE_CRYPT_STREAM_RC4:
-		result = openssl_EVP_init(EVP_rc4, key, key_length);
-		break;
-
-	case SIPE_CRYPT_STREAM_AES_CBC:
-		switch (key_length) {
-		case 16:
-			result = openssl_EVP_init(EVP_aes_128_cbc, key, key_length);
-			break;
-		case 24:
-			result = openssl_EVP_init(EVP_aes_192_cbc, key, key_length);
-			break;
-		case 32:
-			result = openssl_EVP_init(EVP_aes_256_cbc, key, key_length);
-			break;
-		default:
-			SIPE_DEBUG_ERROR("sipe_crypt_tls_start: unsupported key length %" G_GSIZE_FORMAT " bytes for AES CBC",
-					 key_length);
-			break;
-		}
-		break;
-
-	default:
-		SIPE_DEBUG_ERROR("sipe_crypt_tls_start: unknown cipher type '%d'",
-				 type);
-		break;
-	}
-
-	return(result);
+	return(openssl_EVP_init(EVP_rc4(), key, key_length, NULL));
 }
 
 void sipe_crypt_tls_stream(gpointer context,
@@ -235,6 +205,51 @@ void sipe_crypt_tls_destroy(gpointer context)
 {
 	EVP_CIPHER_CTX_cleanup(context);
 	g_free(context);
+}
+
+/* Block AES-CBC cipher for TLS */
+void sipe_crypt_tls_block(const guchar *key, gsize key_length,
+			  const guchar *iv,
+			  /* OpenSSL assumes that iv is of correct size */
+			  SIPE_UNUSED_PARAMETER gsize iv_length,
+			  const guchar *in, gsize length,
+			  guchar *out)
+{
+	const EVP_CIPHER *type = NULL;
+
+	switch (key_length) {
+	case 128 / 8:
+		type = EVP_aes_128_cbc();
+		break;
+	/*
+	 * TLS does not use AES-192
+	 *
+	case 192 / 8:
+		type = EVP_aes_192_cbc();
+		break;
+	*/
+	case 256 / 8:
+		type = EVP_aes_256_cbc();
+		break;
+	default:
+		SIPE_DEBUG_ERROR("sipe_crypt_tls_block: unsupported key length %" G_GSIZE_FORMAT " bytes for AES CBC",
+				 key_length);
+		break;
+	}
+
+	if (type) {
+		EVP_CIPHER_CTX *context = openssl_EVP_init(type,
+							   key, key_length,
+							   iv);
+
+		if (context) {
+			int tmp;
+			EVP_EncryptUpdate(context, out, &tmp, in, length);
+			EVP_EncryptFinal(context, out + tmp, &tmp);
+			EVP_CIPHER_CTX_cleanup(context);
+			g_free(context);
+		}
+	}
 }
 
 /*

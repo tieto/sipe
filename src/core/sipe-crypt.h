@@ -59,13 +59,15 @@ void sipe_crypt_ft_stream(gpointer context,
 			  guchar *out);
 void sipe_crypt_ft_destroy(gpointer context);
 
-/* Stream cipher for TLS */
-#define SIPE_CRYPT_STREAM_UNKNOWN 0
-#define SIPE_CRYPT_STREAM_RC4     1
-#define SIPE_CRYPT_STREAM_AES_CBC 2
-
-gpointer sipe_crypt_tls_start(guint type, const guchar *key, gsize key_length);
+/* Stream RC4 cipher for TLS */
+gpointer sipe_crypt_tls_start(const guchar *key, gsize key_length);
 void sipe_crypt_tls_stream(gpointer context,
 			   const guchar *in, gsize length,
 			   guchar *out);
 void sipe_crypt_tls_destroy(gpointer context);
+
+/* Block AES-CBC cipher for TLS */
+void sipe_crypt_tls_block(const guchar *key, gsize key_length,
+			  const guchar *iv, gsize iv_length,
+			  const guchar *in, gsize length,
+			  guchar *out);

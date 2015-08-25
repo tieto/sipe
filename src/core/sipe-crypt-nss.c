@@ -75,7 +75,9 @@ void sipe_crypto_shutdown(void)
 /* PRIVATE methods */
 
 static PK11Context*
-sipe_crypt_ctx_create(CK_MECHANISM_TYPE cipherMech, const guchar *key, gsize key_length)
+sipe_crypt_ctx_create(CK_MECHANISM_TYPE cipherMech,
+		      const guchar *key, gsize key_length,
+		      const guchar *iv, gsize iv_length)
 {
 	PK11SlotInfo* slot;
 	SECItem keyItem;
@@ -95,10 +97,9 @@ sipe_crypt_ctx_create(CK_MECHANISM_TYPE cipherMech, const guchar *key, gsize key
 
 	/* Parameter for crypto context */
 	ivItem.type = siBuffer;
-	ivItem.data = g_malloc0(key_length);
-	ivItem.len = key_length;
+	ivItem.data = (unsigned char *)iv;
+	ivItem.len = iv_length;
 	SecParam = PK11_ParamFromIV(cipherMech, &ivItem);
-	g_free(ivItem.data);
 
 	EncContext = PK11_CreateContextBySymKey(cipherMech, CKA_ENCRYPT, SymKey, SecParam);
 
@@ -131,7 +132,7 @@ sipe_crypt(CK_MECHANISM_TYPE cipherMech,
 {
 	void *EncContext;
 
-	EncContext = sipe_crypt_ctx_create(cipherMech, key, key_length);
+	EncContext = sipe_crypt_ctx_create(cipherMech, key, key_length, NULL, 0);
 	sipe_crypt_ctx_encrypt(EncContext, plaintext, plaintext_length, encrypted_text);
 	sipe_crypt_ctx_destroy(EncContext);
 }
@@ -230,7 +231,7 @@ gboolean sipe_crypt_verify_rsa(gpointer public,
 gpointer
 sipe_crypt_ft_start(const guchar *key)
 {
-	return sipe_crypt_ctx_create(CKM_RC4, key, 16);
+	return sipe_crypt_ctx_create(CKM_RC4, key, 16, NULL, 0);
 }
 
 void
@@ -248,31 +249,13 @@ sipe_crypt_ft_destroy(gpointer context)
 }
 
 /*
- * Stream cipher for TLS
+ * Stream RC4 cipher for TLS
  *
  * basically the same as for FT, but with variable key length
  */
-gpointer sipe_crypt_tls_start(guint type, const guchar *key, gsize key_length)
+gpointer sipe_crypt_tls_start(const guchar *key, gsize key_length)
 {
-	CK_MECHANISM_TYPE mech;
-
-	switch (type) {
-	case SIPE_CRYPT_STREAM_RC4:
-		mech = CKM_RC4;
-		break;
-
-	case SIPE_CRYPT_STREAM_AES_CBC:
-		mech = CKM_AES_CBC;
-		break;
-
-	default:
-		SIPE_DEBUG_ERROR("sipe_crypt_tls_start: unknown cipher type '%d'",
-				 type);
-		return(NULL);
-		break;
-	}
-
-	return sipe_crypt_ctx_create(mech, key, key_length);
+	return sipe_crypt_ctx_create(CKM_RC4, key, key_length, NULL, 0);
 }
 
 void sipe_crypt_tls_stream(gpointer context,
@@ -285,6 +268,21 @@ void sipe_crypt_tls_stream(gpointer context,
 void sipe_crypt_tls_destroy(gpointer context)
 {
 	sipe_crypt_ctx_destroy(context);
+}
+
+/* Block AES-CBC cipher for TLS */
+void sipe_crypt_tls_block(const guchar *key, gsize key_length,
+			  const guchar *iv, gsize iv_length,
+			  const guchar *in, gsize length,
+			  guchar *out)
+{
+	PK11Context* context = sipe_crypt_ctx_create(CKM_AES_CBC,
+						     key, key_length,
+						     iv, iv_length);
+	if (context) {
+		sipe_crypt_ctx_encrypt(context, in, length, out);
+		sipe_crypt_ctx_destroy(context);
+	}
 }
 
 /*
