@@ -86,6 +86,7 @@ struct tls_internal_state {
 			 guchar *digest);
 	gpointer cipher_context;
 	guint64 sequence_number;
+	gboolean stream_cipher;
 	gboolean encrypted;
 	gboolean expected;
 };
@@ -1106,10 +1107,11 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 	/* Encrypt message + MAC */
 	encrypted = g_malloc(encrypted_length);
 	memcpy(encrypted, message, TLS_RECORD_HEADER_LENGTH);
-	sipe_crypt_tls_stream(state->cipher_context,
-			      message + TLS_RECORD_HEADER_LENGTH,
-			      encrypted_length - TLS_RECORD_HEADER_LENGTH,
-			      encrypted + TLS_RECORD_HEADER_LENGTH);
+	if (state->stream_cipher)
+		sipe_crypt_tls_stream(state->cipher_context,
+				      message + TLS_RECORD_HEADER_LENGTH,
+				      encrypted_length - TLS_RECORD_HEADER_LENGTH,
+				      encrypted + TLS_RECORD_HEADER_LENGTH);
 	g_free(message);
 
 	/* swap buffers */
@@ -1216,47 +1218,52 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 
 	switch (cipher_suite->value) {
 	case TLS_RSA_EXPORT_WITH_RC4_40_MD5:
-		state->mac_length = SIPE_DIGEST_HMAC_MD5_LENGTH;
-		state->key_length = 40 / 8;
-		state->mac_func   = sipe_digest_hmac_md5;
-		label_mac         = "MD5";
-		label_cipher      = "RC4";
+		state->mac_length       = SIPE_DIGEST_HMAC_MD5_LENGTH;
+		state->key_length       = 40 / 8;
+		state->mac_func         = sipe_digest_hmac_md5;
+		state->stream_cipher    = TRUE;
+		label_mac               = "MD5";
+		label_cipher            = "RC4";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		break;
 
 	case TLS_RSA_WITH_RC4_128_MD5:
-		state->mac_length = SIPE_DIGEST_HMAC_MD5_LENGTH;
-		state->key_length = 128 / 8;
-		state->mac_func   = sipe_digest_hmac_md5;
-		label_mac         = "MD5";
-		label_cipher      = "RC4";
+		state->mac_length       = SIPE_DIGEST_HMAC_MD5_LENGTH;
+		state->key_length       = 128 / 8;
+		state->mac_func         = sipe_digest_hmac_md5;
+		state->stream_cipher    = TRUE;
+		label_mac               = "MD5";
+		label_cipher            = "RC4";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		break;
 
 	case TLS_RSA_WITH_RC4_128_SHA:
-		state->mac_length = SIPE_DIGEST_HMAC_SHA1_LENGTH;
-		state->key_length = 128 / 8;
-		state->mac_func   = sipe_digest_hmac_sha1;
-		label_mac         = "SHA-1";
-		label_cipher      = "RC4";
+		state->mac_length       = SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		state->key_length       = 128 / 8;
+		state->mac_func         = sipe_digest_hmac_sha1;
+		state->stream_cipher    = TRUE;
+		label_mac               = "SHA-1";
+		label_cipher            = "RC4";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		break;
 
 	case TLS_RSA_WITH_AES_128_CBC_SHA:
-		state->mac_length = SIPE_DIGEST_HMAC_SHA1_LENGTH;
-		state->key_length = 128 / 8;
-		state->mac_func   = sipe_digest_hmac_sha1;
-		label_mac         = "SHA-1";
-		label_cipher      = "AES-CBC";
+		state->mac_length       = SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		state->key_length       = 128 / 8;
+		state->mac_func         = sipe_digest_hmac_sha1;
+		state->stream_cipher    = FALSE;
+		label_mac               = "SHA-1";
+		label_cipher            = "AES-CBC";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		break;
 
 	case TLS_RSA_WITH_AES_256_CBC_SHA:
-		state->mac_length = SIPE_DIGEST_HMAC_SHA1_LENGTH;
-		state->key_length = 256 / 8;
-		state->mac_func   = sipe_digest_hmac_sha1;
-		label_mac         = "SHA-1";
-		label_cipher      = "AES-CBC";
+		state->mac_length       = SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		state->key_length       = 256 / 8;
+		state->mac_func         = sipe_digest_hmac_sha1;
+		state->stream_cipher    = FALSE;
+		label_mac               = "SHA-1";
+		label_cipher            = "AES-CBC";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		break;
 
@@ -1347,9 +1354,10 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 	state->client_write_secret     = state->key_block + 2 * state->mac_length;
 	state->server_write_secret     = state->key_block + 2 * state->mac_length + state->key_length;
 
-	/* initialize cipher context */
-	state->cipher_context = sipe_crypt_tls_start(state->client_write_secret,
-						     state->key_length);
+	/* initialize stream cipher context */
+	if (state->stream_cipher)
+		state->cipher_context = sipe_crypt_tls_start(state->client_write_secret,
+							     state->key_length);
 }
 
 #if 0 /* NOT NEEDED? */
