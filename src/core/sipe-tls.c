@@ -1197,7 +1197,8 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 {
 	struct tls_parsed_integer *cipher_suite = g_hash_table_lookup(state->data,
 								      "CipherSuite");
-	const gchar *label = NULL;
+	const gchar *label_mac    = NULL;
+	const gchar *label_cipher = NULL;
 
 	if (!cipher_suite) {
 		SIPE_DEBUG_ERROR_NOFORMAT("check_cipher_suite: server didn't specify the cipher suite");
@@ -1209,7 +1210,8 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_length = SIPE_DIGEST_HMAC_MD5_LENGTH;
 		state->key_length = 40 / 8;
 		state->mac_func   = sipe_digest_hmac_md5;
-		label             = "MD5";
+		label_mac         = "MD5";
+		label_cipher      = "RC4";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		state->cipher_type      = SIPE_CRYPT_STREAM_RC4;
 		break;
@@ -1218,7 +1220,8 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_length = SIPE_DIGEST_HMAC_MD5_LENGTH;
 		state->key_length = 128 / 8;
 		state->mac_func   = sipe_digest_hmac_md5;
-		label             = "MD5";
+		label_mac         = "MD5";
+		label_cipher      = "RC4";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		state->cipher_type      = SIPE_CRYPT_STREAM_RC4;
 		break;
@@ -1227,7 +1230,8 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_length = SIPE_DIGEST_HMAC_SHA1_LENGTH;
 		state->key_length = 128 / 8;
 		state->mac_func   = sipe_digest_hmac_sha1;
-		label             = "SHA-1";
+		label_mac         = "SHA-1";
+		label_cipher      = "RC4";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		state->cipher_type      = SIPE_CRYPT_STREAM_RC4;
 		break;
@@ -1236,7 +1240,8 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		state->mac_length = SIPE_DIGEST_HMAC_SHA1_LENGTH;
 		state->key_length = 256 / 8;
 		state->mac_func   = sipe_digest_hmac_sha1;
-		label             = "SHA-1";
+		label_mac         = "SHA-1";
+		label_cipher      = "AES-CBC";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		state->cipher_type      = SIPE_CRYPT_STREAM_AES_CBC;
 		break;
@@ -1247,11 +1252,12 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		break;
 	}
 
-	if (label)
-		SIPE_DEBUG_INFO("check_cipher_suite: KEY(stream cipher RC4) %" G_GSIZE_FORMAT ", MAC(%s) %" G_GSIZE_FORMAT,
-				state->key_length, label, state->mac_length);
+	if (label_cipher && label_mac)
+		SIPE_DEBUG_INFO("check_cipher_suite: KEY(stream cipher %s) %" G_GSIZE_FORMAT ", MAC(%s) %" G_GSIZE_FORMAT,
+				label_cipher, state->key_length,
+				label_mac, state->mac_length);
 
-	return(label != NULL);
+	return(label_cipher && label_mac);
 }
 
 static void tls_calculate_secrets(struct tls_internal_state *state)
