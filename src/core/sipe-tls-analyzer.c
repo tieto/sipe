@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
 			printf("Decoded %" G_GSIZE_FORMAT " bytes\n",
 			       state->common.in_length);
 			state->common.in_buffer = buffer;
-			tls_record_parse(state, TRUE);
+			tls_record_parse(state, TRUE, 0);
 			free_parse_data(state);
 			printf("-------------------------------------------------------------------------------\n");
 			g_free(buffer);

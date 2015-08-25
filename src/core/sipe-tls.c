@@ -88,6 +88,7 @@ struct tls_internal_state {
 	gpointer cipher_context;
 	guint64 sequence_number;
 	gboolean encrypted;
+	gboolean expected;
 };
 
 /*
@@ -790,7 +791,8 @@ static const struct msg_descriptor Finished_m = {
 /*
  * TLS message parsers
  */
-static gboolean handshake_parse(struct tls_internal_state *state)
+static gboolean handshake_parse(struct tls_internal_state *state,
+				guint expected_type)
 {
 	const guchar *bytes = state->msg_current;
 	gsize length        = state->msg_remainder;
@@ -826,6 +828,9 @@ static gboolean handshake_parse(struct tls_internal_state *state)
 		debug_printf(state, "TLS handshake (%" G_GSIZE_FORMAT " bytes) (%d)",
 			     msg_length, msg_type);
 
+		if (msg_type == expected_type)
+			state->expected = TRUE;
+
 		state->msg_current   = (guchar *) bytes + TLS_HANDSHAKE_HEADER_LENGTH;
 		state->msg_remainder = msg_length;
 
@@ -833,6 +838,7 @@ static gboolean handshake_parse(struct tls_internal_state *state)
 			const struct layout_descriptor *ldesc = desc->layouts;
 
 			debug_printf(state, "%s\n", desc->description);
+
 			while (TLS_LAYOUT_IS_VALID(ldesc)) {
 				success = ldesc->parser(state, ldesc);
 				if (!success)
@@ -868,7 +874,8 @@ static void free_parse_data(struct tls_internal_state *state)
 }
 
 static gboolean tls_record_parse(struct tls_internal_state *state,
-				 gboolean incoming)
+				 gboolean incoming,
+				 guint expected)
 {
 	const guchar *bytes  = incoming ? state->common.in_buffer : state->common.out_buffer;
 	gsize length         = incoming ? state->common.in_length : state->common.out_length;
@@ -892,6 +899,7 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 		state->data = g_hash_table_new_full(g_str_hash, g_str_equal,
 						    NULL, g_free);
 
+	state->expected = FALSE;
 	while (success && (length > 0)) {
 
 		/* truncated header check */
@@ -955,7 +963,10 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 		switch (bytes[TLS_RECORD_OFFSET_TYPE]) {
 		case TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC:
 			debug_print(state, "Change Cipher Spec\n");
-			if (incoming) state->encrypted = TRUE;
+			if (incoming)
+				state->encrypted = TRUE;
+			if (expected == TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC)
+				state->expected = TRUE;
 			break;
 
 		case TLS_RECORD_TYPE_HANDSHAKE:
@@ -963,7 +974,7 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 				debug_print(state, "Encrypted handshake message\n");
 				debug_hex(state, 0);
 			} else {
-				success = handshake_parse(state);
+				success = handshake_parse(state, expected);
 			}
 			break;
 
@@ -977,6 +988,14 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 		bytes  += record_length;
 		length -= record_length;
 	}
+
+#ifndef _SIPE_COMPILING_ANALYZER
+	if (incoming && !state->expected) {
+		SIPE_DEBUG_ERROR("tls_record_parse: did not find expected msg type %d",
+				 expected);
+		success = FALSE;
+	}
+#endif
 
 	if (!success)
 		free_parse_data(state);
@@ -1616,7 +1635,7 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 		state->debug = g_string_new("");
 
 	state->state = TLS_HANDSHAKE_STATE_SERVER_HELLO;
-	return(tls_record_parse(state, FALSE));
+	return(tls_record_parse(state, FALSE, 0));
 }
 
 static gboolean tls_server_hello(struct tls_internal_state *state)
@@ -1627,7 +1646,7 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 	struct tls_compiled_message *finished    = NULL;
 	gboolean success = FALSE;
 
-	if (!tls_record_parse(state, TRUE))
+	if (!tls_record_parse(state, TRUE, TLS_HANDSHAKE_TYPE_SERVER_HELLO))
 		return(FALSE);
 
 	if (((certificate = tls_client_certificate(state))  != NULL) &&
@@ -1638,7 +1657,7 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 		/* Part 1 */
 		compile_tls_record(state, certificate, exchange, verify, NULL);
 
-		success = tls_record_parse(state, FALSE);
+		success = tls_record_parse(state, FALSE,  0);
 		if (success) {
 			guchar *part1      = state->common.out_buffer;
 			gsize part1_length = state->common.out_length;
@@ -1693,7 +1712,7 @@ static gboolean tls_finished(struct tls_internal_state *state)
 {
 	guchar *random;
 
-	if (!tls_record_parse(state, TRUE))
+	if (!tls_record_parse(state, TRUE, TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC))
 		return(FALSE);
 
 	/* we don't need the data */
