@@ -111,6 +111,8 @@ struct tls_internal_state {
 #define TLS_RSA_WITH_AES_128_CBC_SHA   0x002F
 #define TLS_RSA_WITH_AES_256_CBC_SHA   0x0035
 
+#define TLS_AES_CBC_BLOCK_LENGTH 16 /* bytes */
+
 /* CompressionMethods */
 #define TLS_COMP_METHOD_NULL 0
 
@@ -1060,12 +1062,14 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 					 const struct tls_compiled_message *msg)
 {
 	guchar *plaintext;
-	gsize plaintext_length;
+	gsize plaintext_length; /* header + content        */
 	guchar *mac;
 	gsize mac_length;
 	guchar *message;
 	guchar *encrypted;
-	gsize encrypted_length;
+	gsize message_length;   /* header + content + MAC  */
+	gsize padding_length;   /* for block cipher        */
+	gsize encrypted_length; /* header [ + IV ] + encrypted data */
 
 	/* Create plaintext TLS record */
 	compile_tls_record(state, msg, NULL);
@@ -1075,16 +1079,23 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 		return;
 
 	/* Prepare encryption buffer */
-	encrypted_length = plaintext_length + state->mac_length;
+	message_length = plaintext_length + state->mac_length;
+	if (state->stream_cipher) {
+		padding_length   = 0;
+		encrypted_length = message_length;
+	} else {
+		padding_length   = TLS_AES_CBC_BLOCK_LENGTH - (message_length - TLS_RECORD_HEADER_LENGTH + 1) % TLS_AES_CBC_BLOCK_LENGTH;
+		encrypted_length = message_length + TLS_AES_CBC_BLOCK_LENGTH + padding_length + 1;
+	}
 	SIPE_DEBUG_INFO("compile_encrypted_tls_record: total size %" G_GSIZE_FORMAT,
 			encrypted_length - TLS_RECORD_HEADER_LENGTH);
-	message          = g_malloc(encrypted_length);
+	message = g_malloc(message_length);
 	memcpy(message, plaintext, plaintext_length);
 	lowlevel_integer_to_tls(message + TLS_RECORD_OFFSET_LENGTH, 2,
 				encrypted_length - TLS_RECORD_HEADER_LENGTH);
 
 	/*
-	 * Calculate MAC
+	 * Calculate MAC and append to message
 	 *
 	 * HMAC_hash(client_write_mac_secret,
 	 *           sequence_number + type + version + length + fragment)
@@ -1104,14 +1115,79 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 			message + plaintext_length);
 	g_free(mac);
 
-	/* Encrypt message + MAC */
+/* temporary debugging */
+//#define _BLOCK_CIPHER_DEBUG
+#ifdef _BLOCK_CIPHER_DEBUG
+	debug_secrets(state,
+		      "MSG + MAC",
+		      message,
+		      message_length);
+#endif
+
 	encrypted = g_malloc(encrypted_length);
+	/* header (unencrypted) */
 	memcpy(encrypted, message, TLS_RECORD_HEADER_LENGTH);
-	if (state->stream_cipher)
+	if (state->stream_cipher) {
+		/* ENCRYPT(content + MAC) */
 		sipe_crypt_tls_stream(state->cipher_context,
 				      message + TLS_RECORD_HEADER_LENGTH,
 				      encrypted_length - TLS_RECORD_HEADER_LENGTH,
 				      encrypted + TLS_RECORD_HEADER_LENGTH);
+	} else {
+#ifdef _BLOCK_CIPHER_DEBUG
+		memset(encrypted + TLS_RECORD_HEADER_LENGTH,
+		       0,
+		       TLS_AES_CBC_BLOCK_LENGTH);
+#else
+		struct sipe_tls_random iv;
+
+		/* IV */
+		sipe_tls_fill_random(&iv,
+				     TLS_AES_CBC_BLOCK_LENGTH * 8); /* bits */
+		memcpy(encrypted + TLS_RECORD_HEADER_LENGTH,
+		       iv.buffer,
+		       TLS_AES_CBC_BLOCK_LENGTH);
+		sipe_tls_free_random(&iv);
+#endif
+
+		/* content + MAC */
+		memcpy(encrypted + TLS_RECORD_HEADER_LENGTH + TLS_AES_CBC_BLOCK_LENGTH,
+		       message + TLS_RECORD_HEADER_LENGTH,
+		       message_length - TLS_RECORD_HEADER_LENGTH);
+
+		/* padding + padding_length */
+		memset(encrypted + TLS_AES_CBC_BLOCK_LENGTH + message_length,
+		       padding_length,
+		       padding_length + 1);
+
+#ifdef _BLOCK_CIPHER_DEBUG
+		SIPE_DEBUG_INFO("block: plain len  %" G_GSIZE_FORMAT, plaintext_length);
+		SIPE_DEBUG_INFO("block: IV length  %d", TLS_AES_CBC_BLOCK_LENGTH);
+		SIPE_DEBUG_INFO("block: msg length %" G_GSIZE_FORMAT, plaintext_length - TLS_RECORD_HEADER_LENGTH);
+		SIPE_DEBUG_INFO("block: MAC length %" G_GSIZE_FORMAT, state->mac_length);
+		SIPE_DEBUG_INFO("block: padding    %" G_GSIZE_FORMAT, padding_length);
+		SIPE_DEBUG_INFO("block: enc length %" G_GSIZE_FORMAT, encrypted_length);
+		debug_secrets(state,
+			      "BLOCK DATA",
+			      encrypted,
+			      encrypted_length);
+#endif
+
+		/* ENCRYPT(content + MAC + padding + padding_length) */
+		sipe_crypt_tls_block(state->client_write_secret,
+				     state->key_length,
+				     encrypted + TLS_RECORD_HEADER_LENGTH,
+				     TLS_AES_CBC_BLOCK_LENGTH,
+				     encrypted + TLS_RECORD_HEADER_LENGTH + TLS_AES_CBC_BLOCK_LENGTH,
+				     encrypted_length - TLS_RECORD_HEADER_LENGTH - TLS_AES_CBC_BLOCK_LENGTH,
+				     encrypted + TLS_RECORD_HEADER_LENGTH + TLS_AES_CBC_BLOCK_LENGTH);
+#ifdef _BLOCK_CIPHER_DEBUG
+		debug_secrets(state,
+			      "ENCRYPTED ",
+			      encrypted,
+			      encrypted_length);
+#endif
+	}
 	g_free(message);
 
 	/* swap buffers */
