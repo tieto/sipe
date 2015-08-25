@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -34,7 +34,9 @@
  *
  *    $ openssl s_server -accept 8443 -debug -msg \
  *              -cert server.cert -key server.pem \
- *              -tls1 -verify 0 -cipher RC4-SHA
+ *              -tls1 -verify 0 [ -cipher <c1>[:<c2>...] ]
+ *
+ *   ciphers: RC4-MD5, RC4-SHA, AES128-SHA, AES256-SHA
  *
  * - Running the test program in another shell:
  *
