@@ -11,221 +11,221 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2015-01-16 19:34+0000\n"
+"PO-Revision-Date: 2015-08-26 16:20+0000\n"
 "Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
-"Language-Team: Chinese (Taiwan) (http://www.transifex.com/projects/p/pidgin-sipe/language/zh_TW/)\n"
+"Language-Team: Chinese (Taiwan) (http://www.transifex.com/stefanb/pidgin-sipe/language/zh_TW/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: zh_TW\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#: ../src/core/sip-transport.c:232
+#: ../src/core/sip-transport.c:235
 msgid "Failed to authenticate to server"
 msgstr "由伺服器認證時失敗"
 
-#: ../src/core/sip-transport.c:290
+#: ../src/core/sip-transport.c:293
 #, c-format
 msgid "Can't request certificate from %s"
 msgstr ""
 
-#: ../src/core/sip-transport.c:300
+#: ../src/core/sip-transport.c:303
 msgid "No URI for certificate provisioning service provided"
 msgstr ""
 
-#: ../src/core/sip-transport.c:1257
+#: ../src/core/sip-transport.c:1281
 msgid "Authentication failed"
 msgstr "認證失敗"
 
-#: ../src/core/sip-transport.c:1314
+#: ../src/core/sip-transport.c:1338
 msgid "Incompatible authentication scheme chosen"
 msgstr "選擇了不相容的認證方案"
 
-#: ../src/core/sip-transport.c:1331 ../src/core/sipe-notify.c:1105
+#: ../src/core/sip-transport.c:1355 ../src/core/sipe-notify.c:1117
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "您已被伺服器 %s 拒絕"
 
-#: ../src/core/sip-transport.c:1332 ../src/core/sip-transport.c:1348
-#: ../src/core/sip-transport.c:1372 ../src/core/sip-transport.c:1396
-#: ../src/core/sipe-conf.c:238 ../src/core/sipe-notify.c:1105
+#: ../src/core/sip-transport.c:1356 ../src/core/sip-transport.c:1372
+#: ../src/core/sip-transport.c:1396 ../src/core/sip-transport.c:1420
+#: ../src/core/sipe-conf.c:239 ../src/core/sipe-notify.c:1117
 msgid "no reason given"
 msgstr "沒有給予原因"
 
-#: ../src/core/sip-transport.c:1347
+#: ../src/core/sip-transport.c:1371
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "找不到：%s。請與您的管理員聯絡"
 
-#: ../src/core/sip-transport.c:1349
+#: ../src/core/sip-transport.c:1373
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP 若非未對目的 URI 啟用或是它並不存在"
 
-#: ../src/core/sip-transport.c:1372 ../src/core/sip-transport.c:1396
+#: ../src/core/sip-transport.c:1396 ../src/core/sip-transport.c:1420
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "不提供該項服務︰%s"
 
-#: ../src/core/sip-transport.c:1742
+#: ../src/core/sip-transport.c:1766
 msgid "Corrupted message received"
 msgstr ""
 
-#: ../src/core/sip-transport.c:1766
+#: ../src/core/sip-transport.c:1790
 msgid "Invalid message signature received"
 msgstr "收到的訊息簽章無效"
 
-#: ../src/core/sipe-buddy.c:536 ../src/core/sipe-buddy.c:2157
+#: ../src/core/sipe-buddy.c:536 ../src/core/sipe-buddy.c:2158
 msgid "Mobile"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:823
+#: ../src/core/sipe-buddy.c:824
 msgid "Status"
 msgstr "狀態"
 
-#: ../src/core/sipe-buddy.c:826
+#: ../src/core/sipe-buddy.c:827
 msgid "Calendar"
 msgstr "行事曆"
 
-#: ../src/core/sipe-buddy.c:831
+#: ../src/core/sipe-buddy.c:832
 msgid "Meeting in"
 msgstr "會議舉行於"
 
-#: ../src/core/sipe-buddy.c:835
+#: ../src/core/sipe-buddy.c:836
 msgid "Meeting about"
 msgstr "會議關於"
 
-#: ../src/core/sipe-buddy.c:840
+#: ../src/core/sipe-buddy.c:841
 msgid "Out of office note"
 msgstr "不在辦公室註記"
 
-#: ../src/core/sipe-buddy.c:840
+#: ../src/core/sipe-buddy.c:841
 msgid "Note"
 msgstr "註記"
 
-#: ../src/core/sipe-buddy.c:845 ../src/core/sipe-buddy.c:2202
+#: ../src/core/sipe-buddy.c:846 ../src/core/sipe-buddy.c:2203
 #: ../src/purple/purple-buddy.c:632
 msgid "Access level"
 msgstr "存取等級"
 
-#: ../src/core/sipe-buddy.c:1068
+#: ../src/core/sipe-buddy.c:1069
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "找到 %d 位聯絡人%s︰"
 
-#: ../src/core/sipe-buddy.c:1070
+#: ../src/core/sipe-buddy.c:1071
 msgid " (more matched your query)"
 msgstr " (更多符合您查詢的項目)"
 
-#: ../src/core/sipe-buddy.c:1116 ../src/core/sipe-buddy.c:1254
+#: ../src/core/sipe-buddy.c:1117 ../src/core/sipe-buddy.c:1255
 #: ../src/core/sipe-ucs.c:373
 msgid "No contacts found"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1129 ../src/core/sipe-buddy.c:1267
+#: ../src/core/sipe-buddy.c:1130 ../src/core/sipe-buddy.c:1268
 #: ../src/core/sipe-ucs.c:337
 msgid "Unable to display the search results"
 msgstr "無法顯示搜尋結果"
 
-#: ../src/core/sipe-buddy.c:1232 ../src/core/sipe-buddy.c:1244
+#: ../src/core/sipe-buddy.c:1233 ../src/core/sipe-buddy.c:1245
 #: ../src/core/sipe-ucs.c:450
 msgid "Contact search failed"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:1407 ../src/core/sipe-ucs.c:454
+#: ../src/core/sipe-buddy.c:1408 ../src/core/sipe-ucs.c:454
 msgid "Invalid contact search query"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:2094
+#: ../src/core/sipe-buddy.c:2095
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "成為「%s」的召集人"
 
-#: ../src/core/sipe-buddy.c:2107
+#: ../src/core/sipe-buddy.c:2108
 #, c-format
 msgid "Remove from '%s'"
 msgstr "從「%s」移除"
 
-#: ../src/core/sipe-buddy.c:2121
+#: ../src/core/sipe-buddy.c:2122
 #, c-format
 msgid "Invite to '%s'"
 msgstr "邀請參加「%s」"
 
-#: ../src/core/sipe-buddy.c:2137
+#: ../src/core/sipe-buddy.c:2138
 msgid "New chat"
 msgstr "新的聊天室"
 
-#: ../src/core/sipe-buddy.c:2150
+#: ../src/core/sipe-buddy.c:2151
 msgid "Work"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:2165
+#: ../src/core/sipe-buddy.c:2166
 msgid "Home"
 msgstr "首頁"
 
-#: ../src/core/sipe-buddy.c:2173
+#: ../src/core/sipe-buddy.c:2174
 msgid "Other"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:2181
+#: ../src/core/sipe-buddy.c:2182
 msgid "Custom1"
 msgstr ""
 
-#: ../src/core/sipe-buddy.c:2191
+#: ../src/core/sipe-buddy.c:2192
 msgid "Send email..."
 msgstr "發送電子郵件…"
 
-#: ../src/core/sipe-cal.c:904
+#: ../src/core/sipe-cal.c:907
 msgid "Free"
 msgstr "免費"
 
-#: ../src/core/sipe-cal.c:905
+#: ../src/core/sipe-cal.c:908
 msgid "Tentative"
 msgstr "臨時"
 
 #. SIPE_ACTIVITY_BUSY
-#: ../src/core/sipe-cal.c:906 ../src/core/sipe-status.c:61
+#: ../src/core/sipe-cal.c:909 ../src/core/sipe-status.c:59
 msgid "Busy"
 msgstr "忙碌"
 
 #. SIPE_ACTIVITY_OOF
-#: ../src/core/sipe-cal.c:907 ../src/core/sipe-status.c:72
+#: ../src/core/sipe-cal.c:910 ../src/core/sipe-status.c:70
 msgid "Out of office"
 msgstr "不在辦公室"
 
-#: ../src/core/sipe-cal.c:908
+#: ../src/core/sipe-cal.c:911
 msgid "No data"
 msgstr "沒有資料"
 
-#: ../src/core/sipe-cal.c:1016 ../src/core/sipe-cal.c:1043
+#: ../src/core/sipe-cal.c:1019 ../src/core/sipe-cal.c:1046
 #, c-format
 msgid "Currently %s"
 msgstr "目前 %s"
 
-#: ../src/core/sipe-cal.c:1022
+#: ../src/core/sipe-cal.c:1025
 msgid "Outside of working hours for next 8 hours"
 msgstr "在下一個 8 小時工作時數之外"
 
-#: ../src/core/sipe-cal.c:1024
+#: ../src/core/sipe-cal.c:1027
 #, c-format
 msgid "%s for next 8 hours"
 msgstr "%s 用於下一個 8 小時"
 
-#: ../src/core/sipe-cal.c:1033
+#: ../src/core/sipe-cal.c:1036
 msgid "Not working"
 msgstr "不在工作中"
 
-#: ../src/core/sipe-cal.c:1037
+#: ../src/core/sipe-cal.c:1040
 #, c-format
 msgid "%s until %.2d:%.2d"
 msgstr "%s 直到 %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1045
+#: ../src/core/sipe-cal.c:1048
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
 msgstr "%s。於 %.2d:%.2d 的工作時數之外"
 
-#: ../src/core/sipe-cal.c:1050
+#: ../src/core/sipe-cal.c:1053
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
 msgstr "%s。%s 於 %.2d:%.2d"
@@ -246,47 +246,47 @@ msgstr ""
 msgid "Chat #%d"
 msgstr "聊天室 #%d"
 
-#: ../src/core/sipe-conf.c:237 ../src/core/sipe-conf.c:361
+#: ../src/core/sipe-conf.c:238 ../src/core/sipe-conf.c:344
 msgid "Failed to join the conference"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:358
+#: ../src/core/sipe-conf.c:341
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:868
+#: ../src/core/sipe-conf.c:951
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
 msgstr ""
 
-#: ../src/core/sipe-conf.c:876
+#: ../src/core/sipe-conf.c:959
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:890
+#: ../src/core/sipe-conf.c:973
 msgid "Accept"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:891
+#: ../src/core/sipe-conf.c:974
 msgid "Decline"
 msgstr ""
 
-#: ../src/core/sipe-conf.c:1105
+#: ../src/core/sipe-conf.c:1188
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
 msgstr "這個會議已不再鎖定。額外參與者現在可以加入。"
 
-#: ../src/core/sipe-conf.c:1109
+#: ../src/core/sipe-conf.c:1192
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
 msgstr "這個會議已被鎖定。當它被鎖定時，其他任何人都不可以加入會議。"
 
-#: ../src/core/sipe-conf.c:1142
+#: ../src/core/sipe-conf.c:1225
 msgid "You have been disconnected from this conference."
 msgstr "您已經從這個會議結束連線。"
 
@@ -447,8 +447,8 @@ msgstr "檔案傳送認證失敗。"
 msgid "Out of memory"
 msgstr "記憶體不足"
 
-#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1119
-#: ../src/core/sipe-notify.c:1146 ../src/core/sipe-notify.c:1250
+#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1131
+#: ../src/core/sipe-notify.c:1158 ../src/core/sipe-notify.c:1262
 #: ../src/purple/purple-search.c:128
 msgid "Other Contacts"
 msgstr "其他聯絡人"
@@ -491,82 +491,86 @@ msgstr "邀請 %s 時失敗"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "從 %s 接收到內容無法辨識的訊息"
 
-#: ../src/core/sipe-media.c:673 ../src/core/sipe-media.c:1011
-#: ../src/core/sipe-media.c:1021 ../src/core/sipe-media.c:1310
-#: ../src/core/sipe-media.c:1330
+#: ../src/core/sipe-media.c:820 ../src/core/sipe-media.c:1187
+#: ../src/core/sipe-media.c:1197 ../src/core/sipe-media.c:1480
+#: ../src/core/sipe-media.c:1500
 msgid "Unable to establish a call"
 msgstr "無法建立呼叫"
 
-#: ../src/core/sipe-media.c:674 ../src/core/sipe-media.c:1311
+#: ../src/core/sipe-media.c:821 ../src/core/sipe-media.c:1481
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr "對方的加密設定值與我們的不相容。"
 
-#: ../src/core/sipe-media.c:883 ../src/core/sipe-media.c:894
-#: ../src/core/sipe-media.c:960 ../src/core/sipe-media.c:1329
+#: ../src/core/sipe-media.c:1059 ../src/core/sipe-media.c:1070
+#: ../src/core/sipe-media.c:1499
 msgid "Error occured"
 msgstr "發生錯誤"
 
-#: ../src/core/sipe-media.c:884 ../src/core/sipe-media.c:961
+#: ../src/core/sipe-media.c:1060 ../src/core/sipe-media.c:1137
 msgid "Error creating audio stream"
 msgstr "建立音訊串流時發生錯誤"
 
-#: ../src/core/sipe-media.c:895
+#: ../src/core/sipe-media.c:1071
 msgid "Error creating video stream"
 msgstr "建立視訊串流時發生錯誤"
 
-#: ../src/core/sipe-media.c:923 ../src/purple/purple-chat.c:305
+#: ../src/core/sipe-media.c:1099 ../src/purple/purple-chat.c:305
 msgid "Join conference call"
 msgstr "加入會議談話"
 
-#: ../src/core/sipe-media.c:924
+#: ../src/core/sipe-media.c:1100
 msgid "Conference calls are not supported on this server."
 msgstr ""
 
-#: ../src/core/sipe-media.c:1012
+#: ../src/core/sipe-media.c:1136
+msgid "Error occurred"
+msgstr ""
+
+#: ../src/core/sipe-media.c:1188
 msgid "Invalid phone number"
 msgstr ""
 
-#: ../src/core/sipe-media.c:1022
+#: ../src/core/sipe-media.c:1198
 msgid "Audio Test Service is not available."
 msgstr ""
 
-#: ../src/core/sipe-media.c:1274
+#: ../src/core/sipe-media.c:1444
 msgid "User unavailable"
 msgstr "使用者無法聯繫"
 
-#: ../src/core/sipe-media.c:1277
+#: ../src/core/sipe-media.c:1447
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr "%s 不想被打擾"
 
-#: ../src/core/sipe-media.c:1279
+#: ../src/core/sipe-media.c:1449
 #, c-format
 msgid "User %s is not available"
 msgstr "使用者 %s 無法聯繫"
 
-#: ../src/core/sipe-media.c:1284
+#: ../src/core/sipe-media.c:1454
 msgid "Call rejected"
 msgstr "呼叫被拒絕"
 
-#: ../src/core/sipe-media.c:1285
+#: ../src/core/sipe-media.c:1455
 #, c-format
 msgid "User %s rejected call"
 msgstr "使用者 %s 已拒絕呼叫"
 
-#: ../src/core/sipe-media.c:1293
+#: ../src/core/sipe-media.c:1463
 msgid "Unsupported media type"
 msgstr ""
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe-notify.c:1097
+#: ../src/core/sipe-notify.c:1109
 msgid "you are already signed in at another location"
 msgstr "您已經在另一個地點登入了"
 
-#: ../src/core/sipe-notify.c:1099
+#: ../src/core/sipe-notify.c:1111
 msgid "user disabled"
 msgstr "使用者已停用"
 
-#: ../src/core/sipe-notify.c:1101
+#: ../src/core/sipe-notify.c:1113
 msgid "user moved"
 msgstr "使用者已移動"
 
@@ -604,36 +608,36 @@ msgid "Unknown"
 msgstr "不明"
 
 #. Translators: remove (clear) previously assigned access level
-#: ../src/core/sipe-ocs2007.c:2541
+#: ../src/core/sipe-ocs2007.c:2557
 msgid "Unspecify"
 msgstr "未定義"
 
-#: ../src/core/sipe-ocs2007.c:2560
+#: ../src/core/sipe-ocs2007.c:2576
 msgid "People in my company"
 msgstr "公司同事"
 
-#: ../src/core/sipe-ocs2007.c:2570
+#: ../src/core/sipe-ocs2007.c:2586
 msgid "People in domains connected with my company"
 msgstr "與公司有連結的認證域名中的人"
 
-#: ../src/core/sipe-ocs2007.c:2579
+#: ../src/core/sipe-ocs2007.c:2595
 msgid "People in public domains"
 msgstr "位於公共認證域名中的人"
 
-#: ../src/core/sipe-ocs2007.c:2589
+#: ../src/core/sipe-ocs2007.c:2605
 #, c-format
 msgid "People at %s"
 msgstr "位於 %s 中的人"
 
-#: ../src/core/sipe-ocs2007.c:2614
+#: ../src/core/sipe-ocs2007.c:2630
 msgid "Add new domain..."
 msgstr "加入新的認證域名…"
 
-#: ../src/core/sipe-ocs2007.c:2643
+#: ../src/core/sipe-ocs2007.c:2659
 msgid "Online help..."
 msgstr "線上說明…"
 
-#: ../src/core/sipe-ocs2007.c:2651
+#: ../src/core/sipe-ocs2007.c:2667
 msgid "Access groups"
 msgstr "存取群組"
 
@@ -645,48 +649,66 @@ msgstr "存取群組"
 #. SIPE_ACTIVITY_AVAILABLE
 #. SIPE_ACTIVITY_ONLINE
 #. SIPE_ACTIVITY_INACTIVE
-#: ../src/core/sipe-status.c:60
+#: ../src/core/sipe-status.c:58
 msgid "Inactive"
 msgstr "非作用中"
 
 #. SIPE_ACTIVITY_BUSYIDLE
-#: ../src/core/sipe-status.c:62
+#: ../src/core/sipe-status.c:60
 msgid "Busy-Idle"
 msgstr "忙碌-空閒"
 
 #. SIPE_ACTIVITY_DND
 #. SIPE_ACTIVITY_BRB
-#: ../src/core/sipe-status.c:64
+#: ../src/core/sipe-status.c:62
 msgid "Be right back"
 msgstr "馬上回來"
 
 #. SIPE_ACTIVITY_AWAY
 #. SIPE_ACTIVITY_LUNCH
-#: ../src/core/sipe-status.c:66
+#: ../src/core/sipe-status.c:64
 msgid "Out to lunch"
 msgstr "外出午餐"
 
 #. SIPE_ACTIVITY_INVISIBLE
 #. SIPE_ACTIVITY_OFFLINE
 #. SIPE_ACTIVITY_ON_PHONE
-#: ../src/core/sipe-status.c:69
+#: ../src/core/sipe-status.c:67
 msgid "In a call"
 msgstr "電話中"
 
 #. SIPE_ACTIVITY_IN_CONF
-#: ../src/core/sipe-status.c:70
+#: ../src/core/sipe-status.c:68
 msgid "In a conference"
 msgstr "會議中"
 
 #. SIPE_ACTIVITY_IN_MEETING
-#: ../src/core/sipe-status.c:71
+#: ../src/core/sipe-status.c:69
 msgid "In a meeting"
 msgstr "談話中"
 
 #. SIPE_ACTIVITY_URGENT_ONLY
-#: ../src/core/sipe-status.c:73
+#: ../src/core/sipe-status.c:71
 msgid "Urgent interruptions only"
 msgstr "非急勿擾"
+
+#: ../src/core/sipe-ucs.c:733
+msgid "UCS initialization failed!"
+msgstr ""
+
+#: ../src/core/sipe-ucs.c:735
+msgid ""
+"Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n"
+"\n"
+"You'll need to provide Email settings in the account setup."
+msgstr ""
+
+#: ../src/core/sipe-ucs.c:736
+msgid ""
+"Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n"
+"\n"
+"Please correct your Email settings."
+msgstr ""
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -859,54 +881,54 @@ msgstr "描述"
 msgid "Conversation subject: %s"
 msgstr ""
 
-#. Macros to reduce code repetition.
+#. Macro to reduce code repetition
 #. Translators: noun
-#: ../src/purple/purple-plugin.c:201
+#: ../src/purple/purple-plugin.c:208
 msgid "Message"
 msgstr "訊息"
 
-#: ../src/purple/purple-plugin.c:377
+#: ../src/purple/purple-plugin.c:441
 msgid "Connecting"
 msgstr "連線中"
 
-#: ../src/purple/purple-plugin.c:407
+#: ../src/purple/purple-plugin.c:471
 msgid "Password required"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:583
+#: ../src/purple/purple-plugin.c:652
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: ../src/purple/purple-plugin.c:848
+#: ../src/purple/purple-plugin.c:918
 msgid "Phone number"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:852 ../src/purple/purple-plugin.c:853
+#: ../src/purple/purple-plugin.c:922 ../src/purple/purple-plugin.c:923
 msgid "Call a phone number"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:856
+#: ../src/purple/purple-plugin.c:926
 msgid "_Call"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:857 ../src/purple/purple-plugin.c:899
+#: ../src/purple/purple-plugin.c:927 ../src/purple/purple-plugin.c:969
 #: ../src/purple/purple-search.c:234
 msgid "_Cancel"
 msgstr "取消(_C)"
 
-#: ../src/purple/purple-plugin.c:884
+#: ../src/purple/purple-plugin.c:954
 msgid "Meeting location"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:888
+#: ../src/purple/purple-plugin.c:958
 msgid "Join conference"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:889
+#: ../src/purple/purple-plugin.c:959
 msgid "Join scheduled conference"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:890
+#: ../src/purple/purple-plugin.c:960
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
@@ -917,39 +939,39 @@ msgid ""
 "https://meet.company.com/someone/abcdef1234"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:898
+#: ../src/purple/purple-plugin.c:968
 msgid "_Join"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:915 ../src/purple/purple-plugin.c:929
+#: ../src/purple/purple-plugin.c:985 ../src/purple/purple-plugin.c:999
 msgid "Publishing of calendar information has been disabled"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:942
+#: ../src/purple/purple-plugin.c:1012
 msgid "About SIPE plugin..."
 msgstr "關於 SIPE 外掛程式…"
 
-#: ../src/purple/purple-plugin.c:945
+#: ../src/purple/purple-plugin.c:1015
 msgid "Contact search..."
 msgstr "聯絡人搜尋…"
 
-#: ../src/purple/purple-plugin.c:949
+#: ../src/purple/purple-plugin.c:1019
 msgid "Call a phone number..."
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:952
+#: ../src/purple/purple-plugin.c:1022
 msgid "Test call"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:956
+#: ../src/purple/purple-plugin.c:1026
 msgid "Join scheduled conference..."
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:959
+#: ../src/purple/purple-plugin.c:1029
 msgid "Republish Calendar"
 msgstr "重新發布行事曆"
 
-#: ../src/purple/purple-plugin.c:962
+#: ../src/purple/purple-plugin.c:1032
 msgid "Reset status"
 msgstr "重置狀態"
 
@@ -959,32 +981,32 @@ msgstr "重置狀態"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#: ../src/purple/purple-plugin.c:1020
+#: ../src/purple/purple-plugin.c:1090
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr "帳號\n  使用者  或  認證域名\\使用者  或\n  user@company.com"
 
-#: ../src/purple/purple-plugin.c:1024
+#: ../src/purple/purple-plugin.c:1094
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr "伺服器[:通訊埠]\n(留空表示自動搜索)"
 
-#: ../src/purple/purple-plugin.c:1027
+#: ../src/purple/purple-plugin.c:1097
 msgid "Connection type"
 msgstr "連線類型"
 
-#: ../src/purple/purple-plugin.c:1028 ../src/purple/purple-plugin.c:1040
+#: ../src/purple/purple-plugin.c:1098 ../src/purple/purple-plugin.c:1110
 msgid "Auto"
 msgstr "自動"
 
-#: ../src/purple/purple-plugin.c:1029
+#: ../src/purple/purple-plugin.c:1099
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:1030
+#: ../src/purple/purple-plugin.c:1100
 msgid "TCP"
 msgstr "TCP"
 
@@ -992,23 +1014,23 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:1036
+#: ../src/purple/purple-plugin.c:1106
 msgid "User Agent"
 msgstr "使用者代理"
 
-#: ../src/purple/purple-plugin.c:1039
+#: ../src/purple/purple-plugin.c:1109
 msgid "Authentication scheme"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:1041
+#: ../src/purple/purple-plugin.c:1111
 msgid "NTLM"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:1043
+#: ../src/purple/purple-plugin.c:1113
 msgid "Kerberos"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:1045
+#: ../src/purple/purple-plugin.c:1115
 msgid "TLS-DSK"
 msgstr ""
 
@@ -1024,23 +1046,23 @@ msgstr ""
 #. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
 #. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
 #. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
-#: ../src/purple/purple-plugin.c:1063
+#: ../src/purple/purple-plugin.c:1133
 msgid "Use Single Sign-On"
 msgstr "使用單一登入"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#: ../src/purple/purple-plugin.c:1070
+#: ../src/purple/purple-plugin.c:1140
 msgid "Don't publish my calendar information"
 msgstr ""
 
-#: ../src/purple/purple-plugin.c:1073
+#: ../src/purple/purple-plugin.c:1143
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr "電子郵件服務網址\n(留空表示自動搜索)"
 
-#: ../src/purple/purple-plugin.c:1076
+#: ../src/purple/purple-plugin.c:1146
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1048,13 +1070,13 @@ msgstr "電子郵件地址\n(如果與使用者名稱不同)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#: ../src/purple/purple-plugin.c:1082
+#: ../src/purple/purple-plugin.c:1152
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr "電子郵件帳號\n(如果與本帳號不同)"
 
-#: ../src/purple/purple-plugin.c:1085
+#: ../src/purple/purple-plugin.c:1155
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1062,12 +1084,32 @@ msgstr "電子郵件密碼\n(如果與本密碼不同)"
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#: ../src/purple/purple-plugin.c:1092
+#: ../src/purple/purple-plugin.c:1162
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
 "(leave empty to determine from Username)"
 msgstr "群組聊天室代理伺服器\n   company.com  或  user@company.com\n(留空表示由使用者名稱決定)"
+
+#: ../src/purple/purple-plugin.c:1166
+msgid "Media encryption"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1167
+msgid "Obey server policy"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1168
+msgid "Always"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1169
+msgid "Optional"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1170
+msgid "Disabled"
+msgstr ""
 
 #: ../src/purple/purple-search.c:60
 msgid "User name"
