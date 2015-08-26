@@ -305,6 +305,9 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sipe_ews_autodiscover_init(sipe_private);
 	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_UNSET);
 
+	sipe_private->access_numbers = g_hash_table_new_full(g_str_hash, g_str_equal,
+							     g_free, g_free);
+
 	return((struct sipe_core_public *)sipe_private);
 }
 
@@ -428,6 +431,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->addressbook_uri);
 	g_free(sipe_private->dlx_uri);
 	sipe_utils_slist_free_full(sipe_private->conf_mcu_types, g_free);
+	g_hash_table_destroy(sipe_private->access_numbers);
 	g_free(sipe_private);
 }
 

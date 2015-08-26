@@ -145,15 +145,37 @@ process_conf_get_capabilities(SIPE_UNUSED_PARAMETER struct sipe_core_private *si
 	}
 	if (msg->response == 200) {
 		sipe_xml *xn_response = sipe_xml_parse(msg->body, msg->bodylen);
+		const sipe_xml *node;
+		gchar *default_region;
 
-		if (sipe_strequal("success", sipe_xml_attribute(xn_response, "code"))) {
-			const sipe_xml *node = sipe_xml_child(xn_response, "getConferencingCapabilities/mcu-types/mcuType");
-			for (;node; node = sipe_xml_twin(node)) {
-				sipe_private->conf_mcu_types =
-						g_slist_append(sipe_private->conf_mcu_types,
-							       sipe_xml_data(node));
+		if (!sipe_strequal("success", sipe_xml_attribute(xn_response, "code"))) {
+			return TRUE;
+		}
+
+		node = sipe_xml_child(xn_response, "getConferencingCapabilities/mcu-types/mcuType");
+		for (;node; node = sipe_xml_twin(node)) {
+			sipe_private->conf_mcu_types =
+					g_slist_append(sipe_private->conf_mcu_types,
+						       sipe_xml_data(node));
+		}
+
+		g_hash_table_remove_all(sipe_private->access_numbers);
+		node = sipe_xml_child(xn_response, "getConferencingCapabilities/pstn-bridging/access-numbers/region");
+		for (;node; node = sipe_xml_twin(node)) {
+			gchar *name = g_strdup(sipe_xml_attribute(node, "name"));
+			gchar *number = sipe_xml_data(sipe_xml_child(node, "access-number/number"));
+			if (name && number) {
+				g_hash_table_insert(sipe_private->access_numbers, name, number);
 			}
 		}
+
+		node = sipe_xml_child(xn_response, "getConferencingCapabilities/pstn-bridging/access-numbers/default-region");
+		default_region = sipe_xml_data(node);
+		if (default_region) {
+			sipe_private->default_access_number =
+					g_hash_table_lookup(sipe_private->access_numbers, default_region);
+		}
+		g_free(default_region);
 
 		sipe_xml_free(xn_response);
 	}

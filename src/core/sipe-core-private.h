@@ -169,6 +169,10 @@ struct sipe_core_private {
 	guint cccp_request_id;
 
 	GSList *conf_mcu_types;
+
+	/* Dial-in conferencing phone numbers for different regions */
+	GHashTable *access_numbers;
+	const gchar *default_access_number;
 };
 
 /**
