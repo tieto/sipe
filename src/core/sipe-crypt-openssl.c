@@ -245,7 +245,6 @@ void sipe_crypt_tls_block(const guchar *key, gsize key_length,
 		if (context) {
 			int tmp;
 			EVP_EncryptUpdate(context, out, &tmp, in, length);
-			EVP_EncryptFinal(context, out + tmp, &tmp);
 			EVP_CIPHER_CTX_cleanup(context);
 			g_free(context);
 		}
