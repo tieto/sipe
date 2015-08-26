@@ -1,4 +1,15 @@
 -------------------------------------------------------------------
+Tue Jun 30 15:14:25 UTC 2015 - dimstar@opensuse.org
+
+- Port to GStreamer 1.0 (follow pidin's port):
+  + Add pidgin-sipe-gstreamer-1.0.patch
+  + Replace pkgconfig(gstreamer-0.10) BuildRequires with
+    pkgconfig(gstreamer-1.0).
+  + Add autoreconf call, as the patch touches the buildsystem.
+  + Pass --with-vv to configure, to ensure we do not lose Voice &
+    Video support.
+
+-------------------------------------------------------------------
 Tue Apr  7 16:35:34 UTC 2015 - dimstar@opensuse.org
 
 - Update to version 1.19.1:
