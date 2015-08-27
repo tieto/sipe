@@ -61,7 +61,6 @@
 #define PURPLE_TYPE_STRING G_TYPE_STRING
 #else
 #include "blist.h"
-#define PurpleIMTypingState                           PurpleTypingState
 #define PURPLE_CONNECTION_FLAG_ALLOW_CUSTOM_SMILEY    PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY
 #define PURPLE_CONNECTION_FLAG_FORMATTING_WBFO        PURPLE_CONNECTION_FORMATTING_WBFO
 #define PURPLE_CONNECTION_FLAG_HTML                   PURPLE_CONNECTION_HTML
@@ -166,13 +165,13 @@ gchar *sipe_backend_version(void)
 }
 
 /* PurplePluginProtocolInfo function calls & data structure */
-static const char *sipe_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
+const char *sipe_purple_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
 				  SIPE_UNUSED_PARAMETER PurpleBuddy *b)
 {
 	return "sipe";
 }
 
-static gchar *sipe_purple_status_text(PurpleBuddy *buddy)
+gchar *sipe_purple_status_text(PurpleBuddy *buddy)
 {
 	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
 	return sipe_core_buddy_status(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
@@ -181,9 +180,9 @@ static gchar *sipe_purple_status_text(PurpleBuddy *buddy)
 				      purple_status_get_name(status));
 }
 
-static void sipe_purple_tooltip_text(PurpleBuddy *buddy,
-				     PurpleNotifyUserInfo *user_info,
-				     SIPE_UNUSED_PARAMETER gboolean full)
+void sipe_purple_tooltip_text(PurpleBuddy *buddy,
+			      PurpleNotifyUserInfo *user_info,
+			      SIPE_UNUSED_PARAMETER gboolean full)
 {
 	const PurplePresence *presence = purple_buddy_get_presence(buddy);
 	sipe_core_buddy_tooltip_info(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
@@ -193,7 +192,7 @@ static void sipe_purple_tooltip_text(PurpleBuddy *buddy,
 				     (struct sipe_backend_buddy_tooltip *) user_info);
 }
 
-static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
+GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 {
 	PurpleStatusType *type;
 	GList *types = NULL;
@@ -328,7 +327,7 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	return types;
 }
 
-static GList *sipe_purple_blist_node_menu(PurpleBlistNode *node)
+GList *sipe_purple_blist_node_menu(PurpleBlistNode *node)
 {
 	if (PURPLE_IS_BUDDY(node))
 	{
@@ -503,7 +502,7 @@ static void password_ok_cb(PurpleConnection *gc,
 		password_required_cb(gc, fields);
 }
 
-static void sipe_purple_login(PurpleAccount *account)
+void sipe_purple_login(PurpleAccount *account)
 {
 	PurpleConnection *gc = purple_account_get_connection(account);
 	const gchar *password = purple_connection_get_password(gc);
@@ -523,7 +522,7 @@ static void sipe_purple_login(PurpleAccount *account)
 
 }
 
-static void sipe_purple_close(PurpleConnection *gc)
+void sipe_purple_close(PurpleConnection *gc)
 {
 	struct sipe_core_public *sipe_public = PURPLE_GC_TO_SIPE_CORE_PUBLIC;
 
@@ -568,9 +567,9 @@ static int sipe_purple_send_im(PurpleConnection *gc,
 }
 #endif
 
-static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
-					    const char *who,
-					    PurpleIMTypingState state)
+unsigned int sipe_purple_send_typing(PurpleConnection *gc,
+				     const char *who,
+				     PurpleIMTypingState state)
 {
 	gboolean typing = (state == PURPLE_IM_TYPING);
 
@@ -599,29 +598,29 @@ static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 	return(typing ? 4 : 0);
 }
 
-static void sipe_purple_get_info(PurpleConnection *gc, const char *who)
+void sipe_purple_get_info(PurpleConnection *gc, const char *who)
 {
 	sipe_core_buddy_get_info(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 				 who);
 }
 
-static void sipe_purple_add_permit(PurpleConnection *gc, const char *name)
+void sipe_purple_add_permit(PurpleConnection *gc, const char *name)
 {
 	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, TRUE);
 }
 
-static void sipe_purple_add_deny(PurpleConnection *gc, const char *name)
+void sipe_purple_add_deny(PurpleConnection *gc, const char *name)
 {
 	sipe_core_contact_allow_deny(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, FALSE);
 }
 
-static void sipe_purple_alias_buddy(PurpleConnection *gc, const char *name,
+void sipe_purple_alias_buddy(PurpleConnection *gc, const char *name,
 				    const char *alias)
 {
 	sipe_core_group_set_alias(PURPLE_GC_TO_SIPE_CORE_PUBLIC, name, alias);
 }
 
-static void sipe_purple_group_rename(PurpleConnection *gc,
+void sipe_purple_group_rename(PurpleConnection *gc,
 				     const char *old_name,
 				     PurpleGroup *group,
 				     SIPE_UNUSED_PARAMETER GList *moved_buddies)
@@ -631,20 +630,20 @@ static void sipe_purple_group_rename(PurpleConnection *gc,
 			       purple_group_get_name(group));
 }
 
-static void sipe_purple_convo_closed(PurpleConnection *gc,
+void sipe_purple_convo_closed(PurpleConnection *gc,
 				     const char *who)
 {
 	sipe_core_im_close(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who);
 }
 
-static void sipe_purple_group_remove(PurpleConnection *gc, PurpleGroup *group)
+void sipe_purple_group_remove(PurpleConnection *gc, PurpleGroup *group)
 {
 	sipe_core_group_remove(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
 			       purple_group_get_name(group));
 }
 
 #if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)
-static GHashTable *
+GHashTable *
 sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 {
 	GHashTable *table;
@@ -662,8 +661,8 @@ sipe_purple_sigusr1_handler(SIPE_UNUSED_PARAMETER int signum)
 	capture_pipeline("PURPLE_SIPE_PIPELINE");
 }
 
-static gboolean sipe_purple_initiate_media(PurpleAccount *account, const char *who,
-					   SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
+gboolean sipe_purple_initiate_media(PurpleAccount *account, const char *who,
+				    SIPE_UNUSED_PARAMETER PurpleMediaSessionType type)
 {
 	sipe_core_media_initiate_call(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
 				      who,
@@ -671,8 +670,8 @@ static gboolean sipe_purple_initiate_media(PurpleAccount *account, const char *w
 	return TRUE;
 }
 
-static PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *account,
-						  SIPE_UNUSED_PARAMETER const char *who)
+PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *account,
+					   SIPE_UNUSED_PARAMETER const char *who)
 {
 	return   PURPLE_MEDIA_CAPS_AUDIO
 	       | PURPLE_MEDIA_CAPS_AUDIO_VIDEO
@@ -711,7 +710,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
 	NO_BUDDY_ICONS,				/* icon_spec */
-	sipe_list_icon,				/* list_icon */
+	sipe_purple_list_icon,			/* list_icon */
 	NULL,					/* list_emblems */
 	sipe_purple_status_text,		/* status_text */
 	sipe_purple_tooltip_text,		/* tooltip_text */	// add custom info to contact tooltip
@@ -816,7 +815,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 /* Original GCC error checking restored from here on... (see above) */
 
 /* PurplePluginInfo function calls & data structure */
-static gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
+gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 #ifdef HAVE_VV
 	struct sigaction action;
@@ -827,7 +826,7 @@ static gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plug
 	return TRUE;
 }
 
-static gboolean sipe_purple_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
+gboolean sipe_purple_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 #ifdef HAVE_VV
 	struct sigaction action;
@@ -1003,8 +1002,13 @@ static void sipe_purple_reset_status(PurplePluginAction *action)
 	}
 }
 
-static GList *sipe_purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
-				  SIPE_UNUSED_PARAMETER gpointer context)
+static GList *purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
+			     SIPE_UNUSED_PARAMETER gpointer context)
+{
+	return sipe_purple_actions();
+}
+
+GList *sipe_purple_actions()
 {
 	GList *menu = NULL;
 	PurplePluginAction *act;
@@ -1062,7 +1066,7 @@ static PurplePluginInfo sipe_purple_info = {
 	NULL,                                             /**< ui_info        */
 	&sipe_prpl_info,                                  /**< extra_info     */
 	NULL,
-	sipe_purple_actions,
+	purple_actions,
 	NULL,
 	NULL,
 	NULL,
