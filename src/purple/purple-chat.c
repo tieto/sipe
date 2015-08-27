@@ -268,6 +268,15 @@ static void sipe_purple_chat_menu_join_call_cb(SIPE_UNUSED_PARAMETER PurpleChat 
 
 #endif
 
+static void sipe_purple_chat_menu_entry_info_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
+						PurpleConversation *conv)
+{
+	gchar *tmp = sipe_core_conf_entry_info(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+					       sipe_purple_chat_get_session(conv));
+	purple_notify_formatted(NULL, NULL, "", NULL, tmp, NULL, NULL);
+	g_free(tmp);
+}
+
 GList *
 sipe_purple_chat_menu(PurpleChat *chat)
 {
@@ -309,6 +318,10 @@ sipe_purple_chat_menu(PurpleChat *chat)
 				menu = g_list_prepend(menu, act);
 		}
 #endif
+		act = purple_menu_action_new(_("Meeting entry info"),
+					     PURPLE_CALLBACK(sipe_purple_chat_menu_entry_info_cb),
+					     conv, NULL);
+		menu = g_list_append(menu, act);
 	}
 
 	return menu;

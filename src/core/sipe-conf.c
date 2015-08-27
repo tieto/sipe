@@ -1370,6 +1370,56 @@ void sipe_core_conf_remove_from(struct sipe_core_public *sipe_public,
 	sipe_conf_delete_user(sipe_private, session, buddy_name);
 }
 
+static gchar *
+access_numbers_info(struct sipe_core_public *sipe_public)
+{
+	GString *result = g_string_new("");
+
+	GList *keys = g_hash_table_get_keys(SIPE_CORE_PRIVATE->access_numbers);
+	keys = g_list_sort(keys, (GCompareFunc)g_strcmp0);
+
+	for (; keys; keys = g_list_delete_link(keys, keys)) {
+		gchar *value;
+		value = g_hash_table_lookup(SIPE_CORE_PRIVATE->access_numbers,
+					    keys->data);
+
+		g_string_append(result, keys->data);
+		g_string_append(result, "&nbsp;&nbsp;&nbsp;&nbsp;");
+		g_string_append(result, value);
+		g_string_append(result, "<br/>");
+	}
+
+	return g_string_free(result, FALSE);
+}
+
+gchar *
+sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
+			  struct sipe_chat_session *chat_session)
+{
+	gchar *access_info = access_numbers_info(sipe_public);
+	gchar *result = g_strdup_printf(
+			"<b><font size=\"+1\">Dial-in info</font></b><br/>"
+			"<b>Number:</b> %s<br/>"
+			"<b>Conference ID:</b> %s<br/>"
+			"<br/>"
+			"<b>Meeting link:</b><br/>"
+			"%s<br/>"
+			"<br/>"
+			"<b>Organizer:</b> %s<br/>"
+			"<br/>"
+			"<b><font size=\"+1\">Alternative dial-in numbers</font></b><br/>"
+			"%s",
+			SIPE_CORE_PRIVATE->default_access_number ? SIPE_CORE_PRIVATE->default_access_number : "",
+			chat_session->dial_in_conf_id ? chat_session->dial_in_conf_id : "",
+			chat_session->join_url ? chat_session->join_url : "",
+			chat_session->organizer ? chat_session->organizer : "",
+			access_info);
+
+	g_free(access_info);
+
+	return result;
+}
+
 /*
   Local Variables:
   mode: c

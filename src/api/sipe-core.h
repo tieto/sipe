@@ -392,6 +392,10 @@ void sipe_core_conf_remove_from(struct sipe_core_public *sipe_public,
 				gpointer parameter,
 				const gchar *buddy_name);
 
+gchar *
+sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
+			  struct sipe_chat_session *chat_session);
+
 /* call control (CSTA) */
 void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,
 			       const gchar *phone);
