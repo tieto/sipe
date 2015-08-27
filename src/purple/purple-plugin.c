@@ -1071,14 +1071,22 @@ static PurplePluginInfo sipe_purple_info = {
 
 static void sipe_purple_init_plugin(PurplePlugin *plugin)
 {
-	PurpleAccountUserSplit *split;
-	PurpleAccountOption *option;
-
 	/* This needs to be called first */
 	sipe_core_init(LOCALEDIR);
 	sipe_purple_activity_init();
 
 	purple_plugin_register(plugin);
+
+	sipe_prpl_info.user_splits = g_list_append(sipe_prpl_info.user_splits,
+						   sipe_purple_user_split());
+
+	sipe_prpl_info.protocol_options = sipe_purple_account_options();
+}
+
+GList * sipe_purple_account_options()
+{
+	PurpleAccountOption *option;
+	GList *options = NULL;
 
         /**
 	 * When adding new string settings please make sure to keep these
@@ -1087,24 +1095,20 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	 *     api/sipe-backend.h
 	 *     purple-settings.c:setting_name[]
 	 */
-	split = purple_account_user_split_new(_("Login\n   user  or  DOMAIN\\user  or\n   user@company.com"), NULL, ',');
-	purple_account_user_split_set_reverse(split, FALSE);
-	sipe_prpl_info.user_splits = g_list_append(sipe_prpl_info.user_splits, split);
-
 	option = purple_account_option_string_new(_("Server[:Port]\n(leave empty for auto-discovery)"), "server", "");
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 	option = purple_account_option_list_new(_("Connection type"), "transport", NULL);
 	purple_account_option_add_list_item(option, _("Auto"), "auto");
 	purple_account_option_add_list_item(option, _("SSL/TLS"), "tls");
 	purple_account_option_add_list_item(option, _("TCP"), "tcp");
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 	/*option = purple_account_option_bool_new(_("Publish status (note: everyone may watch you)"), "doservice", TRUE);
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);*/
 
 	option = purple_account_option_string_new(_("User Agent"), "useragent", "");
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 	option = purple_account_option_list_new(_("Authentication scheme"), "authentication", NULL);
 	purple_account_option_add_list_item(option, _("Auto"), "auto");
@@ -1113,7 +1117,7 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	purple_account_option_add_list_item(option, _("Kerberos"), "krb5");
 #endif
 	purple_account_option_add_list_item(option, _("TLS-DSK"), "tls-dsk");
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 #if PURPLE_SIPE_SSO_AND_KERBEROS
 	/*
@@ -1131,36 +1135,36 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	 *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 	 */
 	option = purple_account_option_bool_new(_("Use Single Sign-On"), "sso", FALSE);
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 #endif
 
 	/** Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 	 */
 	option = purple_account_option_bool_new(_("Don't publish my calendar information"), "dont-publish", FALSE);
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 	option = purple_account_option_string_new(_("Email address\n(if different from Username)"), "email", "");
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 	/** Example (Exchange): DOMAIN\user  or  user@company.com
 	 *  Example (Domino)  : email_address
 	 */
 	option = purple_account_option_string_new(_("Email login\n(if different from Login)"), "email_login", "");
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 	option = purple_account_option_string_new(_("Email password\n(if different from Password)"), "email_password", "");
 	purple_account_option_string_set_masked(option, TRUE);
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 	/** Example (federated domain): company.com      (i.e. ocschat@company.com)
 	 *  Example (non-default user): user@company.com
 	 */
 	option = purple_account_option_string_new(_("Group Chat Proxy\n   company.com  or  user@company.com\n(leave empty to determine from Username)"), "groupchat_user", "");
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 
 #ifdef HAVE_SRTP
 	option = purple_account_option_list_new(_("Media encryption"), "encryption-policy", NULL);
@@ -1168,8 +1172,19 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	purple_account_option_add_list_item(option, _("Always"), "required");
 	purple_account_option_add_list_item(option, _("Optional"), "optional");
 	purple_account_option_add_list_item(option, _("Disabled"), "disabled");
-	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+	options = g_list_append(options, option);
 #endif
+
+	return options;
+}
+
+gpointer sipe_purple_user_split()
+{
+	PurpleAccountUserSplit *split =
+			purple_account_user_split_new(_("Login\n   user  or  DOMAIN\\user  or\n   user@company.com"), NULL, ',');
+	purple_account_user_split_set_reverse(split, FALSE);
+
+	return split;
 }
 
 /* This macro makes the code a purple plugin */

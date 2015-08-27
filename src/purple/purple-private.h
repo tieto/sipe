@@ -171,6 +171,11 @@ void sipe_purple_transport_close_all(struct sipe_backend_private *purple_private
 #define PURPLE_GC_TO_SIPE_CORE_PUBLIC      ((struct sipe_core_public *) gc->proto_data)
 #endif
 
+/* Protocol common functions */
+
+gpointer sipe_purple_user_split(void);
+GList *sipe_purple_account_options(void);
+
 /*
   Local Variables:
   mode: c
