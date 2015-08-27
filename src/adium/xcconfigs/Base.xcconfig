@@ -16,7 +16,7 @@ HEADER_SEARCH_PATHS = "../../../adium/Frameworks/libglib.framework/Headers" "../
 
 // Hack to work around how xcconfig pre-processor handles double-slash as a comment (even in a quoted string!!) :(
 SLASH=/
-SIPE_TRANSLATIONS_URL=\"https:${SLASH}/www.transifex.com/projects/p/pidgin-sipe/resource/mob/\"
+SIPE_TRANSLATIONS_URL=\"https:${SLASH}/www.transifex.com/stefanb/pidgin-sipe/\"
 PACKAGE_BUGREPORT=\"https:${SLASH}/sourceforge.net/p/sipe/bugs/\"
 PACKAGE_URL=\"http:${SLASH}/sipe.sourceforge.net/\"
 
