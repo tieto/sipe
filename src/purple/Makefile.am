@@ -28,7 +28,8 @@ libsipe_backend_la_SOURCES = \
 	purple-user.c
 
 libsipe_la_SOURCES = \
-	purple-plugin.c
+	purple-plugin.c \
+	purple-plugin-common.c
 
 AM_CFLAGS = $(st)
 
