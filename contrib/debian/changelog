@@ -1,3 +1,14 @@
+pidgin-sipe (1.20.0-1) unstable; urgency=low
+
+  * New upstreamv ersion 1.20.0 "SRTP, Conference URL & TLS-DSK Improvements" (2015-XX-XX)
+	- Feature #82: Parse HTML from Lync conference URL (Stefan Becker)
+	- Feature #69: SRTP Support (Jakub Adam)
+	  * requires libpurple >= 3.0.0
+	- Fixed #285: Office365 rejects RC4 in TLS-DSK (Stefan Becker)
+	  * added support for AES-128/256-CBC
+
+ -- Stefan Becker <chemobejk@gmail.com>  Thu, 27 Aug 2015 16:08:00 +0300
+
 pidgin-sipe (1.19.1-1) unstable; urgency=low
 
   * New upstream version 1.19.1 "Bug Fixes I" (2015-04-04)

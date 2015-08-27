@@ -133,7 +133,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.19.1
+Version:        1.20.0
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -535,6 +535,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* DDD MMM DD 2015 J. D. User <jduser@noreply.com> 1.20.0
+- update to 1.20.0
+
 * Sat Apr 04 2015 J. D. User <jduser@noreply.com> 1.19.1
 - update to 1.19.1
 
