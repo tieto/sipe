@@ -1126,6 +1126,30 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		}
 	}
 
+	/* organizer */
+	if (!session->chat_session->organizer) {
+		node = sipe_xml_child(xn_conference_info, "conference-description/organizer/display-name");
+		if (node) {
+			session->chat_session->organizer = sipe_xml_data(node);
+		}
+	}
+
+	/* join URL */
+	if (!session->chat_session->join_url) {
+		node = sipe_xml_child(xn_conference_info, "conference-description/join-url");
+		if (node) {
+			session->chat_session->join_url = sipe_xml_data(node);
+		}
+	}
+
+	/* dial-in conference id */
+	if (!session->chat_session->dial_in_conf_id) {
+		node = sipe_xml_child(xn_conference_info, "conference-description/pstn-access/id");
+		if (node) {
+			session->chat_session->dial_in_conf_id = sipe_xml_data(node);
+		}
+	}
+
 	/* users */
 	for (node = sipe_xml_child(xn_conference_info, "users/user"); node; node = sipe_xml_twin(node)) {
 		const gchar *user_uri = sipe_xml_attribute(node, "entity");
