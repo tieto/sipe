@@ -705,8 +705,7 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 #if PURPLE_VERSION_CHECK(3,0,0)
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
 #endif
-	OPT_PROTO_CHAT_TOPIC |
-	OPT_PROTO_PASSWORD_OPTIONAL,
+	SIPE_PURPLE_PROTOCOL_OPTIONS,
 	NULL,					/* user_splits */
 	NULL,					/* protocol_options */
 	NO_BUDDY_ICONS,				/* icon_spec */
@@ -1048,17 +1047,12 @@ static PurplePluginInfo sipe_purple_info = {
 	0,                                                /**< flags          */
 	NULL,                                             /**< dependencies   */
 	PURPLE_PRIORITY_DEFAULT,                          /**< priority       */
-	"prpl-sipe",                                   	  /**< id             */
-	"Office Communicator",                            /**< name           */
+	SIPE_PURPLE_PLUGIN_ID,                            /**< id             */
+	SIPE_PURPLE_PLUGIN_NAME,                          /**< name           */
 	PACKAGE_VERSION,                                  /**< version        */
-	"Microsoft Office Communicator Protocol Plugin",  /**< summary        */
-	"A plugin for the extended SIP/SIMPLE protocol used by "          /**< description */
-	"Microsoft Live/Office Communications/Lync Server (LCS2005/OCS2007+)", /**< description */
-	"Stefan Becker <chemobejk@gmail.com>, "           /**< author         */
-	"Jakub Adam <jakub.adam@tieto.com>, "             /**< author         */
-	"Anibal Avelar <avelar@gmail.com> (retired), "    /**< author         */
-	"pier11 <pier11@operamail.com> (retired), "       /**< author         */
-	"Gabriel Burt <gburt@novell.com> (retired)",      /**< author         */
+	SIPE_PURPLE_PLUGIN_SUMMARY,                       /**< summary        */
+	SIPE_PURPLE_PLUGIN_DESCRIPTION,                   /**< description    */
+	SIPE_PURPLE_PLUGIN_AUTHORS,                       /**< authors        */
 	PACKAGE_URL,                                      /**< homepage       */
 	sipe_purple_plugin_load,                          /**< load           */
 	sipe_purple_plugin_unload,                        /**< unload         */

@@ -22,6 +22,25 @@
 
 #include "version.h"
 
+#define SIPE_PURPLE_PLUGIN_ID "prpl-sipe"
+#define SIPE_PURPLE_PLUGIN_NAME "Office Communicator"
+
+#define SIPE_PURPLE_PLUGIN_SUMMARY \
+	"Microsoft Office Communicator Protocol Plugin"
+
+#define SIPE_PURPLE_PLUGIN_DESCRIPTION \
+	"A plugin for the extended SIP/SIMPLE protocol used by " \
+	"Microsoft Live/Office Communications/Lync Server (LCS2005/OCS2007+)"
+
+#define SIPE_PURPLE_PLUGIN_AUTHORS \
+	"Stefan Becker <chemobejk@gmail.com>, " \
+	"Jakub Adam <jakub.adam@ktknet.cz>, " \
+	"Anibal Avelar <avelar@gmail.com> (retired), " \
+	"pier11 <pier11@operamail.com> (retired), " \
+	"Gabriel Burt <gburt@novell.com> (retired)"
+
+#define SIPE_PURPLE_PROTOCOL_OPTIONS OPT_PROTO_CHAT_TOPIC | OPT_PROTO_PASSWORD_OPTIONAL
+
 #if !PURPLE_VERSION_CHECK(3,0,0)
 #define PurpleIMTypingState PurpleTypingState
 #endif
