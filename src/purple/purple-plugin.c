@@ -822,6 +822,9 @@ gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 	action.sa_handler = sipe_purple_sigusr1_handler;
 	sigaction(SIGUSR1, &action, NULL);
 #endif
+
+	sipe_purple_activity_init();
+
 	return TRUE;
 }
 
@@ -833,6 +836,9 @@ gboolean sipe_purple_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 	action.sa_handler = SIG_DFL;
 	sigaction(SIGUSR1, &action, NULL);
 #endif
+
+	sipe_purple_activity_shutdown();
+
 	return TRUE;
 }
 
@@ -840,7 +846,6 @@ static void sipe_purple_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugi
 {
 	GList *entry;
 
-	sipe_purple_activity_shutdown();
 	sipe_core_destroy();
 
 	entry = sipe_prpl_info.protocol_options;
@@ -1071,7 +1076,6 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 {
 	/* This needs to be called first */
 	sipe_core_init(LOCALEDIR);
-	sipe_purple_activity_init();
 
 	purple_plugin_register(plugin);
 
