@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -201,9 +201,15 @@ static void sipe_purple_find_contact_cb(PurpleConnection *gc,
 			       country);
 }
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+void sipe_purple_show_find_contact(PurpleProtocolAction *action)
+{
+	PurpleConnection *gc = action->connection;
+#else
 void sipe_purple_show_find_contact(PurplePluginAction *action)
 {
 	PurpleConnection *gc = (PurpleConnection *) action->context;
+#endif
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *group;
 	PurpleRequestField *field;

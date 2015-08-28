@@ -43,6 +43,7 @@
 
 #if !PURPLE_VERSION_CHECK(3,0,0)
 #define PurpleIMTypingState PurpleTypingState
+#define _PurpleProtocolAction _PurplePluginAction
 #endif
 
 /* Forward declarations */
@@ -170,7 +171,7 @@ void sipe_purple_group_buddy(struct _PurpleConnection *gc,
 GList *sipe_purple_buddy_menu(struct _PurpleBuddy *buddy);
 
 /* libpurple search callbacks */
-void sipe_purple_show_find_contact(struct _PurplePluginAction *action);
+void sipe_purple_show_find_contact(struct _PurpleProtocolAction *action);
 
 /* libpurple status callbacks */
 void sipe_purple_set_status(struct _PurpleAccount *account,

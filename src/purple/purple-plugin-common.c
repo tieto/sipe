@@ -59,6 +59,9 @@
 #define purple_connection_error(g, e, m)              purple_connection_error_reason(g, e, m)
 #define purple_connection_get_flags(gc)               0
 #define purple_connection_set_flags(gc, f)            gc->flags |= f
+#define purple_protocol_action_new(l, c)              purple_plugin_action_new(l, c)
+#define PurpleProtocolAction                          PurplePluginAction
+#define SIPE_PURPLE_ACTION_TO_CONNECTION              action->context
 #endif
 
 #include "sipe-backend.h"
@@ -665,10 +668,10 @@ gboolean sipe_purple_plugin_unload(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 	return TRUE;
 }
 
-static void sipe_purple_show_about_plugin(PurplePluginAction *action)
+static void sipe_purple_show_about_plugin(PurpleProtocolAction *action)
 {
 	gchar *tmp = sipe_core_about();
-	purple_notify_formatted((PurpleConnection *) action->context,
+	purple_notify_formatted(SIPE_PURPLE_ACTION_TO_CONNECTION,
 				NULL, " ", NULL, tmp, NULL, NULL);
 	g_free(tmp);
 }
@@ -709,9 +712,9 @@ static void sipe_purple_phone_call_cb(PurpleConnection *gc,
 	}
 }
 
-static void sipe_purple_phone_call(PurplePluginAction *action)
+static void sipe_purple_phone_call(PurpleProtocolAction *action)
 {
-	PurpleConnection *gc = (PurpleConnection *) action->context;
+	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *group;
 	PurpleRequestField *field;
@@ -738,16 +741,16 @@ static void sipe_purple_phone_call(PurplePluginAction *action)
 			      gc);
 }
 
-static void sipe_purple_test_call(PurplePluginAction *action)
+static void sipe_purple_test_call(PurpleProtocolAction *action)
 {
-	PurpleConnection *gc = (PurpleConnection *) action->context;
+	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
 	sipe_core_media_test_call(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 }
 #endif
 
-static void sipe_purple_show_join_conference(PurplePluginAction *action)
+static void sipe_purple_show_join_conference(PurpleProtocolAction *action)
 {
-	PurpleConnection *gc = (PurpleConnection *) action->context;
+	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
 	PurpleRequestFields *fields;
 	PurpleRequestFieldGroup *group;
 	PurpleRequestField *field;
@@ -780,9 +783,9 @@ static void sipe_purple_show_join_conference(PurplePluginAction *action)
 			      gc);
 }
 
-static void sipe_purple_republish_calendar(PurplePluginAction *action)
+static void sipe_purple_republish_calendar(PurpleProtocolAction *action)
 {
-	PurpleConnection *gc = (PurpleConnection *) action->context;
+	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
 	PurpleAccount *account = purple_connection_get_account(gc);
 
 	if (get_dont_publish_flag(account)) {
@@ -794,9 +797,9 @@ static void sipe_purple_republish_calendar(PurplePluginAction *action)
 	}
 }
 
-static void sipe_purple_reset_status(PurplePluginAction *action)
+static void sipe_purple_reset_status(PurpleProtocolAction *action)
 {
-	PurpleConnection *gc = (PurpleConnection *) action->context;
+	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
 	PurpleAccount *account = purple_connection_get_account(gc);
 
 	if (get_dont_publish_flag(account)) {
@@ -811,29 +814,29 @@ static void sipe_purple_reset_status(PurplePluginAction *action)
 GList *sipe_purple_actions()
 {
 	GList *menu = NULL;
-	PurplePluginAction *act;
+	PurpleProtocolAction *act;
 
-	act = purple_plugin_action_new(_("About SIPE plugin..."), sipe_purple_show_about_plugin);
+	act = purple_protocol_action_new(_("About SIPE plugin..."), sipe_purple_show_about_plugin);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_plugin_action_new(_("Contact search..."), sipe_purple_show_find_contact);
+	act = purple_protocol_action_new(_("Contact search..."), sipe_purple_show_find_contact);
 	menu = g_list_prepend(menu, act);
 
 #ifdef HAVE_VV
-	act = purple_plugin_action_new(_("Call a phone number..."), sipe_purple_phone_call);
+	act = purple_protocol_action_new(_("Call a phone number..."), sipe_purple_phone_call);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_plugin_action_new(_("Test call"), sipe_purple_test_call);
+	act = purple_protocol_action_new(_("Test call"), sipe_purple_test_call);
 	menu = g_list_prepend(menu, act);
 #endif
 
-	act = purple_plugin_action_new(_("Join scheduled conference..."), sipe_purple_show_join_conference);
+	act = purple_protocol_action_new(_("Join scheduled conference..."), sipe_purple_show_join_conference);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_plugin_action_new(_("Republish Calendar"), sipe_purple_republish_calendar);
+	act = purple_protocol_action_new(_("Republish Calendar"), sipe_purple_republish_calendar);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_plugin_action_new(_("Reset status"), sipe_purple_reset_status);
+	act = purple_protocol_action_new(_("Reset status"), sipe_purple_reset_status);
 	menu = g_list_prepend(menu, act);
 
 	return g_list_reverse(menu);
