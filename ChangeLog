@@ -1,4 +1,4 @@
-version 1.20.0 "SRTP, Conference URL & TLS-DSK Improvements" (2015-XX-XX)
+version 1.20.0 "SRTP, Conference URL & TLS-DSK Improvements" (2015-08-29)
 	- Feature #82: Parse HTML from Lync conference URL (Stefan Becker)
 	- Feature #69: SRTP Support (Jakub Adam)
 	  * requires libpurple >= 3.0.0
