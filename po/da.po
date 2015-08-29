@@ -12,8 +12,8 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2015-08-26 16:20+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2015-08-28 11:46+0000\n"
+"Last-Translator: Joe Hansen <joedalton2@yahoo.dk>\n"
 "Language-Team: Danish (http://www.transifex.com/stefanb/pidgin-sipe/language/da/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -526,7 +526,7 @@ msgstr "Konferencekald er ikke understøttet på denne server."
 
 #: ../src/core/sipe-media.c:1136
 msgid "Error occurred"
-msgstr ""
+msgstr "Der opstod en fejl"
 
 #: ../src/core/sipe-media.c:1188
 msgid "Invalid phone number"
@@ -696,21 +696,21 @@ msgstr "Kun vigtige afbrydelser"
 
 #: ../src/core/sipe-ucs.c:733
 msgid "UCS initialization failed!"
-msgstr ""
+msgstr "Initialisering af UCS mislykkedes!"
 
 #: ../src/core/sipe-ucs.c:735
 msgid ""
 "Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n"
 "\n"
 "You'll need to provide Email settings in the account setup."
-msgstr ""
+msgstr "Kunne ikke finde en Exchangeserver med standardindstillinger for e-post. Derfor vil kontaktlisten ikke fungere.\n\nDu skal angive indstillinger for e-post i kontoopsætningen."
 
 #: ../src/core/sipe-ucs.c:736
 msgid ""
 "Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n"
 "\n"
 "Please correct your Email settings."
-msgstr ""
+msgstr "Kunne ikke finde en Exchangeserver med indstillinger for e-post i kontoopsætningen. Derfor vil kontaktlisten ikke fungere.\n\nRet venligst dine indstillinger for e-post."
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -1095,23 +1095,23 @@ msgstr "Group Chat Proxy\nfirma.com eller bruger@firma.com\n(tom hvis brugernavn
 
 #: ../src/purple/purple-plugin.c:1166
 msgid "Media encryption"
-msgstr ""
+msgstr "Mediekryptering"
 
 #: ../src/purple/purple-plugin.c:1167
 msgid "Obey server policy"
-msgstr ""
+msgstr "Overhold serverpolitik"
 
 #: ../src/purple/purple-plugin.c:1168
 msgid "Always"
-msgstr ""
+msgstr "Altid"
 
 #: ../src/purple/purple-plugin.c:1169
 msgid "Optional"
-msgstr ""
+msgstr "Valgfrit"
 
 #: ../src/purple/purple-plugin.c:1170
 msgid "Disabled"
-msgstr ""
+msgstr "Deaktiveret"
 
 #: ../src/purple/purple-search.c:60
 msgid "User name"
