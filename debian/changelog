@@ -1,3 +1,12 @@
+pidgin-sipe (1.20.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release (Closes: #791796, #796987).
+        - Feature #82: Parse HTML from Lync conference URL
+        - Feature #69: SRTP Support
+        - Fixed #285: Office365 rejects RC4 in TLS-DSK
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 31 Aug 2015 07:48:07 +0200
+
 pidgin-sipe (1.18.2-1) unstable; urgency=medium
 
   * New upstream release.
