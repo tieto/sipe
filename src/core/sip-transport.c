@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -46,6 +46,9 @@
  * this module (!) Like headers: Via, Route, Contact, Authorization, etc.
  * It's all irrelevant to higher layer responsibilities.
  *
+ * Specification references:
+ *
+ *   - [MS-SIPAE]:    http://msdn.microsoft.com/en-us/library/cc431510.aspx
  */
 
 #ifdef HAVE_CONFIG_H
@@ -89,6 +92,7 @@ struct sip_auth {
 	guint retries;
 	guint ntlm_num;
 	guint expires;
+	gboolean can_retry;
 };
 
 /* sip-transport.c private data */
@@ -114,6 +118,7 @@ struct sip_transport {
 
 	gboolean processing_input;   /* whether full header received */
 	gboolean auth_incomplete;    /* whether authentication not completed */
+	gboolean auth_retry;         /* whether next authentication should be tried */
 	gboolean reregister_set;     /* whether reregister timer set */
 	gboolean reauthenticate_set; /* whether reauthenticate timer set */
 	gboolean subscribed;         /* whether subscribed to events, except buddies presence */
@@ -146,6 +151,7 @@ static void sipe_auth_free(struct sip_auth *auth)
 	auth->type = SIPE_AUTHENTICATION_TYPE_UNSET;
 	auth->retries = 0;
 	auth->expires = 0;
+	auth->can_retry = FALSE;
 	g_free(auth->gssapi_data);
 	auth->gssapi_data = NULL;
 	sip_sec_destroy_context(auth->gssapi_context);
@@ -168,8 +174,11 @@ static void sipe_make_signature(struct sipe_core_private *sipe_private,
 		signature_input_str = sipmsg_breakdown_get_string(transport->registrar.version, &msgbd);
 		if (signature_input_str != NULL) {
 			char *signature_hex = sip_sec_make_signature(transport->registrar.gssapi_context, signature_input_str);
+			g_free(msg->signature);
 			msg->signature = signature_hex;
+			g_free(msg->rand);
 			msg->rand = g_strdup(msgbd.rand);
+			g_free(msg->num);
 			msg->num = g_strdup(msgbd.num);
 			g_free(signature_input_str);
 		}
@@ -184,6 +193,7 @@ static const gchar *const auth_type_to_protocol[] = {
 	"Kerberos", /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 	NULL,       /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
 	"TLS-DSK",  /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+	NULL,       /* SIPE_AUTHENTICATION_TYPE_AUTOMATIC */
 };
 #define AUTH_PROTOCOLS (sizeof(auth_type_to_protocol)/sizeof(gchar *))
 
@@ -194,6 +204,36 @@ static gchar *msg_signature_to_auth(struct sip_auth *auth,
 			       auth->protocol,
 			       auth->opaque, auth->realm, auth->target,
 			       msg->rand, msg->num, msg->signature));
+}
+
+static gboolean auth_can_retry(struct sip_transport *transport,
+			       const struct sip_auth *auth)
+{
+	/* NTLM is the scheme with lowest priority - don't retry */
+	gboolean retry =
+		auth->can_retry &&
+		(auth->type != SIPE_AUTHENTICATION_TYPE_NTLM);
+	if (retry)
+		transport->auth_retry = TRUE;
+	return(retry);
+}
+
+static void initialize_auth_retry(struct sipe_core_private *sipe_private,
+				  struct sip_auth *auth)
+{
+	struct sip_transport *transport = sipe_private->transport;
+
+	if (auth_can_retry(transport, auth)) {
+		if (auth->gssapi_context) {
+			/* need to drop context for retry */
+			sip_sec_destroy_context(auth->gssapi_context);
+			auth->gssapi_context = NULL;
+		}
+	} else {
+		sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+					      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+					      _("Failed to authenticate to server"));
+	}
 }
 
 static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
@@ -230,9 +270,7 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		      (sip_sec_context_is_ready(auth->gssapi_context) || gssapi_data))) {
 			SIPE_DEBUG_ERROR_NOFORMAT("initialize_auth_context: security context continuation failed");
 			g_free(gssapi_data);
-			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-						      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-						      _("Failed to authenticate to server"));
+			initialize_auth_retry(sipe_private, auth);
 			return NULL;
 		}
 
@@ -278,7 +316,6 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 		auth->gssapi_context = sip_sec_create_context(auth->type,
 							      SIPE_CORE_PRIVATE_FLAG_IS(SSO),
 							      FALSE, /* connection-less for SIP */
-							      sipe_private->authdomain ? sipe_private->authdomain : "",
 							      sipe_private->authuser,
 							      password);
 
@@ -290,11 +327,10 @@ static gchar *initialize_auth_context(struct sipe_core_private *sipe_private,
 						  &(auth->expires));
 		}
 
-		if (!gssapi_data || !auth->gssapi_context) {
-			g_free(gssapi_data);
-			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-						      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-						      _("Failed to authenticate to server"));
+		/* if auth->gssapi_context is NULL then gssapi_data is still NULL */
+		if (!gssapi_data) {
+			SIPE_DEBUG_ERROR_NOFORMAT("initialize_auth_context: security context initialization failed");
+			initialize_auth_retry(sipe_private, auth);
 			return NULL;
 		}
 	}
@@ -572,7 +608,7 @@ void sip_transport_response(struct sipe_core_private *sipe_private,
 	GString *outstr = g_string_new("");
 	gchar *contact;
 	GSList *tmp;
-	const gchar *keepers[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route", NULL };
+	static const gchar *keepers[] = { "To", "From", "Call-ID", "CSeq", "Via", "Record-Route", NULL };
 
 	/* Can return NULL! */
 	contact = get_contact(sipe_private);
@@ -933,10 +969,12 @@ void sip_transport_update(struct sipe_core_private *sipe_private,
 }
 
 static const gchar *get_auth_header(struct sipe_core_private *sipe_private,
-				    struct sip_auth *auth,
+				    guint type,
 				    struct sipmsg *msg)
 {
-	auth->type     = sipe_private->authentication_type;
+	struct sip_auth *auth = &sipe_private->transport->registrar;
+
+	auth->type     = type;
 	auth->protocol = auth_type_to_protocol[auth->type];
 
 	return(sipmsg_find_auth_header(msg, auth->protocol));
@@ -957,6 +995,7 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 	sipe_auth_free(&transport->registrar);
 	sipe_auth_free(&transport->proxy);
 	sipe_schedule_cancel(sipe_private, "<registration>");
+	transport->auth_retry     = TRUE;
 	transport->reregister_set = FALSE;
 	transport->register_attempt = 0;
 	do_register(sipe_private, FALSE);
@@ -1020,6 +1059,9 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				const gchar *server_hdr = sipmsg_find_header(msg, "Server");
 
 				if (!transport->reregister_set) {
+					/* Schedule re-register 30 seconds before expiration */
+					if (expires > 30)
+						expires -= 30;
 					sip_transport_set_reregister(sipe_private,
 								     expires);
 					transport->reregister_set = TRUE;
@@ -1031,26 +1073,45 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					transport->user_agent = NULL;
 				}
 
-				auth_hdr = get_auth_header(sipe_private, &transport->registrar, msg);
+				auth_hdr = sipmsg_find_auth_header(msg,
+								   transport->registrar.protocol);
 				if (auth_hdr) {
 					SIPE_DEBUG_INFO("process_register_response: Auth header: %s", auth_hdr);
 					fill_auth(auth_hdr, &transport->registrar);
 				}
 
 				if (!transport->reauthenticate_set) {
+					/* [MS-SIPAE] Section 3.2.2 Timers
+					 *
+					 * When the ... authentication handshake completes
+					 * and the SA enters the "established" state, the
+					 * SIP protocol client MUST start an SA expiration
+					 * timer.
+					 * ...
+					 * The expiration timer value is the lesser of
+					 *
+					 *   - Kerberos: the service ticket expiry time
+					 *   - TLS-DSK:  the certificate expiration time
+					 *
+					 * and eight hours, further reduced by some buffer
+					 * time.
+					 * ...
+					 * The protocol client MUST choose a sufficient
+					 * buffer time to allow for the ... authentication
+					 * handshake that reestablishes the SA to complete
+					 * ... This value SHOULD be five (5) minutes or
+					 * longer.
+					 */
 					guint reauth_timeout = transport->registrar.expires;
 
 					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
 
-					/* Does authentication scheme provide valid expiration time? */
-					if (reauth_timeout == 0) {
-						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: no expiration time - using default of 8 hours");
+					if ((reauth_timeout == 0) ||
+					    (reauth_timeout >  8 * 60 * 60))
 						reauth_timeout = 8 * 60 * 60;
-					}
-
-					/* schedule reauthentication 5 minutes before expiration */
 					if (reauth_timeout > 5 * 60)
 						reauth_timeout -= 5 * 60;
+
 					sipe_schedule_seconds(sipe_private,
 							      "<+reauthentication>",
 							      NULL,
@@ -1059,8 +1120,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 							      NULL);
 					transport->reauthenticate_set = TRUE;
 				}
-
-				sipe_backend_connection_completed(SIPE_CORE_PUBLIC);
 
 				uuid = get_uuid(sipe_private);
 
@@ -1124,6 +1183,8 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					}
                                         hdr = g_slist_next(hdr);
                                 }
+
+				sipe_backend_connection_completed(SIPE_CORE_PUBLIC);
 
 				/* rejoin open chats to be able to use them by continue to send messages */
 				sipe_backend_chat_rejoin_all(SIPE_CORE_PUBLIC);
@@ -1194,7 +1255,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			break;
 		case 401:
 		        {
-				const char *auth_hdr;
+				const char *auth_hdr = NULL;
 
 				SIPE_DEBUG_INFO("process_register_response: REGISTER retries %d", transport->registrar.retries);
 
@@ -1205,14 +1266,72 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				}
 
 				if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
-					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
-					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
-								      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
-								      _("Authentication failed"));
-					return TRUE;
+					struct sip_auth *auth = &transport->registrar;
+
+					/* NTLM is the scheme with lowest priority - don't retry */
+					if (auth_can_retry(transport, auth)) {
+						guint failed = auth->type;
+						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - trying next authentication scheme.");
+						sipe_auth_free(auth);
+						auth->type = failed;
+					} else {
+						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
+						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+									      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
+									      _("Authentication failed"));
+						return TRUE;
+					}
 				}
 
-				auth_hdr = get_auth_header(sipe_private, &transport->registrar, msg);
+				if (sipe_private->authentication_type == SIPE_AUTHENTICATION_TYPE_AUTOMATIC) {
+					struct sip_auth *auth = &transport->registrar;
+					guint try             = auth->type;
+
+					while (!auth_hdr) {
+						/*
+						 * Determine next authentication
+						 * scheme in priority order
+						 */
+						if (transport->auth_retry)
+							switch (try) {
+							case SIPE_AUTHENTICATION_TYPE_UNSET:
+								try = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
+								break;
+
+							case SIPE_AUTHENTICATION_TYPE_TLS_DSK:
+#if defined(HAVE_GSSAPI_GSSAPI_H) || defined(HAVE_SSPI)
+								try = SIPE_AUTHENTICATION_TYPE_KERBEROS;
+								break;
+
+							case SIPE_AUTHENTICATION_TYPE_KERBEROS:
+#endif
+								try = SIPE_AUTHENTICATION_TYPE_NTLM;
+								break;
+
+							default:
+								try = SIPE_AUTHENTICATION_TYPE_UNSET;
+								break;
+							}
+
+						auth->can_retry = (try != SIPE_AUTHENTICATION_TYPE_UNSET);
+
+						if (!auth->can_retry) {
+							SIPE_DEBUG_INFO_NOFORMAT("process_register_response: no more authentication schemes to try");
+							break;
+						}
+
+						auth_hdr = get_auth_header(sipe_private,
+									   try,
+									   msg);
+					}
+
+					transport->auth_retry = FALSE;
+
+				} else
+					auth_hdr = get_auth_header(sipe_private,
+								   sipe_private->authentication_type,
+								   msg);
+
 				if (!auth_hdr) {
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_AUTHENTICATION_IMPOSSIBLE,
@@ -1629,7 +1748,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 						 FALSE);
 			sipe_utils_shrink_buffer(conn, cur);
 		} else {
-			if (msg){
+			if (msg) {
 				SIPE_DEBUG_INFO("sipe_transport_input: body too short (%d < %d, strlen %d) - ignoring message", remainder, msg->bodylen, (int)strlen(conn->buffer));
 				sipmsg_free(msg);
                         }
@@ -1639,8 +1758,16 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 			return;
 		}
 
-		// Verify the signature before processing it
-		if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
+		/* Fatal header parse error? */
+		if (msg->response == SIPMSG_RESPONSE_FATAL_ERROR) {
+			/* can't proceed -> drop connection */
+			sipe_backend_connection_error(SIPE_CORE_PUBLIC,
+						      SIPE_CONNECTION_ERROR_NETWORK,
+						      _("Corrupted message received"));
+			transport->processing_input = FALSE;
+
+		/* Verify the signature before processing it */
+		} else if (sip_sec_context_is_ready(transport->registrar.gssapi_context)) {
 			struct sipmsg_breakdown msgbd;
 			gchar *signature_input_str;
 			gchar *rspauth;
@@ -1661,6 +1788,7 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 					sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 								      SIPE_CONNECTION_ERROR_NETWORK,
 								      _("Invalid message signature received"));
+					transport->processing_input = FALSE;
 				}
 			} else if ((msg->response == 401) ||
 				   sipe_strequal(msg->method, "REGISTER")) {
@@ -1752,6 +1880,7 @@ static void sipe_server_register(struct sipe_core_private *sipe_private,
 	};
 	struct sip_transport *transport = g_new0(struct sip_transport, 1);
 
+	transport->auth_retry   = TRUE;
 	transport->server_name  = server_name;
 	transport->server_port  = setup.server_port;
 	transport->connection   = sipe_backend_transport_connect(SIPE_CORE_PUBLIC,

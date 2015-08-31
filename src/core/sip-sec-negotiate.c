@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -39,7 +39,6 @@
 /* Security context for Negotiate */
 typedef struct _context_negotiate {
 	struct sip_sec_context common;
-	const gchar *domain;
 	const gchar *username;
 	const gchar *password;
 	SipSecContext krb5;
@@ -82,7 +81,6 @@ static gboolean sip_sec_negotiate_ntlm_fallback(context_negotiate context)
 	sip_sec_negotiate_copy_flags(context, context->ntlm);
 
 	return(context->ntlm->acquire_cred_func(context->ntlm,
-						context->domain,
 						context->username,
 						context->password));
 }
@@ -91,7 +89,6 @@ static gboolean sip_sec_negotiate_ntlm_fallback(context_negotiate context)
 
 static gboolean
 sip_sec_acquire_cred__negotiate(SipSecContext context,
-				const gchar *domain,
 				const gchar *username,
 				const gchar *password)
 {
@@ -100,14 +97,12 @@ sip_sec_acquire_cred__negotiate(SipSecContext context,
 
 	SIPE_DEBUG_INFO_NOFORMAT("sip_sec_acquire_cred__negotiate: entering");
 
-	ctx->domain   = domain;
 	ctx->username = username;
 	ctx->password = password;
 
 	context = ctx->krb5;
 	sip_sec_negotiate_copy_flags(ctx, context);
 	ret = context->acquire_cred_func(context,
-					 domain,
 					 username,
 					 password);
 	if (!ret) {

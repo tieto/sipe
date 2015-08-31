@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -89,8 +89,7 @@ gboolean sipe_svc_get_and_publish_cert(struct sipe_core_private *sipe_private,
  * @param session       opaque session pointer
  * @param uri           service URI
  * @param wsse_security predefined authentication token
- * @param search        [MS-DLX] AbEntryRequest.ChangeSearchQuery in XML
- * @param entries       array entries in search XML string
+ * @param search        [MS-DLX] AbEntryRequest.ChangeSearchQuery/BasicSearch in XML
  * @param max_returns   how many entries to return
  * @param callback      callback function
  * @param callback_data callback data
@@ -101,7 +100,6 @@ gboolean sipe_svc_ab_entry_request(struct sipe_core_private *sipe_private,
 				   const gchar *uri,
 				   const gchar *wsse_security,
 				   const gchar *search,
-				   guint entries,
 				   guint max_returns,
 				   sipe_svc_callback *callback,
 				   gpointer callback_data);

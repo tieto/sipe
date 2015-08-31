@@ -3,8 +3,7 @@
 #
 # It has support for:
 #
-#     RedHat family (CentOS, Fedora, RHEL)
-#     Mandriva
+#     RedHat family (CentOS, Fedora, RHEL, ScientificLinux)
 #     SUSE family (openSUSE, SLED, SLES)
 #     Windows (mingw32, mingw64)
 #
@@ -17,7 +16,7 @@
 # Manually add this repository to your private OBS project:
 #
 #  <repository name="mingw32">
-#    <path repository="openSUSE_11.4" project="windows:mingw:win32"/>
+#    <path repository="openSUSE_13.2" project="windows:mingw:win32"/>
 #    <arch>i586</arch>
 #  </repository>
 #
@@ -46,7 +45,7 @@
 # Manually add this repository to your private OBS project:
 #
 #  <repository name="mingw64">
-#    <path repository="openSUSE_11.4" project="windows:mingw:win64"/>
+#    <path repository="openSUSE_13.2" project="windows:mingw:win64"/>
 #    <arch>i586</arch>
 #  </repository>
 #
@@ -78,30 +77,16 @@
 %define ktp_files        ktp-accounts-kcm-sipe
 
 
-%define purple_develname libpurple-devel
-
-%if 0%{?mdkversion} >= 200910
-%ifarch x86_64
-%define purple_develname lib64purple-devel
-%endif
-%if 0%{?mdkversion} >= 201000
-%ifnarch x86_64
-%define has_libnice 1
-%endif
-%endif
-%endif
+%define has_pidgin 1
 
 %if 0%{?suse_version}
 %define nss_develname mozilla-nss-devel
-%if 0%{?suse_version} >= 1120
+# SLES11 defines suse_version = 1110
+%if 0%{?suse_version} > 1110
 %define has_libnice 1
-%if 0%{?suse_version} > 1140
 %define has_gstreamer 1
-%if 0%{?suse_version} > 1210
 %define build_telepathy 1
 %define nice_gstreamer gstreamer-0_10-libnice
-%endif
-%endif
 %endif
 %else
 %define nss_develname nss-devel
@@ -109,27 +94,33 @@
 
 %if 0%{?suse_version} || 0%{?sles_version}
 %define pkg_group Productivity/Networking/Instant Messenger
-%endif
-%if 0%{?fedora}
+%else
 %define pkg_group Applications/Internet
-%if 0%{?fedora} >= 11
+%endif
+
+%if 0%{?fedora}
 %define has_libnice 1
-%if 0%{?fedora} >= 15
 %define has_gstreamer 1
-%if 0%{?fedora} >= 17
 %define build_telepathy 1
 %define build_ktp 1
 %if 0%{?fedora} >= 20
 %define nice_gstreamer libnice-gstreamer
+%if 0%{?fedora} >= 21
+%define has_gssntlmssp 1
 %endif
 %endif
 %endif
+
+%if 0%{?centos_version} || 0%{?scientificlinux_version}
+%define rhel_base_version %{?centos_version}%{?scientificlinux_version}
+%if %{rhel_base_version} >= 600
+%define has_gstreamer 1
+%define has_libnice 1
+%if %{rhel_base_version} >= 700
+# pidgin has been removed, but libpurple still exists
+%define has_pidgin 0
 %endif
 %endif
-%if 0%{?mdkversion}
-%define pkg_group Networking/Instant messaging
-%else
-%define pkg_group Applications/Internet
 %endif
 
 %if 0%{?purple_sipe_mingw32}
@@ -142,7 +133,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.18.2
+Version:        1.20.0
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -179,7 +170,7 @@ BuildRequires:  %{mingw_prefix}pidgin
 #
 # Standard Linux build setup
 #
-BuildRequires:  %{purple_develname} >= 2.4.0
+BuildRequires:  libpurple-devel >= 2.4.0
 BuildRequires:  libxml2-devel
 BuildRequires:  %{nss_develname}
 BuildRequires:  gettext-devel
@@ -204,33 +195,19 @@ BuildRequires:  glib2-devel >= 2.28.0
 # Configurable components
 %if !0%{?_without_kerberos:1}
 BuildRequires:  krb5-devel
+%if 0%{?has_gssntlmssp}
+BuildRequires:  gssntlmssp-devel >= 0.5.0
+Requires:       gssntlmssp >= 0.5.0
+%endif
 %endif
 
 # For directory ownership
+%if %{has_pidgin}
 BuildRequires:  pidgin
+Requires:       pidgin
+%endif
 %if 0%{?build_telepathy:1}
 BuildRequires:  empathy
-%endif
-Requires:       pidgin
-%if 0%{?sles_version} == 10
-BuildRequires:  gnome-keyring-devel
-%endif
-
-# For OBS's "have choice for" for Fedora 11 (only)
-%if 0%{?fedora_version} == 11
-BuildRequires:  libproxy-mozjs
-BuildRequires:  PolicyKit-gnome
-%endif
-
-# For OBS's "have choice for" for Mandriva 2010.1 (and up?)
-%if 0%{?mdkversion} >= 201010
-BuildRequires:  polkit-gnome
-%endif
-
-# For OBS's "have choice for" for Mandriva 2011 (and up?)
-%if 0%{?mdkversion} >= 201100
-BuildRequires:  packagekit-gstreamer-plugin
-BuildRequires:  gnome-packagekit-common
 %endif
 
 # End Windows cross-compilation/Linux build setup
@@ -409,12 +386,6 @@ autoreconf --verbose --install --force
 #
 # Standard Linux build
 #
-%if 0%{?sles_version} == 10
-export CFLAGS="%optflags -I%{_includedir}/gssapi"
-%endif
-%if 0%{?mdkversion}
-autoreconf --verbose --install --force
-%endif
 %configure \
 	--enable-purple \
 %if 0%{?build_telepathy:1}
@@ -437,6 +408,15 @@ make %{_smp_mflags} check
 %{mingw_makeinstall}
 rm -f %{buildroot}%{mingw_libdir}/purple-2/*.dll.a
 
+# generate .dbgsym file
+rm -f %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym
+mv \
+	%{buildroot}%{mingw_libdir}/purple-2/libsipe.dll \
+	%{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym
+%{__strip} --strip-unneeded \
+	%{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym \
+	-o %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll \
+
 # generate NSIS installer package
 perl contrib/opensuse-build-service/generate_nsi.pl po/LINGUAS \
 	<contrib/opensuse-build-service/pidgin-sipe.nsi.template \
@@ -445,6 +425,7 @@ perl contrib/opensuse-build-service/generate_nsi.pl po/LINGUAS \
 	set -e; \
 	cd %{buildroot}; \
 	makensis \
+		-DPIDGIN_VERSION=UNKNOWN \
 		-DVERSION=%{version} \
 		-DMINGW_LIBDIR=%{buildroot}%{mingw_libdir} \
 		-DMINGW_DATADIR=%{buildroot}%{mingw_datadir} \
@@ -470,6 +451,10 @@ rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
 rm -f \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/32/sipe.png
+%if !%{has_pidgin}
+# We don't have Pidgin, so we can't package icons at all
+rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin
+%endif
 %if 0%{?build_telepathy:1}
 %if !0%{?build_ktp:1}
 rm -r %{buildroot}%{_datadir}/telepathy
@@ -491,6 +476,7 @@ rm -rf %{buildroot}
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
 %if 0%{?mingw_prefix:1}
 %{mingw_libdir}/purple-2/libsipe.dll
+%{mingw_libdir}/purple-2/libsipe.dll.dbgsym
 %else
 %{_libdir}/purple-2/libsipe.so
 %endif
@@ -531,10 +517,12 @@ rm -rf %{buildroot}
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 %else
+%if %{has_pidgin}
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 # SLES11 defines suse_version = 1110
 %if !0%{?suse_version} || 0%{?suse_version} >= 1120
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
+%endif
 %endif
 %endif
 
@@ -547,6 +535,36 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Aug 29 2015 J. D. User <jduser@noreply.com> 1.20.0
+- update to 1.20.0
+
+* Sat Apr 04 2015 J. D. User <jduser@noreply.com> 1.19.1
+- update to 1.19.1
+
+* Sat Feb 07 2015 J. D. User <jduser@noreply.com> 1.19.0
+- update to 1.19.0
+
+* Tue Jan 06 2015 J. D. User <jduser@noreply.com> 1.18.5-*git*
+- add dependency on gssntlmssp(-devel) >= 0.5.0 for F21+
+
+* Mon Jan 05 2015 J. D. User <jduser@noreply.com> 1.18.5-*git*
+- remove support for obsolete distributions
+    - Fedora < 19
+    - Mandriva
+    - OpenSUSE < 13.x
+
+* Mon Dec 29 2014 J. D. User <jduser@noreply.com> 1.18.5
+- update to 1.18.5
+
+* Thu Dec 18 2014 J. D. User <jduser@noreply.com> 1.18.4-*git*
+- improve support for CentOS & Scientific Linux
+
+* Sat Oct 18 2014 J. D. User <jduser@noreply.com> 1.18.4
+- update to 1.18.4
+
+* Sat Aug 16 2014 J. D. User <jduser@noreply.com> 1.18.3
+- update to 1.18.3
+
 * Sat Jun 07 2014 J. D. User <jduser@noreply.com> 1.18.2
 - update to 1.18.2
 

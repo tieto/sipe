@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 #include <glib.h>
 
 #include "sipe-backend.h"
+#include "sipe-core.h"
 #include "sdpmsg.h"
 #include "sipe-utils.h"
 
@@ -66,6 +67,8 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 
 			media->name = g_strdup(parts[0]);
 			media->port = atoi(parts[1]);
+			media->encryption_active =
+					g_strstr_len(parts[2], -1, "/SAVP") != NULL;
 
 			g_strfreev(parts);
 
@@ -90,7 +93,6 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 }
 
 static struct sdpcandidate * sdpcandidate_copy(struct sdpcandidate *candidate);
-static void sdpcandidate_free(struct sdpcandidate *candidate);
 
 static SipeComponentType
 parse_component(const gchar *str)
@@ -166,11 +168,11 @@ parse_append_candidate_rfc_5245(gchar **tokens, GSList *candidates)
 	candidate->foundation = g_strdup(tokens[0]);
 	candidate->component = parse_component(tokens[1]);
 
-	if (sipe_strequal(tokens[2], "UDP"))
+	if (sipe_strcase_equal(tokens[2], "UDP"))
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_UDP;
-	else if (sipe_strequal(tokens[2], "TCP-ACT"))
+	else if (sipe_strcase_equal(tokens[2], "TCP-ACT"))
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
-	else if (sipe_strequal(tokens[2], "TCP-PASS"))
+	else if (sipe_strcase_equal(tokens[2], "TCP-PASS"))
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
 	else {
 		sdpcandidate_free(candidate);
@@ -181,20 +183,28 @@ parse_append_candidate_rfc_5245(gchar **tokens, GSList *candidates)
 	candidate->ip = g_strdup(tokens[4]);
 	candidate->port = atoi(tokens[5]);
 
-	if (sipe_strequal(tokens[7], "host"))
+	if (sipe_strcase_equal(tokens[7], "host"))
 		candidate->type = SIPE_CANDIDATE_TYPE_HOST;
-	else if (sipe_strequal(tokens[7], "relay"))
+	else if (sipe_strcase_equal(tokens[7], "relay"))
 		candidate->type = SIPE_CANDIDATE_TYPE_RELAY;
-	else if (sipe_strequal(tokens[7], "srflx"))
+	else if (sipe_strcase_equal(tokens[7], "srflx"))
 		candidate->type = SIPE_CANDIDATE_TYPE_SRFLX;
-	else if (sipe_strequal(tokens[7], "prflx"))
+	else if (sipe_strcase_equal(tokens[7], "prflx"))
 		candidate->type = SIPE_CANDIDATE_TYPE_PRFLX;
 	else {
 		sdpcandidate_free(candidate);
 		return candidates;
 	}
 
-	return g_slist_append(candidates, candidate);
+	candidates = g_slist_append(candidates, candidate);
+
+	// TCP-ACT candidates are both active and passive
+	if (candidate->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) {
+		candidate = sdpcandidate_copy(candidate);
+		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
+		candidates = g_slist_append(candidates, candidate);
+	}
+	return candidates;
 }
 
 static GSList *
@@ -315,6 +325,36 @@ parse_codecs(GSList *attrs, SipeMediaType type)
 	return codecs;
 }
 
+static void
+parse_encryption_key(GSList *attrs, guchar **key, int *key_id)
+{
+	int i = 0;
+	const gchar *attr;
+
+	while ((attr = sipe_utils_nameval_find_instance(attrs, "crypto", i++))) {
+		gchar **tokens = g_strsplit_set(attr, " :|", 6);
+
+		if (tokens[0] && tokens[1] && tokens[2] && tokens[3] && tokens[4] &&
+		    sipe_strcase_equal(tokens[1], "AES_CM_128_HMAC_SHA1_80") &&
+		    sipe_strequal(tokens[2], "inline") &&
+		    !tokens[5]) {
+			gsize key_len;
+			*key = g_base64_decode(tokens[3], &key_len);
+			if (key_len != SIPE_SRTP_KEY_LEN) {
+				g_free(*key);
+				*key = NULL;
+			}
+			*key_id = atoi(tokens[0]);
+		}
+
+		g_strfreev(tokens);
+
+		if (*key) {
+			break;
+		}
+	}
+}
+
 struct sdpmsg *
 sdpmsg_parse_msg(gchar *msg)
 {
@@ -349,6 +389,8 @@ sdpmsg_parse_msg(gchar *msg)
 		}
 
 		media->codecs = parse_codecs(media->attributes, type);
+		parse_encryption_key(media->attributes, &media->encryption_key,
+				&media->encryption_key_id);
 	}
 
 	return smsg;
@@ -466,15 +508,9 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 					break;
 				case SIPE_CANDIDATE_TYPE_RELAY:
 					type = "relay";
-					related = g_strdup_printf("raddr %s rport %d ",
-								  c->base_ip,
-								  c->base_port);
 					break;
 				case SIPE_CANDIDATE_TYPE_SRFLX:
 					type = "srflx";
-					related = g_strdup_printf("raddr %s rport %d",
-								  c->base_ip,
-								  c->base_port);
 					break;
 				case SIPE_CANDIDATE_TYPE_PRFLX:
 					type = "prflx";
@@ -482,6 +518,18 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 				default:
 					/* error unknown/unsupported type */
 					type = "unknown";
+					break;
+			}
+
+			switch (c->type) {
+				case SIPE_CANDIDATE_TYPE_RELAY:
+				case SIPE_CANDIDATE_TYPE_SRFLX:
+				case SIPE_CANDIDATE_TYPE_PRFLX:
+					related = g_strdup_printf("raddr %s rport %d",
+								  c->base_ip,
+								  c->base_port);
+					break;
+				default:
 					break;
 			}
 
@@ -607,6 +655,8 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 {
 	gchar *media_str;
 
+	gchar *transport_profile = NULL;
+
 	gchar *media_conninfo = NULL;
 
 	gchar *codecs_str = NULL;
@@ -615,11 +665,12 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 	gchar *candidates_str = NULL;
 	gchar *remote_candidates_str = NULL;
 
-	gchar *tcp_setup_str = NULL;
 	gchar *attributes_str = NULL;
 	gchar *credentials = NULL;
 
-	gboolean uses_tcp_transport = FALSE;
+	gchar *crypto = NULL;
+
+	gboolean uses_tcp_transport = TRUE;
 
 	if (media->port != 0) {
 		if (!sipe_strequal(msg->ip, media->ip)) {
@@ -635,12 +686,16 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 			struct sdpcandidate *c = media->remote_candidates->data;
 			uses_tcp_transport =
 				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE ||
-				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
-			if (uses_tcp_transport) {
-				tcp_setup_str = g_strdup_printf(
-					"a=connection:existing\r\n"
-					"a=setup:%s\r\n",
-					(c->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) ? "passive" : "active");
+				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_PASSIVE ||
+				c->protocol == SIPE_NETWORK_PROTOCOL_TCP_SO;
+		} else {
+			GSList *candidates = media->candidates;
+			for (; candidates; candidates = candidates->next) {
+				struct sdpcandidate *c = candidates->data;
+				if (c->protocol == SIPE_NETWORK_PROTOCOL_UDP) {
+					uses_tcp_transport = FALSE;
+					break;
+				}
 			}
 		}
 
@@ -654,9 +709,20 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 						      c->username,
 						      c->password);
 		}
+
+		if (media->encryption_key) {
+			gchar *key_encoded = g_base64_encode(media->encryption_key, SIPE_SRTP_KEY_LEN);
+			crypto = g_strdup_printf("a=crypto:%d AES_CM_128_HMAC_SHA1_80 inline:%s|2^31\r\n",
+					media->encryption_key_id, key_encoded);
+			g_free(key_encoded);
+		}
 	}
 
-	media_str = g_strdup_printf("m=%s %d %sRTP/AVP%s\r\n"
+	transport_profile = g_strdup_printf("%sRTP/%sAVP",
+					    uses_tcp_transport ? "TCP/" : "",
+					    media->encryption_active ? "S" : "");
+
+	media_str = g_strdup_printf("m=%s %d %s%s\r\n"
 				    "%s"
 				    "%s"
 				    "%s"
@@ -664,23 +730,24 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 				    "%s"
 				    "%s"
 				    "%s",
-				    media->name, media->port, uses_tcp_transport ? "TCP/" : "", codec_ids_str,
+				    media->name, media->port, transport_profile, codec_ids_str,
 				    media_conninfo ? media_conninfo : "",
 				    candidates_str ? candidates_str : "",
+				    crypto ? crypto : "",
 				    remote_candidates_str ? remote_candidates_str : "",
-				    tcp_setup_str ? tcp_setup_str : "",
 				    codecs_str ? codecs_str : "",
 				    attributes_str ? attributes_str : "",
 				    credentials ? credentials : "");
 
+	g_free(transport_profile);
 	g_free(media_conninfo);
 	g_free(codecs_str);
 	g_free(codec_ids_str);
 	g_free(candidates_str);
 	g_free(remote_candidates_str);
-	g_free(tcp_setup_str);
 	g_free(attributes_str);
 	g_free(credentials);
+	g_free(crypto);
 
 	return media_str;
 }
@@ -734,7 +801,7 @@ sdpcandidate_copy(struct sdpcandidate *candidate)
 		return NULL;
 }
 
-static void
+void
 sdpcandidate_free(struct sdpcandidate *candidate)
 {
 	if (candidate) {
@@ -772,6 +839,8 @@ sdpmedia_free(struct sdpmedia *media)
 				  (GDestroyNotify) sdpcodec_free);
 		sipe_utils_slist_free_full(media->remote_candidates,
 				  (GDestroyNotify) sdpcandidate_free);
+
+		g_free(media->encryption_key);
 
 		g_free(media);
 	}

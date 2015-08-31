@@ -91,10 +91,19 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 			msg->bodylen = SIPMSG_BODYLEN_CHUNKED;
 		} else {
 			tmp = sipmsg_find_header(msg, "Content-Type");
-			if (tmp)
-				SIPE_DEBUG_FATAL_NOFORMAT("sipmsg_parse_header(): Content-Length header not found");
-			else
+			if (tmp) {
+				/*
+				 * This is a fatal error situation: the message
+				 * is corrupted and we can't proceed. Set the
+				 * response code to a special value so that the
+				 * caller can abort correctly.
+				 */
+				SIPE_DEBUG_ERROR_NOFORMAT("sipmsg_parse_header: Content-Length header not found. Aborting!");
+				msg->response = SIPMSG_RESPONSE_FATAL_ERROR;
+				return(msg);
+			} else {
 				msg->bodylen = 0;
+			}
 		}
 	}
 	if(msg->response) {
@@ -428,7 +437,14 @@ void sipmsg_parse_p_asserted_identity(const gchar *header, gchar **sip_uri,
 const gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 	GSList *tmp;
 	struct sipnameval *elem;
-	int name_len = strlen(name);
+	int name_len;
+
+	if (!name) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipmsg_find_auth_header: no authentication scheme specified");
+		return NULL;
+	}
+
+	name_len = strlen(name);
 	tmp = msg->headers;
 	while(tmp) {
 		elem = tmp->data;
@@ -444,7 +460,7 @@ const gchar *sipmsg_find_auth_header(struct sipmsg *msg, const gchar *name) {
 		/* SIPE_DEBUG_INFO_NOFORMAT("moving to next header"); */
 		tmp = g_slist_next(tmp);
 	}
-	SIPE_DEBUG_INFO("auth header '%s' not found.", name);
+	SIPE_DEBUG_INFO("sipmsg_find_auth_header: '%s' not found", name);
 	return NULL;
 }
 

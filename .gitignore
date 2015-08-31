@@ -38,6 +38,7 @@ src/adium/SIPEAdiumPlugin.xcodeproj/project.xcworkspace/
 src/adium/SIPEAdiumPlugin.xcodeproj/xcuserdata/
 src/core/*_tests
 src/core/sipe_ntlm_analyzer
+src/core/sipe_tls_analyzer
 src/core/sipe_tls_tester
 src/purple/tests
 src/purple/tests_load

@@ -234,11 +234,18 @@ noinst_PROGRAMS =
 
 if !SIPE_OS_WIN32
 # TODO: the code needs some TLC from a MinGW expert to compile...
+noinst_PROGRAMS += sipe_tls_analyzer
+sipe_tls_analyzer_SOURCES = sipe-tls-analyzer.c
+sipe_tls_analyzer_CFLAGS = $(libsipe_core_la_CFLAGS)
+sipe_tls_analyzer_LDADD = \
+	$(GLIB_LIBS)
+
 noinst_PROGRAMS += sipe_tls_tester
 sipe_tls_tester_SOURCES = sipe-tls-tester.c
 sipe_tls_tester_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_tls_tester_LDADD = \
 	libsipe_core_la-sipe-tls.lo
+
 if SIPE_OPENSSL
 sipe_tls_tester_LDADD += \
 	libsipe_core_crypto_la-sipe-cert-crypto-openssl.lo \

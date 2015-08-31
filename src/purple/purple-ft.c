@@ -334,25 +334,29 @@ PurpleXfer *sipe_purple_ft_new_xfer(PurpleConnection *gc, const char *who)
 {
 	PurpleXfer *xfer = NULL;
 
-	if (PURPLE_CONNECTION_IS_VALID(gc)) {
-		xfer = purple_xfer_new(purple_connection_get_account(gc),
-				       PURPLE_XFER_TYPE_SEND,
-				       who);
+#if !PURPLE_VERSION_CHECK(3,0,0)
+	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
+		return NULL;
+	}
+#endif
 
-		if (xfer) {
-			struct sipe_file_transfer *ft = sipe_core_ft_allocate(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+	xfer = purple_xfer_new(purple_connection_get_account(gc),
+					   PURPLE_XFER_TYPE_SEND,
+					   who);
 
-			ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
-			purple_xfer_set_protocol_data(xfer, ft);
+	if (xfer) {
+		struct sipe_file_transfer *ft = sipe_core_ft_allocate(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
 
-			purple_xfer_set_init_fnc(xfer, ft_outgoing_init);
-			purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
-			purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
-			purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
-			purple_xfer_set_start_fnc(xfer, tftp_outgoing_start);
-			purple_xfer_set_end_fnc(xfer, tftp_outgoing_stop);
-			purple_xfer_set_write_fnc(xfer, tftp_write);
-		}
+		ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
+		purple_xfer_set_protocol_data(xfer, ft);
+
+		purple_xfer_set_init_fnc(xfer, ft_outgoing_init);
+		purple_xfer_set_request_denied_fnc(xfer, ft_request_denied);
+		purple_xfer_set_cancel_send_fnc(xfer, ft_free_xfer_struct);
+		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
+		purple_xfer_set_start_fnc(xfer, tftp_outgoing_start);
+		purple_xfer_set_end_fnc(xfer, tftp_outgoing_stop);
+		purple_xfer_set_write_fnc(xfer, tftp_write);
 	}
 
 	return xfer;

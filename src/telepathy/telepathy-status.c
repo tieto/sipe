@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -137,6 +137,7 @@ static void update_status(struct sipe_backend_private *telepathy_private,
 	/* outgoing status update */
 	if (outgoing)
 		sipe_core_status_set(telepathy_private->public,
+				     TRUE,
 				     activity,
 				     message);
 

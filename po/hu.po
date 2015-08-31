@@ -5,222 +5,229 @@
 # 
 # 
 # Translators:
-# László Pál <vlad@vlad.hu>, 2012-2013
+# Laszlo Pal <vlad@vlad.hu>, 2012-2013
 # Stefan Becker <chemobejk@gmail.com>, 2011,2013
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2014-01-06 09:46+0000\n"
+"PO-Revision-Date: 2015-08-26 16:20+0000\n"
 "Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
-"Language-Team: Hungarian (http://www.transifex.com/projects/p/pidgin-sipe/language/hu/)\n"
+"Language-Team: Hungarian (http://www.transifex.com/stefanb/pidgin-sipe/language/hu/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Language: hu\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../src/core/sip-transport.c:235 ../src/core/sip-transport.c:297
+#: ../src/core/sip-transport.c:235
 msgid "Failed to authenticate to server"
 msgstr "Sikertelen bejelentkezés a szerverre"
 
-#: ../src/core/sip-transport.c:255
+#: ../src/core/sip-transport.c:293
 #, c-format
 msgid "Can't request certificate from %s"
 msgstr "Nem sikerült tanúsítványt kérni %s tól/től"
 
-#: ../src/core/sip-transport.c:265
+#: ../src/core/sip-transport.c:303
 msgid "No URI for certificate provisioning service provided"
 msgstr "Nincs megadva URI a tanúsítvány elosztó szolgáltatáshoz"
 
-#: ../src/core/sip-transport.c:1211
+#: ../src/core/sip-transport.c:1281
 msgid "Authentication failed"
 msgstr "Sikertelen azonosítás"
 
-#: ../src/core/sip-transport.c:1219
+#: ../src/core/sip-transport.c:1338
 msgid "Incompatible authentication scheme chosen"
 msgstr "Nem kompatibilis azonosítási módszer"
 
-#: ../src/core/sip-transport.c:1236 ../src/core/sipe-notify.c:1067
+#: ../src/core/sip-transport.c:1355 ../src/core/sipe-notify.c:1117
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "A(z) %s kiszolgáló elutasította"
 
-#: ../src/core/sip-transport.c:1237 ../src/core/sip-transport.c:1253
-#: ../src/core/sip-transport.c:1277 ../src/core/sip-transport.c:1301
-#: ../src/core/sipe-conf.c:249 ../src/core/sipe-notify.c:1067
+#: ../src/core/sip-transport.c:1356 ../src/core/sip-transport.c:1372
+#: ../src/core/sip-transport.c:1396 ../src/core/sip-transport.c:1420
+#: ../src/core/sipe-conf.c:239 ../src/core/sipe-notify.c:1117
 msgid "no reason given"
 msgstr "nincs ok megadva"
 
-#: ../src/core/sip-transport.c:1252
+#: ../src/core/sip-transport.c:1371
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "%s nem található. Kérem lépjen kapcsolatba a rendszergazdával"
 
-#: ../src/core/sip-transport.c:1254
+#: ../src/core/sip-transport.c:1373
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "A SIP protokol nincs engedélyezve a megadott URI-n, vagy az URI nem létezik <http://hu.wikipedia.org/wiki/URI>"
 
-#: ../src/core/sip-transport.c:1277 ../src/core/sip-transport.c:1301
+#: ../src/core/sip-transport.c:1396 ../src/core/sip-transport.c:1420
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "A(z) %s szolgáltatás nem érhető el"
 
-#: ../src/core/sip-transport.c:1663
+#: ../src/core/sip-transport.c:1766
+msgid "Corrupted message received"
+msgstr ""
+
+#: ../src/core/sip-transport.c:1790
 msgid "Invalid message signature received"
 msgstr "Érvénytelen üzenetaláírás érkezett"
 
-#: ../src/core/sipe-buddy.c:819
+#: ../src/core/sipe-buddy.c:536 ../src/core/sipe-buddy.c:2158
+msgid "Mobile"
+msgstr "Mobil"
+
+#: ../src/core/sipe-buddy.c:824
 msgid "Status"
 msgstr "Állapot"
 
-#: ../src/core/sipe-buddy.c:822
+#: ../src/core/sipe-buddy.c:827
 msgid "Calendar"
 msgstr "Naptár"
 
-#: ../src/core/sipe-buddy.c:827
+#: ../src/core/sipe-buddy.c:832
 msgid "Meeting in"
 msgstr "Megbeszélés -kor"
 
-#: ../src/core/sipe-buddy.c:831
+#: ../src/core/sipe-buddy.c:836
 msgid "Meeting about"
 msgstr "Megbeszélés témája"
 
-#: ../src/core/sipe-buddy.c:836
+#: ../src/core/sipe-buddy.c:841
 msgid "Out of office note"
 msgstr "\"Irodán kívül\" üzenet"
 
-#: ../src/core/sipe-buddy.c:836
+#: ../src/core/sipe-buddy.c:841
 msgid "Note"
 msgstr "Megjegyzés"
 
-#: ../src/core/sipe-buddy.c:841 ../src/core/sipe-buddy.c:2095
-#: ../src/purple/purple-buddy.c:615
+#: ../src/core/sipe-buddy.c:846 ../src/core/sipe-buddy.c:2203
+#: ../src/purple/purple-buddy.c:632
 msgid "Access level"
 msgstr "Hozzáférési szint"
 
-#: ../src/core/sipe-buddy.c:1025
+#: ../src/core/sipe-buddy.c:1069
 #, c-format
 msgid "Found %d contact%s:"
 msgid_plural "Found %d contacts%s:"
 msgstr[0] "Found %d contacts%s:"
 msgstr[1] "Found %d contacts%s:"
 
-#: ../src/core/sipe-buddy.c:1027
+#: ../src/core/sipe-buddy.c:1071
 msgid " (more matched your query)"
 msgstr " (a keresésnek több találata van)"
 
-#: ../src/core/sipe-buddy.c:1058 ../src/core/sipe-buddy.c:1195
+#: ../src/core/sipe-buddy.c:1117 ../src/core/sipe-buddy.c:1255
+#: ../src/core/sipe-ucs.c:373
 msgid "No contacts found"
 msgstr "Nem található kapcsolat"
 
-#: ../src/core/sipe-buddy.c:1070 ../src/core/sipe-buddy.c:1208
+#: ../src/core/sipe-buddy.c:1130 ../src/core/sipe-buddy.c:1268
+#: ../src/core/sipe-ucs.c:337
 msgid "Unable to display the search results"
 msgstr "A keresési eredményeket nem lehet megjeleníteni"
 
-#: ../src/core/sipe-buddy.c:1173 ../src/core/sipe-buddy.c:1185
+#: ../src/core/sipe-buddy.c:1233 ../src/core/sipe-buddy.c:1245
+#: ../src/core/sipe-ucs.c:450
 msgid "Contact search failed"
 msgstr "Kapcsolat keresés meghiúsult"
 
-#: ../src/core/sipe-buddy.c:1307
+#: ../src/core/sipe-buddy.c:1408 ../src/core/sipe-ucs.c:454
 msgid "Invalid contact search query"
 msgstr "Érvénytelen kapcsolat keresési lekérdezés"
 
-#: ../src/core/sipe-buddy.c:1987
+#: ../src/core/sipe-buddy.c:2095
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Vezetőnek jelölés %s -hez/höz"
 
-#: ../src/core/sipe-buddy.c:2000
+#: ../src/core/sipe-buddy.c:2108
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Eltávolítás %s -ból/ből"
 
-#: ../src/core/sipe-buddy.c:2014
+#: ../src/core/sipe-buddy.c:2122
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Meghívás %s -ba/be"
 
-#: ../src/core/sipe-buddy.c:2030
+#: ../src/core/sipe-buddy.c:2138
 msgid "New chat"
 msgstr "Új társalgás"
 
-#: ../src/core/sipe-buddy.c:2043
+#: ../src/core/sipe-buddy.c:2151
 msgid "Work"
 msgstr "Munka"
 
-#: ../src/core/sipe-buddy.c:2050
-msgid "Mobile"
-msgstr "Mobil"
-
-#: ../src/core/sipe-buddy.c:2058
+#: ../src/core/sipe-buddy.c:2166
 msgid "Home"
 msgstr "Kiindulás"
 
-#: ../src/core/sipe-buddy.c:2066
+#: ../src/core/sipe-buddy.c:2174
 msgid "Other"
 msgstr "Más"
 
-#: ../src/core/sipe-buddy.c:2074
+#: ../src/core/sipe-buddy.c:2182
 msgid "Custom1"
 msgstr "Speciális1"
 
-#: ../src/core/sipe-buddy.c:2084
+#: ../src/core/sipe-buddy.c:2192
 msgid "Send email..."
 msgstr "E-mail küldése..."
 
-#: ../src/core/sipe-cal.c:904
+#: ../src/core/sipe-cal.c:907
 msgid "Free"
 msgstr "Szabad"
 
-#: ../src/core/sipe-cal.c:905
+#: ../src/core/sipe-cal.c:908
 msgid "Tentative"
 msgstr "Kétséges"
 
 #. SIPE_ACTIVITY_BUSY
-#: ../src/core/sipe-cal.c:906 ../src/core/sipe-status.c:61
+#: ../src/core/sipe-cal.c:909 ../src/core/sipe-status.c:59
 msgid "Busy"
 msgstr "Elfoglalt"
 
 #. SIPE_ACTIVITY_OOF
-#: ../src/core/sipe-cal.c:907 ../src/core/sipe-status.c:72
+#: ../src/core/sipe-cal.c:910 ../src/core/sipe-status.c:70
 msgid "Out of office"
 msgstr "Irodán kívül"
 
-#: ../src/core/sipe-cal.c:908
+#: ../src/core/sipe-cal.c:911
 msgid "No data"
 msgstr "Nincs információ"
 
-#: ../src/core/sipe-cal.c:1016 ../src/core/sipe-cal.c:1043
+#: ../src/core/sipe-cal.c:1019 ../src/core/sipe-cal.c:1046
 #, c-format
 msgid "Currently %s"
 msgstr "Jelenleg %s"
 
-#: ../src/core/sipe-cal.c:1022
+#: ../src/core/sipe-cal.c:1025
 msgid "Outside of working hours for next 8 hours"
 msgstr "A következő 8 órában nem dolgozik"
 
-#: ../src/core/sipe-cal.c:1024
+#: ../src/core/sipe-cal.c:1027
 #, c-format
 msgid "%s for next 8 hours"
 msgstr "A következő nyolc órában %s"
 
-#: ../src/core/sipe-cal.c:1033
+#: ../src/core/sipe-cal.c:1036
 msgid "Not working"
 msgstr "Nem dolgozik"
 
-#: ../src/core/sipe-cal.c:1037
+#: ../src/core/sipe-cal.c:1040
 #, c-format
 msgid "%s until %.2d:%.2d"
 msgstr "%s %.2d:%.2d -ig"
 
-#: ../src/core/sipe-cal.c:1045
+#: ../src/core/sipe-cal.c:1048
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
 msgstr "%s. \"Nem dolgozik\" %.2d:%.2d"
 
-#: ../src/core/sipe-cal.c:1050
+#: ../src/core/sipe-cal.c:1053
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
 msgstr "%s. %s %.2d:%.2d -kor"
@@ -236,52 +243,52 @@ msgid "Web ticket request to %s failed"
 msgstr "Nem sikerült Web-es jegyet nyitni %s-hez"
 
 #. Generate next ID
-#: ../src/core/sipe-chat.c:231
+#: ../src/core/sipe-chat.c:237
 #, c-format
 msgid "Chat #%d"
 msgstr "Beszélgetés #%d"
 
-#: ../src/core/sipe-conf.c:248 ../src/core/sipe-conf.c:370
+#: ../src/core/sipe-conf.c:238 ../src/core/sipe-conf.c:344
 msgid "Failed to join the conference"
 msgstr "Nem sikerült csatlakozni a konferenciához"
 
-#: ../src/core/sipe-conf.c:367
+#: ../src/core/sipe-conf.c:341
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
 msgstr "A következő URI nem valós konferencia cím: \"%s\""
 
-#: ../src/core/sipe-conf.c:898
+#: ../src/core/sipe-conf.c:951
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
 msgstr "\n\nMivel ez a kliens hang-hívás támogatás nélkül került lefordításra, ezért amennyiben elfogadja a másik féllel csak azonnali üzeneteket fog tudni váltani."
 
-#: ../src/core/sipe-conf.c:906
+#: ../src/core/sipe-conf.c:959
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
 msgstr "%s meghívta egy konferencia hívásba %s"
 
-#: ../src/core/sipe-conf.c:920
+#: ../src/core/sipe-conf.c:973
 msgid "Accept"
 msgstr "Elfogad"
 
-#: ../src/core/sipe-conf.c:921
+#: ../src/core/sipe-conf.c:974
 msgid "Decline"
 msgstr "Elutasít"
 
-#: ../src/core/sipe-conf.c:1135
+#: ../src/core/sipe-conf.c:1188
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
 msgstr "A megbeszélés feloldva, további résztvevők csatlakozhatnak"
 
-#: ../src/core/sipe-conf.c:1139
+#: ../src/core/sipe-conf.c:1192
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
 msgstr "Megbeszélés lezárva, további résztvevők nem csatlakozhatnak"
 
-#: ../src/core/sipe-conf.c:1172
+#: ../src/core/sipe-conf.c:1225
 msgid "You have been disconnected from this conference."
 msgstr "Ön eltávolításra került a megbeszélésről"
 
@@ -354,11 +361,11 @@ msgstr "Fejlesztők"
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Az eredeti szöveg Angolul (en): SIPE Developers"
 
-#: ../src/core/sipe-core.c:227
+#: ../src/core/sipe-core.c:226
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Az Exchange SIP felhasználó név tiltott karaktereket tartalmaz"
 
-#: ../src/core/sipe-core.c:235 ../src/purple/purple-buddy.c:464
+#: ../src/core/sipe-core.c:234 ../src/purple/purple-buddy.c:484
 #: ../src/telepathy/telepathy-protocol.c:89
 #: ../src/telepathy/telepathy-protocol.c:191
 #, c-format
@@ -368,8 +375,8 @@ msgid ""
 msgstr "A felhasználó névnek egy valós SIP URI-nak kell lennie⏎\nmint például \"felhasznalo@ceg.hu\""
 
 #: ../src/core/sipe-core.c:241
-msgid "Login and password are required when Single Sign-On is not enabled"
-msgstr "Ha az egyszeri bejelentkezés szolgáltatás nincs engedélyezve, felhasználónév és jelszó megadása szükséges"
+msgid "Password is required when Single Sign-On is not enabled"
+msgstr ""
 
 #: ../src/core/sipe-core.c:251
 msgid ""
@@ -442,9 +449,9 @@ msgstr "Fájl átviteli azonosítás sikertelen"
 msgid "Out of memory"
 msgstr "Elfogyott a memória"
 
-#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1081
-#: ../src/core/sipe-notify.c:1108 ../src/core/sipe-notify.c:1212
-#: ../src/purple/purple-search.c:125
+#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1131
+#: ../src/core/sipe-notify.c:1158 ../src/core/sipe-notify.c:1262
+#: ../src/purple/purple-search.c:128
 msgid "Other Contacts"
 msgstr "Egyéb kapcsolatok"
 
@@ -462,16 +469,16 @@ msgstr "A csoport-társalgás proxy beállítása érvénytelen:\n\n<span class=
 msgid "Couldn't find Group Chat server!"
 msgstr "A csoport-társalgás szerver nem található"
 
-#: ../src/core/sipe-groupchat.c:506
+#: ../src/core/sipe-groupchat.c:508
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
 msgstr "Az üzenet továbbítása a %s szobába sikertelen"
 
-#: ../src/core/sipe-groupchat.c:604
+#: ../src/core/sipe-groupchat.c:609
 msgid "Error retrieving room list"
 msgstr "A szoba lista letöltése sikertelen"
 
-#: ../src/core/sipe-groupchat.c:708
+#: ../src/core/sipe-groupchat.c:713
 msgid "Error joining chat room"
 msgstr "Csatlakozás a szobához sikertelen"
 
@@ -486,103 +493,115 @@ msgstr "%s meghívása sikertelen"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "%s értelmezhetetlen tartalmú üzenetet küldött"
 
-#: ../src/core/sipe-media.c:574 ../src/core/sipe-media.c:904
-#: ../src/core/sipe-media.c:914 ../src/core/sipe-media.c:1201
-#: ../src/core/sipe-media.c:1213
+#: ../src/core/sipe-media.c:820 ../src/core/sipe-media.c:1187
+#: ../src/core/sipe-media.c:1197 ../src/core/sipe-media.c:1480
+#: ../src/core/sipe-media.c:1500
 msgid "Unable to establish a call"
 msgstr "Sikertelen hívás"
 
-#: ../src/core/sipe-media.c:575 ../src/core/sipe-media.c:1202
+#: ../src/core/sipe-media.c:821 ../src/core/sipe-media.c:1481
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr "A partner titkosítási beállításai nem egyeznek a mienkkel"
 
-#: ../src/core/sipe-media.c:770 ../src/core/sipe-media.c:783
-#: ../src/core/sipe-media.c:851 ../src/core/sipe-media.c:1212
+#: ../src/core/sipe-media.c:1059 ../src/core/sipe-media.c:1070
+#: ../src/core/sipe-media.c:1499
 msgid "Error occured"
 msgstr "Hiba!"
 
-#: ../src/core/sipe-media.c:771 ../src/core/sipe-media.c:852
+#: ../src/core/sipe-media.c:1060 ../src/core/sipe-media.c:1137
 msgid "Error creating audio stream"
 msgstr "A hang adatfolyam létrehozása nem sikerült"
 
-#: ../src/core/sipe-media.c:784
+#: ../src/core/sipe-media.c:1071
 msgid "Error creating video stream"
 msgstr "A videó adatfolyam létrehozása nem sikerült"
 
-#: ../src/core/sipe-media.c:905
+#: ../src/core/sipe-media.c:1099 ../src/purple/purple-chat.c:305
+msgid "Join conference call"
+msgstr "Csatlakozás telefon konferenciához"
+
+#: ../src/core/sipe-media.c:1100
+msgid "Conference calls are not supported on this server."
+msgstr ""
+
+#: ../src/core/sipe-media.c:1136
+msgid "Error occurred"
+msgstr ""
+
+#: ../src/core/sipe-media.c:1188
 msgid "Invalid phone number"
 msgstr "Érvénytelen telefonszám"
 
-#: ../src/core/sipe-media.c:915
+#: ../src/core/sipe-media.c:1198
 msgid "Audio Test Service is not available."
 msgstr "Hang tesztelési szolgáltatás nem elérhető"
 
-#: ../src/core/sipe-media.c:1166
+#: ../src/core/sipe-media.c:1444
 msgid "User unavailable"
 msgstr "Felhasználó nem elérhető"
 
-#: ../src/core/sipe-media.c:1169
+#: ../src/core/sipe-media.c:1447
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr "%s állapota: \"Ne zavarj!\""
 
-#: ../src/core/sipe-media.c:1171
+#: ../src/core/sipe-media.c:1449
 #, c-format
 msgid "User %s is not available"
 msgstr "%s állapota: \"Nem elérhető\""
 
-#: ../src/core/sipe-media.c:1176
+#: ../src/core/sipe-media.c:1454
 msgid "Call rejected"
 msgstr "Hívás visszautasítva"
 
-#: ../src/core/sipe-media.c:1177
+#: ../src/core/sipe-media.c:1455
 #, c-format
 msgid "User %s rejected call"
 msgstr "%s visszautasította a hívást"
 
-#: ../src/core/sipe-media.c:1185
+#: ../src/core/sipe-media.c:1463
 msgid "Unsupported media type"
 msgstr "Nem támogatott médiatípus "
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe-notify.c:1059
+#: ../src/core/sipe-notify.c:1109
 msgid "you are already signed in at another location"
 msgstr "Egy másik helyről már be va jelentkezve"
 
-#: ../src/core/sipe-notify.c:1061
+#: ../src/core/sipe-notify.c:1111
 msgid "user disabled"
 msgstr "Felhasználó letiltva"
 
-#: ../src/core/sipe-notify.c:1063
+#: ../src/core/sipe-notify.c:1113
 msgid "user moved"
 msgstr "Felhasználó áthelyezve"
 
-#: ../src/core/sipe-ocs2007.c:458 ../src/purple/purple-buddy.c:622
-#: ../src/purple/purple-buddy.c:629
+#: ../src/core/sipe-ocs2007.c:458 ../src/purple/purple-buddy.c:639
+#: ../src/purple/purple-buddy.c:646
 msgid "Blocked"
 msgstr "Blokkolva"
 
-#: ../src/core/sipe-ocs2007.c:459 ../src/purple/purple-buddy.c:618
-#: ../src/purple/purple-buddy.c:625
+#: ../src/core/sipe-ocs2007.c:459 ../src/purple/purple-buddy.c:635
+#: ../src/purple/purple-buddy.c:642
 msgid "Personal"
 msgstr "Személyes"
 
 #. index 0
-#: ../src/core/sipe-ocs2007.c:460 ../src/purple/purple-buddy.c:619
-#: ../src/purple/purple-buddy.c:626
+#: ../src/core/sipe-ocs2007.c:460 ../src/purple/purple-buddy.c:636
+#: ../src/purple/purple-buddy.c:643
 msgid "Team"
 msgstr "Csapat"
 
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
 #: ../src/core/sipe-ocs2007.c:461 ../src/purple/purple-buddy.c:75
-#: ../src/purple/purple-buddy.c:620 ../src/purple/purple-buddy.c:627
-#: ../src/purple/purple-plugin.c:868 ../src/purple/purple-search.c:63
+#: ../src/purple/purple-buddy.c:637 ../src/purple/purple-buddy.c:644
+#: ../src/purple/purple-search.c:66 ../src/purple/purple-search.c:223
 msgid "Company"
 msgstr "Cég"
 
-#: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:621
-#: ../src/purple/purple-buddy.c:628
+#: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:638
+#: ../src/purple/purple-buddy.c:645
 msgid "Public"
 msgstr "Nyilvános"
 
@@ -591,90 +610,107 @@ msgid "Unknown"
 msgstr "Ismeretlen"
 
 #. Translators: remove (clear) previously assigned access level
-#: ../src/core/sipe-ocs2007.c:2539
+#: ../src/core/sipe-ocs2007.c:2557
 msgid "Unspecify"
 msgstr "Mellőz"
 
-#: ../src/core/sipe-ocs2007.c:2558
+#: ../src/core/sipe-ocs2007.c:2576
 msgid "People in my company"
 msgstr "Emberek a cégemnél"
 
-#: ../src/core/sipe-ocs2007.c:2568
+#: ../src/core/sipe-ocs2007.c:2586
 msgid "People in domains connected with my company"
 msgstr "Emberek a cégemmel kapcsolódott domainekben"
 
-#: ../src/core/sipe-ocs2007.c:2577
+#: ../src/core/sipe-ocs2007.c:2595
 msgid "People in public domains"
 msgstr "Emberek a nyílvános domainekben"
 
-#: ../src/core/sipe-ocs2007.c:2587
+#: ../src/core/sipe-ocs2007.c:2605
 #, c-format
 msgid "People at %s"
 msgstr "Emberek %s -nál/nél"
 
-#: ../src/core/sipe-ocs2007.c:2612
+#: ../src/core/sipe-ocs2007.c:2630
 msgid "Add new domain..."
 msgstr "Domain hozzáadása..."
 
-#: ../src/core/sipe-ocs2007.c:2641
+#: ../src/core/sipe-ocs2007.c:2659
 msgid "Online help..."
 msgstr "Online segítség..."
 
-#: ../src/core/sipe-ocs2007.c:2649
+#: ../src/core/sipe-ocs2007.c:2667
 msgid "Access groups"
 msgstr "Hozzáférési csoportok..."
 
 #. * This has nothing to do with Availability numbers, like 3500 (online).
 #. * Just a mapping of Communicator Activities to tokens/translations
-#. 
 #. @TODO: NULL means "default translation from Pidgin"?
 #. *        What about other backends?
 #. SIPE_ACTIVITY_UNSET
 #. SIPE_ACTIVITY_AVAILABLE
 #. SIPE_ACTIVITY_ONLINE
 #. SIPE_ACTIVITY_INACTIVE
-#: ../src/core/sipe-status.c:60
+#: ../src/core/sipe-status.c:58
 msgid "Inactive"
 msgstr "Tétlen"
 
 #. SIPE_ACTIVITY_BUSYIDLE
-#: ../src/core/sipe-status.c:62
+#: ../src/core/sipe-status.c:60
 msgid "Busy-Idle"
 msgstr "Elfoglalt->Tétlen"
 
 #. SIPE_ACTIVITY_DND
 #. SIPE_ACTIVITY_BRB
-#: ../src/core/sipe-status.c:64
+#: ../src/core/sipe-status.c:62
 msgid "Be right back"
 msgstr "Rögtön jön"
 
 #. SIPE_ACTIVITY_AWAY
 #. SIPE_ACTIVITY_LUNCH
-#: ../src/core/sipe-status.c:66
+#: ../src/core/sipe-status.c:64
 msgid "Out to lunch"
 msgstr "Ebédel"
 
 #. SIPE_ACTIVITY_INVISIBLE
 #. SIPE_ACTIVITY_OFFLINE
 #. SIPE_ACTIVITY_ON_PHONE
-#: ../src/core/sipe-status.c:69
+#: ../src/core/sipe-status.c:67
 msgid "In a call"
 msgstr "Hívásban"
 
 #. SIPE_ACTIVITY_IN_CONF
-#: ../src/core/sipe-status.c:70
+#: ../src/core/sipe-status.c:68
 msgid "In a conference"
 msgstr "Telefonkonferenciában"
 
 #. SIPE_ACTIVITY_IN_MEETING
-#: ../src/core/sipe-status.c:71
+#: ../src/core/sipe-status.c:69
 msgid "In a meeting"
 msgstr "Megbeszélésen"
 
 #. SIPE_ACTIVITY_URGENT_ONLY
-#: ../src/core/sipe-status.c:73
+#: ../src/core/sipe-status.c:71
 msgid "Urgent interruptions only"
 msgstr "Csak sürgős esetben elérhető"
+
+#: ../src/core/sipe-ucs.c:733
+msgid "UCS initialization failed!"
+msgstr ""
+
+#: ../src/core/sipe-ucs.c:735
+msgid ""
+"Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n"
+"\n"
+"You'll need to provide Email settings in the account setup."
+msgstr ""
+
+#: ../src/core/sipe-ucs.c:736
+msgid ""
+"Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n"
+"\n"
+"Please correct your Email settings."
+msgstr ""
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -741,8 +777,8 @@ msgstr "Iroda"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
-#: ../src/purple/purple-buddy.c:72 ../src/purple/purple-plugin.c:870
-#: ../src/purple/purple-search.c:66
+#: ../src/purple/purple-buddy.c:72 ../src/purple/purple-search.c:69
+#: ../src/purple/purple-search.c:225
 msgid "Country"
 msgstr "Ország"
 
@@ -785,42 +821,38 @@ msgstr "Eszköz"
 msgid "you"
 msgstr "Te"
 
-#: ../src/purple/purple-buddy.c:563
+#: ../src/purple/purple-buddy.c:583
 msgid ""
 "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 msgstr "https://sourceforge.net/apps/mediawiki/sipe/index.php?title=Access_Levels"
 
-#: ../src/purple/purple-buddy.c:608
+#: ../src/purple/purple-buddy.c:625
 msgid "Domain"
 msgstr "Domain"
 
-#: ../src/purple/purple-buddy.c:637 ../src/purple/purple-buddy.c:638
+#: ../src/purple/purple-buddy.c:654 ../src/purple/purple-buddy.c:655
 msgid "Add new domain"
 msgstr "Új domain hozzáadása"
 
-#: ../src/purple/purple-buddy.c:639
+#: ../src/purple/purple-buddy.c:656
 msgid "Add"
 msgstr "Hozzáad"
 
-#: ../src/purple/purple-buddy.c:640
+#: ../src/purple/purple-buddy.c:657
 msgid "Cancel"
 msgstr "Mégsem"
 
-#: ../src/purple/purple-buddy.c:791
+#: ../src/purple/purple-buddy.c:809
 msgid "Copy to"
 msgstr "Másolás..."
 
-#: ../src/purple/purple-chat.c:275
+#: ../src/purple/purple-chat.c:286
 msgid "Lock"
 msgstr "Kizár"
 
-#: ../src/purple/purple-chat.c:280
+#: ../src/purple/purple-chat.c:291
 msgid "Unlock"
 msgstr "Kizárást felold"
-
-#: ../src/purple/purple-chat.c:294
-msgid "Join conference call"
-msgstr "Csatlakozás telefon konferenciához"
 
 #: ../src/purple/purple-groupchat.c:53
 msgid "_URI:"
@@ -846,89 +878,59 @@ msgstr "Napló"
 msgid "Description"
 msgstr "Leírás"
 
-#: ../src/purple/purple-im.c:84
+#: ../src/purple/purple-im.c:86
 #, c-format
 msgid "Conversation subject: %s"
 msgstr "A beszélgetés témája: %s"
 
-#. Macros to reduce code repetition.
+#. Macro to reduce code repetition
 #. Translators: noun
-#: ../src/purple/purple-plugin.c:201
+#: ../src/purple/purple-plugin.c:208
 msgid "Message"
 msgstr "Üzenet"
 
-#: ../src/purple/purple-plugin.c:399
+#: ../src/purple/purple-plugin.c:441
 msgid "Connecting"
 msgstr "Kapcsolódás"
 
-#: ../src/purple/purple-plugin.c:426
+#: ../src/purple/purple-plugin.c:471
 msgid "Password required"
 msgstr "Jelszó megadása kötelező"
 
-#: ../src/purple/purple-plugin.c:589
+#: ../src/purple/purple-plugin.c:652
 msgid "user@company.com"
 msgstr "user@company.com"
 
-#: ../src/purple/purple-plugin.c:862
-msgid "First name"
-msgstr "Keresztnév"
-
-#: ../src/purple/purple-plugin.c:864
-msgid "Last name"
-msgstr "Vezetéknév"
-
-#: ../src/purple/purple-plugin.c:866 ../src/purple/purple-search.c:69
-msgid "Email"
-msgstr "E-mail"
-
-#: ../src/purple/purple-plugin.c:874
-msgid "Search"
-msgstr "Keresés"
-
-#: ../src/purple/purple-plugin.c:875
-msgid "Search for a contact"
-msgstr "Kapcsolat keresése"
-
-#: ../src/purple/purple-plugin.c:876
-msgid ""
-"Enter the information for the person you wish to find. Empty fields will be "
-"ignored."
-msgstr "Adja meg a keresett személy adatait. Az üres mezők figyelmen kívül lesznek hagyva"
-
-#: ../src/purple/purple-plugin.c:878
-msgid "_Search"
-msgstr "_Keresés"
-
-#: ../src/purple/purple-plugin.c:879 ../src/purple/purple-plugin.c:947
-#: ../src/purple/purple-plugin.c:992
-msgid "_Cancel"
-msgstr "_Mégse"
-
-#: ../src/purple/purple-plugin.c:938
+#: ../src/purple/purple-plugin.c:918
 msgid "Phone number"
 msgstr "Telefonszám"
 
-#: ../src/purple/purple-plugin.c:942 ../src/purple/purple-plugin.c:943
+#: ../src/purple/purple-plugin.c:922 ../src/purple/purple-plugin.c:923
 msgid "Call a phone number"
 msgstr "Telefonszám felhívása"
 
-#: ../src/purple/purple-plugin.c:946
+#: ../src/purple/purple-plugin.c:926
 msgid "_Call"
 msgstr "_Hívás"
 
-#: ../src/purple/purple-plugin.c:977
+#: ../src/purple/purple-plugin.c:927 ../src/purple/purple-plugin.c:969
+#: ../src/purple/purple-search.c:234
+msgid "_Cancel"
+msgstr "_Mégse"
+
+#: ../src/purple/purple-plugin.c:954
 msgid "Meeting location"
 msgstr "Megbeszélés helyszíne"
 
-#: ../src/purple/purple-plugin.c:981
+#: ../src/purple/purple-plugin.c:958
 msgid "Join conference"
 msgstr "Kapcsolódás a konferenciához"
 
-#: ../src/purple/purple-plugin.c:982
+#: ../src/purple/purple-plugin.c:959
 msgid "Join scheduled conference"
 msgstr "Kapcsolódás tervezett konferenciához"
 
-#: ../src/purple/purple-plugin.c:983
+#: ../src/purple/purple-plugin.c:960
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
@@ -939,39 +941,39 @@ msgid ""
 "https://meet.company.com/someone/abcdef1234"
 msgstr "Add meg a megbeszélés helyére vonatkozó hivatkozást a meghívóból.\n\nEgy valós hivatkozás formátuma valami ehhez hasonló\nmeet:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\nor\nhttps://meet.company.com/someone/abcdef1234"
 
-#: ../src/purple/purple-plugin.c:991
+#: ../src/purple/purple-plugin.c:968
 msgid "_Join"
 msgstr "_Csatlakozás"
 
-#: ../src/purple/purple-plugin.c:1008 ../src/purple/purple-plugin.c:1022
+#: ../src/purple/purple-plugin.c:985 ../src/purple/purple-plugin.c:999
 msgid "Publishing of calendar information has been disabled"
 msgstr "A naptár információk közzététele letiltva"
 
-#: ../src/purple/purple-plugin.c:1035
+#: ../src/purple/purple-plugin.c:1012
 msgid "About SIPE plugin..."
 msgstr "A SIPE kiegészítőről..."
 
-#: ../src/purple/purple-plugin.c:1038
+#: ../src/purple/purple-plugin.c:1015
 msgid "Contact search..."
 msgstr "Kapcsolatok Keresése..."
 
-#: ../src/purple/purple-plugin.c:1042
+#: ../src/purple/purple-plugin.c:1019
 msgid "Call a phone number..."
 msgstr "Telefonszám felhívása..."
 
-#: ../src/purple/purple-plugin.c:1045
+#: ../src/purple/purple-plugin.c:1022
 msgid "Test call"
 msgstr "Teszt hívás"
 
-#: ../src/purple/purple-plugin.c:1049
+#: ../src/purple/purple-plugin.c:1026
 msgid "Join scheduled conference..."
 msgstr "Kapcsolódás tervezett konferenciához..."
 
-#: ../src/purple/purple-plugin.c:1052
+#: ../src/purple/purple-plugin.c:1029
 msgid "Republish Calendar"
 msgstr "A naptár közzététele"
 
-#: ../src/purple/purple-plugin.c:1055
+#: ../src/purple/purple-plugin.c:1032
 msgid "Reset status"
 msgstr "Állapot alaphelyzetbe"
 
@@ -981,33 +983,32 @@ msgstr "Állapot alaphelyzetbe"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#. 
-#: ../src/purple/purple-plugin.c:1113
+#: ../src/purple/purple-plugin.c:1090
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
 msgstr "Bejelentkezés⏎\n   \"Felhasználó név\"  vagy  \"DOMAIN\\felhasználó név\"  vagy\n   felhasznalo@ceg.hu"
 
-#: ../src/purple/purple-plugin.c:1117
+#: ../src/purple/purple-plugin.c:1094
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr "Server[:Port]⏎\n(az automatikus kitöltéshez hagyja üresen!)"
 
-#: ../src/purple/purple-plugin.c:1120
+#: ../src/purple/purple-plugin.c:1097
 msgid "Connection type"
 msgstr "Kapcsolat típusa"
 
-#: ../src/purple/purple-plugin.c:1121
+#: ../src/purple/purple-plugin.c:1098 ../src/purple/purple-plugin.c:1110
 msgid "Auto"
 msgstr "Automatikus"
 
-#: ../src/purple/purple-plugin.c:1122
+#: ../src/purple/purple-plugin.c:1099
 msgid "SSL/TLS"
 msgstr "SSL/TLS"
 
-#: ../src/purple/purple-plugin.c:1123
+#: ../src/purple/purple-plugin.c:1100
 msgid "TCP"
 msgstr "TCP"
 
@@ -1015,23 +1016,23 @@ msgstr "TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin.c:1129
+#: ../src/purple/purple-plugin.c:1106
 msgid "User Agent"
 msgstr "Felhasználó ügynökprogram"
 
-#: ../src/purple/purple-plugin.c:1132
+#: ../src/purple/purple-plugin.c:1109
 msgid "Authentication scheme"
 msgstr "Autentikációs séma"
 
-#: ../src/purple/purple-plugin.c:1133
+#: ../src/purple/purple-plugin.c:1111
 msgid "NTLM"
 msgstr "NTLM"
 
-#: ../src/purple/purple-plugin.c:1135
+#: ../src/purple/purple-plugin.c:1113
 msgid "Kerberos"
 msgstr "Kerberos"
 
-#: ../src/purple/purple-plugin.c:1137
+#: ../src/purple/purple-plugin.c:1115
 msgid "TLS-DSK"
 msgstr "TLS-DSK"
 
@@ -1047,25 +1048,23 @@ msgstr "TLS-DSK"
 #. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
 #. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
 #. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
-#. 
-#: ../src/purple/purple-plugin.c:1155
+#: ../src/purple/purple-plugin.c:1133
 msgid "Use Single Sign-On"
 msgstr "Egyszeri-bejelentkezés (SSO) használata"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#. 
-#: ../src/purple/purple-plugin.c:1162
+#: ../src/purple/purple-plugin.c:1140
 msgid "Don't publish my calendar information"
 msgstr "Ne publikáld a naptár információkat!"
 
-#: ../src/purple/purple-plugin.c:1165
+#: ../src/purple/purple-plugin.c:1143
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr "E-mail szolgáltatások URI-ja⏎\n(az automatikus kitöltéshez hagyja üresen!)"
 
-#: ../src/purple/purple-plugin.c:1168
+#: ../src/purple/purple-plugin.c:1146
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1073,14 +1072,13 @@ msgstr "E-mail cím\n(ha különbözik a felhasználó névtől)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#. 
-#: ../src/purple/purple-plugin.c:1174
+#: ../src/purple/purple-plugin.c:1152
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr "E-mail bejelentkezési név\n(ha különbözik a bejelentkezési névtől)"
 
-#: ../src/purple/purple-plugin.c:1177
+#: ../src/purple/purple-plugin.c:1155
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1088,21 +1086,74 @@ msgstr "E-mail jelszó\n(ha különbözik a jelszótól)"
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#. 
-#: ../src/purple/purple-plugin.c:1184
+#: ../src/purple/purple-plugin.c:1162
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
 "(leave empty to determine from Username)"
 msgstr "Csoportos beszélgetés proxy\nceg.hu  vagy  felhasznalo@ceg.hu\n(hagyja üresen a felhasználó névből való meghatározáshoz!)"
 
-#: ../src/purple/purple-search.c:57
+#: ../src/purple/purple-plugin.c:1166
+msgid "Media encryption"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1167
+msgid "Obey server policy"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1168
+msgid "Always"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1169
+msgid "Optional"
+msgstr ""
+
+#: ../src/purple/purple-plugin.c:1170
+msgid "Disabled"
+msgstr ""
+
+#: ../src/purple/purple-search.c:60
 msgid "User name"
 msgstr "Felhasználónév"
 
-#: ../src/purple/purple-search.c:60
+#: ../src/purple/purple-search.c:63
 msgid "Name"
 msgstr "Név"
+
+#: ../src/purple/purple-search.c:72 ../src/purple/purple-search.c:219
+msgid "Email"
+msgstr "E-mail"
+
+#: ../src/purple/purple-search.c:215
+msgid "First name"
+msgstr "Keresztnév"
+
+#: ../src/purple/purple-search.c:217
+msgid "Last name"
+msgstr "Vezetéknév"
+
+#: ../src/purple/purple-search.c:221
+msgid "SIP ID"
+msgstr ""
+
+#: ../src/purple/purple-search.c:229
+msgid "Search"
+msgstr "Keresés"
+
+#: ../src/purple/purple-search.c:230
+msgid "Search for a contact"
+msgstr "Kapcsolat keresése"
+
+#: ../src/purple/purple-search.c:231
+msgid ""
+"Enter the information for the person you wish to find. Empty fields will be "
+"ignored."
+msgstr "Adja meg a keresett személy adatait. Az üres mezők figyelmen kívül lesznek hagyva"
+
+#: ../src/purple/purple-search.c:233
+msgid "_Search"
+msgstr "_Keresés"
 
 #: ../src/purple/purple-transport.c:131
 msgid "Read error"
@@ -1121,10 +1172,10 @@ msgstr "Nem sikerült kapcsolódni"
 msgid "Could not create SSL context"
 msgstr "Az SSL-környezet nem hozható létre"
 
-#: ../src/purple/purple-transport.c:281
+#: ../src/purple/purple-transport.c:289
 msgid "Could not create socket"
 msgstr "Nem tudom létrehozni a \"Socket\"-et"
 
-#: ../src/purple/purple-transport.c:372
+#: ../src/purple/purple-transport.c:380
 msgid "Write error"
 msgstr "Írási hiba"

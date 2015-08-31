@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -53,6 +53,7 @@ static const gchar * const mech_names[] = {
 	"Kerberos",  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 	"Negotiate", /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
 	"",          /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+	"",          /* SIPE_AUTHENTICATION_TYPE_AUTOMATIC */
 };
 
 #ifndef ISC_REQ_IDENTIFY
@@ -132,7 +133,6 @@ sip_sec_destroy_sspi_context(context_sspi context)
 
 static gboolean
 sip_sec_acquire_cred__sspi(SipSecContext context,
-			   const gchar *domain,
 			   const gchar *username,
 			   const gchar *password)
 {
@@ -140,6 +140,8 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 	TimeStamp expiry;
 	SEC_WINNT_AUTH_IDENTITY auth_identity;
 	context_sspi ctx = (context_sspi)context;
+	gchar *domain_tmp = NULL;
+	gchar *user_tmp = NULL;
 
 	/* this is the first time we are allowed to set private flags */
 	if (((context->flags & SIP_SEC_FLAG_COMMON_HTTP) == 0) &&
@@ -147,22 +149,34 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 		context->flags |= SIP_SEC_FLAG_SSPI_SIP_NTLM;
 
 	if ((context->flags & SIP_SEC_FLAG_COMMON_SSO) == 0) {
-		if (!username || !password) {
+		if (is_empty(username) || is_empty(password)) {
+			SIPE_DEBUG_ERROR_NOFORMAT("sip_sec_acquire_cred__sspi: no valid authentication information provided");
 			return FALSE;
 		}
 
 		memset(&auth_identity, 0, sizeof(auth_identity));
 		auth_identity.Flags = SEC_WINNT_AUTH_IDENTITY_ANSI;
 
-		if (!is_empty(domain)) {
-			auth_identity.Domain = (unsigned char*)domain;
-			auth_identity.DomainLength = strlen(domain);
+		if (SIP_SEC_USERNAME_IS_ENTERPRISE) {
+			/* use username as-is, just replace enterprise marker with @ */
+			user_tmp = sipe_utils_str_replace(username,
+							  SIP_SEC_USERNAME_ENTERPRISE_STRING,
+							  "@");
+		} else {
+			SIP_SEC_USERNAME_SPLIT_START;
+			if (SIP_SEC_USERNAME_HAS_DOMAIN) {
+				domain_tmp                 = g_strdup(SIP_SEC_USERNAME_DOMAIN);
+				user_tmp                   = g_strdup(SIP_SEC_USERNAME_ACCOUNT);
+				auth_identity.Domain       = (unsigned char *)domain_tmp;
+				auth_identity.DomainLength = strlen(domain_tmp);
+			}
+			SIP_SEC_USERNAME_SPLIT_END;
 		}
 
-		auth_identity.User = (unsigned char*)username;
-		auth_identity.UserLength = strlen(username);
+		auth_identity.User           = (unsigned char *)(user_tmp ? user_tmp : username);
+		auth_identity.UserLength     = strlen((char *) auth_identity.User);
 
-		auth_identity.Password = (unsigned char*)password;
+		auth_identity.Password       = (unsigned char *)password;
 		auth_identity.PasswordLength = strlen(password);
 	}
 
@@ -177,6 +191,9 @@ sip_sec_acquire_cred__sspi(SipSecContext context,
 					NULL,
 					ctx->cred_sspi,
 					&expiry);
+
+	g_free(user_tmp);
+	g_free(domain_tmp);
 
 	if (ret != SEC_E_OK) {
 		sip_sec_sspi_print_error("sip_sec_acquire_cred__sspi: AcquireCredentialsHandleA", ret);

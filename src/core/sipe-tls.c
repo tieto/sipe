@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,7 +21,7 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  *
  *
- * TLS Protocol Version 1.0/1.1 - Handshake Messages
+ * TLS Protocol Version 1.0/1.1/1.2 - Handshake Messages
  *
  * TLS-DSK uses the handshake messages during authentication and session key
  * exchange. This module *ONLY* implements this part of the TLS specification!
@@ -31,6 +31,7 @@
  *   - RFC2246: http://www.ietf.org/rfc/rfc2246.txt
  *   - RFC3546: http://www.ietf.org/rfc/rfc3546.txt
  *   - RFC4346: http://www.ietf.org/rfc/rfc4346.txt
+ *   - RFC5246: http://www.ietf.org/rfc/rfc5246.txt
  */
 
 #include <stdlib.h>
@@ -81,12 +82,16 @@ struct tls_internal_state {
 	const guchar *server_write_mac_secret;
 	const guchar *client_write_secret;
 	const guchar *server_write_secret;
+	const guchar *client_write_iv;
+	const guchar *server_write_iv;
 	void (*mac_func)(const guchar *key, gsize key_length,
 			 const guchar *data, gsize data_length,
 			 guchar *digest);
 	gpointer cipher_context;
 	guint64 sequence_number;
+	gboolean stream_cipher;
 	gboolean encrypted;
+	gboolean expected;
 };
 
 /*
@@ -100,11 +105,16 @@ struct tls_internal_state {
 
 #define TLS_PROTOCOL_VERSION_1_0 0x0301
 #define TLS_PROTOCOL_VERSION_1_1 0x0302
+#define TLS_PROTOCOL_VERSION_1_2 0x0303
 
 /* CipherSuites */
 #define TLS_RSA_EXPORT_WITH_RC4_40_MD5 0x0003
 #define TLS_RSA_WITH_RC4_128_MD5       0x0004
 #define TLS_RSA_WITH_RC4_128_SHA       0x0005
+#define TLS_RSA_WITH_AES_128_CBC_SHA   0x002F
+#define TLS_RSA_WITH_AES_256_CBC_SHA   0x0035
+
+#define TLS_AES_CBC_BLOCK_LENGTH 16 /* bytes */
 
 /* CompressionMethods */
 #define TLS_COMP_METHOD_NULL 0
@@ -203,7 +213,7 @@ struct tls_compile_sessionid {
 
 struct tls_compile_cipher {
 	gsize elements; /* VECTOR */
-	guint suites[3];
+	guint suites[5];
 };
 
 struct tls_compile_compression {
@@ -275,6 +285,9 @@ static void debug_hex(struct tls_internal_state *state,
 	if (state->debug) g_string_append(state->debug, string)
 #define debug_printf(state, format, ...) \
 	if (state->debug) g_string_append_printf(state->debug, format, __VA_ARGS__)
+
+/* Analyzer only needs the debugging functions */
+#ifndef _SIPE_COMPILING_ANALYZER
 
 static void debug_secrets(struct tls_internal_state *state,
 			  const gchar *label,
@@ -471,6 +484,8 @@ static guchar *sipe_tls_prf(SIPE_UNUSED_PARAMETER struct tls_internal_state *sta
 	return(md5);
 }
 
+#endif /* !_SIPE_COMPILING_ANALYZER */
+
 /*
  * TLS data parsers
  *
@@ -539,6 +554,10 @@ static gboolean parse_array(struct tls_internal_state *state,
 		return(FALSE);
 	debug_printf(state, "%s/ARRAY[%" G_GSIZE_FORMAT "]\n",
 		     desc->label, desc->max);
+#ifdef _SIPE_COMPILING_ANALYZER
+	if (desc->max)
+		debug_hex(state, desc->max);
+#endif
 	if (state->data) {
 		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
 							  desc->max);
@@ -567,6 +586,10 @@ static gboolean parse_vector(struct tls_internal_state *state,
 		return(FALSE);
 	}
 	debug_printf(state, "%s/VECTOR<%d>\n", desc->label, length);
+#ifdef _SIPE_COMPILING_ANALYZER
+	if (length)
+		debug_hex(state, length);
+#endif
 	if (state->data) {
 		struct tls_parsed_array *save = g_malloc0(sizeof(struct tls_parsed_array) +
 							  length);
@@ -773,7 +796,8 @@ static const struct msg_descriptor Finished_m = {
 /*
  * TLS message parsers
  */
-static gboolean handshake_parse(struct tls_internal_state *state)
+static gboolean handshake_parse(struct tls_internal_state *state,
+				guint expected_type)
 {
 	const guchar *bytes = state->msg_current;
 	gsize length        = state->msg_remainder;
@@ -809,6 +833,9 @@ static gboolean handshake_parse(struct tls_internal_state *state)
 		debug_printf(state, "TLS handshake (%" G_GSIZE_FORMAT " bytes) (%d)",
 			     msg_length, msg_type);
 
+		if (msg_type == expected_type)
+			state->expected = TRUE;
+
 		state->msg_current   = (guchar *) bytes + TLS_HANDSHAKE_HEADER_LENGTH;
 		state->msg_remainder = msg_length;
 
@@ -816,6 +843,7 @@ static gboolean handshake_parse(struct tls_internal_state *state)
 			const struct layout_descriptor *ldesc = desc->layouts;
 
 			debug_printf(state, "%s\n", desc->description);
+
 			while (TLS_LAYOUT_IS_VALID(ldesc)) {
 				success = ldesc->parser(state, ldesc);
 				if (!success)
@@ -851,7 +879,8 @@ static void free_parse_data(struct tls_internal_state *state)
 }
 
 static gboolean tls_record_parse(struct tls_internal_state *state,
-				 gboolean incoming)
+				 gboolean incoming,
+				 guint expected)
 {
 	const guchar *bytes  = incoming ? state->common.in_buffer : state->common.out_buffer;
 	gsize length         = incoming ? state->common.in_length : state->common.out_length;
@@ -860,13 +889,22 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 	gsize record_length;
 	gboolean success = TRUE;
 
+	/* reject empty incoming messages */
+	if (incoming && (length == 0)) {
+		SIPE_DEBUG_ERROR_NOFORMAT("tls_record_parse: empty TLS message received");
+		return(FALSE);
+	}
+
+#ifndef _SIPE_COMPILING_ANALYZER
 	debug_printf(state, "TLS MESSAGE %s\n", incoming ? "INCOMING" : "OUTGOING");
+#endif
 
 	/* Collect parser data for incoming messages */
 	if (incoming)
 		state->data = g_hash_table_new_full(g_str_hash, g_str_equal,
 						    NULL, g_free);
 
+	state->expected = FALSE;
 	while (success && (length > 0)) {
 
 		/* truncated header check */
@@ -891,6 +929,9 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 		case TLS_PROTOCOL_VERSION_1_1:
 			version_str = "1.1 (RFC4346)";
 			break;
+		case TLS_PROTOCOL_VERSION_1_2:
+			version_str = "1.2 (RFC5246)";
+			break;
 		default:
 			version_str = "<future protocol version>";
 			break;
@@ -911,6 +952,8 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 		state->msg_current   = (guchar *) bytes + TLS_RECORD_HEADER_LENGTH;
 		state->msg_remainder = record_length - TLS_RECORD_HEADER_LENGTH;
 
+/* Analyzer only needs the debugging functions */
+#ifndef _SIPE_COMPILING_ANALYZER
 		/* Add incoming message contents to digest contexts */
 		if (incoming) {
 			sipe_digest_md5_update(state->md5_context,
@@ -920,11 +963,15 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 						state->msg_current,
 						state->msg_remainder);
 		}
+#endif /* !_SIPE_COMPILING_ANALYZER */
 
 		switch (bytes[TLS_RECORD_OFFSET_TYPE]) {
 		case TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC:
 			debug_print(state, "Change Cipher Spec\n");
-			if (incoming) state->encrypted = TRUE;
+			if (incoming)
+				state->encrypted = TRUE;
+			if (expected == TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC)
+				state->expected = TRUE;
 			break;
 
 		case TLS_RECORD_TYPE_HANDSHAKE:
@@ -932,7 +979,7 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 				debug_print(state, "Encrypted handshake message\n");
 				debug_hex(state, 0);
 			} else {
-				success = handshake_parse(state);
+				success = handshake_parse(state, expected);
 			}
 			break;
 
@@ -947,6 +994,14 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 		length -= record_length;
 	}
 
+#ifndef _SIPE_COMPILING_ANALYZER
+	if (incoming && !state->expected) {
+		SIPE_DEBUG_ERROR("tls_record_parse: did not find expected msg type %d",
+				 expected);
+		success = FALSE;
+	}
+#endif
+
 	if (!success)
 		free_parse_data(state);
 
@@ -957,6 +1012,9 @@ static gboolean tls_record_parse(struct tls_internal_state *state,
 
 	return(success);
 }
+
+/* Analyzer only needs the debugging functions */
+#ifndef _SIPE_COMPILING_ANALYZER
 
 /*
  * TLS message compiler
@@ -1007,12 +1065,14 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 					 const struct tls_compiled_message *msg)
 {
 	guchar *plaintext;
-	gsize plaintext_length;
+	gsize plaintext_length; /* header + content        */
 	guchar *mac;
 	gsize mac_length;
 	guchar *message;
 	guchar *encrypted;
-	gsize encrypted_length;
+	gsize message_length;   /* header + content + MAC  */
+	gsize padding_length;   /* for block cipher        */
+	gsize encrypted_length; /* header + encrypted data */
 
 	/* Create plaintext TLS record */
 	compile_tls_record(state, msg, NULL);
@@ -1022,16 +1082,23 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 		return;
 
 	/* Prepare encryption buffer */
-	encrypted_length = plaintext_length + state->mac_length;
+	message_length = plaintext_length + state->mac_length;
+	if (state->stream_cipher) {
+		padding_length   = 0;
+		encrypted_length = message_length;
+	} else {
+		padding_length   = TLS_AES_CBC_BLOCK_LENGTH - (message_length - TLS_RECORD_HEADER_LENGTH + 1) % TLS_AES_CBC_BLOCK_LENGTH;
+		encrypted_length = message_length + padding_length + 1;
+	}
 	SIPE_DEBUG_INFO("compile_encrypted_tls_record: total size %" G_GSIZE_FORMAT,
 			encrypted_length - TLS_RECORD_HEADER_LENGTH);
-	message          = g_malloc(encrypted_length);
+	message = g_malloc(message_length);
 	memcpy(message, plaintext, plaintext_length);
 	lowlevel_integer_to_tls(message + TLS_RECORD_OFFSET_LENGTH, 2,
 				encrypted_length - TLS_RECORD_HEADER_LENGTH);
 
 	/*
-	 * Calculate MAC
+	 * Calculate MAC and append to message
 	 *
 	 * HMAC_hash(client_write_mac_secret,
 	 *           sequence_number + type + version + length + fragment)
@@ -1051,13 +1118,36 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 			message + plaintext_length);
 	g_free(mac);
 
-	/* Encrypt message + MAC */
 	encrypted = g_malloc(encrypted_length);
+	/* header (unencrypted) */
 	memcpy(encrypted, message, TLS_RECORD_HEADER_LENGTH);
-	sipe_crypt_tls_stream(state->cipher_context,
-			      message + TLS_RECORD_HEADER_LENGTH,
-			      encrypted_length - TLS_RECORD_HEADER_LENGTH,
-			      encrypted + TLS_RECORD_HEADER_LENGTH);
+	if (state->stream_cipher) {
+		/* ENCRYPT(content + MAC) */
+		sipe_crypt_tls_stream(state->cipher_context,
+				      message + TLS_RECORD_HEADER_LENGTH,
+				      encrypted_length - TLS_RECORD_HEADER_LENGTH,
+				      encrypted + TLS_RECORD_HEADER_LENGTH);
+	} else {
+		/* TLS 1.0 GenericBlockCipher */
+		/* content + MAC */
+		memcpy(encrypted + TLS_RECORD_HEADER_LENGTH,
+		       message + TLS_RECORD_HEADER_LENGTH,
+		       message_length - TLS_RECORD_HEADER_LENGTH);
+
+		/* padding + padding_length */
+		memset(encrypted + message_length,
+		       padding_length,
+		       padding_length + 1);
+
+		/* ENCRYPT(content + MAC + padding + padding_length) */
+		sipe_crypt_tls_block(state->client_write_secret,
+				     state->key_length,
+				     state->client_write_iv,
+				     TLS_AES_CBC_BLOCK_LENGTH,
+				     encrypted + TLS_RECORD_HEADER_LENGTH,
+				     encrypted_length - TLS_RECORD_HEADER_LENGTH,
+				     encrypted + TLS_RECORD_HEADER_LENGTH);
+	}
 	g_free(message);
 
 	/* swap buffers */
@@ -1154,7 +1244,8 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 {
 	struct tls_parsed_integer *cipher_suite = g_hash_table_lookup(state->data,
 								      "CipherSuite");
-	const gchar *label = NULL;
+	const gchar *label_mac    = NULL;
+	const gchar *label_cipher = NULL;
 
 	if (!cipher_suite) {
 		SIPE_DEBUG_ERROR_NOFORMAT("check_cipher_suite: server didn't specify the cipher suite");
@@ -1163,26 +1254,52 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 
 	switch (cipher_suite->value) {
 	case TLS_RSA_EXPORT_WITH_RC4_40_MD5:
-		state->mac_length = SIPE_DIGEST_HMAC_MD5_LENGTH;
-		state->key_length = 40 / 8;
-		state->mac_func   = sipe_digest_hmac_md5;
-		label             = "MD5";
+		state->mac_length       = SIPE_DIGEST_HMAC_MD5_LENGTH;
+		state->key_length       = 40 / 8;
+		state->mac_func         = sipe_digest_hmac_md5;
+		state->stream_cipher    = TRUE;
+		label_mac               = "MD5";
+		label_cipher            = "RC4 stream";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		break;
 
 	case TLS_RSA_WITH_RC4_128_MD5:
-		state->mac_length = SIPE_DIGEST_HMAC_MD5_LENGTH;
-		state->key_length = 128 / 8;
-		state->mac_func   = sipe_digest_hmac_md5;
-		label             = "MD5";
+		state->mac_length       = SIPE_DIGEST_HMAC_MD5_LENGTH;
+		state->key_length       = 128 / 8;
+		state->mac_func         = sipe_digest_hmac_md5;
+		state->stream_cipher    = TRUE;
+		label_mac               = "MD5";
+		label_cipher            = "RC4 stream";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_MD5;
 		break;
 
 	case TLS_RSA_WITH_RC4_128_SHA:
-		state->mac_length = SIPE_DIGEST_HMAC_SHA1_LENGTH;
-		state->key_length = 128 / 8;
-		state->mac_func   = sipe_digest_hmac_sha1;
-		label             = "SHA-1";
+		state->mac_length       = SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		state->key_length       = 128 / 8;
+		state->mac_func         = sipe_digest_hmac_sha1;
+		state->stream_cipher    = TRUE;
+		label_mac               = "SHA-1";
+		label_cipher            = "RC4 stream";
+		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
+		break;
+
+	case TLS_RSA_WITH_AES_128_CBC_SHA:
+		state->mac_length       = SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		state->key_length       = 128 / 8;
+		state->mac_func         = sipe_digest_hmac_sha1;
+		state->stream_cipher    = FALSE;
+		label_mac               = "SHA-1";
+		label_cipher            = "AES-CBC block";
+		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
+		break;
+
+	case TLS_RSA_WITH_AES_256_CBC_SHA:
+		state->mac_length       = SIPE_DIGEST_HMAC_SHA1_LENGTH;
+		state->key_length       = 256 / 8;
+		state->mac_func         = sipe_digest_hmac_sha1;
+		state->stream_cipher    = FALSE;
+		label_mac               = "SHA-1";
+		label_cipher            = "AES-CBC block";
 		state->common.algorithm = SIPE_TLS_DIGEST_ALGORITHM_SHA1;
 		break;
 
@@ -1192,16 +1309,18 @@ static gboolean check_cipher_suite(struct tls_internal_state *state)
 		break;
 	}
 
-	if (label)
-		SIPE_DEBUG_INFO("check_cipher_suite: KEY(stream cipher RC4) %" G_GSIZE_FORMAT ", MAC(%s) %" G_GSIZE_FORMAT,
-				state->key_length, label, state->mac_length);
+	if (label_cipher && label_mac)
+		SIPE_DEBUG_INFO("check_cipher_suite: KEY(%s cipher) %" G_GSIZE_FORMAT ", MAC(%s) %" G_GSIZE_FORMAT,
+				label_cipher, state->key_length,
+				label_mac, state->mac_length);
 
-	return(label != NULL);
+	return(label_cipher && label_mac);
 }
 
 static void tls_calculate_secrets(struct tls_internal_state *state)
 {
-	gsize length = 2 * (state->mac_length + state->key_length);
+	gsize length = 2 * (state->mac_length + state->key_length +
+			    (state->stream_cipher ? 0 : TLS_AES_CBC_BLOCK_LENGTH));
 	guchar *random;
 
 	/* Generate pre-master secret */
@@ -1272,9 +1391,14 @@ static void tls_calculate_secrets(struct tls_internal_state *state)
 	state->client_write_secret     = state->key_block + 2 * state->mac_length;
 	state->server_write_secret     = state->key_block + 2 * state->mac_length + state->key_length;
 
-	/* initialize cipher context */
-	state->cipher_context = sipe_crypt_tls_start(state->client_write_secret,
-						     state->key_length);
+	/* initialize stream cipher context */
+	if (state->stream_cipher) {
+		state->cipher_context = sipe_crypt_tls_start(state->client_write_secret,
+							     state->key_length);
+	} else {
+		state->client_write_iv = state->key_block + 2 * (state->mac_length + state->key_length);
+		state->server_write_iv = state->key_block + 2 * (state->mac_length + state->key_length) + TLS_AES_CBC_BLOCK_LENGTH;
+	}
 }
 
 #if 0 /* NOT NEEDED? */
@@ -1521,10 +1645,12 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 		{ TLS_PROTOCOL_VERSION_1_0 },
 		{ 0, { 0 } },
 		{ 0 /* empty SessionID */ },
-		{ 3,
+		{ 5,
 		  {
 			  TLS_RSA_WITH_RC4_128_MD5,
 			  TLS_RSA_WITH_RC4_128_SHA,
+			  TLS_RSA_WITH_AES_128_CBC_SHA,
+			  TLS_RSA_WITH_AES_256_CBC_SHA,
 			  TLS_RSA_EXPORT_WITH_RC4_40_MD5
 		  }
 		},
@@ -1551,7 +1677,7 @@ static gboolean tls_client_hello(struct tls_internal_state *state)
 		state->debug = g_string_new("");
 
 	state->state = TLS_HANDSHAKE_STATE_SERVER_HELLO;
-	return(tls_record_parse(state, FALSE));
+	return(tls_record_parse(state, FALSE, 0));
 }
 
 static gboolean tls_server_hello(struct tls_internal_state *state)
@@ -1562,7 +1688,7 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 	struct tls_compiled_message *finished    = NULL;
 	gboolean success = FALSE;
 
-	if (!tls_record_parse(state, TRUE))
+	if (!tls_record_parse(state, TRUE, TLS_HANDSHAKE_TYPE_SERVER_HELLO))
 		return(FALSE);
 
 	if (((certificate = tls_client_certificate(state))  != NULL) &&
@@ -1573,7 +1699,7 @@ static gboolean tls_server_hello(struct tls_internal_state *state)
 		/* Part 1 */
 		compile_tls_record(state, certificate, exchange, verify, NULL);
 
-		success = tls_record_parse(state, FALSE);
+		success = tls_record_parse(state, FALSE,  0);
 		if (success) {
 			guchar *part1      = state->common.out_buffer;
 			gsize part1_length = state->common.out_length;
@@ -1628,7 +1754,7 @@ static gboolean tls_finished(struct tls_internal_state *state)
 {
 	guchar *random;
 
-	if (!tls_record_parse(state, TRUE))
+	if (!tls_record_parse(state, TRUE, TLS_RECORD_TYPE_CHANGE_CIPHER_SPEC))
 		return(FALSE);
 
 	/* we don't need the data */
@@ -1781,6 +1907,8 @@ void sipe_tls_free(struct sipe_tls_state *state)
 		g_free(state);
 	}
 }
+
+#endif /* !_SIPE_COMPILING_ANALYZER */
 
 /*
   Local Variables:

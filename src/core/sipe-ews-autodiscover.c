@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -185,17 +185,19 @@ static void sipe_ews_autodiscover_parse(struct sipe_core_private *sipe_private,
 
 static void sipe_ews_autodiscover_response(struct sipe_core_private *sipe_private,
 					   guint status,
-					   SIPE_UNUSED_PARAMETER GSList *headers,
+					   GSList *headers,
 					   const gchar *body,
 					   gpointer data)
 {
 	struct sipe_ews_autodiscover *sea = data;
+	const gchar *type = sipe_utils_nameval_find(headers, "Content-Type");
 
 	sea->request = NULL;
 
 	switch (status) {
 	case SIPE_HTTP_STATUS_OK:
-		if (body)
+		/* only accept XML responses */
+		if (body && g_str_has_prefix(type, "text/xml"))
 			sipe_ews_autodiscover_parse(sipe_private, body);
 		else
 			sipe_ews_autodiscover_request(sipe_private, TRUE);
@@ -239,7 +241,7 @@ static gboolean sipe_ews_autodiscover_url(struct sipe_core_private *sipe_private
 
 	sea->request = sipe_http_request_post(sipe_private,
 					      url,
-					      NULL,
+					      "Accept: text/xml\r\n",
 					      body,
 					      "text/xml",
 					      sipe_ews_autodiscover_response,
@@ -264,7 +266,7 @@ static void sipe_ews_autodiscover_redirect_response(struct sipe_core_private *si
 						    gpointer data)
 {
 	struct sipe_ews_autodiscover *sea = data;
-	gboolean failed = TRUE;
+	gboolean failed = (status != (guint) SIPE_HTTP_STATUS_ABORTED);
 
 	sea->request = NULL;
 
@@ -308,7 +310,7 @@ static void sipe_ews_autodiscover_request(struct sipe_core_private *sipe_private
 					  gboolean next_method)
 {
 	struct sipe_ews_autodiscover *sea = sipe_private->ews_autodiscover;
-	static const struct autodiscover_method const methods[] = {
+	static const struct autodiscover_method methods[] = {
 		{ "https://Autodiscover.%s/Autodiscover/Autodiscover.xml", FALSE },
 		{ "http://Autodiscover.%s/Autodiscover/Autodiscover.xml",  TRUE  },
 		{ "http://Autodiscover.%s/Autodiscover/Autodiscover.xml",  FALSE },

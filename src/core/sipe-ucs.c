@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -23,6 +23,14 @@
  *
  * Implementation for Unified Contact Store [MS-OXWSCOS]
  *  <http://msdn.microsoft.com/en-us/library/jj194130.aspx>
+ * EWS Reference
+ *  <http://msdn.microsoft.com/en-us/library/office/bb204119.aspx>
+ * Photo Web Service Protocol [MS-OXWSPHOTO]
+ *  <http://msdn.microsoft.com/en-us/library/jj194353.aspx>
+ * GetUserPhoto operation
+ *  <http://msdn.microsoft.com/en-us/library/office/jj900502.aspx>
+ * FindPeople operation
+ *  <http://msdn.microsoft.com/en-us/library/office/jj191039.aspx>
  */
 
 #include <string.h>
@@ -39,6 +47,7 @@
 #include "sipe-ews-autodiscover.h"
 #include "sipe-group.h"
 #include "sipe-http.h"
+#include "sipe-nls.h"
 #include "sipe-subscriptions.h"
 #include "sipe-ucs.h"
 #include "sipe-utils.h"
@@ -291,6 +300,160 @@ void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
 				   sipe_ucs_get_user_photo_response,
 				   payload))
 		g_free(payload);
+}
+
+static void sipe_ucs_search_response(struct sipe_core_private *sipe_private,
+				     SIPE_UNUSED_PARAMETER struct sipe_ucs_transaction *trans,
+				     const sipe_xml *body,
+				     gpointer callback_data)
+{
+	const sipe_xml *persona_node;
+	struct sipe_backend_search_results *results = NULL;
+	guint match_count = 0;
+
+	for (persona_node = sipe_xml_child(body,
+					   "FindPeopleResponse/People/Persona");
+	     persona_node;
+	     persona_node = sipe_xml_twin(persona_node)) {
+		const sipe_xml *address = sipe_xml_child(persona_node,
+							 "ImAddress");
+
+		/* only display Persona nodes which have an "ImAddress" node */
+		if (address) {
+			gchar *uri;
+			gchar *displayname;
+			gchar *company;
+			gchar *email;
+
+			/* OK, we found something - show the results to the user */
+			match_count++;
+			if (!results) {
+				results = sipe_backend_search_results_start(SIPE_CORE_PUBLIC,
+									    callback_data);
+				if (!results) {
+					SIPE_DEBUG_ERROR_NOFORMAT("sipe_ucs_search_response: Unable to display the search results.");
+					sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+								   callback_data,
+								   _("Unable to display the search results"));
+					return;
+				}
+			}
+
+			uri         = sipe_xml_data(address);
+			displayname = sipe_xml_data(sipe_xml_child(persona_node,
+								   "DisplayName"));
+			company     = sipe_xml_data(sipe_xml_child(persona_node,
+								   "CompanyName"));
+			email       = sipe_xml_data(sipe_xml_child(persona_node,
+								   "EmailAddress/EmailAddress"));
+
+			sipe_backend_search_results_add(SIPE_CORE_PUBLIC,
+							results,
+							sipe_get_no_sip_uri(uri),
+							displayname,
+							company,
+							NULL,
+							email);
+
+			g_free(email);
+			g_free(company);
+			g_free(displayname);
+			g_free(uri);
+		}
+	}
+
+	if (match_count > 0)
+		sipe_buddy_search_contacts_finalize(sipe_private,
+						    results,
+						    match_count,
+						    FALSE);
+	else
+		sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+					   callback_data,
+					   _("No contacts found"));
+}
+
+void sipe_ucs_search(struct sipe_core_private *sipe_private,
+		     struct sipe_backend_search_token *token,
+		     const gchar *given_name,
+		     const gchar *surname,
+		     const gchar *email,
+		     const gchar *sipid,
+		     const gchar *company,
+		     const gchar *country)
+{
+	guint count    = 0;
+	GString *query = g_string_new(NULL);
+
+	/*
+	 * Search GAL for matching entries
+	 *
+	 * QueryString should support field properties and quoting ("")
+	 * according to the specification. But in my trials I couldn't get
+	 * them to work. Concatenate all query words to a single string.
+	 * Only items that match ALL words will be returned by this query.
+	 */
+#define ADD_QUERY_VALUE(val)			       \
+	if (val) {				       \
+		if (count++)			       \
+			g_string_append_c(query, ' '); \
+		g_string_append(query, val);	       \
+	}
+
+	ADD_QUERY_VALUE(given_name);
+	ADD_QUERY_VALUE(surname);
+	ADD_QUERY_VALUE(email);
+	ADD_QUERY_VALUE(sipid);
+	ADD_QUERY_VALUE(company);
+	ADD_QUERY_VALUE(country);
+
+	if (count > 0) {
+		gchar *body = g_markup_printf_escaped("<m:FindPeople>"
+						      " <m:PersonaShape>"
+						      "  <t:BaseShape>IdOnly</t:BaseShape>"
+						      "  <t:AdditionalProperties>"
+						      "   <t:FieldURI FieldURI=\"persona:CompanyName\"/>"
+						      "   <t:FieldURI FieldURI=\"persona:DisplayName\"/>"
+						      "   <t:FieldURI FieldURI=\"persona:EmailAddress\"/>"
+						      "   <t:FieldURI FieldURI=\"persona:ImAddress\"/>"
+						      /* Locations doesn't seem to work
+						      "   <t:FieldURI FieldURI=\"persona:Locations\"/>"
+						      */
+						      "  </t:AdditionalProperties>"
+						      " </m:PersonaShape>"
+						      " <m:IndexedPageItemView BasePoint=\"Beginning\" MaxEntriesReturned=\"100\" Offset=\"0\"/>"
+						      /*
+						       * I have no idea why Exchnage doesn't accept this
+						       * FieldURI for restrictions. Without it the search
+						       * will return users that don't have an ImAddress
+						       * and we need to filter them out ourselves :-(
+						      " <m:Restriction>"
+						      "  <t:Exists>"
+						      "   <t:FieldURI FieldURI=\"persona:ImAddress\"/>"
+						      "  </t:Exists>"
+						      " </m:Restriction>"
+						      */
+						      " <m:ParentFolderId>"
+						      "  <t:DistinguishedFolderId Id=\"directory\"/>"
+						      " </m:ParentFolderId>"
+						      " <m:QueryString>%s</m:QueryString>"
+						      "</m:FindPeople>",
+						      query->str);
+
+		if (!sipe_ucs_http_request(sipe_private,
+					   NULL,
+					   body,
+					   sipe_ucs_search_response,
+					   token))
+			sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+						   token,
+						   _("Contact search failed"));
+	} else
+		sipe_backend_search_failed(SIPE_CORE_PUBLIC,
+					   token,
+					   _("Invalid contact search query"));
+
+	g_string_free(query, TRUE);
 }
 
 static void sipe_ucs_ignore_response(struct sipe_core_private *sipe_private,
@@ -555,6 +718,24 @@ void sipe_ucs_group_remove(struct sipe_core_private *sipe_private,
 			      NULL);
 }
 
+static void ucs_init_failure(struct sipe_core_private *sipe_private)
+{
+	/* Did the user specify any email settings? */
+	gboolean default_settings =
+		is_empty(sipe_backend_setting(SIPE_CORE_PUBLIC,
+					      SIPE_SETTING_EMAIL_URL))   &&
+		is_empty(sipe_backend_setting(SIPE_CORE_PUBLIC,
+					      SIPE_SETTING_EMAIL_LOGIN)) &&
+		is_empty(sipe_backend_setting(SIPE_CORE_PUBLIC,
+					      SIPE_SETTING_EMAIL_PASSWORD));
+
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				  _("UCS initialization failed!"),
+				  default_settings ?
+				  _("Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n\nYou'll need to provide Email settings in the account setup.") :
+				  _("Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n\nPlease correct your Email settings."));
+}
+
 static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_private,
 					       SIPE_UNUSED_PARAMETER struct sipe_ucs_transaction *trans,
 					       const sipe_xml *body,
@@ -650,6 +831,9 @@ static void sipe_ucs_get_im_item_list_response(struct sipe_core_private *sipe_pr
 			sipe_backend_buddy_list_processing_finish(SIPE_CORE_PUBLIC);
 			sipe_subscribe_presence_initial(sipe_private);
 		}
+	} else if (sipe_private->ucs) {
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_ucs_get_im_item_list_response: query failed, contact list operations will not work!");
+		ucs_init_failure(sipe_private);
 	}
 }
 
@@ -681,18 +865,20 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 				    SIPE_UNUSED_PARAMETER gpointer callback_data)
 {
 	struct sipe_ucs *ucs = sipe_private->ucs;
-	const gchar *ews_url;
+	const gchar *ews_url = NULL;
 
-	if (!ucs || !ews_data)
+	if (!ucs)
 		return;
 
-	ews_url = ews_data->ews_url;
+	if (ews_data)
+		ews_url = ews_data->ews_url;
+
 	if (is_empty(ews_url)) {
 		SIPE_DEBUG_ERROR_NOFORMAT("ucs_ews_autodiscover_cb: can't detect EWS URL, contact list operations will not work!");
-		return;
+		ucs_init_failure(sipe_private);
+	} else {
+		ucs_set_ews_url(sipe_private, ews_url);
 	}
-
-	ucs_set_ews_url(sipe_private, ews_url);
 }
 
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private)
@@ -704,7 +890,6 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 		   gboolean migrated)
 {
 	struct sipe_ucs *ucs;
-	const gchar *ews_url;
 
 	if (sipe_private->ucs) {
 		struct sipe_ucs *ucs = sipe_private->ucs;
@@ -734,14 +919,17 @@ void sipe_ucs_init(struct sipe_core_private *sipe_private,
 	sipe_ucs_transaction(sipe_private);
 	ucs->default_transaction = ucs->transactions;
 
-	/* user specified a service URL? */
-	ews_url = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
-	if (is_empty(ews_url))
-		sipe_ews_autodiscover_start(sipe_private,
-					    ucs_ews_autodiscover_cb,
-					    NULL);
-	else
-		ucs_set_ews_url(sipe_private, ews_url);
+	if (migrated) {
+		/* user specified a service URL? */
+		const gchar *ews_url = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_URL);
+
+		if (is_empty(ews_url))
+			sipe_ews_autodiscover_start(sipe_private,
+						    ucs_ews_autodiscover_cb,
+						    NULL);
+		else
+			ucs_set_ews_url(sipe_private, ews_url);
+	}
 }
 
 void sipe_ucs_free(struct sipe_core_private *sipe_private)

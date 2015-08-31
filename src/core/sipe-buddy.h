@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
  */
 
 /* Forward declarations */
+struct sipe_backend_search_results;
 struct sipe_cal_working_hours;
 struct sipe_core_private;
 struct sipe_group;
@@ -226,11 +227,40 @@ void sipe_buddy_update_property(struct sipe_core_private *sipe_private,
 				gchar *property_value);
 
 /**
+ * Update the buddy photo with given SIP URI. If hash is the same
+ * as the cached one then the fetching of the photo is skipped.
+ *
+ * @param sipe_private SIPE core data
+ * @param uri          a SIP URI
+ * @param photo_hash   hash value for the photo data
+ * @param photo_url    HTTP URL where to get the photo data
+ * @param headers      additional HTTP headers (may be @c NULL)
+ */
+void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
+			     const gchar *uri,
+			     const gchar *photo_hash,
+			     const gchar *photo_url,
+			     const gchar *headers);
+
+/**
  * Triggers a download of all buddy photos that were changed on the server.
  *
  * @param sipe_private SIPE core data
  */
 void sipe_buddy_refresh_photos(struct sipe_core_private *sipe_private);
+
+/**
+ * Finalize the search results and display results to user.
+ *
+ * @param sipe_private SIPE core data
+ * @param results      opaque results handle for backend
+ * @param match_count  number of matches found
+ * @param more         @c TRUE if there are more matches available
+ */
+void sipe_buddy_search_contacts_finalize(struct sipe_core_private *sipe_private,
+					 struct sipe_backend_search_results *results,
+					 guint match_count,
+					 gboolean more);
 
 /**
  * Number of buddies

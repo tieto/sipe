@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,7 +103,11 @@
 #define PURPLE_SIPE_SSO_AND_KERBEROS 0
 #endif
 
-/* Sipe core activity <-> Purple status mapping */
+/*
+ * SIPE core activity <-> Purple status mapping
+ *
+ * NOTE: this needs to be kept in sync with sipe_purple_status_types()
+ */
 static const gchar * const activity_to_purple_map[SIPE_ACTIVITY_NUM_TYPES] = {
 /* SIPE_ACTIVITY_UNSET       */ "unset",     /* == purple_primitive_get_id_from_type(PURPLE_STATUS_UNSET) */
 /* SIPE_ACTIVITY_AVAILABLE   */ "available", /* == purple_primitive_get_id_from_type(PURPLE_STATUS_AVAILABLE) */
@@ -122,6 +126,7 @@ static const gchar * const activity_to_purple_map[SIPE_ACTIVITY_NUM_TYPES] = {
 /* SIPE_ACTIVITY_IN_MEETING  */ "in-a-meeting",
 /* SIPE_ACTIVITY_OOF         */ "out-of-office",
 /* SIPE_ACTIVITY_URGENT_ONLY */ "urgent-interruptions-only",
+/* SIPE_ACTIVIY_NUM_TYPES == 17 -> compare to sipe_purple_status_types() */
 };
 
 GHashTable *purple_token_map;
@@ -193,68 +198,127 @@ static GList *sipe_purple_status_types(SIPE_UNUSED_PARAMETER PurpleAccount *acc)
 	PurpleStatusType *type;
 	GList *types = NULL;
 
-	/* Macros to reduce code repetition.
+	/* Macro to reduce code repetition
 	   Translators: noun */
-#define SIPE_ADD_STATUS(prim,id,name,user) type = purple_status_type_new_with_attrs( \
-		prim, id, name,             \
+#define SIPE_ADD_STATUS(prim,activity,user) type = purple_status_type_new_with_attrs( \
+		prim, \
+		sipe_purple_activity_to_token(activity), \
+		sipe_core_activity_description(activity), \
 		TRUE, user, FALSE,          \
 		SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, _("Message"), purple_value_new(PURPLE_TYPE_STRING), \
 		NULL);                      \
 	types = g_list_append(types, type);
 
-	/* Online */
+	/*
+	 * NOTE: needs to be kept in sync with activity_to_purple_map[],
+	 *       i.e. for each SIPE_ACTIVITY_xxx value there must be an
+	 *       entry on this list.
+	 *
+	 * NOTE: the following code is sorted by purple primitive type not
+	 *       by SIPE_ACTIVITY_xxx value.
+	 */
+
+	/*  1: Unset - special case: no entry needed */
+
+	/*
+	 * Status list entries for primitive type AVAILABLE
+	 *
+	 *  2: Available */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
-			NULL,
-			NULL,
+			SIPE_ACTIVITY_AVAILABLE,
 			TRUE);
 
-	/* Busy */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_BUSY),
-			sipe_core_activity_description(SIPE_ACTIVITY_BUSY),
-			TRUE);
-
-	/* Do Not Disturb */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_DND),
-			NULL,
-			TRUE);
-
-	/* In a call */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_ON_PHONE),
-			sipe_core_activity_description(SIPE_ACTIVITY_ON_PHONE),
+	/*  3: Online */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
+			SIPE_ACTIVITY_ONLINE,
 			FALSE);
 
-	/* In a conference call  */
-	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_IN_CONF),
-			sipe_core_activity_description(SIPE_ACTIVITY_IN_CONF),
+	/*  4: Inactive (Idle) */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AVAILABLE,
+			SIPE_ACTIVITY_INACTIVE,
 			FALSE);
 
-	/* Away */
-	/* Goes first in the list as
-	 * purple picks the first status with the AWAY type
-	 * for idle.
+	/*
+	 * Status list entries for primitive type UNAVAILABLE
+	 *
+	 *  5: Busy */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_BUSY,
+			TRUE);
+
+	/*  6: Busy-Idle */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_BUSYIDLE,
+			FALSE);
+
+	/*  7: Do Not Disturb */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_DND,
+			TRUE);
+
+	/*  8: In a call */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_ON_PHONE,
+			FALSE);
+
+	/*  9: In a conference call */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_IN_CONF,
+			FALSE);
+
+	/* 10: In a meeting */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_IN_MEETING,
+			FALSE);
+
+	/* 11: Urgent interruptions only */
+	SIPE_ADD_STATUS(PURPLE_STATUS_UNAVAILABLE,
+			SIPE_ACTIVITY_URGENT_ONLY,
+			FALSE);
+
+	/*
+	 * Status list entries for primitive type AWAY
+	 *
+	 * 12: Away - special case: needs to go first in the list as purple
+	 *            picks the first status with primitive type AWAY for idle
 	 */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			NULL,
-			NULL,
+			SIPE_ACTIVITY_AWAY,
 			TRUE);
 
-	/* Be Right Back */
+	/* 13: Be Right Back */
 	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
-			sipe_purple_activity_to_token(SIPE_ACTIVITY_BRB),
-			sipe_core_activity_description(SIPE_ACTIVITY_BRB),
+			SIPE_ACTIVITY_BRB,
 			TRUE);
 
-	/* Appear Offline */
+	/* 14: Out to lunch */
+	SIPE_ADD_STATUS(PURPLE_STATUS_AWAY,
+			SIPE_ACTIVITY_LUNCH,
+			FALSE);
+
+	/*
+	 * Status list entries for primitive type EXTENDED_AWAY
+	 *
+	 * 15: Out of office */
+	SIPE_ADD_STATUS(PURPLE_STATUS_EXTENDED_AWAY,
+			SIPE_ACTIVITY_OOF,
+			FALSE);
+
+	/*
+	 * Status list entries for primitive type INVISIBLE
+	 *
+	 * 16: Appear Offline */
 	SIPE_ADD_STATUS(PURPLE_STATUS_INVISIBLE,
-			NULL,
-			NULL,
+			SIPE_ACTIVITY_INVISIBLE,
 			TRUE);
 
-	/* Offline */
+	/*
+	 * Status list entries for primitive type OFFLINE
+	 *
+	 * NOTE: this is always the last entry. Compare the number
+	 *       with the comment in activity_to_purple_map[].
+	 *
+	 * 17: Offline - special case: no message text */
 	type = purple_status_type_new(PURPLE_STATUS_OFFLINE,
 				      NULL,
 				      NULL,
@@ -282,12 +346,15 @@ static guint get_authentication_type(PurpleAccount *account)
 {
 	const gchar *auth = purple_account_get_string(account, "authentication", "ntlm");
 
-	/* map option list to type - default is NTLM */
-	guint authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+	/* map option list to type - default is automatic */
+	guint authentication_type = SIPE_AUTHENTICATION_TYPE_AUTOMATIC;
+	if (sipe_strequal(auth, "ntlm")) {
+		authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+	} else
 #if PURPLE_SIPE_SSO_AND_KERBEROS
 	if (sipe_strequal(auth, "krb5")) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_KERBEROS;
-	}
+	} else
 #endif
 	if (sipe_strequal(auth, "tls-dsk")) {
 		authentication_type = SIPE_AUTHENTICATION_TYPE_TLS_DSK;
@@ -326,46 +393,21 @@ static void connect_to_core(PurpleConnection *gc,
 	const gchar *transport = purple_account_get_string(account, "transport", "auto");
 	struct sipe_core_public *sipe_public;
 	gchar **username_split;
-	gchar *login_domain = NULL;
-	gchar *login_account = NULL;
 	const gchar *errmsg;
 	guint transport_type;
 	struct sipe_backend_private *purple_private;
-	gboolean sso = get_sso_flag(account);
 
 	/* username format: <username>,[<optional login>] */
 	SIPE_DEBUG_INFO("sipe_purple_login: username '%s'", username);
 	username_split = g_strsplit(username, ",", 2);
 
-	/* login name is ignored when SSO has been selected */
-	if (!sso) {
-		/* login name specified? */
-		if (username_split[1] && strlen(username_split[1])) {
-			/* Allowed domain-account separators are / or \ */
-			gchar **domain_user = g_strsplit_set(username_split[1], "/\\", 2);
-			gboolean has_domain = domain_user[1] != NULL;
-			SIPE_DEBUG_INFO("sipe_purple_login: login '%s'", username_split[1]);
-			login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
-			login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
-			SIPE_DEBUG_INFO("sipe_purple_login: auth domain '%s' user '%s'",
-					login_domain ? login_domain : "",
-					login_account);
-			g_strfreev(domain_user);
-		} else {
-			/* No -> duplicate username */
-			login_account = g_strdup(username_split[0]);
-		}
-	}
-
 	sipe_public = sipe_core_allocate(username_split[0],
-					 sso,
-					 login_domain, login_account,
+					 get_sso_flag(account),
+					 username_split[1],
 					 password,
 					 email,
 					 email_url,
 					 &errmsg);
-	g_free(login_domain);
-	g_free(login_account);
 	g_strfreev(username_split);
 
 	if (!sipe_public) {
@@ -418,8 +460,11 @@ static void connect_to_core(PurpleConnection *gc,
 static void password_required_cb(PurpleConnection *gc,
 				 SIPE_UNUSED_PARAMETER PurpleRequestFields *fields)
 {
-        if (!PURPLE_CONNECTION_IS_VALID(gc))
-                return;
+#if !PURPLE_VERSION_CHECK(3,0,0)
+	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
+		return;
+	}
+#endif
 
 	purple_connection_error(gc,
 				PURPLE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
@@ -431,8 +476,11 @@ static void password_ok_cb(PurpleConnection *gc,
 {
 	const gchar *password;
 
-        if (!PURPLE_CONNECTION_IS_VALID(gc))
-                return;
+#if !PURPLE_VERSION_CHECK(3,0,0)
+	if (!PURPLE_CONNECTION_IS_VALID(gc)) {
+		return;
+	}
+#endif
 
 	password = purple_request_fields_get_string(fields, "password");
 
@@ -491,11 +539,25 @@ static void sipe_purple_close(PurpleConnection *gc)
 		if (purple_private->roomlist_map)
 			g_hash_table_destroy(purple_private->roomlist_map);
 		sipe_purple_chat_destroy_rejoin(purple_private);
+
+		if (purple_private->deferred_status_timeout)
+			purple_timeout_remove(purple_private->deferred_status_timeout);
+		g_free(purple_private->deferred_status_note);
+
 		g_free(purple_private);
 		purple_connection_set_protocol_data(gc, NULL);
 	}
 }
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+static int sipe_purple_send_im(PurpleConnection *gc, PurpleMessage *msg)
+{
+	sipe_core_im_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+			purple_message_get_recipient(msg),
+			purple_message_get_contents(msg));
+	return 1;
+}
+#else
 static int sipe_purple_send_im(PurpleConnection *gc,
 			       const char *who,
 			       const char *what,
@@ -504,6 +566,7 @@ static int sipe_purple_send_im(PurpleConnection *gc,
 	sipe_core_im_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who, what);
 	return 1;
 }
+#endif
 
 static unsigned int sipe_purple_send_typing(PurpleConnection *gc,
 					    const char *who,
@@ -631,8 +694,8 @@ static PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAc
  * Diagnostic push/pop was added in GCC 4.6.0
  */
 #ifdef __GNUC__
-#if (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 2)
-#if __GNUC_MINOR__ >= 6
+#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)) || (__GNUC__ >= 5)
+#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ >= 5)
 #pragma GCC diagnostic push
 #endif
 #pragma GCC diagnostic warning "-Wmissing-field-initializers"
@@ -679,7 +742,9 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* get_chat_name */
 	sipe_purple_chat_invite,		/* chat_invite */
 	sipe_purple_chat_leave,			/* chat_leave */
+#if !PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* chat_whisper */
+#endif
 	sipe_purple_chat_send,			/* chat_send */
 	NULL,					/* keepalive */
 	NULL,					/* register_user */
@@ -737,13 +802,14 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* add_buddies_with_invite */
 #elif PURPLE_VERSION_CHECK(3,0,0)
 	NULL,					/* get_max_message_size */
+	NULL,					/* media_send_dtmf */
 #endif
 #endif
 #endif
 #endif
 };
 #ifdef __GNUC__
-#if (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 6)
+#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ >= 5)
 #pragma GCC diagnostic pop
 #endif
 #endif
@@ -800,86 +866,6 @@ static void sipe_purple_show_about_plugin(PurplePluginAction *action)
 	purple_notify_formatted((PurpleConnection *) action->context,
 				NULL, " ", NULL, tmp, NULL, NULL);
 	g_free(tmp);
-}
-
-static void sipe_purple_find_contact_cb(PurpleConnection *gc,
-					PurpleRequestFields *fields)
-{
-	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
-	const gchar *given_name = NULL;
-	const gchar *surname    = NULL;
-	const gchar *email      = NULL;
-	const gchar *company    = NULL;
-	const gchar *country    = NULL;
-
-	while (entries) {
-		PurpleRequestField *field = entries->data;
-		const char *id = purple_request_field_get_id(field);
-		const char *value = purple_request_field_string_get_value(field);
-
-		SIPE_DEBUG_INFO("sipe_purple_find_contact_cb: %s = '%s'", id, value ? value : "");
-
-		if (value && strlen(value)) {
-			if (strcmp(id, "given") == 0) {
-				given_name = value;
-			} else if (strcmp(id, "surname") == 0) {
-				surname = value;
-			} else if (strcmp(id, "email") == 0) {
-				email = value;
-			} else if (strcmp(id, "company") == 0) {
-				company = value;
-			} else if (strcmp(id, "country") == 0) {
-				country = value;
-			}
-		}
-
-		entries = g_list_next(entries);
-	};
-
-	sipe_core_buddy_search(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
-			       NULL,
-			       given_name,
-			       surname,
-			       email,
-			       company,
-			       country);
-}
-
-static void sipe_purple_show_find_contact(PurplePluginAction *action)
-{
-	PurpleConnection *gc = (PurpleConnection *) action->context;
-	PurpleRequestFields *fields;
-	PurpleRequestFieldGroup *group;
-	PurpleRequestField *field;
-
-	fields = purple_request_fields_new();
-	group = purple_request_field_group_new(NULL);
-	purple_request_fields_add_group(fields, group);
-
-	field = purple_request_field_string_new("given", _("First name"), NULL, FALSE);
-	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("surname", _("Last name"), NULL, FALSE);
-	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("email", _("Email"), NULL, FALSE);
-	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("company", _("Company"), NULL, FALSE);
-	purple_request_field_group_add_field(group, field);
-	field = purple_request_field_string_new("country", _("Country"), NULL, FALSE);
-	purple_request_field_group_add_field(group, field);
-
-	purple_request_fields(gc,
-			      _("Search"),
-			      _("Search for a contact"),
-			      _("Enter the information for the person you wish to find. Empty fields will be ignored."),
-			      fields,
-			      _("_Search"), G_CALLBACK(sipe_purple_find_contact_cb),
-			      _("_Cancel"), NULL,
-#if PURPLE_VERSION_CHECK(3,0,0)
-			      purple_request_cpar_from_connection(gc),
-#else
-			      purple_connection_get_account(gc), NULL, NULL,
-#endif
-			      gc);
 }
 
 static void sipe_purple_join_conference_cb(PurpleConnection *gc,
@@ -1121,6 +1107,7 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
 
 	option = purple_account_option_list_new(_("Authentication scheme"), "authentication", NULL);
+	purple_account_option_add_list_item(option, _("Auto"), "auto");
 	purple_account_option_add_list_item(option, _("NTLM"), "ntlm");
 #if PURPLE_SIPE_SSO_AND_KERBEROS
 	purple_account_option_add_list_item(option, _("Kerberos"), "krb5");
@@ -1174,6 +1161,15 @@ static void sipe_purple_init_plugin(PurplePlugin *plugin)
 	 */
 	option = purple_account_option_string_new(_("Group Chat Proxy\n   company.com  or  user@company.com\n(leave empty to determine from Username)"), "groupchat_user", "");
 	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+
+#ifdef HAVE_SRTP
+	option = purple_account_option_list_new(_("Media encryption"), "encryption-policy", NULL);
+	purple_account_option_add_list_item(option, _("Obey server policy"), "obey-server");
+	purple_account_option_add_list_item(option, _("Always"), "required");
+	purple_account_option_add_list_item(option, _("Optional"), "optional");
+	purple_account_option_add_list_item(option, _("Disabled"), "disabled");
+	sipe_prpl_info.protocol_options = g_list_append(sipe_prpl_info.protocol_options, option);
+#endif
 }
 
 /* This macro makes the code a purple plugin */

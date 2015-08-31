@@ -315,7 +315,7 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleBuddy *buddy = NULL;
 	PurpleStatus *status = NULL;
-	const gchar *tmp = NULL;
+	gchar *tmp = NULL;
 
 	buddy = purple_blist_find_buddy(purple_private->account, who);
 	if (buddy)
@@ -323,16 +323,17 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 
 	if (status)
 		tmp = sipe_core_buddy_status(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
-                                      purple_buddy_get_name(buddy),
-                                      sipe_purple_token_to_activity(purple_status_get_id(status)),
-                                      purple_status_get_name(status));
+					     purple_buddy_get_name(buddy),
+					     sipe_purple_token_to_activity(purple_status_get_id(status)),
+					     purple_status_get_name(status));
 
-	if (tmp)
+	if (tmp) {
 		purple_prpl_got_user_status(purple_private->account, who,
 					    sipe_purple_activity_to_token(activity),
 					    SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
 					    NULL);
-	else
+		g_free(tmp);
+	} else
 		purple_prpl_got_user_status(purple_private->account, who,
 					    sipe_purple_activity_to_token(activity),
 					    NULL);

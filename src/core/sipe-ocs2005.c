@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -298,8 +298,8 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 	gboolean pub_oof = cal && oof_note && (!sipe_private->note || cal->updated > sipe_private->note_since);
 
 	if (oof_note && sipe_private->note) {
-		SIPE_DEBUG_INFO("cal->oof_start           : %s", asctime(localtime(&(cal->oof_start))));
-		SIPE_DEBUG_INFO("sipe_private->note_since : %s", asctime(localtime(&(sipe_private->note_since))));
+		SIPE_DEBUG_INFO("cal->oof_start           : %s", sipe_utils_time_to_debug_str(localtime(&(cal->oof_start))));
+		SIPE_DEBUG_INFO("sipe_private->note_since : %s", sipe_utils_time_to_debug_str(localtime(&(sipe_private->note_since))));
 	}
 
 	SIPE_DEBUG_INFO("sipe_private->note  : %s", sipe_private->note ? sipe_private->note : "");
@@ -336,7 +336,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 
 	/* User State */
 	if (!do_reset_status) {
-		if (sipe_status_changed_by_user(sipe_private) &&
+		if (sipe_private->status_set_by_user &&
 		    !do_publish_calendar &&
 		    SIPE_CORE_PRIVATE_FLAG_IS(INITIAL_PUBLISH)) {
 			const gchar *activity_token;
@@ -373,7 +373,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 		g_free(free_busy_base64);
 	}
 
-	user_input = (sipe_status_changed_by_user(sipe_private) ||
+	user_input = (sipe_private->status_set_by_user ||
 		      sipe_is_user_available(sipe_private)) ?
 		"active" : "idle";
 
@@ -428,7 +428,7 @@ void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
 
 	if (cal_status < SIPE_CAL_NO_DATA) {
 		SIPE_DEBUG_INFO("sipe_apply_calendar_status: cal_status      : %d for %s", cal_status, sbuddy->name);
-		SIPE_DEBUG_INFO("sipe_apply_calendar_status: cal_avail_since : %s", asctime(localtime(&cal_avail_since)));
+		SIPE_DEBUG_INFO("sipe_apply_calendar_status: cal_avail_since : %s", sipe_utils_time_to_debug_str(localtime(&cal_avail_since)));
 	}
 
 	/* scheduled Cal update call */
@@ -446,7 +446,7 @@ void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
 
 	/* adjust to calendar status */
 	if (cal_status != SIPE_CAL_NO_DATA) {
-		SIPE_DEBUG_INFO("sipe_apply_calendar_status: user_avail_since: %s", asctime(localtime(&sbuddy->user_avail_since)));
+		SIPE_DEBUG_INFO("sipe_apply_calendar_status: user_avail_since: %s", sipe_utils_time_to_debug_str(localtime(&sbuddy->user_avail_since)));
 
 		if ((cal_status == SIPE_CAL_BUSY) &&
 		    (cal_avail_since > sbuddy->user_avail_since) &&
@@ -457,7 +457,7 @@ void sipe_ocs2005_apply_calendar_status(struct sipe_core_private *sipe_private,
 		}
 		avail = sipe_ocs2007_availability_from_status(status_id, NULL);
 
-		SIPE_DEBUG_INFO("sipe_apply_calendar_status: activity_since  : %s", asctime(localtime(&sbuddy->activity_since)));
+		SIPE_DEBUG_INFO("sipe_apply_calendar_status: activity_since  : %s", sipe_utils_time_to_debug_str(localtime(&sbuddy->activity_since)));
 		if (cal_avail_since > sbuddy->activity_since) {
 			if ((cal_status == SIPE_CAL_OOF) &&
 			    sipe_ocs2007_availability_is_away(avail)) {
@@ -526,9 +526,9 @@ void sipe_ocs2005_schedule_status_update(struct sipe_core_private *sipe_private,
 	time_t next_start = (calculate_from / SCHEDULE_INTERVAL + 1) * SCHEDULE_INTERVAL;
 
 	SIPE_DEBUG_INFO("sipe_ocs2005_schedule_status_update: calculate_from time: %s",
-			asctime(localtime(&calculate_from)));
+			sipe_utils_time_to_debug_str(localtime(&calculate_from)));
 	SIPE_DEBUG_INFO("sipe_ocs2005_schedule_status_update: next start time    : %s",
-			asctime(localtime(&next_start)));
+			sipe_utils_time_to_debug_str(localtime(&next_start)));
 
 	sipe_schedule_seconds(sipe_private,
 			      "<+2005-cal-status>",

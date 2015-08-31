@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -59,11 +59,9 @@ struct sipe_core_private {
 
 	/* Account information */
 	gchar *username;
-	gchar *authdomain; /* NULL when SSO is enabled */
 	gchar *authuser;   /* NULL when SSO is enabled */
 	gchar *password;   /* NULL when SSO is enabled */
 	gchar *email;
-	gchar *email_authdomain;
 	gchar *email_authuser;   /* NULL -> use default authentication */
 	gchar *email_password;
 
@@ -83,8 +81,7 @@ struct sipe_core_private {
 	gchar *status;
 	gchar *note;
 	time_t note_since;
-	time_t idle_switch;
-	time_t do_not_publish[SIPE_ACTIVITY_NUM_TYPES];
+	gboolean status_set_by_user;
 
 	/* [MS-SIP] deltaNum counters */
 	guint deltanum_contacts;
@@ -137,6 +134,7 @@ struct sipe_core_private {
 	gchar *media_relay_username;
 	gchar *media_relay_password;
 	GSList *media_relays;
+	SipeEncryptionPolicy server_av_encryption_policy;
 
 	/* Group chat */
 	struct sipe_groupchat *groupchat;
@@ -166,6 +164,11 @@ struct sipe_core_private {
 
 	/* Addressbook server URI */
 	gchar *addressbook_uri;
+
+	/* [MS-CONFPRO] CCCP request ID counter */
+	guint cccp_request_id;
+
+	GSList *conf_mcu_types;
 };
 
 /**

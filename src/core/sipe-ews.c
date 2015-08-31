@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010, 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -131,8 +131,8 @@ be great to implement too.
   "</soap:Body>"\
 "</soap:Envelope>"
 
-#define SIPE_EWS_STATE_NONE			 0
-#define SIPE_EWS_STATE_IDLE			 1
+#define SIPE_EWS_STATE_IDLE			 0
+#define SIPE_EWS_STATE_AUTODISCOVER_TRIGGERED	 1
 #define SIPE_EWS_STATE_AVAILABILITY_SUCCESS	 2
 #define SIPE_EWS_STATE_AVAILABILITY_FAILURE	-2
 #define SIPE_EWS_STATE_OOF_SUCCESS		 3
@@ -433,6 +433,9 @@ sipe_ews_run_state_machine(struct sipe_calendar *cal)
 	case SIPE_EWS_STATE_IDLE:
 		sipe_ews_do_avail_request(cal);
 		break;
+	case SIPE_EWS_STATE_AUTODISCOVER_TRIGGERED:
+		/* do nothing */
+		break;
 	case SIPE_EWS_STATE_AVAILABILITY_SUCCESS:
 		sipe_ews_do_oof_request(cal);
 		break;
@@ -479,8 +482,8 @@ void sipe_ews_update_calendar(struct sipe_core_private *sipe_private)
 
 	if (cal->is_ews_disabled) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_ews_update_calendar: disabled, exiting.");
-	} else if (!cal->as_url && !cal->ews_autodiscover_triggered) {
-		cal->ews_autodiscover_triggered = TRUE;
+	} else if (!cal->as_url && (cal->state != SIPE_EWS_STATE_AUTODISCOVER_TRIGGERED)) {
+		cal->state = SIPE_EWS_STATE_AUTODISCOVER_TRIGGERED;
 		sipe_ews_autodiscover_start(sipe_private,
 					    sipe_calendar_ews_autodiscover_cb,
 					    cal);

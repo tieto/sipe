@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -210,7 +210,6 @@ gchar *sipe_core_about(void)
 
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    gboolean sso,
-					    const gchar *login_domain,
 					    const gchar *login_account,
 					    const gchar *password,
 					    const gchar *email,
@@ -236,9 +235,10 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		return NULL;
 	}
 
-	/* ensure that Login & Password are valid when SSO is not selected */
-	if (!sso && (is_empty(login_account) || is_empty(password))) {
-		*errmsg = _("Login and password are required when Single Sign-On is not enabled");
+
+	/* ensure that Password is valid when SSO is not selected */
+	if (!sso && is_empty(password)) {
+		*errmsg = _("Password is required when Single Sign-On is not enabled");
 		return NULL;
 	}
 
@@ -279,6 +279,10 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		g_free(tmp);
 	}
 
+	/* re-use sign-in name if login is empty */
+	if (is_empty(login_account))
+		login_account = signin_name;
+
 	sipe_private = g_new0(struct sipe_core_private, 1);
 	SIPE_CORE_PRIVATE_FLAG_UNSET(SUBSCRIBED_BUDDIES);
 	SIPE_CORE_PRIVATE_FLAG_UNSET(INITIAL_PUBLISH);
@@ -287,7 +291,6 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 		SIPE_CORE_PRIVATE_FLAG_SET(SSO);
 	sipe_private->username   = g_strdup(signin_name);
 	sipe_private->email      = is_empty(email) ? g_strdup(signin_name) : g_strdup(email);
-	sipe_private->authdomain = sso             ? NULL                  : g_strdup(login_domain);
 	sipe_private->authuser   = sso             ? NULL                  : g_strdup(login_account);
 	sipe_private->password   = sso             ? NULL                  : g_strdup(password);
 	sipe_private->public.sip_name   = g_strdup(user_domain[0]);
@@ -315,15 +318,9 @@ void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
 	/* user specified email login? */
 	value = sipe_backend_setting(SIPE_CORE_PUBLIC, SIPE_SETTING_EMAIL_LOGIN);
 	if (!is_empty(value)) {
-		/* Allowed domain-account separators are / or \ */
-		gchar **domain_user = g_strsplit_set(value, "/\\", 2);
-		gboolean has_domain = domain_user[1] != NULL;
-
-		sipe_private->email_authdomain = has_domain ? g_strdup(domain_user[0]) : NULL;
-		sipe_private->email_authuser   = g_strdup(domain_user[has_domain ? 1 : 0]);
-		sipe_private->email_password   = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
-									       SIPE_SETTING_EMAIL_PASSWORD));
-		g_strfreev(domain_user);
+		sipe_private->email_authuser = g_strdup(value);
+		sipe_private->email_password = g_strdup(sipe_backend_setting(SIPE_CORE_PUBLIC,
+									     SIPE_SETTING_EMAIL_PASSWORD));
 	}
 }
 
@@ -402,10 +399,8 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->username);
 	g_free(sipe_private->email_password);
 	g_free(sipe_private->email_authuser);
-	g_free(sipe_private->email_authdomain);
 	g_free(sipe_private->email);
 	g_free(sipe_private->password);
-	g_free(sipe_private->authdomain);
 	g_free(sipe_private->authuser);
 	g_free(sipe_private->status);
 	g_free(sipe_private->note);
@@ -432,6 +427,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	g_free(sipe_private->persistentChatPool_uri);
 	g_free(sipe_private->addressbook_uri);
 	g_free(sipe_private->dlx_uri);
+	sipe_utils_slist_free_full(sipe_private->conf_mcu_types, g_free);
 	g_free(sipe_private);
 }
 
@@ -440,7 +436,6 @@ void sipe_core_email_authentication(struct sipe_core_private *sipe_private,
 {
 	if (sipe_private->email_authuser) {
 		sipe_http_request_authentication(request,
-						 sipe_private->email_authdomain,
 						 sipe_private->email_authuser,
 						 sipe_private->email_password);
 	}

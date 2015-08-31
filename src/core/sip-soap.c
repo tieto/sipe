@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -34,6 +34,7 @@
 
 #include "sip-soap.h"
 #include "sip-transport.h"
+#include "sipe-backend.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-utils.h"

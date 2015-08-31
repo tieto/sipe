@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,12 +23,16 @@
 #include "version.h"
 
 /* Forward declarations */
+struct sipe_chat_session;
 struct sipe_core_public;
 struct _PurpleAccount;
 struct _PurpleBuddy;
 struct _PurpleChat;
 struct _PurpleConnection;
+struct _PurpleConversation;
 struct _PurpleGroup;
+struct _PurpleMessage;
+struct _PurplePluginAction;
 struct _PurpleRoomlist;
 struct _PurpleStatus;
 struct _PurpleXfer;
@@ -42,10 +46,21 @@ struct sipe_backend_private {
 	struct _PurpleConnection *gc;
 	struct _PurpleAccount *account;
 	struct _PurpleRoomlist *roomlist;
+	/* see sipe_backend_chat_create() */
+	struct sipe_chat_session *adium_chat_session;
 	GHashTable *roomlist_map; /* name -> uri */
 	GList *rejoin_chats;
 	GSList *transports;
 	GSList *dns_queries;
+
+	/* work around broken libpurple idle notification */
+	gchar *deferred_status_note;
+	guint  deferred_status_activity;
+	guint  deferred_status_timeout;
+
+	/* flags */
+	gboolean status_changed_by_core; /* status changed by core */
+	gboolean user_is_not_idle;       /* user came back online */
 };
 
 struct sipe_backend_fd {
@@ -85,6 +100,7 @@ struct _PurpleXfer *sipe_purple_ft_new_xfer(struct _PurpleConnection *gc,
 /* libpurple chat callbacks */
 #define SIPE_PURPLE_COMPONENT_KEY_CONVERSATION "_conv"
 
+struct sipe_chat_session *sipe_purple_chat_get_session(struct _PurpleConversation *conv);
 void sipe_purple_chat_setup_rejoin(struct sipe_backend_private *purple_private);
 void sipe_purple_chat_destroy_rejoin(struct sipe_backend_private *purple_private);
 void sipe_purple_chat_invite(struct _PurpleConnection *gc,
@@ -94,8 +110,12 @@ void sipe_purple_chat_invite(struct _PurpleConnection *gc,
 void sipe_purple_chat_leave(struct _PurpleConnection *gc, int id);
 int sipe_purple_chat_send(struct _PurpleConnection *gc,
 			  int id,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			  struct _PurpleMessage *msg);
+#else
 			  const char *what,
 			  _PurpleMessageFlags flags);
+#endif
 GList *sipe_purple_chat_menu(struct _PurpleChat *chat);
 
 /* libpurple chat room callbacks */
@@ -124,6 +144,9 @@ void sipe_purple_group_buddy(struct _PurpleConnection *gc,
 			     const char *old_group_name,
 			     const char *new_group_name);
 GList *sipe_purple_buddy_menu(struct _PurpleBuddy *buddy);
+
+/* libpurple search callbacks */
+void sipe_purple_show_find_contact(struct _PurplePluginAction *action);
 
 /* libpurple status callbacks */
 void sipe_purple_set_status(struct _PurpleAccount *account,

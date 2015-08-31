@@ -55,24 +55,15 @@ done >checksums.txt
 for d in *.dsc; do cat checksums.txt >>${d}; done
 rm checksums.txt
 
-# Overwrite those .dsc's that have support for Voice & Video
-for os in \
-    xUbuntu_11.10; \
-do \
-    cp pidgin-sipe-VandV.dsc pidgin-sipe-${os}.dsc; \
-done
-
+# All current platforms currently support telepathy - use only default .dsc
+cp pidgin-sipe-telepathy.dsc pidgin-sipe.dsc
 # Overwrite those .dsc's that have support for telepathy
-for os in \
-    Debian_7.0 \
-    xUbuntu_14.04 \
-    xUbuntu_13.10 \
-    xUbuntu_13.04 \
-    xUbuntu_12.10 \
-    xUbuntu_12.04; \
-do \
-    cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
-done
+#for os in \
+#    Debian_x.y \
+#    xUbuntu_xx.yy; \
+#do \
+#    cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
+#done
 
 # Update SHA-2 256 checksum in Arch Linux PKGBUILD
 sed -i -e "s/@@SHA256SUM@@/$(sha256sum pidgin-sipe-${version}.tar.gz | cut -d' ' -f1)/" PKGBUILD
