@@ -5,6 +5,7 @@ pidgin-sipe (1.20.0-1) UNRELEASED; urgency=medium
         - Feature #69: SRTP Support
         - Fixed #285: Office365 rejects RC4 in TLS-DSK
   * Bump Standards-Version to 3.9.6.
+  * Remove reference to removed file ltmain.sh from d/copyright.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 31 Aug 2015 07:48:07 +0200
 
