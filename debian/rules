@@ -32,4 +32,10 @@ override_dh_auto_clean:
 		missing test-driver
 	find -type f -name Makefile.in\* -delete
 
-.PHONY: override_dh_auto_configure override_dh_auto_install override_dh_strip override_dh_installdocs override_dh_auto_clean
+VERSION=$(shell dpkg-parsechangelog -S Version | cut -d- -f1)
+get-orig-source:
+	uscan --force-download --download-version $(VERSION) \
+		--rename --destdir=$(CURDIR) \
+		--repack --compression xz
+
+.PHONY: override_dh_auto_configure override_dh_auto_install override_dh_strip override_dh_installdocs override_dh_auto_clean get-orig-source
