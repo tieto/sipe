@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2014 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,7 +106,6 @@ static const GLogLevelFlags debug_level_mapping[] = {
 	G_LOG_LEVEL_DEBUG,    /* SIPE_DEBUG_LEVEL_INFO    */
 	G_LOG_LEVEL_WARNING,  /* SIPE_DEBUG_LEVEL_WARNING */
 	G_LOG_LEVEL_CRITICAL, /* SIPE_DEBUG_LEVEL_ERROR   */
-	G_LOG_LEVEL_ERROR,    /* SIPE_DEBUG_LEVEL_FATAL, this will abort! */
 };
 
 void sipe_backend_debug_literal(sipe_debug_level level,

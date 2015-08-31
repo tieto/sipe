@@ -1,6 +1,6 @@
 ################################### tell Emacs this is a -*- makefile-gmake -*-
 #
-# Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2012-2014 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #
@@ -22,6 +22,7 @@ export CFLAGS=-Werror
 WIX3_HOME := /cygdrive/c/Program\ Files/Windows\ Installer\ XML\ v3
 WXS_NAME := pidgin-sipe
 export VERSION := $(shell cat VERSION)
+PIDGIN_VERSION := $(shell cat $(PIDGIN_TREE_TOP)/VERSION)
 
 .PHONY: all clean install msi dev devinst nsis
 
@@ -72,6 +73,7 @@ cross-compile-nsis:
 		>$(PIDGIN_INSTALL_DIR)/pidgin-sipe.nsi
 	set -e; cd $(PIDGIN_INSTALL_DIR); \
 	makensis \
+		-DPIDGIN_VERSION=$(PIDGIN_VERSION) \
 		-DVERSION=$(VERSION) \
 		-DMINGW_LIBDIR=. \
 		-DMINGW_DATADIR=. \

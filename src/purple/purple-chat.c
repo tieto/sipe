@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -155,7 +155,7 @@
 
 #define SIPE_PURPLE_KEY_CHAT_SESSION "sipe"
 
-static struct sipe_chat_session *sipe_purple_chat_get_session(PurpleConversation *conv)
+struct sipe_chat_session *sipe_purple_chat_get_session(PurpleConversation *conv)
 {
 	return(
 #if PURPLE_VERSION_CHECK(3,0,0)
@@ -219,12 +219,21 @@ void sipe_purple_chat_leave(PurpleConnection *gc, int id)
 
 int sipe_purple_chat_send(PurpleConnection *gc,
 			  int id,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			  PurpleMessage *msg)
+#else
 			  const char *what,
 			  SIPE_UNUSED_PARAMETER PurpleMessageFlags flags)
+#endif
 {
 	struct sipe_chat_session *session = sipe_purple_chat_find(gc, id);
 	if (!session) return -ENOTCONN;
-	sipe_core_chat_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session, what);
+	sipe_core_chat_send(PURPLE_GC_TO_SIPE_CORE_PUBLIC, session,
+#if PURPLE_VERSION_CHECK(3,0,0)
+			purple_message_get_contents(msg));
+#else
+			what);
+#endif
 	return 1;
 }
 
@@ -349,13 +358,21 @@ struct sipe_backend_chat_session *sipe_backend_chat_create(struct sipe_core_publ
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 #if PURPLE_VERSION_CHECK(3,0,0)
-	PurpleChatConversation *conv =
+	PurpleChatConversation *conv;
 #else
-	PurpleConversation *conv =
+	PurpleConversation *conv;
 #endif
-		purple_serv_got_joined_chat(purple_private->gc,
-					    sipe_purple_chat_id(purple_private->gc),
-					    title);
+
+	/*
+	 * Adium calls back into SIPE code during execution of the following
+	 * libpurple API. That code needs access to "session". As "conv" is
+	 * still being initialized we can't use sipe_purple_chat_get_session().
+	 */
+	purple_private->adium_chat_session = session;
+	conv = purple_serv_got_joined_chat(purple_private->gc,
+					   sipe_purple_chat_id(purple_private->gc),
+					   title);
+	purple_private->adium_chat_session = NULL;
 #if PURPLE_VERSION_CHECK(3,0,0)
 	g_object_set_data(G_OBJECT(conv),
 #else

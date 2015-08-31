@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -144,37 +144,16 @@ static void create_handle_repos(SIPE_UNUSED_PARAMETER TpBaseConnection *conn,
 static gboolean connect_to_core(SipeConnection *self,
 				GError **error)
 {
-	gchar *login_domain  = NULL;
-	gchar *login_account = NULL;
 	struct sipe_core_public *sipe_public;
 	const gchar *errmsg;
 
-	/* login name specified? */
-	if (self->login && strlen(self->login)) {
-		/* Allowed domain-account separators are / or \ */
-		gchar **domain_user = g_strsplit_set(self->login, "/\\", 2);
-		gboolean has_domain = domain_user[1] != NULL;
-		SIPE_DEBUG_INFO("connect_to_core: login '%s'", self->login);
-		login_domain  = has_domain ? g_strdup(domain_user[0]) : NULL;
-		login_account = g_strdup(domain_user[has_domain ? 1 : 0]);
-		SIPE_DEBUG_INFO("connect_to_core: auth domain '%s' user '%s'",
-				login_domain ? login_domain : "",
-				login_account);
-		g_strfreev(domain_user);
-	} else {
-		/* No -> duplicate username */
-		login_account = g_strdup(self->account);
-	}
-
 	sipe_public = sipe_core_allocate(self->account,
 					 self->sso,
-					 login_domain, login_account,
+					 self->login,
 					 self->password,
 					 NULL, /* @TODO: email     */
 					 NULL, /* @TODO: email_url */
 					 &errmsg);
-	g_free(login_domain);
-	g_free(login_account);
 
 	SIPE_DEBUG_INFO("connect_to_core: created %p", sipe_public);
 
@@ -298,8 +277,12 @@ static gboolean start_connecting(TpBaseConnection *base,
 	tp_base_connection_change_status(base, TP_CONNECTION_STATUS_CONNECTING,
 					 TP_CONNECTION_STATUS_REASON_REQUESTED);
 
-	/* map option list to flags - default is NTLM */
-	self->authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+	/* map option list to flags - default is automatic */
+	self->authentication_type = SIPE_AUTHENTICATION_TYPE_AUTOMATIC;
+	if (sipe_strequal(self->authentication, "ntlm")) {
+		SIPE_DEBUG_INFO_NOFORMAT("start_connecting: NTLM selected");
+		self->authentication_type = SIPE_AUTHENTICATION_TYPE_NTLM;
+	} else
 #ifdef HAVE_GSSAPI_GSSAPI_H
 	if (sipe_strequal(self->authentication, "krb5")) {
 		SIPE_DEBUG_INFO_NOFORMAT("start_connecting: KRB5 selected");

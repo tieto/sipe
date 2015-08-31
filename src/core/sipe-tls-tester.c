@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -34,7 +34,9 @@
  *
  *    $ openssl s_server -accept 8443 -debug -msg \
  *              -cert server.cert -key server.pem \
- *              -tls1 -verify 0 -cipher RC4-SHA
+ *              -tls1 -verify 0 [ -cipher <c1>[:<c2>...] ]
+ *
+ *   ciphers: RC4-MD5, RC4-SHA, AES128-SHA, AES256-SHA
  *
  * - Running the test program in another shell:
  *
@@ -178,6 +180,8 @@ static guchar *read_tls_record(int fd,
 static void tls_handshake(struct sipe_tls_state *state,
 			  int fd)
 {
+	gboolean success = FALSE;
+
 	printf("TLS handshake starting...\n");
 
 	/* generate next handshake message */
@@ -186,7 +190,7 @@ static void tls_handshake(struct sipe_tls_state *state,
 
 		/* handshake completed? */
 		if (!state->out_buffer) {
-			printf("Handshake completed.\n");
+			success = TRUE;
 			break;
 		}
 
@@ -213,7 +217,7 @@ static void tls_handshake(struct sipe_tls_state *state,
 		}
 	}
 
-	printf("TLS handshake done.\n");
+	printf("TLS handshake %s.\n", success ? "SUCCESSFUL" : "FAILED");
 }
 
 

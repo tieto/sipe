@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2014-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -21,20 +22,24 @@
  */
 
 struct sdpmsg {
-	gchar		*ip;
+	gchar		*ip;    /* currently this has to be an IPv4 address */
 	GSList		*media;
 	SipeIceVersion	 ice_version;
 };
 
 struct sdpmedia {
 	gchar		*name;
-	gchar		*ip;
+	gchar		*ip;    /* currently this has to be an IPv4 address */
 	guint		 port;
 
 	GSList		*attributes;
 	GSList		*candidates;
 	GSList		*codecs;
 	GSList		*remote_candidates;
+
+	guchar		*encryption_key;
+	int		 encryption_key_id;
+	gboolean	 encryption_active;
 };
 
 struct sdpcandidate {
@@ -43,7 +48,7 @@ struct sdpcandidate {
 	SipeCandidateType	 type;
 	SipeNetworkProtocol	 protocol;
 	guint32			 priority;
-	gchar			*ip;
+	gchar			*ip; /* currently this has to be an IPv4 address */
 	guint			 port;
 	gchar			*base_ip;
 	guint			 base_port;
@@ -81,6 +86,11 @@ gchar *sdpmsg_to_string(const struct sdpmsg *msg);
  * Deallocates @c sdpmsg.
  */
 void sdpmsg_free(struct sdpmsg *msg);
+
+/**
+ * Deallocates @c sdpcandidate.
+ */
+void sdpcandidate_free(struct sdpcandidate *candidate);
 
 /**
  * Deallocates @c sdpcodec.

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -45,7 +45,6 @@ typedef struct _context_basic {
 
 static gboolean
 sip_sec_acquire_cred__basic(SipSecContext context,
-			    SIPE_UNUSED_PARAMETER const gchar *domain,
 			    const gchar *username,
 			    const gchar *password)
 {

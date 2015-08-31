@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -110,10 +110,11 @@ sip_sec_create_context__NONE(SIPE_UNUSED_PARAMETER guint type)
 	return(NULL);
 }
 
-/* Dummy SIP password hook */
+/* Dummy SIP password hooks */
 static gboolean sip_sec_password__NONE(void)
 {
-	return(TRUE);
+	/* Don't ask for a password */
+	return(FALSE);
 }
 
 /* sip_sec API methods */
@@ -121,7 +122,6 @@ SipSecContext
 sip_sec_create_context(guint type,
 		       gboolean sso,
 		       gboolean http,
-		       const gchar *domain,
 		       const gchar *username,
 		       const gchar *password)
 {
@@ -135,6 +135,7 @@ sip_sec_create_context(guint type,
 		sip_sec_create_context__Kerberos,  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 		sip_sec_create_context__Negotiate, /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
 		sip_sec_create_context__TLS_DSK,   /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+		sip_sec_create_context__NONE,      /* SIPE_AUTHENTICATION_TYPE_AUTOMATIC */
 	};
 
 	SIPE_DEBUG_INFO("sip_sec_create_context: type: %d, Single Sign-On: %s, protocol: %s",
@@ -154,7 +155,7 @@ sip_sec_create_context(guint type,
 		if (http)
 			context->flags |= SIP_SEC_FLAG_COMMON_HTTP;
 
-		if (!(*context->acquire_cred_func)(context, domain, username, password)) {
+		if (!(*context->acquire_cred_func)(context, username, password)) {
 			SIPE_DEBUG_INFO_NOFORMAT("ERROR: sip_sec_create_context: failed to acquire credentials.");
 			(*context->destroy_context_func)(context);
 			context = NULL;
@@ -280,6 +281,7 @@ gboolean sip_sec_requires_password(guint authentication,
 		sip_sec_password__Kerberos,  /* SIPE_AUTHENTICATION_TYPE_KERBEROS  */
 		sip_sec_password__Negotiate, /* SIPE_AUTHENTICATION_TYPE_NEGOTIATE */
 		sip_sec_password__TLS_DSK,   /* SIPE_AUTHENTICATION_TYPE_TLS_DSK   */
+		sip_sec_password__NONE,      /* SIPE_AUTHENTICATION_TYPE_AUTOMATIC */
 	};
 
 	/* If Single-Sign On is disabled then a password is required */

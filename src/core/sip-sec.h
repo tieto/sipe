@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -35,7 +35,6 @@ typedef struct sip_sec_context *SipSecContext;
  * @param type     (in) authentication type
  * @param sso      (in) @c TRUE if Single Sign-On should be used
  * @param http     (in) @c TRUE if HTTP, @c FALSE for SIP
- * @param domain   (in) NTLM Domain/Kerberos Realm (ignored for SSO)
  * @param username (in) user name (can be NULL)    (ignored for SSO)
  * @param password (in) password (can be NULL)     (ignored for SSO)
  *
@@ -45,7 +44,6 @@ SipSecContext
 sip_sec_create_context(guint type,
 		       gboolean sso,
 		       gboolean http,
-		       const gchar *domain,
 		       const gchar *username,
 		       const gchar *password);
 

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,7 +49,8 @@ gboolean sipe_ocs2007_availability_is_away(guint availability);
 void sipe_ocs2007_presence_publish(struct sipe_core_private *sipe_private,
 				   gpointer unused);
 void sipe_ocs2007_free(struct sipe_core_private *sipe_private);
-void sipe_ocs2007_category_publish(struct sipe_core_private *sipe_private);
+void sipe_ocs2007_category_publish(struct sipe_core_private *sipe_private,
+				   gboolean force_publish);
 void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private);
 void sipe_ocs2007_reset_status(struct sipe_core_private *sipe_private);
 void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,

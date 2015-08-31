@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -65,3 +65,9 @@ void sipe_crypt_tls_stream(gpointer context,
 			   const guchar *in, gsize length,
 			   guchar *out);
 void sipe_crypt_tls_destroy(gpointer context);
+
+/* Block AES-CBC cipher for TLS */
+void sipe_crypt_tls_block(const guchar *key, gsize key_length,
+			  const guchar *iv, gsize iv_length,
+			  const guchar *in, gsize length,
+			  guchar *out);

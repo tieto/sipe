@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -51,6 +51,7 @@
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
+#include "sipe-http.h"
 #include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
@@ -58,131 +59,6 @@
 #include "sipe-user.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
-
-#ifdef HAVE_VV
-#define ENTITY_VIEW_AUDIO_VIDEO "<msci:entity-view entity=\"audio-video\"/>"
-#else
-#define ENTITY_VIEW_AUDIO_VIDEO
-#endif
-
-/**
- * Add Conference request to FocusFactory.
- * @param focus_factory_uri (%s) Ex.: sip:bob7@boston.local;gruu;opaque=app:conf:focusfactory
- * @param from		    (%s) Ex.: sip:bob7@boston.local
- * @param request_id	    (%d) Ex.: 1094520
- * @param conference_id	    (%s) Ex.: 8386E6AEAAA41E4AA6627BA76D43B6D1
- * @param expiry_time	    (%s) Ex.: 2009-07-13T17:57:09Z , Default duration: 7 hours
- */
-#define SIPE_SEND_CONF_ADD \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" "\
-	"xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<addConference>"\
-		"<ci:conference-info xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" entity=\"\" xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\">"\
-			"<ci:conference-description>"\
-				"<ci:subject/>"\
-				"<msci:conference-id>%s</msci:conference-id>"\
-				"<msci:expiry-time>%s</msci:expiry-time>"\
-				"<msci:admission-policy>openAuthenticated</msci:admission-policy>"\
-			"</ci:conference-description>"\
-			"<msci:conference-view>"\
-				"<msci:entity-view entity=\"chat\"/>"\
-				ENTITY_VIEW_AUDIO_VIDEO \
-			"</msci:conference-view>"\
-		"</ci:conference-info>"\
-	"</addConference>"\
-"</request>"
-
-/**
- * AddUser request to Focus.
- * Params:
- * focus_URI, from, request_id, focus_URI, from, endpoint_GUID
- */
-#define SIPE_SEND_CONF_ADD_USER \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<addUser>"\
-		"<conferenceKeys confEntity=\"%s\"/>"\
-		"<ci:user xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" entity=\"%s\">"\
-			"<ci:roles>"\
-				"<ci:entry>attendee</ci:entry>"\
-			"</ci:roles>"\
-			"<ci:endpoint entity=\"{%s}\" xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\"/>"\
-		"</ci:user>"\
-	"</addUser>"\
-"</request>"
-
-/**
- * ModifyUserRoles request to Focus. Makes user a leader.
- * @param focus_uri (%s)
- * @param from (%s)
- * @param request_id (%d)
- * @param focus_uri (%s)
- * @param who (%s)
- */
-#define SIPE_SEND_CONF_MODIFY_USER_ROLES \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<modifyUserRoles>"\
-		"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"\
-		"<user-roles xmlns=\"urn:ietf:params:xml:ns:conference-info\">"\
-			"<entry>presenter</entry>"\
-		"</user-roles>"\
-	"</modifyUserRoles>"\
-"</request>"
-
-/**
- * ModifyConferenceLock request to Focus. Locks/unlocks conference.
- * @param focus_uri (%s)
- * @param from (%s)
- * @param request_id (%d)
- * @param focus_uri (%s)
- * @param locked (%s) "true" or "false" values applicable
- */
-#define SIPE_SEND_CONF_MODIFY_CONF_LOCK \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<modifyConferenceLock>"\
-		"<conferenceKeys confEntity=\"%s\"/>"\
-		"<locked>%s</locked>"\
-	"</modifyConferenceLock>"\
-"</request>"
-
-/**
- * ModifyConferenceLock request to Focus. Locks/unlocks conference.
- * @param focus_uri (%s)
- * @param from (%s)
- * @param request_id (%d)
- * @param focus_uri (%s)
- * @param who (%s)
- */
-#define SIPE_SEND_CONF_DELETE_USER \
-"<?xml version=\"1.0\"?>"\
-"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "\
-	"C3PVersion=\"1\" "\
-	"to=\"%s\" "\
-	"from=\"%s\" "\
-	"requestId=\"%d\">"\
-	"<deleteUser>"\
-		"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"\
-	"</deleteUser>"\
-"</request>"
 
 /**
  * Invite counterparty to join conference.
@@ -197,6 +73,111 @@
 		"<first-im/>"\
 	"</im>"\
 "</Conferencing>"
+
+static struct transaction *
+cccp_request(struct sipe_core_private *sipe_private, const gchar *method,
+	     const gchar *with, struct sip_dialog *dialog,
+	     TransCallback callback, const gchar *body, ...)
+{
+	gchar *headers;
+	gchar *request;
+	gchar *request_body;
+
+	gchar *self = sip_uri_self(sipe_private);
+
+	va_list args;
+
+	struct transaction *trans;
+
+	headers = g_strdup_printf(
+		"Supported: ms-sender\r\n"
+		"Contact: %s\r\n"
+		"Content-Type: application/cccp+xml\r\n",
+		sipe_private->contact);
+
+	/* TODO: put request_id to queue to further compare with incoming one */
+	request = g_strdup_printf(
+		"<?xml version=\"1.0\"?>"
+		"<request xmlns=\"urn:ietf:params:xml:ns:cccp\" "
+		"xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\" "
+			"C3PVersion=\"1\" "
+			"to=\"%s\" "
+			"from=\"%s\" "
+			"requestId=\"%d\">"
+			"%s"
+		"</request>",
+		with,
+		self,
+		sipe_private->cccp_request_id++,
+		body);
+	g_free(self);
+
+	va_start(args, body);
+	request_body = g_strdup_vprintf(request, args);
+	va_end(args);
+
+	g_free(request);
+
+	trans = sip_transport_request(sipe_private,
+				      method,
+				      with,
+				      with,
+				      headers,
+				      request_body,
+				      dialog,
+				      callback);
+
+	g_free(headers);
+	g_free(request_body);
+
+	return trans;
+}
+
+static gboolean
+process_conf_get_capabilities(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+			      struct sipmsg *msg,
+			      SIPE_UNUSED_PARAMETER struct transaction *trans)
+{
+	if (msg->response >= 400) {
+		SIPE_DEBUG_INFO_NOFORMAT("process_conf_get_capabilities: "
+				"getConferencingCapabilities failed.");
+		return FALSE;
+	}
+	if (msg->response == 200) {
+		sipe_xml *xn_response = sipe_xml_parse(msg->body, msg->bodylen);
+
+		if (sipe_strequal("success", sipe_xml_attribute(xn_response, "code"))) {
+			const sipe_xml *node = sipe_xml_child(xn_response, "getConferencingCapabilities/mcu-types/mcuType");
+			for (;node; node = sipe_xml_twin(node)) {
+				sipe_private->conf_mcu_types =
+						g_slist_append(sipe_private->conf_mcu_types,
+							       sipe_xml_data(node));
+			}
+		}
+
+		sipe_xml_free(xn_response);
+	}
+
+	return TRUE;
+}
+
+void
+sipe_conf_get_capabilities(struct sipe_core_private *sipe_private)
+{
+	cccp_request(sipe_private, "SERVICE",
+		     sipe_private->focus_factory_uri,
+		     NULL,
+		     process_conf_get_capabilities,
+		     "<getConferencingCapabilities />");
+}
+
+gboolean
+sipe_conf_supports_mcu_type(struct sipe_core_private *sipe_private,
+			    const gchar *type)
+{
+	return g_slist_find_custom(sipe_private->conf_mcu_types, type,
+				   sipe_strcompare) != NULL;
+}
 
 /**
  * Generates random GUID.
@@ -354,38 +335,120 @@ parse_lync_join_url(const gchar *uri)
 	return focus_uri;
 }
 
-struct sip_session *
-sipe_core_conf_create(struct sipe_core_public *sipe_public,
-		      const gchar *uri)
+static void sipe_conf_error(struct sipe_core_private *sipe_private,
+			    const gchar *uri)
 {
+	gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
+				       uri ? uri : "");
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				  _("Failed to join the conference"),
+				  error);
+	g_free(error);
+}
+
+static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
+				  guint status,
+				  SIPE_UNUSED_PARAMETER GSList *headers,
+				  const gchar *body,
+				  gpointer callback_data)
+{
+	gchar *uri = callback_data;
+
+	if (status != (guint) SIPE_HTTP_STATUS_ABORTED) {
+		gchar *focus_uri = NULL;
+
+		if (body) {
+			/*
+			 * Extract focus URI from HTML, e.g.
+			 *
+			 *  <a ... href="conf&#58;sip&#58;...ABCDEF&#37;3Frequired..." ... >
+			 */
+			const gchar *start = g_strstr_len(body,
+							  -1,
+							  "href=\"conf");
+			if (start) {
+				const gchar *end;
+
+				start += 6;
+				end = strchr(start, '"');
+
+				if (end) {
+					gchar *html = g_strndup(start,
+								end - start);
+
+					/* decode HTML entities */
+					gchar *html_unescaped = sipe_backend_markup_strip_html(html);
+					g_free(html);
+
+					if (!is_empty(html_unescaped)) {
+						gchar *uri_unescaped = sipe_utils_uri_unescape(html_unescaped);
+						SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: found focus URI '%s'",
+								uri_unescaped);
+						focus_uri = parse_ocs_focus_uri(uri_unescaped);
+						g_free(uri_unescaped);
+					}
+					g_free(html_unescaped);
+				}
+			}
+		}
+
+		/* If we can't find a focus URI then fall back to URL parser */
+		if (!focus_uri) {
+			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI found. Falling back to parsing Lync URL '%s'",
+					uri);
+			focus_uri = parse_lync_join_url(uri);
+		}
+
+		if (focus_uri) {
+			sipe_conf_create(sipe_private, NULL, focus_uri);
+			g_free(focus_uri);
+		} else {
+			sipe_conf_error(sipe_private, uri);
+		}
+	}
+
+	g_free(uri);
+}
+
+static gboolean sipe_conf_check_for_lync_url(struct sipe_core_private *sipe_private,
+					     gchar *uri)
+{
+	if (!(g_str_has_prefix(uri, "https://") ||
+	      g_str_has_prefix(uri, "http://")))
+		return(FALSE);
+
+	/* URL points to a HTML page with the conference focus URI */
+	return(sipe_http_request_get(sipe_private,
+				     uri,
+				     NULL,
+				     sipe_conf_lync_url_cb,
+				     uri)
+	       != NULL);
+}
+
+void sipe_core_conf_create(struct sipe_core_public *sipe_public,
+			   const gchar *uri)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	gchar *uri_ue = sipe_utils_uri_unescape(uri);
-	gchar *focus_uri;
-	struct sip_session *session = NULL;
 
 	SIPE_DEBUG_INFO("sipe_core_conf_create: URI '%s' unescaped '%s'",
 			uri    ? uri    : "<UNDEFINED>",
 			uri_ue ? uri_ue : "<UNDEFINED>");
 
-	focus_uri = parse_ocs_focus_uri(uri_ue);
-	if (!focus_uri) {
-		focus_uri = parse_lync_join_url(uri_ue);
+	/* takes ownership of "uri_ue" if successful */
+	if (!sipe_conf_check_for_lync_url(sipe_private, uri_ue)) {
+		gchar *focus_uri = parse_ocs_focus_uri(uri_ue);
+
+		if (focus_uri) {
+			sipe_conf_create(sipe_private, NULL, focus_uri);
+			g_free(focus_uri);
+		} else {
+			sipe_conf_error(sipe_private, uri);
+		}
+
+		g_free(uri_ue);
 	}
-
-	if (focus_uri) {
-		session = sipe_conf_create(SIPE_CORE_PRIVATE, NULL, focus_uri);
-		g_free(focus_uri);
-	} else {
-		gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
-					       uri ? uri : "");
-		sipe_backend_notify_error(sipe_public,
-					  _("Failed to join the conference"),
-					  error);
-		g_free(error);
-	}
-
-	g_free(uri_ue);
-
-	return session;
 }
 
 /** Create new session with Focus URI */
@@ -394,9 +457,22 @@ sipe_conf_create(struct sipe_core_private *sipe_private,
 		 struct sipe_chat_session *chat_session,
 		 const gchar *focus_uri)
 {
-	gchar *hdr;
-	gchar *contact;
-	gchar *body;
+	/* addUser request to the focus.
+	 *
+	 * focus_URI, from, endpoint_GUID
+	 */
+	static const gchar CCCP_ADD_USER[] =
+		"<addUser>"
+			"<conferenceKeys confEntity=\"%s\"/>"
+			"<ci:user xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" entity=\"%s\">"
+				"<ci:roles>"
+					"<ci:entry>attendee</ci:entry>"
+				"</ci:roles>"
+				"<ci:endpoint entity=\"{%s}\" "
+					      "xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\"/>"
+			"</ci:user>"
+		"</addUser>";
+
 	gchar *self;
 	struct sip_session *session = sipe_session_add_chat(sipe_private,
 							    chat_session,
@@ -409,34 +485,14 @@ sipe_conf_create(struct sipe_core_private *sipe_private,
 	session->focus_dialog->endpoint_GUID = rand_guid();
 	session->focus_dialog->ourtag = gentag();
 
-	contact = get_contact(sipe_private);
-	hdr = g_strdup_printf(
-		"Supported: ms-sender\r\n"
-		"Contact: %s\r\n"
-		"Content-Type: application/cccp+xml\r\n",
-		contact);
-	g_free(contact);
-
-	/* @TODO put request_id to queue to further compare with incoming one */
-	/* focus_URI, from, request_id, focus_URI, from, endpoint_GUID */
 	self = sip_uri_self(sipe_private);
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_ADD_USER,
-		session->focus_dialog->with,
-		self,
-		session->request_id++,
-		session->focus_dialog->with,
-		self,
-		session->focus_dialog->endpoint_GUID);
-
 	session->focus_dialog->outgoing_invite =
-		sip_transport_invite(sipe_private,
-				     hdr,
-				     body,
-				     session->focus_dialog,
-				     process_invite_conf_focus_response);
-	g_free(body);
-	g_free(hdr);
+		cccp_request(sipe_private, "INVITE",
+			     session->focus_dialog->with, session->focus_dialog,
+			     process_invite_conf_focus_response,
+			     CCCP_ADD_USER,
+			     session->focus_dialog->with, self,
+			     session->focus_dialog->endpoint_GUID);
 
 	/* Rejoin existing session? */
 	if (chat_session) {
@@ -459,36 +515,28 @@ sipe_conf_modify_user_role(struct sipe_core_private *sipe_private,
 			   struct sip_session *session,
 			   const gchar* who)
 {
-	gchar *hdr;
-	gchar *body;
-	gchar *self;
+	/* modifyUserRoles request to the focus. Makes user a leader.
+	 *
+	 * focus_uri (%s)
+	 * who (%s)
+	 */
+	static const gchar CCCP_MODIFY_USER_ROLES[] =
+		"<modifyUserRoles>"
+			"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"
+			"<user-roles xmlns=\"urn:ietf:params:xml:ns:conference-info\">"
+				"<entry>presenter</entry>"
+			"</user-roles>"
+		"</modifyUserRoles>";
 
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_conf_modify_user_role: no dialog with focus, exiting.");
 		return;
 	}
 
-	hdr = g_strdup(
-		"Content-Type: application/cccp+xml\r\n");
-
-	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(sipe_private);
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_MODIFY_USER_ROLES,
-		session->focus_dialog->with,
-		self,
-		session->request_id++,
-		session->focus_dialog->with,
-		who);
-	g_free(self);
-
-	sip_transport_info(sipe_private,
-			   hdr,
-			   body,
-			   session->focus_dialog,
-			   NULL);
-	g_free(body);
-	g_free(hdr);
+	cccp_request(sipe_private, "INFO", session->focus_dialog->with,
+		     session->focus_dialog, NULL,
+		     CCCP_MODIFY_USER_ROLES,
+		     session->focus_dialog->with, who);
 }
 
 /**
@@ -531,10 +579,18 @@ sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
 			   struct sipe_chat_session *chat_session,
 			   const gboolean locked)
 {
+	/* modifyConferenceLock request to the focus. Locks/unlocks conference.
+	 *
+	 * focus_uri (%s)
+	 * locked (%s) "true" or "false" values applicable
+	 */
+	static const gchar CCCP_MODIFY_CONFERENCE_LOCK[] =
+		"<modifyConferenceLock>"
+			"<conferenceKeys confEntity=\"%s\"/>"
+			"<locked>%s</locked>"
+		"</modifyConferenceLock>";
+
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	gchar *hdr;
-	gchar *body;
-	gchar *self;
 
 	struct sip_session *session = sipe_session_find_chat(sipe_private,
 							     chat_session);
@@ -545,27 +601,11 @@ sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
 		return;
 	}
 
-	hdr = g_strdup(
-		"Content-Type: application/cccp+xml\r\n");
-
-	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(sipe_private);
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_MODIFY_CONF_LOCK,
-		session->focus_dialog->with,
-		self,
-		session->request_id++,
-		session->focus_dialog->with,
-		locked ? "true" : "false");
-	g_free(self);
-
-	sip_transport_info(sipe_private,
-			   hdr,
-			   body,
-			   session->focus_dialog,
-			   NULL);
-	g_free(body);
-	g_free(hdr);
+	cccp_request(sipe_private, "INFO", session->focus_dialog->with,
+		     session->focus_dialog, NULL,
+		     CCCP_MODIFY_CONFERENCE_LOCK,
+		     session->focus_dialog->with,
+		     locked ? "true" : "false");
 }
 
 /** Modify Delete User */
@@ -574,36 +614,25 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		      struct sip_session *session,
 		      const gchar* who)
 {
-	gchar *hdr;
-	gchar *body;
-	gchar *self;
+	/* deleteUser request to the focus. Removes a user from the conference.
+	 *
+	 * focus_uri (%s)
+	 * who (%s)
+	 */
+	static const gchar CCCP_DELETE_USER[] =
+		"<deleteUser>"
+			"<userKeys confEntity=\"%s\" userEntity=\"%s\"/>"
+		"</deleteUser>";
 
 	if (!session->focus_dialog || !session->focus_dialog->is_established) {
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_conf_delete_user: no dialog with focus, exiting.");
 		return;
 	}
 
-	hdr = g_strdup(
-		"Content-Type: application/cccp+xml\r\n");
-
-	/* @TODO put request_id to queue to further compare with incoming one */
-	self = sip_uri_self(sipe_private);
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_DELETE_USER,
-		session->focus_dialog->with,
-		self,
-		session->request_id++,
-		session->focus_dialog->with,
-		who);
-	g_free(self);
-
-	sip_transport_info(sipe_private,
-			   hdr,
-			   body,
-			   session->focus_dialog,
-			   NULL);
-	g_free(body);
-	g_free(hdr);
+	cccp_request(sipe_private, "INFO", session->focus_dialog->with,
+		     session->focus_dialog, NULL,
+		     CCCP_DELETE_USER,
+		     session->focus_dialog->with, who);
 }
 
 /** Invite counterparty to join conference callback */
@@ -738,53 +767,66 @@ void
 sipe_conf_add(struct sipe_core_private *sipe_private,
 	      const gchar* who)
 {
-	gchar *hdr;
 	gchar *conference_id;
-	gchar *contact;
-	gchar *body;
-	gchar *self;
 	struct transaction *trans;
-	struct sip_dialog *dialog = NULL;
 	time_t expiry = time(NULL) + 7*60*60; /* 7 hours */
 	char *expiry_time;
 	struct transaction_payload *payload;
 
-	contact = get_contact(sipe_private);
-	hdr = g_strdup_printf(
-		"Supported: ms-sender\r\n"
-		"Contact: %s\r\n"
-		"Content-Type: application/cccp+xml\r\n",
-		contact);
-	g_free(contact);
+	/* addConference request to the focus factory.
+	 *
+	 * conference_id	(%s) Ex.: 8386E6AEAAA41E4AA6627BA76D43B6D1
+	 * expiry_time		(%s) Ex.: 2009-07-13T17:57:09Z
+	 * conference_view	(%s) Ex.: <msci:entity-view entity="chat"/>
+	 */
+	static const gchar CCCP_ADD_CONFERENCE[] =
+		"<addConference>"
+			"<ci:conference-info xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" "
+					     "entity=\"\" "
+					     "xmlns:msci=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\">"
+				"<ci:conference-description>"
+					"<ci:subject/>"
+					"<msci:conference-id>%s</msci:conference-id>"
+					"<msci:expiry-time>%s</msci:expiry-time>"
+					"<msci:admission-policy>openAuthenticated</msci:admission-policy>"
+				"</ci:conference-description>"
+				"<msci:conference-view>%s</msci:conference-view>"
+			"</ci:conference-info>"
+		"</addConference>";
+
+	static const gchar *DESIRED_MCU_TYPES[] = {
+		"chat",
+#ifdef HAVE_VV
+		"audio-video",
+#endif
+		NULL
+	};
+
+	GString *conference_view = g_string_new("");
+	const gchar **type;
+
+	for (type = DESIRED_MCU_TYPES; *type; ++type ) {
+		if (sipe_conf_supports_mcu_type(sipe_private, *type)) {
+			g_string_append(conference_view, "<msci:entity-view entity=\"");
+			g_string_append(conference_view, *type);
+			g_string_append(conference_view, "\"/>");
+		}
+	}
 
 	expiry_time = sipe_utils_time_to_str(expiry);
-	self = sip_uri_self(sipe_private);
 	conference_id = genconfid();
-	body = g_strdup_printf(
-		SIPE_SEND_CONF_ADD,
-		sipe_private->focus_factory_uri,
-		self,
-		rand(),
-		conference_id,
-		expiry_time);
-	g_free(self);
+	trans = cccp_request(sipe_private, "SERVICE", sipe_private->focus_factory_uri,
+			     NULL, process_conf_add_response,
+			     CCCP_ADD_CONFERENCE,
+			     conference_id, expiry_time, conference_view->str);
 	g_free(conference_id);
 	g_free(expiry_time);
-
-	trans = sip_transport_service(sipe_private,
-				      sipe_private->focus_factory_uri,
-				      hdr,
-				      body,
-				      process_conf_add_response);
+	g_string_free(conference_view, TRUE);
 
 	payload = g_new0(struct transaction_payload, 1);
 	payload->destroy = g_free;
 	payload->data = g_strdup(who);
 	trans->payload = payload;
-
-	sipe_dialog_free(dialog);
-	g_free(body);
-	g_free(hdr);
 }
 
 static void

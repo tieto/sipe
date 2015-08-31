@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>
  *
@@ -28,7 +28,8 @@
  * <glib.h>
  */
 
-#define SIPMSG_BODYLEN_CHUNKED -1
+#define SIPMSG_RESPONSE_FATAL_ERROR -1
+#define SIPMSG_BODYLEN_CHUNKED      -1
 
 struct sipmsg {
 	int response; /* 0 means request, otherwise response code */

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -155,11 +155,9 @@ void sipe_http_request_allow_redirect(struct sipe_http_request *request);
  * Provide authentication information for HTTP request
  *
  * @param request  pointer to opaque HTTP request data structure
- * @param domain   domain name (MUST stay valid for duration of request!)
  * @param user     user name   (MUST stay valid for duration of request!)
  * @param password Password    (MUST stay valid for duration of request!)
  */
 void sipe_http_request_authentication(struct sipe_http_request *request,
-				      const gchar *domain,
 				      const gchar *user,
 				      const gchar *password);

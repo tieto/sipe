@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -94,6 +94,7 @@ struct sipe_backend_private;
 #define SIPE_AUTHENTICATION_TYPE_KERBEROS  3
 #define SIPE_AUTHENTICATION_TYPE_NEGOTIATE 4 /* internal use only */
 #define SIPE_AUTHENTICATION_TYPE_TLS_DSK   5
+#define SIPE_AUTHENTICATION_TYPE_AUTOMATIC 6 /* always last */
 
 /**
  * Flags
@@ -107,6 +108,11 @@ struct sipe_backend_private;
 	(sipe_public->flags |= SIPE_CORE_FLAG_ ## flag)
 #define SIPE_CORE_FLAG_UNSET(flag) \
 	(sipe_public->flags &= ~SIPE_CORE_FLAG_ ## flag)
+
+/**
+ * Byte length of cryptographic key for call encryption.
+ */
+#define SIPE_SRTP_KEY_LEN 30
 
 /**
  * Public part of the Sipe data structure
@@ -281,7 +287,6 @@ void sipe_core_group_set_alias(struct sipe_core_public *sipe_public,
  */
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 					    gboolean sso,
-					    const gchar *login_domain,
 					    const gchar *login_account,
 					    const gchar *password,
 					    const gchar *email,
@@ -319,6 +324,12 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
  * @return server host name (may be @c NULL if not fully connected yet)
  */
 const gchar *sipe_core_transport_sip_server_name(struct sipe_core_public *sipe_public);
+
+/**
+ * Get chat ID, f.ex. group chat URI
+ */
+const gchar *sipe_core_chat_id(struct sipe_core_public *sipe_public,
+			       struct sipe_chat_session *chat_session);
 
 /**
  * Invite to chat
@@ -369,12 +380,9 @@ void sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
  *
  * @param sipe_public (in) SIPE core data.
  * @param focus_uri (in) focus URI string
- *
- * @return new SIP session
  */
-struct sip_session *
-sipe_core_conf_create(struct sipe_core_public *sipe_public,
-		      const gchar *focus_uri);
+void sipe_core_conf_create(struct sipe_core_public *sipe_public,
+			   const gchar *focus_uri);
 
 /* buddy menu callback: parameter == chat_session */
 void sipe_core_conf_make_leader(struct sipe_core_public *sipe_public,
@@ -392,6 +400,10 @@ void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,
 void sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 				   const char *participant,
 				   gboolean with_video);
+struct sipe_media_call;
+struct sipe_media_stream *
+sipe_core_media_get_stream_by_id(struct sipe_media_call *call, const gchar *id);
+
 /**
  * Connects to a conference call specified by given chat session
  *
@@ -484,6 +496,7 @@ void sipe_core_buddy_search(struct sipe_core_public *sipe_public,
 			    const gchar *given_name,
 			    const gchar *surname,
 			    const gchar *email,
+			    const gchar *sipid,
 			    const gchar *company,
 			    const gchar *country);
 
@@ -502,11 +515,20 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 
 void sipe_core_buddy_menu_free(struct sipe_core_public *sipe_public);
 
-/* status */
+/**
+ * User/Machine has changed the user status
+ *
+ * NOTE: must *NEVER* be triggered by @c sipe_backend_status_and_note()!
+ *
+ * @param sipe_public   The handle representing the protocol instance
+ * @param set_by_user   @c TRUE if status has been changed by user
+ * @param activity      New activity
+ * @param message       New note text
+ */
 void sipe_core_status_set(struct sipe_core_public *sipe_public,
+			  gboolean set_by_user,
 			  guint activity,
 			  const gchar *note);
-void sipe_core_status_idle(struct sipe_core_public *sipe_public);
 
 #ifdef __cplusplus
 }

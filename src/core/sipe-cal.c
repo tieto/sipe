@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -215,11 +215,12 @@ sipe_cal_calendar_init(struct sipe_core_private *sipe_private)
 }
 
 
-char *
-sipe_cal_event_describe(struct sipe_cal_event* cal_event)
+void
+sipe_cal_event_debug(const struct sipe_cal_event *cal_event,
+		     const gchar *label)
 {
 	GString* str = g_string_new(NULL);
-	const char *status = "";
+	const gchar *status = "";
 
 	switch(cal_event->cal_status) {
 		case SIPE_CAL_FREE:		status = "SIPE_CAL_FREE";	break;
@@ -229,16 +230,18 @@ sipe_cal_event_describe(struct sipe_cal_event* cal_event)
 		case SIPE_CAL_NO_DATA:		status = "SIPE_CAL_NO_DATA";	break;
 	}
 
-	g_string_append_printf(str, "\t%s: %s",   "start_time",
-		IS(cal_event->start_time) ? asctime(localtime(&cal_event->start_time)) : "\n");
-	g_string_append_printf(str, "\t%s: %s",   "end_time  ",
-		IS(cal_event->end_time) ? asctime(localtime(&cal_event->end_time)) : "\n");
-	g_string_append_printf(str, "\t%s: %s\n", "cal_status",  status);
-	g_string_append_printf(str, "\t%s: %s\n", "subject   ",  cal_event->subject ? cal_event->subject : "");
-	g_string_append_printf(str, "\t%s: %s\n", "location  ",  cal_event->location ? cal_event->location : "");
-	g_string_append_printf(str, "\t%s: %s\n", "is_meeting",  cal_event->is_meeting ? "TRUE" : "FALSE");
+	g_string_append_printf(str, "\tstart_time: %s\n",
+		IS(cal_event->start_time) ? sipe_utils_time_to_debug_str(localtime(&cal_event->start_time)) : "");
+	g_string_append_printf(str, "\tend_time  : %s\n",
+		IS(cal_event->end_time) ? sipe_utils_time_to_debug_str(localtime(&cal_event->end_time)) : "");
+	g_string_append_printf(str, "\tcal_status: %s\n", status);
+	g_string_append_printf(str, "\tsubject   : %s\n", cal_event->subject ? cal_event->subject : "");
+	g_string_append_printf(str, "\tlocation  : %s\n", cal_event->location ? cal_event->location : "");
+	/* last line must have no line break */
+	g_string_append_printf(str, "\tis_meeting: %s", cal_event->is_meeting ? "TRUE" : "FALSE");
 
-	return g_string_free(str, FALSE);
+	SIPE_DEBUG_INFO("%s%s", label, str->str);
+	g_string_free(str, TRUE);
 }
 
 char *
@@ -938,26 +941,26 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 
 		SIPE_DEBUG_INFO("Remote now timezone : %s", sipe_cal_get_tz(buddy->cal_working_hours, now));
 		SIPE_DEBUG_INFO("std.switch_time(GMT): %s",
-				IS((*buddy->cal_working_hours).std.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).std.switch_time))) : "");
+				IS((*buddy->cal_working_hours).std.switch_time) ? sipe_utils_time_to_debug_str(gmtime(&((*buddy->cal_working_hours).std.switch_time))) : "");
 		SIPE_DEBUG_INFO("dst.switch_time(GMT): %s",
-				IS((*buddy->cal_working_hours).dst.switch_time) ? asctime(gmtime(&((*buddy->cal_working_hours).dst.switch_time))) : "");
+				IS((*buddy->cal_working_hours).dst.switch_time) ? sipe_utils_time_to_debug_str(gmtime(&((*buddy->cal_working_hours).dst.switch_time))) : "");
 		SIPE_DEBUG_INFO("Remote now time     : %s",
-			asctime(sipe_localtime_tz(&now, sipe_cal_get_tz(buddy->cal_working_hours, now))));
+			sipe_utils_time_to_debug_str(sipe_localtime_tz(&now, sipe_cal_get_tz(buddy->cal_working_hours, now))));
 		SIPE_DEBUG_INFO("Remote start time   : %s",
-			IS(start) ? asctime(sipe_localtime_tz(&start, sipe_cal_get_tz(buddy->cal_working_hours, start))) : "");
+			IS(start) ? sipe_utils_time_to_debug_str(sipe_localtime_tz(&start, sipe_cal_get_tz(buddy->cal_working_hours, start))) : "");
 		SIPE_DEBUG_INFO("Remote end time     : %s",
-			IS(end) ? asctime(sipe_localtime_tz(&end, sipe_cal_get_tz(buddy->cal_working_hours, end))) : "");
+			IS(end) ? sipe_utils_time_to_debug_str(sipe_localtime_tz(&end, sipe_cal_get_tz(buddy->cal_working_hours, end))) : "");
 		SIPE_DEBUG_INFO("Rem. next_start time: %s",
-			IS(next_start) ? asctime(sipe_localtime_tz(&next_start, sipe_cal_get_tz(buddy->cal_working_hours, next_start))) : "");
+			IS(next_start) ? sipe_utils_time_to_debug_str(sipe_localtime_tz(&next_start, sipe_cal_get_tz(buddy->cal_working_hours, next_start))) : "");
 		SIPE_DEBUG_INFO("Remote switch time  : %s",
-			IS(switch_time) ? asctime(sipe_localtime_tz(&switch_time, sipe_cal_get_tz(buddy->cal_working_hours, switch_time))) : "");
+			IS(switch_time) ? sipe_utils_time_to_debug_str(sipe_localtime_tz(&switch_time, sipe_cal_get_tz(buddy->cal_working_hours, switch_time))) : "");
 	} else {
 		SIPE_DEBUG_INFO("Local now time      : %s",
-			asctime(localtime(&now)));
+			sipe_utils_time_to_debug_str(localtime(&now)));
 		SIPE_DEBUG_INFO("Local switch time   : %s",
-			IS(switch_time) ? asctime(localtime(&switch_time)) : "");
+			IS(switch_time) ? sipe_utils_time_to_debug_str(localtime(&switch_time)) : "");
 	}
-	SIPE_DEBUG_INFO("Calendar End (GMT)  : %s", asctime(gmtime(&cal_end)));
+	SIPE_DEBUG_INFO("Calendar End (GMT)  : %s", sipe_utils_time_to_debug_str(gmtime(&cal_end)));
 	SIPE_DEBUG_INFO("current cal state   : %s", cal_states[current_cal_state]);
 	SIPE_DEBUG_INFO("switch  cal state   : %s", cal_states[to_state]         );
 
@@ -1055,10 +1058,13 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 	/* End of - Calendar: string calculations */
 }
 
-#define UPDATE_CALENDAR_INTERVAL	30*60	/* 30 min */
+#define UPDATE_CALENDAR_INTERVAL (15*60) /* 15 min, default granularity for Exchange */
+#define UPDATE_CALENDAR_OFFSET       30  /* 30 seconds before next interval starts */
 
 void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 {
+	time_t now, offset;
+
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
 
 	/* Do in parallel.
@@ -1071,11 +1077,19 @@ void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 	sipe_domino_update_calendar(SIPE_CORE_PRIVATE);
 #endif
 
-	/* schedule repeat */
+	/* how long, in seconds, until the next calendar interval starts? */
+	now    = time(NULL);
+	offset = (now / UPDATE_CALENDAR_INTERVAL + 1) * UPDATE_CALENDAR_INTERVAL - now;
+
+	/* ensure that the update after the initial one is not too soon */
+	if (offset <= (UPDATE_CALENDAR_INTERVAL / 2))
+		offset += UPDATE_CALENDAR_INTERVAL;
+
+	/* schedule next update before a new calendar interval starts */
 	sipe_schedule_seconds(SIPE_CORE_PRIVATE,
 			      "<+update-calendar>",
 			      NULL,
-			      UPDATE_CALENDAR_INTERVAL,
+			      offset - UPDATE_CALENDAR_OFFSET,
 			      (sipe_schedule_action)sipe_core_update_calendar,
 			      NULL);
 
@@ -1089,7 +1103,7 @@ void sipe_cal_presence_publish(struct sipe_core_private *sipe_private,
 		if (do_publish_calendar)
 			sipe_ocs2007_presence_publish(sipe_private, NULL);
 		else
-			sipe_ocs2007_category_publish(sipe_private);
+			sipe_ocs2007_category_publish(sipe_private, FALSE);
 	} else {
 		sipe_ocs2005_presence_publish(sipe_private,
 					      do_publish_calendar);

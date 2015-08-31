@@ -22,26 +22,28 @@
 @implementation ESSIPEAccountViewController
 
 - (id)init {
-    [super init];
+    self = [super init];
     
-    sipe_key_to_gui =
-    [[NSDictionary alloc] initWithObjectsAndKeys:
-     textField_windowsLogin,     KEY_SIPE_WINDOWS_LOGIN,
-     textField_password,         KEY_SIPE_PASSWORD,
-     textField_server,           KEY_SIPE_CONNECT_HOST,
-     popup_connectionType,       KEY_SIPE_CONNECTION_TYPE,
-     popup_authenticationScheme, KEY_SIPE_AUTH_SCHEME,
-     textField_userAgent,        KEY_SIPE_USER_AGENT,
-     checkBox_singleSignOn,      KEY_SIPE_SINGLE_SIGN_ON,
-     checkbox_beastDisable,      KEY_SIPE_BEAST_DISABLE,
-     textField_groupchatUser,    KEY_SIPE_GROUP_CHAT_PROXY,
-     textField_emailURL,         KEY_SIPE_EMAIL_URL,
-     textField_email,            KEY_SIPE_EMAIL,
-     textField_emailLogin,       KEY_SIPE_EMAIL_LOGIN,
-     textField_emailPassword,    KEY_SIPE_EMAIL_PASSWORD,
-     checkbox_dontPublish,       KEY_SIPE_DONT_PUBLISH,
-     nil
-     ];
+    if (self) {
+        sipe_key_to_gui =
+            [[NSDictionary alloc] initWithObjectsAndKeys:
+             textField_windowsLogin,     KEY_SIPE_WINDOWS_LOGIN,
+             textField_password,         KEY_SIPE_PASSWORD,
+             textField_server,           KEY_SIPE_CONNECT_HOST,
+             popup_connectionType,       KEY_SIPE_CONNECTION_TYPE,
+             popup_authenticationScheme, KEY_SIPE_AUTH_SCHEME,
+             textField_userAgent,        KEY_SIPE_USER_AGENT,
+             checkBox_singleSignOn,      KEY_SIPE_SINGLE_SIGN_ON,
+             checkbox_beastDisable,      KEY_SIPE_BEAST_DISABLE,
+             textField_groupchatUser,    KEY_SIPE_GROUP_CHAT_PROXY,
+             textField_emailURL,         KEY_SIPE_EMAIL_URL,
+             textField_email,            KEY_SIPE_EMAIL,
+             textField_emailLogin,       KEY_SIPE_EMAIL_LOGIN,
+             textField_emailPassword,    KEY_SIPE_EMAIL_PASSWORD,
+             checkbox_dontPublish,       KEY_SIPE_DONT_PUBLISH,
+             nil
+             ];
+    }
     
     return self;
 }
@@ -88,7 +90,7 @@
             // NSPopUpButton *MUST* appear before NSButton in the if/else
             //   because  NSPopUpButton is a NSButton...
             NSString *tmp_key = [account preferenceForKey:key group:GROUP_ACCOUNT_STATUS];
-            NSString *tmp = [key isEqualToString:KEY_SIPE_CONNECTION_TYPE] ? @"auto" : @"ntlm";
+            NSString *tmp = @"auto";
             
             if ([conn_auth_dict objectForKey:tmp_key])
                 tmp = [conn_auth_dict objectForKey:tmp_key];

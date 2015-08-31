@@ -1,6 +1,6 @@
 ################################### tell Emacs this is a -*- makefile-gmake -*-
 #
-# Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #
@@ -43,7 +43,7 @@ DEFINES += -DPACKAGE_BUGREPORT=\"https://sourceforge.net/p/sipe/bugs/\"
 DEFINES += -DPACKAGE_NAME=\"pidgin-sipe\"
 DEFINES += -DPACKAGE_URL=\"http://sipe.sourceforge.net/\"
 DEFINES += -DPACKAGE_VERSION=\"$(VERSION)\"
-DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.com/projects/p/pidgin-sipe/resource/mob/\"
+DEFINES += -DSIPE_TRANSLATIONS_URL=\"https://www.transifex.com/stefanb/pidgin-sipe/\"
 #DEFINES += -DENABLE_OCS2005_MESSAGE_HACK=1
 
 ifdef USE_SSPI
@@ -209,7 +209,8 @@ libsiperc.rc: libsiperc.rc.in
 $(OBJECTS): $(PURPLE_CONFIG_H)
 
 $(TARGET).dll: $(PURPLE_DLL).a $(OBJECTS)
-	$(CC) -shared $(OBJECTS) $(LIB_PATHS) $(LIBS) $(DLL_LD_FLAGS) -o $(TARGET).dll
+	$(CC) -shared $(OBJECTS) $(LIB_PATHS) $(LIBS) $(DLL_LD_FLAGS) -o $@.dbgsym
+	$(STRIP) --strip-unneeded $@.dbgsym -o $@
 
 ##
 ## CLEAN RULES
@@ -224,7 +225,7 @@ rmbak:
 
 install:
 	test -z "$(DLL_INSTALL_DIR)" || mkdir -p "$(DLL_INSTALL_DIR)"
-	/usr/bin/install -c $(TARGET).dll '$(DLL_INSTALL_DIR)'
+	/usr/bin/install -c $(TARGET).dll $(TARGET).dll.dbgsym '$(DLL_INSTALL_DIR)'
 
 $(TEST_OBJECTS):
 
