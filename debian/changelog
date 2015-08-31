@@ -1,4 +1,4 @@
-pidgin-sipe (1.20.0-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.20.0-1) unstable; urgency=medium
 
   * New upstream release (Closes: #791796, #796987).
         - Feature #82: Parse HTML from Lync conference URL
@@ -7,7 +7,7 @@ pidgin-sipe (1.20.0-1) UNRELEASED; urgency=medium
   * Bump Standards-Version to 3.9.6.
   * Remove reference to removed file ltmain.sh from d/copyright.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 31 Aug 2015 07:48:07 +0200
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 31 Aug 2015 08:17:35 +0200
 
 pidgin-sipe (1.18.2-1) unstable; urgency=medium
 
