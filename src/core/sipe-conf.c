@@ -1398,21 +1398,27 @@ sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
 {
 	gchar *access_info = access_numbers_info(sipe_public);
 	gchar *result = g_strdup_printf(
-			"<b><font size=\"+1\">Dial-in info</font></b><br/>"
-			"<b>Number:</b> %s<br/>"
-			"<b>Conference ID:</b> %s<br/>"
+			"<b><font size=\"+1\">%s</font></b><br/>"
+			"<b>%s:</b> %s<br/>"
+			"<b>%s:</b> %s<br/>"
 			"<br/>"
-			"<b>Meeting link:</b><br/>"
+			"<b>%s:</b><br/>"
 			"%s<br/>"
 			"<br/>"
-			"<b>Organizer:</b> %s<br/>"
+			"<b>%s:</b> %s<br/>"
 			"<br/>"
-			"<b><font size=\"+1\">Alternative dial-in numbers</font></b><br/>"
+			"<b><font size=\"+1\">%s</font></b><br/>"
 			"%s",
+			_("Dial-in info"),
+			_("Number"),
 			SIPE_CORE_PRIVATE->default_access_number ? SIPE_CORE_PRIVATE->default_access_number : "",
+			_("Conference ID"),
 			chat_session->dial_in_conf_id ? chat_session->dial_in_conf_id : "",
+			_("Meeting link"),
 			chat_session->join_url ? chat_session->join_url : "",
+			_("Organizer"),
 			chat_session->organizer ? chat_session->organizer : "",
+			_("Alternative dial-in numbers"),
 			access_info);
 
 	g_free(access_info);
