@@ -5,6 +5,7 @@ SIPE is a third-party plugin for the Pidgin/Adium/Miranda/Telepathy
 multi-protocol instant messaging clients/frameworks. It implements the
 extended version of SIP/SIMPLE used by various products:
 
+    * Skype for Business
     * Microsoft Office 365
     * Microsoft Business Productivity Online Suite (BPOS)
     * Microsoft Lync Server

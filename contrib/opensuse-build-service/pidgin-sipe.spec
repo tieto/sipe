@@ -223,6 +223,7 @@ BuildRequires:  glib2-devel >= 2.12.0
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
+    * Skype for Business
     * Microsoft Office 365
     * Microsoft Business Productivity Online Suite (BPOS)
     * Microsoft Lync Server
@@ -249,6 +250,7 @@ Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
+    * Skype for Business
     * Microsoft Office 365
     * Microsoft Business Productivity Online Suite (BPOS)
     * Microsoft Lync Server
@@ -271,6 +273,7 @@ Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
+    * Skype for Business
     * Microsoft Office 365
     * Microsoft Business Productivity Online Suite (BPOS)
     * Microsoft Lync Server
@@ -292,6 +295,7 @@ Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
+    * Skype for Business
     * Microsoft Office 365
     * Microsoft Business Productivity Online Suite (BPOS)
     * Microsoft Lync Server
@@ -313,6 +317,7 @@ Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 A Telepathy connection manager that implements the extended version of
 SIP/SIMPLE used by various products:
 
+    * Skype for Business
     * Microsoft Office 365
     * Microsoft Business Productivity Online Suite (BPOS)
     * Microsoft Lync Server
@@ -346,6 +351,7 @@ License:        GPL-2.0+
 A third-party plugin for the Pidgin multi-protocol instant messenger.
 It implements the extended version of SIP/SIMPLE used by various products:
 
+    * Skype for Business
     * Microsoft Office 365
     * Microsoft Business Productivity Online Suite (BPOS)
     * Microsoft Lync Server
@@ -535,6 +541,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Thu Sep 03 2015 J. D. User <jduser@noreply.com> 1.20.0-*git*
+- we also support "Skype for Business"
+
 * Sat Aug 29 2015 J. D. User <jduser@noreply.com> 1.20.0
 - update to 1.20.0
 

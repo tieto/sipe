@@ -144,6 +144,7 @@ gchar *sipe_core_about(void)
 		"<b><font size=\"+1\">SIPE " SIPE_CORE_VERSION " </font></b><br/>"
 		"<br/>"
 		/* 1 */   "%s:<br/>"
+		" - Skype for Business<br/>"
 		" - Microsoft Office 365<br/>"
 		" - Microsoft Business Productivity Online Suite (BPOS)<br/>"
 		" - Microsoft Lync Server<br/>"
