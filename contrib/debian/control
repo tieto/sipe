@@ -16,6 +16,7 @@ Description: Pidgin protocol plugin to connect to MS Office Communicator
  A third-party plugin for the Pidgin multi-protocol instant messenger.
  It implements the extended version of SIP/SIMPLE used by various products:
  .
+     * Skype for Business
      * Microsoft Office 365
      * Microsoft Business Productivity Online Suite (BPOS)
      * Microsoft Lync Server
