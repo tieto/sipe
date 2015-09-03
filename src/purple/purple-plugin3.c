@@ -160,14 +160,6 @@ sipe_protocol_media_iface_init(PurpleProtocolMediaIface *media_iface)
 	media_iface->get_caps = sipe_purple_get_media_caps;
 }
 
-#ifdef __GNUC__
-#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)) || (__GNUC__ >= 5)
-#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ >= 5)
-#pragma GCC diagnostic push
-#endif
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#endif
-#endif
 PURPLE_DEFINE_TYPE_EXTENDED(
 	SipeProtocol, sipe_protocol, PURPLE_TYPE_PROTOCOL, 0,
 
@@ -188,12 +180,6 @@ PURPLE_DEFINE_TYPE_EXTENDED(
 	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_MEDIA_IFACE,
 					  sipe_protocol_media_iface_init)
 )
-
-#ifdef __GNUC__
-#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ >= 5)
-#pragma GCC diagnostic pop
-#endif
-#endif
 
 static PurplePluginInfo *
 plugin_query(SIPE_UNUSED_PARAMETER GError **error)
