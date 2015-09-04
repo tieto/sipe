@@ -74,6 +74,8 @@ struct sipe_media_stream_private {
 	int encryption_key_id;
 	gboolean remote_candidates_and_codecs_set;
 
+	GSList *extra_sdp;
+
 	/* User data associated with the stream. */
 	gpointer data;
 	GDestroyNotify data_free_func;
@@ -106,6 +108,7 @@ remove_stream(struct sipe_media_call* call,
 	sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
 	g_free(SIPE_MEDIA_STREAM->id);
 	g_free(stream_private->encryption_key);
+	sipe_utils_nameval_free(stream_private->extra_sdp);
 	g_free(stream_private);
 }
 
@@ -368,6 +371,7 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 	GSList *all_sdpcandidates;
 	GList *candidates;
 	GList *i;
+	GSList *j;
 
 	sdpmedia->name = g_strdup(SIPE_MEDIA_STREAM->id);
 
@@ -478,8 +482,6 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		attributes = sipe_utils_nameval_add(attributes, "encryption", encryption);
 	}
 
-	sdpmedia->attributes = attributes;
-
 	// Process remote candidates
 	candidates = sipe_backend_media_get_active_remote_candidates(SIPE_MEDIA_CALL,
 								     SIPE_MEDIA_STREAM);
@@ -498,6 +500,15 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 						    SIPE_SRTP_KEY_LEN);
 		sdpmedia->encryption_key_id = stream_private->encryption_key_id;
 	}
+
+	// Append extra attributes assigned to the stream.
+	for (j = stream_private->extra_sdp; j; j = g_slist_next(j)) {
+		struct sipnameval *attr = j->data;
+		attributes = sipe_utils_nameval_add(attributes,
+						    attr->name, attr->value);
+	}
+
+	sdpmedia->attributes = attributes;
 
 	return sdpmedia;
 }
@@ -1755,6 +1766,15 @@ sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private)
 			      process_get_av_edge_credentials_response);
 
 	g_free(body);
+}
+
+void
+sipe_media_stream_add_extra_attribute(struct sipe_media_stream *stream,
+				      const gchar *name, const gchar *value)
+{
+	SIPE_MEDIA_STREAM_PRIVATE->extra_sdp =
+			sipe_utils_nameval_add(SIPE_MEDIA_STREAM_PRIVATE->extra_sdp,
+					       name, value);
 }
 
 void

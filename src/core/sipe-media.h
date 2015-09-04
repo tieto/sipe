@@ -91,6 +91,20 @@ gboolean is_media_session_msg(struct sipe_media_call_private *call_private,
 void sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private);
 
 /**
+ * Adds application-specific SDP attribute to the stream. This will be sent as
+ * a part of our SIP INVITE alongside standard media description, formatted as:
+ *
+ *  a=name[:value]
+ *
+ * @param stream (in) media stream data
+ * @param name (in) attribute name
+ * @param value (in) optional value of the attribute
+ */
+void
+sipe_media_stream_add_extra_attribute(struct sipe_media_stream *stream,
+				      const gchar *name, const gchar *value);
+
+/**
  * Associates user data with the media stream.
  *
  * @param stream (in) media stream data
