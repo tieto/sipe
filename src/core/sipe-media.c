@@ -45,6 +45,7 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-nls.h"
+#include "sipe-schedule.h"
 #include "sipe-xml.h"
 
 /* [MS-SDPEXT] 3.1.5.31.2 says a range size of 100 SHOULD be used for video and
@@ -79,6 +80,8 @@ struct sipe_media_call_private {
 struct sipe_media_stream_private {
 	struct sipe_media_stream public;
 
+	gchar *timeout_key;
+
 	guchar *encryption_key;
 	int encryption_key_id;
 	gboolean remote_candidates_and_codecs_set;
@@ -101,11 +104,17 @@ struct sipe_media_stream_private {
 #define SIPE_MEDIA_STREAM         ((struct sipe_media_stream *) stream_private)
 #define SIPE_MEDIA_STREAM_PRIVATE ((struct sipe_media_stream_private *) stream)
 
+#define SIPE_MEDIA_STREAM_CONNECTION_TIMEOUT_SECONDS 30
+
 struct async_read_data {
 	guint8 *buffer;
 	gssize len;
 	sipe_media_stream_read_callback callback;
 };
+
+static void stream_schedule_cancel_timeout(struct sipe_media_call *call,
+					   struct sipe_media_stream_private *stream_private);
+
 
 static void sipe_media_codec_list_free(GList *codecs)
 {
@@ -125,6 +134,8 @@ sipe_media_stream_free(struct sipe_media_stream_private *stream_private)
 	struct sipe_media_call_private *call_private;
 
 	call_private = (struct sipe_media_call_private *)SIPE_MEDIA_STREAM->call;
+
+	stream_schedule_cancel_timeout(SIPE_MEDIA_CALL, stream_private);
 
 	sipe_media_stream_set_data(SIPE_MEDIA_STREAM, NULL, NULL);
 
@@ -840,6 +851,52 @@ call_initialized(struct sipe_media_call *call)
 	return TRUE;
 }
 
+static void
+stream_connection_timeout_cb(struct sipe_core_private *sipe_private,
+			    gpointer data)
+{
+	struct sipe_media_call_private *call_private = data;
+
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				  _("Couldn't create stream"),
+				  _("Connection timed out"));
+	sipe_backend_media_hangup(SIPE_MEDIA_CALL->backend_private, FALSE);
+}
+
+static void
+stream_schedule_timeout(struct sipe_media_call *call)
+{
+	GSList *i;
+	for (i = SIPE_MEDIA_CALL_PRIVATE->streams; i; i = i->next) {
+		struct sipe_media_stream_private *stream_private = i->data;
+
+		stream_private->timeout_key =
+			g_strdup_printf("<media-stream-connect><%s><%s>",
+					sipe_media_get_sip_dialog(call)->callid,
+					SIPE_MEDIA_STREAM->id);
+
+		sipe_schedule_seconds(SIPE_MEDIA_CALL_PRIVATE->sipe_private,
+				      stream_private->timeout_key,
+				      SIPE_MEDIA_CALL_PRIVATE,
+				      SIPE_MEDIA_STREAM_CONNECTION_TIMEOUT_SECONDS,
+				      stream_connection_timeout_cb,
+				      NULL);
+	}
+}
+
+static void
+stream_schedule_cancel_timeout(struct sipe_media_call *call,
+			       struct sipe_media_stream_private *stream_private)
+{
+	if (stream_private->timeout_key) {
+		sipe_schedule_cancel(SIPE_MEDIA_CALL_PRIVATE->sipe_private,
+				     stream_private->timeout_key);
+		g_free(stream_private->timeout_key);
+	}
+	stream_private->timeout_key = NULL;
+}
+
+
 // Sends an invite response when the call is accepted and local candidates were
 // prepared, otherwise does nothing. If error response is sent, call_private is
 // disposed before function returns.
@@ -869,6 +926,7 @@ maybe_send_first_invite_response(struct sipe_media_call_private *call_private)
 					  _("Encryption settings of peer are incompatible with ours."));
 	} else {
 		send_response_with_session_description(call_private, 200, "OK");
+		stream_schedule_timeout(SIPE_MEDIA_CALL);
 		sipmsg_free(call_private->invitation);
 		call_private->invitation = NULL;
 	}
@@ -1775,6 +1833,8 @@ sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stre
 	}
 	SIPE_MEDIA_STREAM_PRIVATE->established = TRUE;
 
+	stream_schedule_cancel_timeout(call, SIPE_MEDIA_STREAM_PRIVATE);
+
 	if (stream->candidate_pairs_established_cb) {
 		stream->candidate_pairs_established_cb(stream);
 	}
@@ -1970,6 +2030,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	apply_remote_message(call_private, smsg);
 	sdpmsg_free(smsg);
 
+	stream_schedule_timeout(SIPE_MEDIA_CALL);
 	sipe_media_send_ack(sipe_private, msg, trans);
 
 	return TRUE;
