@@ -81,6 +81,8 @@ struct sipe_media_call_private {
 struct sipe_media_stream_private {
 	struct sipe_media_stream public;
 
+	gchar *timeout_key;
+
 	guchar *encryption_key;
 	int encryption_key_id;
 	gboolean remote_candidates_and_codecs_set;
@@ -100,6 +102,8 @@ struct sipe_media_stream_private {
 };
 #define SIPE_MEDIA_STREAM         ((struct sipe_media_stream *) stream_private)
 #define SIPE_MEDIA_STREAM_PRIVATE ((struct sipe_media_stream_private *) stream)
+
+#define SIPE_MEDIA_STREAM_CONNECTION_TIMEOUT_SECONDS 30
 
 struct async_read_data {
 	guint8 *buffer;
@@ -125,6 +129,12 @@ sipe_media_stream_free(struct sipe_media_stream_private *stream_private)
 	struct sipe_media_call_private *call_private;
 
 	call_private = (struct sipe_media_call_private *)SIPE_MEDIA_STREAM->call;
+
+	if (stream_private->timeout_key) {
+		sipe_schedule_cancel(call_private->sipe_private,
+				     stream_private->timeout_key);
+		g_free(stream_private->timeout_key);
+	}
 
 	sipe_media_stream_set_data(SIPE_MEDIA_STREAM, NULL, NULL);
 
@@ -1189,6 +1199,18 @@ candidates_prepared_cb(struct sipe_media_stream *stream)
 	}
 }
 
+static void
+stream_connection_timeouted_cb(struct sipe_core_private *sipe_private,
+			    gpointer data)
+{
+	struct sipe_media_call_private *call_private = data;
+
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				  _("Couldn't create stream"),
+				  _("Connection timed out"));
+	sipe_backend_media_hangup(SIPE_MEDIA_CALL->backend_private, FALSE);
+}
+
 struct sipe_media_stream *
 sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		      SipeMediaType type, SipeIceVersion ice_version,
@@ -1270,6 +1292,18 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
 				"x-source", "main-video");
 	}
+
+	stream_private->timeout_key =
+			g_strdup_printf("<media-stream-connect><%s><%s>",
+					sipe_media_get_sip_dialog(call)->callid,
+					id);
+
+	sipe_schedule_seconds(sipe_private,
+			      stream_private->timeout_key,
+			      SIPE_MEDIA_CALL_PRIVATE,
+			      SIPE_MEDIA_STREAM_CONNECTION_TIMEOUT_SECONDS,
+			      stream_connection_timeouted_cb,
+			      NULL);
 
 #ifdef HAVE_SRTP
 	{
@@ -1743,6 +1777,11 @@ sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stre
 		return;
 	}
 	SIPE_MEDIA_STREAM_PRIVATE->established = TRUE;
+
+	sipe_schedule_cancel(SIPE_MEDIA_CALL_PRIVATE->sipe_private,
+			     SIPE_MEDIA_STREAM_PRIVATE->timeout_key);
+	g_free(SIPE_MEDIA_STREAM_PRIVATE->timeout_key);
+	SIPE_MEDIA_STREAM_PRIVATE->timeout_key = NULL;
 
 	if (stream->candidate_pairs_established_cb) {
 		stream->candidate_pairs_established_cb(stream);
