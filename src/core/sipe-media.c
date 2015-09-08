@@ -73,6 +73,7 @@ struct sipe_media_stream_private {
 	guchar *encryption_key;
 	int encryption_key_id;
 	gboolean remote_candidates_and_codecs_set;
+	gboolean established;
 
 	GSList *extra_sdp;
 
@@ -1465,8 +1466,25 @@ sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stre
 		return;
 	}
 
-	if (sipe_backend_media_is_initiator(stream->call, stream)) {
-		sipe_invite_call(SIPE_MEDIA_CALL_PRIVATE, sipe_media_send_final_ack);
+	if (SIPE_MEDIA_STREAM_PRIVATE->established) {
+		return;
+	}
+	SIPE_MEDIA_STREAM_PRIVATE->established = TRUE;
+
+	if (sipe_backend_media_is_initiator(stream->call, NULL)) {
+		GSList *streams = SIPE_MEDIA_CALL_PRIVATE->streams;
+		for (; streams; streams = streams->next) {
+			struct sipe_media_stream_private *s = streams->data;
+			if (!s->established) {
+				break;
+			}
+		}
+
+		if (streams == NULL) {
+			// All call streams have been established.
+			sipe_invite_call(SIPE_MEDIA_CALL_PRIVATE,
+					 sipe_media_send_final_ack);
+		}
 	}
 
 	if (stream->candidate_pairs_established_cb) {
