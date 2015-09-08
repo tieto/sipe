@@ -56,7 +56,12 @@ struct sipe_appshare {
 	guint rdp_channel_readable_watch_id;
 	guint monitor_id;
 	struct sipe_user_ask_ctx *ask_ctx;
+
+	gboolean writable;
+	gboolean confirmed;
 };
+
+static void launch_rdp_client(struct sipe_appshare *appshare);
 
 static void
 unlink_appshare_socket(GSocket *socket)
@@ -98,6 +103,18 @@ sipe_appshare_free(struct sipe_appshare *appshare)
 	}
 
 	g_free(appshare);
+}
+
+static void
+confirmed_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
+	     struct sipe_media_stream *stream)
+{
+	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
+	appshare->confirmed = TRUE;
+
+	if (appshare->writable && appshare->confirmed && !appshare->socket) {
+		launch_rdp_client(appshare);
+	}
 }
 
 static void
@@ -213,48 +230,55 @@ build_socket_path(struct sipe_media_call *call)
 }
 
 static void
-writable_cb(struct sipe_media_call *call, struct sipe_media_stream *stream,
-	    gboolean writable)
+writable_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
+	    struct sipe_media_stream *stream, gboolean writable)
 {
 	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
+	appshare->writable = writable;
 
-	if (writable && !appshare->socket) {
-		gchar *socket_path;
-		gchar *cmdline;
-		GSocketAddress *address;
-		GError *error = NULL;
-
-		socket_path = build_socket_path(call);
-
-		appshare->socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
-					     G_SOCKET_TYPE_STREAM,
-					     G_SOCKET_PROTOCOL_DEFAULT,
-					     &error);
-		g_assert_no_error(error);
-		g_socket_set_blocking(appshare->socket, FALSE);
-
-		address = g_unix_socket_address_new(socket_path);
-
-		g_unlink(socket_path);
-
-		g_socket_bind(appshare->socket, address, TRUE, &error);
-		g_assert_no_error(error);
-		g_socket_listen(appshare->socket, &error);
-		g_assert_no_error(error);
-
-		appshare->channel = g_io_channel_unix_new(g_socket_get_fd(appshare->socket));
-		appshare->rdp_channel_readable_watch_id =
-				g_io_add_watch(appshare->channel, G_IO_IN,
-					       socket_connect_cb, appshare);
-
-		cmdline = g_strdup_printf("xfreerdp /v:%s /sec:rdp",socket_path);
-
-		g_spawn_command_line_async(cmdline, &error);
-		g_assert_no_error(error);
-
-		g_free(cmdline);
-		g_free(socket_path);
+	if (appshare->writable && appshare->confirmed && !appshare->socket) {
+		launch_rdp_client(appshare);
 	}
+}
+
+static void
+launch_rdp_client(struct sipe_appshare *appshare)
+{
+	gchar *socket_path;
+	gchar *cmdline;
+	GSocketAddress *address;
+	GError *error = NULL;
+
+	socket_path = build_socket_path(appshare->media);
+
+	appshare->socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
+				     G_SOCKET_TYPE_STREAM,
+				     G_SOCKET_PROTOCOL_DEFAULT,
+				     &error);
+	g_assert_no_error(error);
+	g_socket_set_blocking(appshare->socket, FALSE);
+
+	address = g_unix_socket_address_new(socket_path);
+
+	g_unlink(socket_path);
+
+	g_socket_bind(appshare->socket, address, TRUE, &error);
+	g_assert_no_error(error);
+	g_socket_listen(appshare->socket, &error);
+	g_assert_no_error(error);
+
+	appshare->channel = g_io_channel_unix_new(g_socket_get_fd(appshare->socket));
+	appshare->rdp_channel_readable_watch_id =
+			g_io_add_watch(appshare->channel, G_IO_IN,
+				       socket_connect_cb, appshare);
+
+	cmdline = g_strdup_printf("xfreerdp /v:%s /sec:rdp",socket_path);
+
+	g_spawn_command_line_async(cmdline, &error);
+	g_assert_no_error(error);
+
+	g_free(cmdline);
+	g_free(socket_path);
 }
 
 static void
@@ -317,6 +341,7 @@ initialize_incoming_appshare(struct sipe_media_call *call,
 	sipe_media_stream_set_data(stream, appshare,
 				   (GDestroyNotify)sipe_appshare_free);
 
+	call->confirmed_cb = confirmed_cb;
 	call->writable_cb = writable_cb;
 	stream->read_cb = read_cb;
 
