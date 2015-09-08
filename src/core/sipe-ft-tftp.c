@@ -209,7 +209,7 @@ sipe_ft_tftp_start_receiving(struct sipe_file_transfer *ft, gsize total_size)
 		return;
 	}
 
-	if (!sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, TFR, sizeof(TFR) - 1)) {
+	if (sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, TFR, sizeof(TFR) - 1) != (sizeof(TFR) - 1)) {
 		raise_ft_socket_write_error_and_cancel(ft_private);
 		return;
 	}
@@ -231,7 +231,7 @@ sipe_ft_tftp_stop_receiving(struct sipe_file_transfer *ft)
 	gchar *mac;
 	gchar *mac1;
 
-	if (!sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, BYE, sizeof(BYE) - 1)) {
+	if (sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, BYE, sizeof(BYE) - 1) != (sizeof(BYE) - 1)) {
 		raise_ft_socket_write_error_and_cancel(ft_private);
 		return FALSE;
 	}
@@ -516,7 +516,7 @@ sipe_ft_tftp_write(struct sipe_file_transfer *ft, const guchar *buffer,
 		hdr_buf[2] = (ft_private->bytes_remaining_chunk & 0xFF00) >> 8;
 
 		/* write chunk header */
-		if (!sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, hdr_buf, sizeof(hdr_buf))) {
+		if (sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, hdr_buf, sizeof(hdr_buf)) != sizeof(hdr_buf)) {
 			sipe_backend_ft_error(SIPE_FILE_TRANSFER_PUBLIC,
 					      _("Socket write failed"));
 			return -1;
