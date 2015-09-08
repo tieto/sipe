@@ -42,6 +42,8 @@ struct sipe_appshare {
 	GIOChannel *channel;
 	guint rdp_channel_readable_watch_id;
 	struct sipe_user_ask_ctx *ask_ctx;
+	gboolean writable;
+	gboolean confirmed;
 
 	struct sipe_rdp_client client;
 };
@@ -200,6 +202,18 @@ launch_rdp_client(struct sipe_appshare *appshare)
 }
 
 static void
+confirmed_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
+	     struct sipe_media_stream *stream)
+{
+	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
+	appshare->confirmed = TRUE;
+
+	if (appshare->writable && appshare->confirmed && !appshare->socket) {
+		launch_rdp_client(appshare);
+	}
+}
+
+static void
 read_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
@@ -232,8 +246,9 @@ static void
 writable_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
+	appshare->writable = TRUE;
 
-	if (!appshare->socket) {
+	if (appshare->writable && appshare->confirmed && !appshare->socket) {
 		launch_rdp_client(appshare);
 	}
 }
@@ -311,6 +326,7 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 	sipe_media_stream_add_extra_attribute(stream,
 			"x-applicationsharing-media-type", "rdp");
 
+	call->confirmed_cb = confirmed_cb;
 	stream->read_cb = read_cb;
 	stream->writable_cb = writable_cb;
 
