@@ -1459,6 +1459,18 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		send_response_with_session_description(call_private, 200, "OK");
 
 		sdpmsg_free(smsg);
+
+		if (SIPE_MEDIA_CALL->confirmed_cb) {
+			GSList *it;
+
+			for (it = call_private->streams; it; it = it->next) {
+				struct sipe_media_stream_private *stream_private = it->data;
+				g_assert(stream_private->established);
+
+				SIPE_MEDIA_CALL->confirmed_cb(SIPE_MEDIA_CALL,
+							      SIPE_MEDIA_STREAM);
+			}
+		}
 	}
 
 	return SIPE_MEDIA_CALL;
@@ -1522,6 +1534,18 @@ sipe_media_send_final_ack(struct sipe_core_private *sipe_private,
 	call_private = sipe_media_from_sipmsg(sipe_private, msg);
 
 	sipe_backend_media_accept(SIPE_MEDIA_CALL->backend_private, FALSE);
+
+	if (SIPE_MEDIA_CALL->confirmed_cb) {
+		GSList *it;
+
+		for (it = call_private->streams; it; it = it->next) {
+			struct sipe_media_stream_private *stream_private = it->data;
+			g_assert(stream_private->established);
+
+			SIPE_MEDIA_CALL->confirmed_cb(SIPE_MEDIA_CALL,
+						      SIPE_MEDIA_STREAM);
+		}
+	}
 
 	return TRUE;
 }
