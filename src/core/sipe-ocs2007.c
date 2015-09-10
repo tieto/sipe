@@ -1536,17 +1536,23 @@ static void send_publish_category_initial(struct sipe_core_private *sipe_private
 {
 	gchar *pub_device   = sipe_publish_get_category_device(sipe_private);
 	gchar *pub_machine;
+	gchar *pub_user;
 	gchar *publications;
 
-	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_AVAILABLE);
+	sipe_status_set_activity(sipe_private,
+				 sipe_backend_status(SIPE_CORE_PUBLIC));
 
 	pub_machine  = sipe_publish_get_category_state_machine(sipe_private,
 							       TRUE);
-	publications = g_strdup_printf("%s%s",
+	pub_user = sipe_publish_get_category_state_user(sipe_private, TRUE);
+
+	publications = g_strdup_printf("%s%s%s",
 				       pub_device,
-				       pub_machine ? pub_machine : "");
+				       pub_machine ? pub_machine : "",
+				       pub_user ? pub_user : "");
 	g_free(pub_device);
 	g_free(pub_machine);
+	g_free(pub_user);
 
 	send_presence_publish(sipe_private, publications);
 	g_free(publications);
