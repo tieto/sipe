@@ -329,7 +329,8 @@ typedef enum {
 
 typedef enum {
 	SIPE_MEDIA_AUDIO,
-	SIPE_MEDIA_VIDEO
+	SIPE_MEDIA_VIDEO,
+	SIPE_MEDIA_APPLICATION
 } SipeMediaType;
 
 typedef enum {
