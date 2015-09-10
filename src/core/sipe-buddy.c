@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,10 +45,12 @@
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-appshare.h"
 #include "sipe-digest.h"
 #include "sipe-group.h"
 #include "sipe-http.h"
 #include "sipe-im.h"
+#include "sipe-media.h"
 #include "sipe-nls.h"
 #include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
@@ -2371,11 +2373,20 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 	}
 
 #ifdef HAVE_APPSHARE_SERVER
-	menu = sipe_backend_buddy_menu_add(sipe_public,
-					   menu,
-					   _("Share my desktop"),
-					   SIPE_BUDDY_MENU_SHARE_DESKTOP,
-					   NULL);
+	{
+		struct sipe_media_call *call = sipe_media_call_find(SIPE_CORE_PRIVATE,
+								    buddy_name);
+
+		if (!call || sipe_appshare_get_role(call) != SIPE_APPSHARE_ROLE_PRESENTER) {
+			/* Add the menu item only to the buddies to whom we
+			 * aren't already presenting. */
+			menu = sipe_backend_buddy_menu_add(sipe_public,
+				   menu,
+				   _("Share my desktop"),
+				   SIPE_BUDDY_MENU_SHARE_DESKTOP,
+				   NULL);
+		}
+	}
 #endif // HAVE_APPSHARE_SERVER
 
 	/* access level control */
