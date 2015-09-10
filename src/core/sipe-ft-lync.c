@@ -22,9 +22,15 @@
 
 #include <glib.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "sip-transport.h"
+#include "sipe-backend.h"
+#include "sipe-common.h"
+#include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-ft-lync.h"
+#include "sipe-media.h"
 #include "sipe-mime.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
@@ -36,6 +42,8 @@ struct sipe_file_transfer_lync {
 	gchar *id;
 	gsize file_size;
 	guint request_id;
+
+	struct sipe_media_call_private *call_private;
 };
 #define SIPE_FILE_TRANSFER         ((struct sipe_file_transfer *) ft_private)
 #define SIPE_FILE_TRANSFER_PRIVATE ((struct sipe_file_transfer_lync *) ft)
@@ -89,11 +97,24 @@ mime_mixed_cb(gpointer user_data, const GSList *fields, const gchar *body,
 	}
 }
 
+static void
+candidate_pair_established_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
+			      struct sipe_media_stream *stream)
+{
+	g_return_if_fail(sipe_strequal(stream->id, "data"));
+
+	/* TODO: So far reject the file transfer. */
+	sipe_file_transfer_lync_free(sipe_media_stream_get_data(stream));
+	sipe_backend_media_hangup(call->backend_private, TRUE);
+}
+
 void
 process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 				struct sipmsg *msg)
 {
 	struct sipe_file_transfer_lync *ft_private;
+	struct sipe_media_call *call;
+	struct sipe_media_stream *stream;
 
 	ft_private = g_new0(struct sipe_file_transfer_lync, 1);
 	sipe_mime_parts_foreach(sipmsg_find_header(msg, "Content-Type"),
@@ -105,10 +126,30 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	/* For now reject the request since we still don't do anything with
-	 * the parsed data. */
-	sip_transport_response(sipe_private, msg, 488, "Not Acceptable Here", NULL);
-	sipe_file_transfer_lync_free(ft_private);
+	/* Replace multipart message body with the selected SDP part and
+	 * initialize media session as if invited to a media call. */
+	g_free(msg->body);
+	msg->body = ft_private->sdp;
+	msg->bodylen = strlen(msg->body);
+	ft_private->sdp = NULL;
+
+	ft_private->call_private = process_incoming_invite_call(sipe_private, msg);
+	if (!ft_private->call_private) {
+		sip_transport_response(sipe_private, msg, 500, "Server Internal Error", NULL);
+		sipe_file_transfer_lync_free(ft_private);
+		return;
+	}
+
+	call = (struct sipe_media_call *)ft_private->call_private;
+	call->candidate_pair_established_cb = candidate_pair_established_cb;
+
+	stream = sipe_core_media_get_stream_by_id(call, "data");
+	sipe_media_stream_add_extra_attribute(stream, "recvonly", NULL);
+	sipe_media_stream_set_data(stream, ft_private, NULL);
+
+	/* TODO: Call should be accepted only after file transfer backend is
+	 * initialized. */
+	sipe_backend_media_accept(call->backend_private, TRUE);
 }
 
 /*

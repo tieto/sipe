@@ -382,6 +382,8 @@ sdpmsg_parse_msg(gchar *msg)
 			type = SIPE_MEDIA_AUDIO;
 		else if (sipe_strequal(media->name, "video"))
 			type = SIPE_MEDIA_VIDEO;
+		else if (sipe_strequal(media->name, "data"))
+			type = SIPE_MEDIA_APPLICATION;
 		else {
 			// Unknown media type
 			sdpmsg_free(smsg);

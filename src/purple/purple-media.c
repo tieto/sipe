@@ -474,6 +474,18 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 			relay_info = &params[params_cnt].value;
 			++params_cnt;
 		}
+
+		if (type == SIPE_MEDIA_APPLICATION) {
+			params[params_cnt].name = "ice-udp";
+			g_value_init(&params[params_cnt].value, G_TYPE_BOOLEAN);
+			g_value_set_boolean(&params[params_cnt].value, FALSE);
+			++params_cnt;
+
+			params[params_cnt].name = "reliable";
+			g_value_init(&params[params_cnt].value, G_TYPE_BOOLEAN);
+			g_value_set_boolean(&params[params_cnt].value, TRUE);
+			++params_cnt;
+		}
 	} else {
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";

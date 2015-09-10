@@ -405,8 +405,9 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 
 #ifdef HAVE_VV
-	/* Invitation to audio call */
-	if (msg->body && strstr(msg->body, "m=audio")) {
+	/* Invitation to audio call or file transfer */
+	if (msg->body &&
+	    (strstr(msg->body, "m=audio") || strstr(msg->body, "m=data"))) {
 		process_incoming_invite_call(sipe_private, msg);
 		return;
 	}

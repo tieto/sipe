@@ -390,6 +390,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		type = SIPE_MEDIA_AUDIO;
 	else if (sipe_strequal(sdpmedia->name, "video"))
 		type = SIPE_MEDIA_VIDEO;
+	else if (sipe_strequal(sdpmedia->name, "data"))
+		type = SIPE_MEDIA_APPLICATION;
 	else {
 		// TODO: incompatible media, should not happen here
 		g_free(sdpmedia->name);
@@ -1308,9 +1310,14 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 
 	if (!call_private) {
 		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
+		SipeMediaCallFlags flags = 0;
+
+		if (strstr(msg->body, "m=data")) {
+			flags |= SIPE_MEDIA_CALL_NO_UI;
+		}
 
 		call_private = sipe_media_call_new(sipe_private, with, msg,
-						   smsg->ice_version, 0);
+						   smsg->ice_version, flags);
 
 		g_free(with);
 	}
@@ -1331,6 +1338,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 				type = SIPE_MEDIA_AUDIO;
 			else if (sipe_strequal(id, "video"))
 				type = SIPE_MEDIA_VIDEO;
+			else if (sipe_strequal(id, "data"))
+				type = SIPE_MEDIA_APPLICATION;
 			else
 				continue;
 
