@@ -2209,6 +2209,38 @@ static struct sipe_backend_buddy_menu *buddy_menu_phone(struct sipe_core_public 
 	return(menu);
 }
 
+static struct sipe_backend_buddy_menu *buddy_menu_share_desktop(struct sipe_core_public *sipe_public,
+								struct sipe_backend_buddy_menu *menu,
+								const gchar *buddy_name)
+{
+	/* Make sure desktop can't be shared with the same user more than once. */
+	GList *calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
+	for (; calls; calls = g_list_delete_link(calls, calls)) {
+		struct sipe_media_call *call = calls->data;
+		struct sipe_media_stream *stream;
+
+		if (!sipe_strequal(call->with, buddy_name)) {
+			continue;
+		}
+
+		stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
+		if (stream && sipe_backend_media_is_initiator(call, stream)) {
+			g_list_free(calls);
+			return menu;
+		}
+	}
+
+#ifdef HAVE_FREERDP
+	menu = sipe_backend_buddy_menu_add(sipe_public,
+					   menu,
+					   _("Share my desktop"),
+					   SIPE_BUDDY_MENU_SHARE_APPLICATION,
+					   NULL);
+#endif
+
+	return menu;
+}
+
 struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_public *sipe_public,
 							    const gchar *buddy_name,
 							    struct sipe_backend_buddy_menu *menu)
@@ -2338,13 +2370,7 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 		}
 	}
 
-#ifdef HAVE_FREERDP
-	menu = sipe_backend_buddy_menu_add(sipe_public,
-					   menu,
-					   _("Share my desktop"),
-					   SIPE_BUDDY_MENU_SHARE_APPLICATION,
-					   NULL);
-#endif
+	menu = buddy_menu_share_desktop(sipe_public, menu, buddy_name);
 
 	/* access level control */
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
