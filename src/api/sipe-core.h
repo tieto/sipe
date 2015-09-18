@@ -78,16 +78,16 @@ struct sipe_chat_session;
 struct sipe_file_transfer {
 	struct sipe_backend_file_transfer *backend_private;
 
-	void (* init)(struct sipe_file_transfer *ft, const gchar *filename,
-		      gsize size, const gchar *who);
-	void (* start)(struct sipe_file_transfer *ft, gsize total_size);
-	gssize (* read)(struct sipe_file_transfer *ft, guchar **buffer,
-			gsize bytes_remaining, gsize bytes_available);
-	gssize (* write)(struct sipe_file_transfer *ft, const guchar *buffer,
-			 gsize size);
-	gboolean (* end)(struct sipe_file_transfer *ft);
-	void (* request_denied)(struct sipe_file_transfer *ft);
-	void (* deallocate)(struct sipe_file_transfer *ft);
+	void (* ft_init)(struct sipe_file_transfer *ft, const gchar *filename,
+			 gsize size, const gchar *who);
+	void (* ft_start)(struct sipe_file_transfer *ft, gsize total_size);
+	gssize (* ft_read)(struct sipe_file_transfer *ft, guchar **buffer,
+			   gsize bytes_remaining, gsize bytes_available);
+	gssize (* ft_write)(struct sipe_file_transfer *ft, const guchar *buffer,
+			    gsize size);
+	gboolean (* ft_end)(struct sipe_file_transfer *ft);
+	void (* ft_request_denied)(struct sipe_file_transfer *ft);
+	void (* ft_deallocate)(struct sipe_file_transfer *ft);
 };
 
 /**

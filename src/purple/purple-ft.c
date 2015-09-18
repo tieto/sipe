@@ -154,8 +154,8 @@ ft_free_xfer_struct(PurpleXfer *xfer)
 			purple_input_remove(purple_xfer_get_watcher(xfer));
 			purple_xfer_set_watcher(xfer, 0);
 		}
-		if (ft->deallocate) {
-			ft->deallocate(ft);
+		if (ft->ft_deallocate) {
+			ft->ft_deallocate(ft);
 		}
 		purple_xfer_set_protocol_data(xfer, NULL);
 	}
@@ -165,8 +165,8 @@ static void
 ft_request_denied(PurpleXfer *xfer)
 {
 	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
-	if (ft->request_denied) {
-		ft->request_denied(ft);
+	if (ft->ft_request_denied) {
+		ft->ft_request_denied(ft);
 	}
 
 	ft_free_xfer_struct(xfer);
@@ -176,12 +176,12 @@ static void
 ft_init(PurpleXfer *xfer)
 {
 	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
-	g_return_if_fail(ft->init);
+	g_return_if_fail(ft->ft_init);
 
-	ft->init(ft,
-		 purple_xfer_get_filename(xfer),
-		 purple_xfer_get_size(xfer),
-		 purple_xfer_get_remote_user(xfer));
+	ft->ft_init(ft,
+		    purple_xfer_get_filename(xfer),
+		    purple_xfer_get_size(xfer),
+		    purple_xfer_get_remote_user(xfer));
 }
 
 static void
@@ -199,8 +199,8 @@ ft_start(PurpleXfer *xfer)
 		fcntl(purple_xfer_get_fd(xfer), F_SETFL, flags | O_NONBLOCK);
 	}
 
-	if (ft->start) {
-		ft->start(ft, purple_xfer_get_size(xfer));
+	if (ft->ft_start) {
+		ft->ft_start(ft, purple_xfer_get_size(xfer));
 	}
 }
 
@@ -209,7 +209,7 @@ ft_end(PurpleXfer *xfer)
 {
 	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
 
-	if (ft->end && ft->end(ft)) {
+	if (ft->ft_end && ft->ft_end(ft)) {
 		/* We're done with this transfer */
 		ft_free_xfer_struct(xfer);
 	} else if (purple_xfer_get_xfer_type(xfer) == PURPLE_XFER_TYPE_RECEIVE) {
@@ -226,12 +226,12 @@ ft_read(guchar **buffer,
 			PurpleXfer *xfer)
 {
 	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
-	g_return_val_if_fail(ft->read, 0);
-	return ft->read(ft, buffer, purple_xfer_get_bytes_remaining(xfer),
+	g_return_val_if_fail(ft->ft_read, 0);
+	return ft->ft_read(ft, buffer, purple_xfer_get_bytes_remaining(xfer),
 #if PURPLE_VERSION_CHECK(3,0,0)
-			buffer_size
+			   buffer_size
 #else
-			xfer->current_buffer_size
+			   xfer->current_buffer_size
 #endif
 	);
 }
@@ -242,9 +242,9 @@ ft_write(const guchar *buffer, size_t size, PurpleXfer *xfer)
 	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
 	gssize bytes_written = 0;
 
-	g_return_val_if_fail(ft->write, 0);
+	g_return_val_if_fail(ft->ft_write, 0);
 
-	bytes_written = ft->write(ft, buffer, size);
+	bytes_written = ft->ft_write(ft, buffer, size);
 
 	if ((purple_xfer_get_bytes_remaining(xfer) - bytes_written) == 0)
 		purple_xfer_set_completed(xfer, TRUE);
