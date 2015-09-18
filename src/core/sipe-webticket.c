@@ -294,6 +294,12 @@ static void generate_federation_wsse(struct sipe_webticket *webticket,
 	if (!keydata)
 		keydata   = sipe_xml_extract_raw(raw, "saml1:Assertion", TRUE);
 
+	/* try other alternative names */
+	if (!timestamp)
+		timestamp = generate_timestamp(raw, "Lifetime");
+	if (!keydata)
+		keydata   = sipe_xml_extract_raw(raw, "ns1:Assertion", TRUE);
+
 	/* clear old ADFS token */
 	g_free(webticket->adfs_token);
 	webticket->adfs_token = NULL;
@@ -303,6 +309,11 @@ static void generate_federation_wsse(struct sipe_webticket *webticket,
 							     "wsu:Expires",
 							     FALSE);
 
+		/* try alternative names */
+		if (!expires_string)
+			expires_string = sipe_xml_extract_raw(timestamp,
+							      "ns3:Expires",
+							      FALSE);
 		if (expires_string) {
 
 			SIPE_DEBUG_INFO("generate_federation_wsse: found timestamp & keydata, expires %s",
