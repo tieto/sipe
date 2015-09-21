@@ -25,6 +25,7 @@
 #endif
 
 #include <glib.h>
+#include <string.h>
 
 #include "sipe-common.h"
 

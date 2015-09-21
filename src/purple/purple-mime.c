@@ -71,15 +71,16 @@ void sipe_mime_parts_foreach(const gchar *type,
 									       "Content-Type");
 			if (content_type) {
 				const gchar *content = NULL;
-				gchar *content_decoded = NULL;
+				guchar *content_decoded = NULL;
 				gsize length = 0;
 
 				GSList *fields = mime_fields_to_nameval(parts->data);
 
 				purple_mime_part_get_data_decoded(parts->data,
-								  (guchar **)&content_decoded, &length);
+								  &content_decoded,
+								  &length);
 				if (content_decoded) {
-					content = content_decoded;
+					content = (gchar *) content_decoded;
 				} else {
 					/* Unknown encoding in Content-Transfer-Encoding
 					 * field; revert to the plain content extraction. */
