@@ -1375,6 +1375,7 @@ access_numbers_info(struct sipe_core_public *sipe_public)
 {
 	GString *result = g_string_new("");
 
+#if GLIB_CHECK_VERSION(2,16,0)
 	GList *keys = g_hash_table_get_keys(SIPE_CORE_PRIVATE->access_numbers);
 	keys = g_list_sort(keys, (GCompareFunc)g_strcmp0);
 
@@ -1388,6 +1389,9 @@ access_numbers_info(struct sipe_core_public *sipe_public)
 		g_string_append(result, value);
 		g_string_append(result, "<br/>");
 	}
+#else
+	(void)sipe_public; /* keep compiler happy */
+#endif
 
 	return g_string_free(result, FALSE);
 }
