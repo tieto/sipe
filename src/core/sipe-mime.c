@@ -25,6 +25,20 @@
 #include "sipe-common.h"
 
 #include <glib.h>
+
+/*
+ * GMIME interfaces fail to compile on ARM architecture with -Wcast-align
+ *
+ * Diagnostic #pragma was added in GCC 4.2.0
+ */
+#if defined(__GNUC__)
+#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)) || (__GNUC__ >= 5)
+#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__) || (defined(__powerpc__) && defined(__NO_FPRS__))
+#pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+#endif
+#endif
+
 #include <gmime/gmime.h>
 
 #include "sipe-mime.h"
