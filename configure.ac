@@ -409,10 +409,17 @@ AS_IF([test "x$enable_purple" != xno],
 				[AC_MSG_WARN([cross compiling: not checking])])
 			 ])
 
+		 AC_COMPILE_IFELSE(
+			[AC_LANG_PROGRAM([[
+#include <media.h>
+				]],
+				[[purple_media_set_encryption_parameters(NULL, "", "", "", "", 0);
+			          purple_media_set_decryption_parameters(NULL, "", "", "", "", "", 0);]]
+			 )],
+			 [AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])]
+		 )
 		 AS_IF([test "x$purple_pkgconfig" = xpurple-3],
-			[dnl enable SRTP when building with libpurple 3.x
-			 AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])
-			 dnl libpurple 3.x supports raw data RTP connections
+			[dnl libpurple 3.x supports raw data RTP connections
 			 with_xdata=yes
 		 ])
 
