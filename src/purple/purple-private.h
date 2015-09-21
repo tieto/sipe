@@ -224,11 +224,13 @@ unsigned int sipe_purple_send_typing(struct _PurpleConnection *gc,
 void sipe_purple_add_permit(struct _PurpleConnection *gc, const char *name);
 void sipe_purple_add_deny(struct _PurpleConnection *gc, const char *name);
 
+#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 gboolean sipe_purple_initiate_media(struct _PurpleAccount *account,
 				    const char *who,
 				    PurpleMediaSessionType type);
 PurpleMediaCaps sipe_purple_get_media_caps(struct _PurpleAccount *account,
 					   const char *who);
+#endif
 
 /*
   Local Variables:

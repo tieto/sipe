@@ -58,6 +58,7 @@
 #define purple_account_option_string_set_masked(o, f) purple_account_option_set_masked(o, f)
 #define purple_connection_error(g, e, m)              purple_connection_error_reason(g, e, m)
 #define purple_connection_get_flags(gc)               0
+#define purple_connection_set_protocol_data(gc, p)    gc->proto_data = p
 #define purple_connection_set_flags(gc, f)            gc->flags |= f
 #define purple_protocol_action_new(l, c)              purple_plugin_action_new(l, c)
 #define PurpleProtocolAction                          PurplePluginAction
