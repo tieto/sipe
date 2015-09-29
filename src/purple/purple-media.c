@@ -972,15 +972,6 @@ static PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type)
 	}
 }
 
-/*SipeMediaType purple_media_to_sipe(PurpleMediaSessionType type)
-{
-	switch (type) {
-		case PURPLE_MEDIA_AUDIO: return SIPE_MEDIA_AUDIO;
-		case PURPLE_MEDIA_VIDEO: return SIPE_MEDIA_VIDEO;
-		default:				 return SIPE_MEDIA_AUDIO;
-	}
-}*/
-
 static PurpleMediaCandidateType
 sipe_candidate_type_to_purple(SipeCandidateType type)
 {
