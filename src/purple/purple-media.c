@@ -268,11 +268,19 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 	PurpleMediaManager *manager = purple_media_manager_get();
 	GstElement *pipeline;
 
-	media->m = purple_media_manager_create_media(manager,
-						     purple_private->account,
-						     "fsrtpconference",
-						     participant,
-						     flags & SIPE_MEDIA_CALL_INITIATOR);
+	if (flags & SIPE_MEDIA_CALL_NO_UI) {
+#ifdef HAVE_XDATA
+		media->m = purple_media_manager_create_private_media(manager,
+				purple_private->account, "fsrtpconference",
+				participant, flags & SIPE_MEDIA_CALL_INITIATOR);
+#else
+		SIPE_DEBUG_ERROR_NOFORMAT("Purple doesn't support private media");
+#endif
+	} else {
+		media->m = purple_media_manager_create_media(manager,
+				purple_private->account, "fsrtpconference",
+				participant, flags & SIPE_MEDIA_CALL_INITIATOR);
+	}
 
 	g_signal_connect(G_OBJECT(media->m), "candidates-prepared",
 			 G_CALLBACK(on_candidates_prepared_cb), call);

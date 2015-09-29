@@ -309,7 +309,9 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 
 typedef enum {
 	/* This client is the one who invites other participant to the call. */
-	SIPE_MEDIA_CALL_INITIATOR = 1
+	SIPE_MEDIA_CALL_INITIATOR = 1,
+	/* Don't show any user interface elements for the call. */
+	SIPE_MEDIA_CALL_NO_UI = 2
 } SipeMediaCallFlags;
 
 typedef enum {
