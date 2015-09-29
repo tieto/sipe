@@ -500,7 +500,8 @@ sipe_backend_media_add_remote_candidates(struct sipe_media_call *media,
 {
 	GList *udp_candidates = NULL;
 
-#ifdef HAVE_PURPLE_NEW_TCP_ENUMS
+#ifndef HAVE_PURPLE_NEW_TCP_ENUMS
+	/* Keep only UDP candidates in the list to set. */
 	while (candidates) {
 		PurpleMediaCandidate *candidate = candidates->data;
 		PurpleMediaNetworkProtocol proto;
