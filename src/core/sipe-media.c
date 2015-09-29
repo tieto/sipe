@@ -963,10 +963,8 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 
 	dialog = sipe_dialog_add(session);
 	dialog->with = g_strdup(with);
-	if (flags & SIPE_MEDIA_CALL_INITIATOR) {
-		dialog->callid = gencallid();
-		dialog->ourtag = gentag();
-	} else {
+
+	if (msg) {
 		gchar *newTag = gentag();
 		const gchar *oldHeader;
 		gchar *newHeader;
@@ -980,6 +978,10 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 
 		dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
 		sipe_dialog_parse(dialog, msg, FALSE);
+	} else {
+		dialog->callid = gencallid();
+		dialog->ourtag = gentag();
+		flags |= SIPE_MEDIA_CALL_INITIATOR;
 	}
 
 	call_private = g_new0(struct sipe_media_call_private, 1);
@@ -1077,8 +1079,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 	if (sipe_private->media_call)
 		return;
 
-	sipe_media_call_new(sipe_private, with, NULL, ice_version,
-			    SIPE_MEDIA_CALL_INITIATOR);
+	sipe_media_call_new(sipe_private, with, NULL, ice_version, 0);
 
 	if (!sipe_media_stream_add(sipe_private, "audio", with, SIPE_MEDIA_AUDIO,
 				   sipe_private->media_call->ice_version,
@@ -1142,8 +1143,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	ice_version = SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) ? SIPE_ICE_RFC_5245 :
 							    SIPE_ICE_DRAFT_6;
 
-	sipe_media_call_new(sipe_private, av_uri, NULL, ice_version,
-			    SIPE_MEDIA_CALL_INITIATOR);
+	sipe_media_call_new(sipe_private, av_uri, NULL, ice_version, 0);
 
 	if (!sipe_media_stream_add(sipe_private, "audio", av_uri,
 				   SIPE_MEDIA_AUDIO,
