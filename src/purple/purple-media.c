@@ -261,7 +261,7 @@ struct sipe_backend_media *
 sipe_backend_media_new(struct sipe_core_public *sipe_public,
 		       struct sipe_media_call *call,
 		       const gchar *participant,
-		       gboolean initiator)
+		       SipeMediaCallFlags flags)
 {
 	struct sipe_backend_media *media = g_new0(struct sipe_backend_media, 1);
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
@@ -271,7 +271,8 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 	media->m = purple_media_manager_create_media(manager,
 						     purple_private->account,
 						     "fsrtpconference",
-						     participant, initiator);
+						     participant,
+						     flags & SIPE_MEDIA_CALL_INITIATOR);
 
 	g_signal_connect(G_OBJECT(media->m), "candidates-prepared",
 			 G_CALLBACK(on_candidates_prepared_cb), call);

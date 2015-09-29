@@ -176,7 +176,7 @@ gchar *sipe_backend_markup_strip_html(SIPE_UNUSED_PARAMETER SIPE_UNUSED_PARAMETE
 struct sipe_backend_media *sipe_backend_media_new(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 						  SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
 						  SIPE_UNUSED_PARAMETER const gchar *participant,
-						  SIPE_UNUSED_PARAMETER gboolean initiator) { return(NULL); }
+						  SIPE_UNUSED_PARAMETER SipeMediaCallFlags flags) { return(NULL); }
 void sipe_backend_media_free(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) {}
 void sipe_backend_media_set_cname(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
 				  SIPE_UNUSED_PARAMETER gchar *cname) {}

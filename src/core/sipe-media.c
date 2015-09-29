@@ -949,8 +949,8 @@ error_cb(struct sipe_media_call *call, gchar *message)
 }
 
 static struct sipe_media_call_private *
-sipe_media_call_new(struct sipe_core_private *sipe_private,
-		    const gchar* with, gboolean initiator, SipeIceVersion ice_version)
+sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
+		    SipeIceVersion ice_version, SipeMediaCallFlags flags)
 {
 	struct sipe_media_call_private *call_private = g_new0(struct sipe_media_call_private, 1);
 	gchar *cname;
@@ -963,7 +963,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private,
 	call_private->public.backend_private = sipe_backend_media_new(SIPE_CORE_PUBLIC,
 								      SIPE_MEDIA_CALL,
 								      with,
-								      initiator);
+								      flags);
 	sipe_backend_media_set_cname(call_private->public.backend_private, cname);
 
 	call_private->ice_version = ice_version;
@@ -1049,8 +1049,9 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 	if (sipe_private->media_call)
 		return;
 
-	sipe_private->media_call = sipe_media_call_new(sipe_private, with, TRUE,
-						       ice_version);
+	sipe_private->media_call = sipe_media_call_new(sipe_private, with,
+						       ice_version,
+						       SIPE_MEDIA_CALL_INITIATOR);
 
 	session = sipe_session_add_call(sipe_private, with);
 	dialog = sipe_dialog_add(session);
@@ -1124,7 +1125,8 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 							    SIPE_ICE_DRAFT_6;
 
 	sipe_private->media_call = sipe_media_call_new(sipe_private, av_uri,
-						       TRUE, ice_version);
+						       ice_version,
+						       SIPE_MEDIA_CALL_INITIATOR);
 
 	session = sipe_session_add_call(sipe_private, av_uri);
 	dialog = sipe_dialog_add(session);
@@ -1249,7 +1251,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 		struct sip_session *session;
 
-		call_private = sipe_media_call_new(sipe_private, with, FALSE, smsg->ice_version);
+		call_private = sipe_media_call_new(sipe_private, with, smsg->ice_version, 0);
 		session = sipe_session_add_call(sipe_private, with);
 		sipe_media_dialog_init(session, msg);
 

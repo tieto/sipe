@@ -308,6 +308,11 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 /** MEDIA ********************************************************************/
 
 typedef enum {
+	/* This client is the one who invites other participant to the call. */
+	SIPE_MEDIA_CALL_INITIATOR = 1
+} SipeMediaCallFlags;
+
+typedef enum {
 	SIPE_ICE_NO_ICE,
 	SIPE_ICE_DRAFT_6,
 	SIPE_ICE_RFC_5245
@@ -391,7 +396,7 @@ struct sipe_media_relay {
 struct sipe_backend_media *sipe_backend_media_new(struct sipe_core_public *sipe_public,
 						  struct sipe_media_call *call,
 						  const gchar *participant,
-						  gboolean initiator);
+						  SipeMediaCallFlags flags);
 void sipe_backend_media_free(struct sipe_backend_media *media);
 
 void sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname);

@@ -42,7 +42,7 @@ struct sipe_backend_media *
 sipe_backend_media_new(struct sipe_core_public *sipe_public,
 		       struct sipe_media_call *call,
 		       const gchar *participant,
-		       gboolean initiator)
+		       SipeMediaCallFlags flags)
 {
 	struct sipe_backend_media *m = g_new0(struct sipe_backend_media,1);
 
