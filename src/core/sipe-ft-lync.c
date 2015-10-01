@@ -58,6 +58,35 @@ sipe_file_transfer_lync_free(struct sipe_file_transfer_lync *ft_private)
 }
 
 static void
+send_ms_filetransfer_msg(char *body, struct sipe_file_transfer_lync *ft_private,
+			 TransCallback callback)
+{
+	sip_transport_info(sipe_media_get_sipe_core_private(ft_private->call),
+			   "Content-Type: application/ms-filetransfer+xml\r\n",
+			   body,
+			   sipe_media_get_sip_dialog(ft_private->call),
+			   callback);
+
+	g_free(body);
+}
+
+static void
+send_ms_filetransfer_response(struct sipe_file_transfer_lync *ft_private,
+			      const gchar *code, const gchar *reason,
+			      TransCallback callback)
+{
+	static const gchar *RESPONSE_STR =
+			"<response xmlns=\"http://schemas.microsoft.com/rtc/2009/05/filetransfer\" requestId=\"%d\" code=\"%s\" %s%s%s/>";
+
+	send_ms_filetransfer_msg(g_strdup_printf(RESPONSE_STR,
+						 ft_private->request_id, code,
+						 reason ? "reason=\"" : "",
+						 reason ? reason : "",
+						 reason ? "\"" : ""),
+				 ft_private, callback);
+}
+
+static void
 mime_mixed_cb(gpointer user_data, const GSList *fields, const gchar *body,
 	      gsize length)
 {
@@ -101,11 +130,28 @@ static void
 candidate_pair_established_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
 			      struct sipe_media_stream *stream)
 {
+	struct sipe_file_transfer_lync *ft_private;
+	static const gchar *DOWNLOAD_FILE_REQUEST =
+		"<request xmlns=\"http://schemas.microsoft.com/rtc/2009/05/filetransfer\" requestId=\"%d\">"
+			"<downloadFile>"
+				"<fileInfo>"
+					"<id>%s</id>"
+					"<name>%s</name>"
+				"</fileInfo>"
+			"</downloadFile>"
+		"</request>";
+
 	g_return_if_fail(sipe_strequal(stream->id, "data"));
 
-	/* TODO: So far reject the file transfer. */
-	sipe_file_transfer_lync_free(sipe_media_stream_get_data(stream));
-	sipe_backend_media_hangup(call->backend_private, TRUE);
+	ft_private = sipe_media_stream_get_data(stream);
+
+	send_ms_filetransfer_response(ft_private, "success", NULL, NULL);
+
+	send_ms_filetransfer_msg(g_strdup_printf(DOWNLOAD_FILE_REQUEST,
+						 ++ft_private->request_id,
+						 ft_private->id,
+						 ft_private->file_name),
+				 ft_private, NULL);
 }
 
 void
