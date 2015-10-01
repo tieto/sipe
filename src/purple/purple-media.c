@@ -464,6 +464,16 @@ stream_readable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
 	}
 }
 
+gssize
+sipe_backend_media_stream_read(struct sipe_media_stream *stream,
+			       guint8 *buffer, gsize len)
+{
+	return purple_media_manager_receive_application_data(
+			purple_media_manager_get(),
+			stream->call->backend_private->m,
+			stream->id, stream->call->with, buffer, len, FALSE);
+}
+
 static void
 stream_writable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
 		 SIPE_UNUSED_PARAMETER PurpleMedia *media,

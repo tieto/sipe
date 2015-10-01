@@ -444,6 +444,10 @@ void sipe_backend_stream_unhold(struct sipe_media_call *media,
 				struct sipe_media_stream *stream,
 				gboolean local);
 gboolean sipe_backend_stream_is_held(struct sipe_media_stream *stream);
+
+gssize sipe_backend_media_stream_read(struct sipe_media_stream *stream,
+				     guint8 *buffer, gsize len);
+
 void sipe_backend_media_stream_end(struct sipe_media_call *media,
 				   struct sipe_media_stream *stream);
 void sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream);

@@ -266,6 +266,9 @@ void sipe_backend_media_hangup(SIPE_UNUSED_PARAMETER struct sipe_backend_media *
 void sipe_backend_media_reject(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
 			       SIPE_UNUSED_PARAMETER gboolean local) {}
 SipeEncryptionPolicy sipe_backend_media_get_encryption_policy(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(SIPE_ENCRYPTION_POLICY_REJECTED); }
+gssize sipe_backend_media_stream_read(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
+				      SIPE_UNUSED_PARAMETER guint8 *buffer,
+				      SIPE_UNUSED_PARAMETER gsize len) {}
 #endif
 
 /** NETWORK ******************************************************************/
