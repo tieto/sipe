@@ -20,9 +20,19 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
+
+#include <errno.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
 
 #include "sip-transport.h"
 #include "sipe-backend.h"
@@ -45,14 +55,33 @@ struct sipe_file_transfer_lync {
 	gsize file_size;
 	guint request_id;
 
+	guint bytes_left_in_chunk;
+
+	guint8 buffer[2048];
+	guint buffer_len;
+	guint buffer_read_pos;
+
+	int backend_pipe[2];
+
 	struct sipe_media_call *call;
 };
 #define SIPE_FILE_TRANSFER         ((struct sipe_file_transfer *) ft_private)
 #define SIPE_FILE_TRANSFER_PRIVATE ((struct sipe_file_transfer_lync *) ft)
 
+typedef enum {
+	SIPE_XDATA_DATA_CHUNK = 0x00,
+	SIPE_XDATA_START_OF_STREAM = 0x01,
+	SIPE_XDATA_END_OF_STREAM = 0x02
+} SipeXDataMessages;
+
 static void
 sipe_file_transfer_lync_free(struct sipe_file_transfer_lync *ft_private)
 {
+	if (ft_private->backend_pipe[1] != 0) {
+		// Backend is responsible for closing the pipe's read end.
+		close(ft_private->backend_pipe[1]);
+	}
+
 	g_free(ft_private->file_name);
 	g_free(ft_private->sdp);
 	g_free(ft_private->id);
@@ -156,6 +185,114 @@ candidate_pair_established_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call
 				 ft_private, NULL);
 }
 
+static gboolean
+create_pipe(int pipefd[2])
+{
+#ifdef _WIN32
+#error "Pipes not implemented for Windows"
+/* Those interested in porting the code may use Pidgin's wpurple_input_pipe() in
+ * win32dep.c as an inspiration. */
+#else
+	if (pipe(pipefd) != 0) {
+		return FALSE;
+	}
+
+	fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL) | O_NONBLOCK);
+	fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL) | O_NONBLOCK);
+
+	return TRUE;
+#endif
+}
+
+static void
+read_cb(struct sipe_media_stream *stream)
+{
+	struct sipe_file_transfer_lync *ft_private =
+			sipe_media_stream_get_data(stream);
+
+	if (ft_private->buffer_read_pos < ft_private->buffer_len) {
+		/* Have data in buffer, write them to the backend. */
+
+		gpointer buffer;
+		size_t len;
+		ssize_t written;
+
+		buffer = ft_private->buffer + ft_private->buffer_read_pos;
+		len = ft_private->buffer_len - ft_private->buffer_read_pos;
+		written = write(ft_private->backend_pipe[1], buffer, len);
+
+		if (written > 0) {
+			ft_private->buffer_read_pos += written;
+		} else if (written < 0 && errno != EAGAIN) {
+			SIPE_DEBUG_ERROR_NOFORMAT("Error while writing into "
+						  "backend pipe");
+			sipe_backend_ft_cancel_local(SIPE_FILE_TRANSFER);
+			return;
+		}
+	} else if (ft_private->bytes_left_in_chunk != 0) {
+		/* Have data from the sender, replenish our buffer with it. */
+
+		ft_private->buffer_len = MIN(ft_private->bytes_left_in_chunk,
+					     sizeof (ft_private->buffer));
+
+		ft_private->buffer_len =
+				sipe_backend_media_stream_read(stream,
+							       ft_private->buffer,
+							       ft_private->buffer_len);
+
+		ft_private->bytes_left_in_chunk -= ft_private->buffer_len;
+		ft_private->buffer_read_pos = 0;
+
+		SIPE_DEBUG_INFO("Read %d bytes. %d left in this chunk.",
+				ft_private->buffer_len, ft_private->bytes_left_in_chunk);
+	} else {
+		/* No data available. This is either stream start, beginning of
+		 * chunk, or stream end. */
+
+		guint8 type;
+		guint16 size;
+
+		sipe_backend_media_stream_read(stream, &type, sizeof (guint8));
+		sipe_backend_media_stream_read(stream, (guint8 *)&size, sizeof (guint16));
+		size = GUINT16_FROM_BE(size);
+
+		switch (type) {
+			case SIPE_XDATA_START_OF_STREAM: {
+				struct sipe_backend_fd *fd;
+
+				sipe_backend_media_stream_read(stream,
+							       ft_private->buffer,
+							       size);
+				ft_private->buffer[size] = 0;
+				SIPE_DEBUG_INFO("Received new stream for requestId : %s",
+						ft_private->buffer);
+				if (!create_pipe(ft_private->backend_pipe)) {
+					SIPE_DEBUG_ERROR_NOFORMAT("Couldn't create backend pipe");
+					sipe_backend_ft_cancel_local(SIPE_FILE_TRANSFER);
+					return;
+				}
+
+				fd = sipe_backend_fd_from_int(ft_private->backend_pipe[0]);
+				sipe_backend_ft_start(SIPE_FILE_TRANSFER, fd, NULL, 0);
+				sipe_backend_fd_free(fd);
+				break;
+			}
+			case SIPE_XDATA_DATA_CHUNK:
+				SIPE_DEBUG_INFO("Received new data chunk of size %d", size);
+				ft_private->bytes_left_in_chunk = size;
+				break;
+				/* We'll read the data when read_cb is called again. */
+			case SIPE_XDATA_END_OF_STREAM:
+				sipe_backend_media_stream_read(stream, ft_private->buffer, size);
+				ft_private->buffer[size] = 0;
+
+				SIPE_DEBUG_INFO("Received end of stream for requestId : %s",
+						ft_private->buffer);
+				break;
+		}
+	}
+}
+
 static void
 ft_lync_incoming_init(struct sipe_file_transfer *ft,
 		      SIPE_UNUSED_PARAMETER const gchar *filename,
@@ -219,6 +356,7 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	ft_private->public.ft_deallocate = ft_lync_deallocate;
 
 	stream = sipe_core_media_get_stream_by_id(call, "data");
+	stream->read_cb = read_cb;
 	sipe_media_stream_add_extra_attribute(stream, "recvonly", NULL);
 	sipe_media_stream_set_data(stream, ft_private, NULL);
 
