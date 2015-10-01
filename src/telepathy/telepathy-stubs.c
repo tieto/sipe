@@ -133,6 +133,9 @@ gssize sipe_backend_ft_read(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
 gssize sipe_backend_ft_write(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
 			     SIPE_UNUSED_PARAMETER const guchar *data,
 			     SIPE_UNUSED_PARAMETER gsize size) { return(-1); }
+gssize sipe_backend_ft_write_file(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
+				  SIPE_UNUSED_PARAMETER const guchar *data,
+				  SIPE_UNUSED_PARAMETER gsize size) {}
 void sipe_backend_ft_set_completed(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft) {}
 void sipe_backend_ft_cancel_local(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft) {}
 void sipe_backend_ft_cancel_remote(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft) {}

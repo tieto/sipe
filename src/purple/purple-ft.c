@@ -134,6 +134,19 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 	return bytes_written;
 }
 
+#ifdef HAVE_XDATA
+gssize sipe_backend_ft_write_file(struct sipe_file_transfer *ft,
+				  const guchar *data, gsize size)
+{
+	if (purple_xfer_write_file(FT_TO_PURPLE_XFER, data, size)) {
+		purple_xfer_update_progress(FT_TO_PURPLE_XFER);
+		return size;
+	}
+
+	return -1;
+}
+#endif
+
 static gboolean
 end_transfer_cb(gpointer data)
 {
