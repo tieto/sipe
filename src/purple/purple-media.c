@@ -227,6 +227,12 @@ on_stream_info_cb(PurpleMedia *media,
 			struct sipe_media_stream *stream;
 			stream = sipe_core_media_get_stream_by_id(call, sessionid);
 
+#ifdef HAVE_XDATA
+			purple_media_manager_set_application_data_callbacks(
+					purple_media_manager_get(), media,
+					sessionid, participant, NULL, NULL, NULL);
+#endif
+
 			if (stream) {
 				if (local && --call->backend_private->unconfirmed_streams == 0 &&
 				    call->call_reject_cb)
@@ -438,6 +444,30 @@ sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
 #endif
 }
 
+#ifdef HAVE_XDATA
+static void
+stream_readable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
+		 SIPE_UNUSED_PARAMETER PurpleMedia *media,
+		 const gchar *session_id,
+		 SIPE_UNUSED_PARAMETER const gchar *participant,
+		 SIPE_UNUSED_PARAMETER gpointer user_data)
+{
+	SIPE_DEBUG_INFO("stream_readable_cb: %s is readable", session_id);
+}
+
+static void
+stream_writable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
+		 SIPE_UNUSED_PARAMETER PurpleMedia *media,
+		 const gchar *session_id,
+		 SIPE_UNUSED_PARAMETER const gchar *participant,
+		 SIPE_UNUSED_PARAMETER gboolean writable,
+		 SIPE_UNUSED_PARAMETER gpointer user_data)
+{
+	SIPE_DEBUG_INFO("stream_writable_cb: %s has become %swritable",
+			session_id, writable ? "" : "not ");
+}
+#endif
+
 struct sipe_backend_media_stream *
 sipe_backend_media_add_stream(struct sipe_media_call *call,
 			      const gchar *id,
@@ -455,6 +485,11 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 	guint params_cnt = 0;
 	gchar *transmitter;
 	GValue *relay_info = NULL;
+#ifdef HAVE_XDATA
+	PurpleMediaAppDataCallbacks callbacks = {
+			stream_readable_cb, stream_writable_cb
+	};
+#endif
 
 	if (ice_version != SIPE_ICE_NO_ICE) {
 		transmitter = "nice";
@@ -493,6 +528,15 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 	}
 
 	ensure_codecs_conf();
+
+#ifdef HAVE_XDATA
+	if (type == SIPE_MEDIA_APPLICATION) {
+		purple_media_manager_set_application_data_callbacks(
+				purple_media_manager_get(),
+				media->m, id, participant, &callbacks,
+				call, NULL);
+	}
+#endif
 
 	if (purple_media_add_stream(media->m, id, participant, prpl_type,
 				    initiator, transmitter, params_cnt,
