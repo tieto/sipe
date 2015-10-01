@@ -429,13 +429,17 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					struct sipe_chat_session *chat_session);
 
 /**
- * Checks whether there is a media call in progress
+ * Retrieves the media call in progress
+ *
+ * The function checks only for voice and video calls, ignoring other types of
+ * data transfers.
  *
  * @param sipe_public (in) SIPE core data.
  *
- * @return @c TRUE if media call is in progress
+ * @return @c sipe_media_call structure or @c NULL if call is not in progress.
  */
-gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public);
+struct sipe_media_call *
+sipe_core_media_get_call(struct sipe_core_public *sipe_public);
 
 /**
  * Initiates a call with given phone number

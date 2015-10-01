@@ -309,7 +309,7 @@ sipe_purple_chat_menu(PurpleChat *chat)
 		if (act)
 			menu = g_list_prepend(menu, act);
 #ifdef HAVE_VV
-		if (!sipe_core_media_in_call(PURPLE_CONV_TO_SIPE_CORE_PUBLIC)) {
+		if (!sipe_core_media_get_call(PURPLE_CONV_TO_SIPE_CORE_PUBLIC)) {
 			act = NULL;
 			act = purple_menu_action_new(_("Join conference call"),
 						     PURPLE_CALLBACK(sipe_purple_chat_menu_join_call_cb),

@@ -123,7 +123,7 @@ struct sipe_core_private {
 	GHashTable *subscriptions;
 
 	/* Voice call */
-	struct sipe_media_call_private *media_call;
+	GHashTable *media_calls;
 	gchar *test_call_bot_uri;
 	gchar *uc_line_uri;
 	/**

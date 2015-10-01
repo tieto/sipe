@@ -306,6 +306,8 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sipe_ews_autodiscover_init(sipe_private);
 	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_UNSET);
 
+	sipe_private->media_calls = g_hash_table_new_full(g_str_hash, g_str_equal,
+							  g_free, NULL);
 	sipe_private->access_numbers = g_hash_table_new_full(g_str_hash, g_str_equal,
 							     g_free, g_free);
 
@@ -364,9 +366,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 
 #ifdef HAVE_VV
-	if (sipe_private->media_call) {
-		sipe_media_handle_going_offline(sipe_private->media_call);
-	}
+	sipe_media_handle_going_offline(sipe_private);
 #endif
 
 	/* leave all conversations */
@@ -413,6 +413,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_buddy_free(sipe_private);
 	g_hash_table_destroy(sipe_private->our_publications);
 	g_hash_table_destroy(sipe_private->user_state_publications);
+	g_hash_table_destroy(sipe_private->media_calls);
 	sipe_subscriptions_destroy(sipe_private);
 	sipe_group_free(sipe_private);
 

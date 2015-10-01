@@ -1826,16 +1826,21 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 	g_free(key_3);
 
 #ifdef HAVE_VV
-	if (sipe_private->media_call) {
-		guint availability;
-		const gchar *token;
-		if (sipe_media_is_conference_call(sipe_private->media_call)) {
-			availability = 7000;
-			token = sipe_status_activity_to_token(SIPE_ACTIVITY_IN_CONF);
-		} else {
-			availability = 6500;
-			token = sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE);
+	if (g_hash_table_size(sipe_private->media_calls)) {
+		guint availability = 6500;
+		const gchar *token = sipe_status_activity_to_token(SIPE_ACTIVITY_ON_PHONE);
+		GList *calls = g_hash_table_get_values(sipe_private->media_calls);
+		GList *i;
+
+		for (i = calls; i; i = i->next) {
+			if (sipe_media_is_conference_call(i->data)) {
+				availability = 7000;
+				token = sipe_status_activity_to_token(SIPE_ACTIVITY_IN_CONF);
+				break;
+			}
 		}
+
+		g_list_free(calls);
 
 		publications = g_strdup_printf(SIPE_PUB_XML_STATE_PHONE,
 				instance, publication_2 ? publication_2->version : 0,
