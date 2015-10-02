@@ -529,6 +529,25 @@ process_response_incoming(struct sipe_file_transfer_lync *ft_private,
 }
 
 static void
+process_response_outgoing(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
+{
+	guint request_id = sipe_xml_int_attribute(xml, "requestId", 0);
+	const gchar *code;
+
+	if (request_id != ft_private->request_id) {
+		return;
+	}
+
+	code = sipe_xml_attribute(xml, "code");
+	if (sipe_strequal(code, "failure")) {
+		const gchar *reason = sipe_xml_attribute(xml, "reason");
+		if (sipe_strequal(reason, "requestDeclined")) {
+			sipe_backend_ft_cancel_remote(SIPE_FILE_TRANSFER);
+		}
+	}
+}
+
+static void
 write_chunk(struct sipe_media_stream *stream,
 	    guint8 type, guint16 len, const gchar *buffer)
 {
@@ -691,6 +710,8 @@ process_incoming_info_ft_lync(struct sipe_core_private *sipe_private,
 	} else {
 		if (sipe_strequal(sipe_xml_name(xml), "request")) {
 			process_request(ft_private, xml);
+		} else if (sipe_strequal(sipe_xml_name(xml), "response")) {
+			process_response_outgoing(ft_private, xml);
 		} else if (sipe_strequal(sipe_xml_name(xml), "notify")) {
 			process_notify(ft_private, xml);
 		}
