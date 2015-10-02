@@ -642,6 +642,8 @@ process_request(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
 	static const gchar *DOWNLOAD_PENDING_RESPONSE =
 			"<response xmlns=\"http://schemas.microsoft.com/rtc/2009/05/filetransfer\" "
 			  "requestId=\"%u\" code=\"pending\"/>";
+	static const gchar *CANCEL_TRANSFER_RESPONSE =
+			"<response xmlns=\"http://schemas.microsoft.com/rtc/2009/05/filetransfer\" requestId=\"%u\" code=\"success\"/>";
 
 	if (sipe_xml_child(xml, "downloadFile")) {
 		ft_private->request_id =
@@ -652,6 +654,15 @@ process_request(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
 					 ft_private, NULL);
 
 		start_writing(ft_private);
+	} else if (sipe_xml_child(xml, "cancelTransfer")) {
+		sipe_backend_ft_cancel_remote(SIPE_FILE_TRANSFER);
+
+		ft_private->request_id =
+				atoi(sipe_xml_attribute(xml, "requestId"));
+
+		send_ms_filetransfer_msg(g_strdup_printf(CANCEL_TRANSFER_RESPONSE,
+							 ft_private->request_id),
+					 ft_private, NULL);
 	}
 }
 
