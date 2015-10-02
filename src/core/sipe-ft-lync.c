@@ -539,7 +539,7 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 }
 
 static void
-process_response(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
+process_response_incoming(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
 {
 	guint request_id = atoi(sipe_xml_attribute(xml, "requestId"));
 	const gchar *code;
@@ -559,6 +559,25 @@ process_response(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
 	} else if (sipe_strequal(code, "failure")) {
 		const gchar *reason = sipe_xml_attribute(xml, "reason");
 		if (sipe_strequal(reason, "requestCancelled")) {
+			sipe_backend_ft_cancel_remote(SIPE_FILE_TRANSFER);
+		}
+	}
+}
+
+static void
+process_response_outgoing(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
+{
+	guint request_id = atoi(sipe_xml_attribute(xml, "requestId"));
+	const gchar *code;
+
+	if (request_id != ft_private->request_id) {
+		return;
+	}
+
+	code = sipe_xml_attribute(xml, "code");
+	if (sipe_strequal(code, "failure")) {
+		const gchar *reason = sipe_xml_attribute(xml, "reason");
+		if (sipe_strequal(reason, "requestDeclined")) {
 			sipe_backend_ft_cancel_remote(SIPE_FILE_TRANSFER);
 		}
 	}
@@ -695,11 +714,13 @@ process_incoming_info_ft_lync(struct sipe_core_private *sipe_private,
 
 	if (sipe_backend_ft_is_incoming(SIPE_FILE_TRANSFER)) {
 		if (sipe_strequal(sipe_xml_name(xml), "response")) {
-			process_response(ft_private, xml);
+			process_response_incoming(ft_private, xml);
 		}
 	} else {
 		if (sipe_strequal(sipe_xml_name(xml), "request")) {
 			process_request(ft_private, xml);
+		} else if (sipe_strequal(sipe_xml_name(xml), "response")) {
+			process_response_outgoing(ft_private, xml);
 		} else if (sipe_strequal(sipe_xml_name(xml), "notify")) {
 			process_notify(ft_private, xml);
 		}
