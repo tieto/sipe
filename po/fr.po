@@ -15,8 +15,8 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2015-08-26 16:20+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2015-08-31 13:25+0000\n"
+"Last-Translator: Kevin C <kdc_net@laposte.net>\n"
 "Language-Team: French (http://www.transifex.com/stefanb/pidgin-sipe/language/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -529,7 +529,7 @@ msgstr "Les audio-conférences ne sont pas supportées sur ce serveur."
 
 #: ../src/core/sipe-media.c:1136
 msgid "Error occurred"
-msgstr ""
+msgstr "Une erreur est survenue"
 
 #: ../src/core/sipe-media.c:1188
 msgid "Invalid phone number"
@@ -699,21 +699,21 @@ msgstr "Urgences uniquement"
 
 #: ../src/core/sipe-ucs.c:733
 msgid "UCS initialization failed!"
-msgstr ""
+msgstr "L'initialisation UCS a échoué !"
 
 #: ../src/core/sipe-ucs.c:735
 msgid ""
 "Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n"
 "\n"
 "You'll need to provide Email settings in the account setup."
-msgstr ""
+msgstr "Ne parvient pas à se connecter à un serveur Exchange avec les paramètres mail par défaut. La liste de contacts ne sera pas disponible.\n\nVous devez saisir des paramètres de mail dans la configuration du compte."
 
 #: ../src/core/sipe-ucs.c:736
 msgid ""
 "Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n"
 "\n"
 "Please correct your Email settings."
-msgstr ""
+msgstr "Ne parvient pas à se connecter à un serveur Exchange avec les paramètres mail saisis dans la configuration du compte. La liste de contacts ne sera pas disponible.\n\nMerci de corriger ces paramètres."
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -1098,23 +1098,23 @@ msgstr "Proxy pour le chat en groupe\n   entreprise.com  or  utilisateur@entrepr
 
 #: ../src/purple/purple-plugin.c:1166
 msgid "Media encryption"
-msgstr ""
+msgstr "Chiffrement du média"
 
 #: ../src/purple/purple-plugin.c:1167
 msgid "Obey server policy"
-msgstr ""
+msgstr "Respecte la politique du serveur"
 
 #: ../src/purple/purple-plugin.c:1168
 msgid "Always"
-msgstr ""
+msgstr "Toujours"
 
 #: ../src/purple/purple-plugin.c:1169
 msgid "Optional"
-msgstr ""
+msgstr "Optionnel"
 
 #: ../src/purple/purple-plugin.c:1170
 msgid "Disabled"
-msgstr ""
+msgstr "Désactivé"
 
 #: ../src/purple/purple-search.c:60
 msgid "User name"
