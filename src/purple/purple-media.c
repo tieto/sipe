@@ -515,8 +515,8 @@ stream_writable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
 
 	stream = sipe_core_media_get_stream_by_id(call, session_id);
 
-	if (stream && call->writable_cb) {
-		call->writable_cb(call, stream, writable);
+	if (stream) {
+		sipe_core_media_stream_writable(stream, writable);
 	}
 }
 #endif

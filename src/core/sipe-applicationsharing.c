@@ -230,11 +230,10 @@ build_socket_path(struct sipe_media_call *call)
 }
 
 static void
-writable_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
-	    struct sipe_media_stream *stream, gboolean writable)
+writable_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
-	appshare->writable = writable;
+	appshare->writable = TRUE;
 
 	if (appshare->writable && appshare->confirmed && !appshare->socket) {
 		launch_rdp_client(appshare);
