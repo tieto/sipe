@@ -70,6 +70,7 @@ struct sipe_file_transfer_lync {
 	gboolean was_cancelled;
 
 	int write_source_id;
+	gsize bytes_written;
 
 	void (*call_reject_parent_cb)(struct sipe_media_call *call,
 				      gboolean local);
@@ -581,6 +582,14 @@ process_response_outgoing(struct sipe_file_transfer_lync *ft_private, sipe_xml *
 			sipe_backend_ft_cancel_remote(SIPE_FILE_TRANSFER);
 		}
 	}
+	/* TODO: finish the transfer
+	 *
+	 * 	if (purple_xfer_get_bytes_remaining(xfer) == 0 &&
+	    !purple_xfer_is_completed(xfer)) {
+		purple_xfer_set_completed(xfer, TRUE);
+		g_timeout_add_seconds(0, end_transfer_cb, (gpointer)xfer);
+	}
+	 * */
 }
 
 static void
@@ -589,9 +598,9 @@ write_chunk(struct sipe_media_stream *stream, guint8 type,
 {
 	guint16 len_be = GUINT16_TO_BE(len);
 
-	sipe_backend_media_stream_write(stream, &type, sizeof (guint8));
-	sipe_backend_media_stream_write(stream, (guint8 *)&len_be, sizeof (guint16));
-	sipe_backend_media_stream_write(stream, (guint8 *)buffer, len);
+	sipe_media_stream_write(stream, &type, sizeof (guint8));
+	sipe_media_stream_write(stream, (guint8 *)&len_be, sizeof (guint16));
+	sipe_media_stream_write(stream, (guint8 *)buffer, len);
 }
 
 static gboolean
@@ -604,18 +613,24 @@ send_file_chunk(struct sipe_file_transfer_lync *ft_private)
 	gchar buffer[1024];
 	gssize bytes_read;
 
+	if (!sipe_media_stream_is_writable(stream)) {
+		return G_SOURCE_CONTINUE;
+	}
+
 	bytes_read = sipe_backend_ft_read_file(SIPE_FILE_TRANSFER,
 					       (guchar *)&buffer,
 					       sizeof (buffer));
 	if (bytes_read != 0) {
 		write_chunk(stream, 0x00, bytes_read, buffer);
+		ft_private->bytes_written += bytes_read;
 	}
 
-	if (sipe_backend_ft_is_completed(SIPE_FILE_TRANSFER)) {
+	if (ft_private->bytes_written == ft_private->file_size) {
 		/* End of transfer. */
 		gchar *request_id_str =
 				g_strdup_printf("%u", ft_private->request_id);
-		write_chunk(stream, 0x02, strlen(request_id_str), request_id_str);
+		write_chunk(stream, 0x02, strlen(request_id_str),
+			    request_id_str);
 		g_free(request_id_str);
 		ft_private->write_source_id = 0;
 		return G_SOURCE_REMOVE;
@@ -635,7 +650,8 @@ start_writing(struct sipe_file_transfer_lync *ft_private)
 		gchar *request_id_str =
 				g_strdup_printf("%u", ft_private->request_id);
 
-		write_chunk(stream, 0x01, strlen(request_id_str), request_id_str);
+		write_chunk(stream, 0x01, strlen(request_id_str),
+			    request_id_str);
 
 		g_free(request_id_str);
 
@@ -690,9 +706,7 @@ process_notify(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
 			send_ms_filetransfer_msg(g_strdup_printf(DOWNLOAD_SUCCESS_RESPONSE,
 								 ft_private->request_id),
 						 ft_private, NULL);
-			/* This also hangs up the call and sends BYE to the
-			 * other party. */
-			ft_lync_deallocate(SIPE_FILE_TRANSFER);
+			sipe_backend_ft_set_completed(SIPE_FILE_TRANSFER);
 		}
 		g_free(to_str);
 	}
@@ -803,15 +817,15 @@ ft_lync_outgoing_init(struct sipe_file_transfer *ft, const gchar *filename,
 	append_publish_file_invite(call, ft_private);
 }
 
-static gboolean
-ft_lync_outgoing_end(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft)
-{
-	/* We still need our filetransfer structure so don't let backend
-	 * deallocate it. We'll free it in process_notify(). */
-	ft->ft_deallocate = NULL;
-
-	return TRUE;
-}
+//static gboolean
+//ft_lync_outgoing_end(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft)
+//{
+///	/* We still need our filetransfer structure so don't let backend
+//	 * deallocate it. We'll free it in process_notify(). */
+//	//ft->ft_deallocate = NULL;
+//
+//	return TRUE;
+//}
 
 struct sipe_file_transfer *
 sipe_core_ft_lync_create_outgoing(struct sipe_core_public *sipe_public)
@@ -821,7 +835,7 @@ sipe_core_ft_lync_create_outgoing(struct sipe_core_public *sipe_public)
 
 	ft_private->sipe_private = SIPE_CORE_PRIVATE;
 	ft_private->public.ft_init = ft_lync_outgoing_init;
-	ft_private->public.ft_end = ft_lync_outgoing_end;
+//	ft_private->public.ft_end = ft_lync_outgoing_end;
 	ft_private->public.ft_deallocate = ft_lync_deallocate;
 
 	return (struct sipe_file_transfer *)ft_private;
