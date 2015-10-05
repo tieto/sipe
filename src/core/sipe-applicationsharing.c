@@ -161,7 +161,7 @@ data_in_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 		return FALSE;
 	}
 
-	while (1) {
+	while (sipe_media_stream_is_writable(appshare->stream)) {
 		g_io_channel_read_chars(channel, buffer, sizeof (buffer), &bytes_read, &error);
 		g_assert_no_error(error);
 
@@ -169,9 +169,9 @@ data_in_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 			break;
 		}
 
-		sipe_backend_media_stream_write(appshare->stream,
-						(guint8 *)buffer, bytes_read);
 		SIPE_DEBUG_INFO("Written: %" G_GSIZE_FORMAT "\n", bytes_read);
+		sipe_media_stream_write(appshare->stream, (guint8 *)buffer,
+					bytes_read);
 	}
 
 	return TRUE;
