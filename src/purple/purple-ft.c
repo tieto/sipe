@@ -148,12 +148,6 @@ gssize sipe_backend_ft_read_file(struct sipe_file_transfer *ft, guchar *data,
 	gssize bytes_read = purple_xfer_read_file(xfer, data, size);
 	purple_xfer_update_progress(xfer);
 
-	if (purple_xfer_get_bytes_remaining(xfer) == 0 &&
-	    !purple_xfer_is_completed(xfer)) {
-		purple_xfer_set_completed(xfer, TRUE);
-		g_timeout_add_seconds(0, end_transfer_cb, (gpointer)xfer);
-	}
-
 	return bytes_read;
 }
 
