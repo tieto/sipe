@@ -450,9 +450,18 @@ stream_readable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
 		 SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		 const gchar *session_id,
 		 SIPE_UNUSED_PARAMETER const gchar *participant,
-		 SIPE_UNUSED_PARAMETER gpointer user_data)
+		 gpointer user_data)
 {
+	struct sipe_media_call *call = (struct sipe_media_call *)user_data;
+	struct sipe_media_stream *stream;
+
 	SIPE_DEBUG_INFO("stream_readable_cb: %s is readable", session_id);
+
+	stream = sipe_core_media_get_stream_by_id(call, session_id);
+
+	if (stream && stream->read_cb) {
+		stream->read_cb(stream);
+	}
 }
 
 static void

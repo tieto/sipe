@@ -1072,6 +1072,7 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 	}
 
 	stream_private = g_new0(struct sipe_media_stream_private, 1);
+	SIPE_MEDIA_STREAM->call = call;
 	SIPE_MEDIA_STREAM->id = g_strdup(id);
 	SIPE_MEDIA_STREAM->backend_private = backend_stream;
 
