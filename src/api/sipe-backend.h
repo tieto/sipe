@@ -230,6 +230,7 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 			     const guchar *data,
 			     gsize size);
 
+void sipe_backend_ft_set_completed(struct sipe_file_transfer *ft);
 
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft);
 void sipe_backend_ft_cancel_remote(struct sipe_file_transfer *ft);

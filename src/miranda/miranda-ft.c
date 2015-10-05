@@ -294,6 +294,11 @@ cancel_local(struct sipe_backend_file_transfer *xfer)
 	g_free(xfer);
 }
 
+void sipe_backend_ft_set_completed(struct sipe_file_transfer *ft)
+{
+	_NIF();
+}
+
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft)
 {
 	cancel_local(ft->backend_private);
