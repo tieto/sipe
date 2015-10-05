@@ -154,6 +154,13 @@ sipe_media_add_extra_invite_section(struct sipe_media_call *call,
 				    const gchar *invite_content_type,
 				    gchar *body);
 
+gboolean
+sipe_media_stream_is_writable(struct sipe_media_stream *stream);
+
+gboolean
+sipe_media_stream_write(struct sipe_media_stream *stream,
+			guint8 *buffer, guint buffer_len);
+
 void
 sipe_media_stream_add_extra_attribute(struct sipe_media_stream *stream,
 				      const gchar *name, const gchar *value);
