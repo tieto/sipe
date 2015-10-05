@@ -83,6 +83,8 @@ struct sipe_media_stream_private {
 
 	GSList *extra_sdp;
 
+	gboolean writable;
+
 	GQueue *async_reads;
 	gssize read_pos;
 
@@ -1957,6 +1959,20 @@ sipe_media_add_extra_invite_section(struct sipe_media_call *call,
 	SIPE_MEDIA_CALL_PRIVATE->extra_invite_section = body;
 	SIPE_MEDIA_CALL_PRIVATE->invite_content_type =
 			g_strdup(invite_content_type);
+}
+
+void
+sipe_core_media_stream_writable(struct sipe_media_stream *stream,
+				gboolean writable)
+{
+	SIPE_MEDIA_STREAM_PRIVATE->writable = writable;
+	if (!writable) {
+		return;
+	}
+
+	if (sipe_media_stream_is_writable(stream) && stream->call->writable_cb) {
+		stream->call->writable_cb(stream);
+	}
 }
 
 void
