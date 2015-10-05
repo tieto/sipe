@@ -43,7 +43,7 @@ struct sipe_file_transfer_lync {
 	gsize file_size;
 	guint request_id;
 
-	struct sipe_media_call_private *call_private;
+	struct sipe_media_call *call;
 };
 #define SIPE_FILE_TRANSFER         ((struct sipe_file_transfer *) ft_private)
 #define SIPE_FILE_TRANSFER_PRIVATE ((struct sipe_file_transfer_lync *) ft)
@@ -133,14 +133,14 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	msg->bodylen = strlen(msg->body);
 	ft_private->sdp = NULL;
 
-	ft_private->call_private = process_incoming_invite_call(sipe_private, msg);
-	if (!ft_private->call_private) {
+	ft_private->call = process_incoming_invite_call(sipe_private, msg);
+	if (!ft_private->call) {
 		sip_transport_response(sipe_private, msg, 500, "Server Internal Error", NULL);
 		sipe_file_transfer_lync_free(ft_private);
 		return;
 	}
 
-	call = (struct sipe_media_call *)ft_private->call_private;
+	call = ft_private->call;
 	call->candidate_pair_established_cb = candidate_pair_established_cb;
 
 	stream = sipe_core_media_get_stream_by_id(call, "data");

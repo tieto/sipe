@@ -1265,7 +1265,7 @@ sipe_media_from_sipmsg(struct sipe_core_private *sipe_private,
 				   sipmsg_find_header(msg, "Call-ID"));
 }
 
-struct sipe_media_call_private *
+struct sipe_media_call *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
@@ -1362,7 +1362,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		sdpmsg_free(smsg);
 	}
 
-	return call_private;
+	return SIPE_MEDIA_CALL;
 }
 
 void process_incoming_cancel_call(struct sipe_media_call_private *call_private,
