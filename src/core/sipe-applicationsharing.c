@@ -85,7 +85,7 @@ rdp_channel_readable_cb(GIOChannel *channel,
 	gchar buffer[2048];
 	gsize bytes_read;
 
-	while (1) {
+	while (sipe_media_stream_is_writable(appshare->stream)) {
 		g_io_channel_read_chars(channel, buffer, sizeof (buffer), &bytes_read, &error);
 		g_assert_no_error(error);
 
@@ -93,8 +93,9 @@ rdp_channel_readable_cb(GIOChannel *channel,
 			break;
 		}
 
-		sipe_backend_media_write(appshare->media, appshare->stream,
-					 (guint8 *)buffer, bytes_read, TRUE);
+		sipe_media_stream_write(appshare->stream, (guint8 *)buffer,
+					bytes_read);
+		SIPE_DEBUG_INFO("Written: %" G_GSIZE_FORMAT "\n", bytes_read);
 	}
 
 	return TRUE;
