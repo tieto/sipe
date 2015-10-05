@@ -458,6 +458,8 @@ gboolean sipe_backend_stream_is_held(struct sipe_media_stream *stream);
 
 gssize sipe_backend_media_stream_read(struct sipe_media_stream *stream,
 				     guint8 *buffer, gsize len);
+guint sipe_backend_media_stream_write(struct sipe_media_stream *stream,
+				      guint8 *buffer, guint buffer_len);
 
 void sipe_backend_media_stream_end(struct sipe_media_call *media,
 				   struct sipe_media_stream *stream);
@@ -526,10 +528,6 @@ void sipe_backend_media_accept(struct sipe_backend_media *media, gboolean local)
 void sipe_backend_media_hangup(struct sipe_backend_media *media, gboolean local);
 void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local);
 
-gint sipe_backend_media_write(struct sipe_media_call *call,
-			      struct sipe_media_stream *stream,
-			      guint8 *buffer, guint buffer_len,
-			      gboolean blocking);
 
 struct sipe_user_ask_ctx *
 sipe_backend_applicationsharing_show_presenter_actions(struct sipe_core_public *sipe_public,

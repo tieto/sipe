@@ -169,8 +169,8 @@ data_in_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 			break;
 		}
 
-		sipe_backend_media_write(appshare->media, appshare->stream,
-					 (guint8 *)buffer, bytes_read, TRUE);
+		sipe_backend_media_stream_write(appshare->stream,
+						(guint8 *)buffer, bytes_read);
 		SIPE_DEBUG_INFO("Written: %" G_GSIZE_FORMAT "\n", bytes_read);
 	}
 

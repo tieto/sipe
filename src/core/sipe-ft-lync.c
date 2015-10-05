@@ -584,14 +584,14 @@ process_response_outgoing(struct sipe_file_transfer_lync *ft_private, sipe_xml *
 }
 
 static void
-write_chunk(struct sipe_media_call *call, struct sipe_media_stream *stream,
-	    guint8 type, guint16 len, const gchar *buffer, gboolean blocking)
+write_chunk(struct sipe_media_stream *stream, guint8 type,
+	    guint16 len, const gchar *buffer)
 {
 	guint16 len_be = GUINT16_TO_BE(len);
 
-	sipe_backend_media_write(call, stream, &type, sizeof (guint8), blocking);
-	sipe_backend_media_write(call, stream, (guint8 *)&len_be, sizeof (guint16), blocking);
-	sipe_backend_media_write(call, stream, (guint8 *)buffer, len, blocking);
+	sipe_backend_media_stream_write(stream, &type, sizeof (guint8));
+	sipe_backend_media_stream_write(stream, (guint8 *)&len_be, sizeof (guint16));
+	sipe_backend_media_stream_write(stream, (guint8 *)buffer, len);
 }
 
 static gboolean
@@ -608,15 +608,14 @@ send_file_chunk(struct sipe_file_transfer_lync *ft_private)
 					       (guchar *)&buffer,
 					       sizeof (buffer));
 	if (bytes_read != 0) {
-		write_chunk(call, stream, 0x00, bytes_read, buffer, TRUE);
+		write_chunk(stream, 0x00, bytes_read, buffer);
 	}
 
 	if (sipe_backend_ft_is_completed(SIPE_FILE_TRANSFER)) {
 		/* End of transfer. */
 		gchar *request_id_str =
 				g_strdup_printf("%u", ft_private->request_id);
-		write_chunk(call, stream, 0x02, strlen(request_id_str),
-			    request_id_str, TRUE);
+		write_chunk(stream, 0x02, strlen(request_id_str), request_id_str);
 		g_free(request_id_str);
 		ft_private->write_source_id = 0;
 		return G_SOURCE_REMOVE;
@@ -636,8 +635,7 @@ start_writing(struct sipe_file_transfer_lync *ft_private)
 		gchar *request_id_str =
 				g_strdup_printf("%u", ft_private->request_id);
 
-		write_chunk(call, stream, 0x01, strlen(request_id_str),
-			    request_id_str, TRUE);
+		write_chunk(stream, 0x01, strlen(request_id_str), request_id_str);
 
 		g_free(request_id_str);
 

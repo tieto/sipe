@@ -521,14 +521,14 @@ stream_writable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
 }
 #endif
 
-gint
-sipe_backend_media_write(struct sipe_media_call *call,
-			 struct sipe_media_stream *stream,
-			 guint8 *buffer, guint buffer_len, gboolean blocking)
+guint
+sipe_backend_media_stream_write(struct sipe_media_stream *stream,
+				guint8 *buffer, guint buffer_len)
 {
 	return purple_media_manager_send_application_data(
-			purple_media_manager_get(), call->backend_private->m,
-			stream->id, call->with, buffer, buffer_len, blocking);
+			purple_media_manager_get(),
+			stream->call->backend_private->m, stream->id,
+			stream->call->with, buffer, buffer_len, FALSE);
 }
 
 struct sipe_backend_media_stream *
