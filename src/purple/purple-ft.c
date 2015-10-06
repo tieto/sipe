@@ -223,7 +223,7 @@ ft_end(PurpleXfer *xfer)
 {
 	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
 
-	if (ft->ft_end && ft->ft_end(ft)) {
+	if (!ft->ft_end || ft->ft_end(ft)) {
 		/* We're done with this transfer */
 		ft_free_xfer_struct(xfer);
 	} else if (purple_xfer_get_xfer_type(xfer) == PURPLE_XFER_TYPE_RECEIVE) {
