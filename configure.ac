@@ -418,10 +418,17 @@ AS_IF([test "x$enable_purple" != xno],
 			 )],
 			 [AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])]
 		 )
-		 AS_IF([test "x$purple_pkgconfig" = xpurple-3],
-			[dnl libpurple 3.x supports raw data RTP connections
-			 with_xdata=yes
-		 ])
+
+		 AC_COMPILE_IFELSE(
+			[AC_LANG_PROGRAM([[
+#include <ft.h>
+				]],
+				[[purple_xfer_write_file(NULL, NULL, 0);]]
+			 )],
+			 [dnl libpurple supports raw data RTP connections
+			  ac_have_xdata=yes],
+			 [ac_have_xdata=no]
+		 )
 
 		 CFLAGS=$ac_save_CFLAGS
 		 LIBS=$ac_save_LIBS])])
@@ -470,9 +477,9 @@ AS_IF([test "x$with_purple_vv" != xno],
 AM_CONDITIONAL(SIPE_WITH_VV, [test "x$with_purple_vv" != xno])
 
 dnl raw data RTP streams enable Lync file transfer
-AS_IF([test "x$with_xdata" == xyes],
+AM_CONDITIONAL(SIPE_HAVE_XDATA, [test "x$ac_have_xdata" == xyes])
+AS_IF([test "x$ac_have_xdata" == xyes],
 	[AC_DEFINE(HAVE_XDATA, 1, [Define if we have raw data RTP in media backend.])])
-AM_CONDITIONAL(SIPE_WITH_XDATA, [test "x$with_xdata" == xyes])
 
 dnl these code parts rely on interfaces that require GValueArray. This
 dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there

@@ -198,7 +198,7 @@ libsipe_core_la_SOURCES += sipe-media.h sipe-media.c \
 	sdpmsg.h sdpmsg.c
 endif
 
-if SIPE_WITH_XDATA
+if SIPE_HAVE_XDATA
 libsipe_core_la_SOURCES += \
 	sipe-ft-lync.h sipe-ft-lync.c
 endif
