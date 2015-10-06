@@ -74,6 +74,8 @@ typedef enum {
 	SIPE_XDATA_END_OF_STREAM = 0x02
 } SipeXDataMessages;
 
+#define XDATA_HEADER_SIZE sizeof (guint8) + sizeof (guint16)
+
 static void
 sipe_file_transfer_lync_free(struct sipe_file_transfer_lync *ft_private)
 {
@@ -205,6 +207,67 @@ create_pipe(int pipefd[2])
 }
 
 static void
+xdata_start_of_stream_cb(struct sipe_media_stream *stream,
+			 guint8 *buffer, gsize len)
+{
+	struct sipe_file_transfer_lync *ft_private =
+			sipe_media_stream_get_data(stream);
+	struct sipe_backend_fd *fd;
+
+	buffer[len] = 0;
+	SIPE_DEBUG_INFO("Received new stream for requestId : %s", buffer);
+
+	if (!create_pipe(ft_private->backend_pipe)) {
+		SIPE_DEBUG_ERROR_NOFORMAT("Couldn't create backend pipe");
+		sipe_backend_ft_cancel_local(SIPE_FILE_TRANSFER);
+		return;
+	}
+
+	fd = sipe_backend_fd_from_int(ft_private->backend_pipe[0]);
+	sipe_backend_ft_start(SIPE_FILE_TRANSFER, fd, NULL, 0);
+	sipe_backend_fd_free(fd);
+}
+
+static void
+xdata_end_of_stream_cb(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
+		       guint8 *buffer, gsize len)
+{
+	buffer[len] = 0;
+	SIPE_DEBUG_INFO("Received end of stream for requestId : %s", buffer);
+}
+
+static void
+xdata_got_header_cb(struct sipe_media_stream *stream,
+		    guint8 *buffer,
+		    SIPE_UNUSED_PARAMETER gsize len)
+{
+	struct sipe_file_transfer_lync *ft_private =
+			sipe_media_stream_get_data(stream);
+
+	guint8 type = buffer[0];
+	guint16 size = GUINT16_FROM_BE(*(guint16 *)(buffer + sizeof (guint8)));
+
+	switch (type) {
+		case SIPE_XDATA_START_OF_STREAM:
+			sipe_media_stream_read_async(stream,
+						     ft_private->buffer, size,
+						     xdata_start_of_stream_cb);
+			break;
+		case SIPE_XDATA_DATA_CHUNK:
+			SIPE_DEBUG_INFO("Received new data chunk of size %d",
+					size);
+			ft_private->bytes_left_in_chunk = size;
+			break;
+			/* We'll read the data when read_cb is called again. */
+		case SIPE_XDATA_END_OF_STREAM:
+			sipe_media_stream_read_async(stream,
+						     ft_private->buffer, size,
+						     xdata_end_of_stream_cb);
+			break;
+	}
+}
+
+static void
 read_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_file_transfer_lync *ft_private =
@@ -249,47 +312,9 @@ read_cb(struct sipe_media_stream *stream)
 		/* No data available. This is either stream start, beginning of
 		 * chunk, or stream end. */
 
-		guint8 type;
-		guint16 size;
-
-		sipe_backend_media_stream_read(stream, &type, sizeof (guint8));
-		sipe_backend_media_stream_read(stream, (guint8 *)&size, sizeof (guint16));
-		size = GUINT16_FROM_BE(size);
-
-		switch (type) {
-			case SIPE_XDATA_START_OF_STREAM: {
-				struct sipe_backend_fd *fd;
-
-				sipe_backend_media_stream_read(stream,
-							       ft_private->buffer,
-							       size);
-				ft_private->buffer[size] = 0;
-				SIPE_DEBUG_INFO("Received new stream for requestId : %s",
-						ft_private->buffer);
-				if (!create_pipe(ft_private->backend_pipe)) {
-					SIPE_DEBUG_ERROR_NOFORMAT("Couldn't create backend pipe");
-					sipe_backend_ft_cancel_local(SIPE_FILE_TRANSFER);
-					return;
-				}
-
-				fd = sipe_backend_fd_from_int(ft_private->backend_pipe[0]);
-				sipe_backend_ft_start(SIPE_FILE_TRANSFER, fd, NULL, 0);
-				sipe_backend_fd_free(fd);
-				break;
-			}
-			case SIPE_XDATA_DATA_CHUNK:
-				SIPE_DEBUG_INFO("Received new data chunk of size %d", size);
-				ft_private->bytes_left_in_chunk = size;
-				break;
-				/* We'll read the data when read_cb is called again. */
-			case SIPE_XDATA_END_OF_STREAM:
-				sipe_backend_media_stream_read(stream, ft_private->buffer, size);
-				ft_private->buffer[size] = 0;
-
-				SIPE_DEBUG_INFO("Received end of stream for requestId : %s",
-						ft_private->buffer);
-				break;
-		}
+		sipe_media_stream_read_async(stream, ft_private->buffer,
+					     XDATA_HEADER_SIZE,
+					     xdata_got_header_cb);
 	}
 }
 
