@@ -26,6 +26,9 @@ struct sipe_core_private;
 struct sipe_media_call_private;
 struct sipe_media_stream;
 
+typedef void (* sipe_media_stream_read_callback)(struct sipe_media_stream *stream,
+						 guint8 *buffer, gsize len);
+
 /**
  * Adds a new media stream to a call.
  *
@@ -144,6 +147,11 @@ void sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private);
 void
 sipe_media_stream_add_extra_attribute(struct sipe_media_stream *stream,
 				      const gchar *name, const gchar *value);
+
+void
+sipe_media_stream_read_async(struct sipe_media_stream *stream,
+			     gpointer buffer, gsize len,
+			     sipe_media_stream_read_callback callback);
 
 /**
  * Associates user data with the media stream.

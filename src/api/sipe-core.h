@@ -419,6 +419,9 @@ struct sipe_media_call;
 struct sipe_media_stream *
 sipe_core_media_get_stream_by_id(struct sipe_media_call *call, const gchar *id);
 
+void
+sipe_core_media_stream_readable(struct sipe_media_stream *stream);
+
 /**
  * Connects to a conference call specified by given chat session
  *
