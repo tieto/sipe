@@ -230,18 +230,6 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 			     const guchar *data,
 			     gsize size);
 
-/**
- * Writes received data to a file.
- *
- * @param ft   file transfer data
- * @param data data to write
- * @param size length of the data in bytes
- *
- * @return number of bytes written or -1 on error.
- */
-gssize sipe_backend_ft_write_file(struct sipe_file_transfer *ft,
-				  const guchar *data, gsize size);
-
 void sipe_backend_ft_set_completed(struct sipe_file_transfer *ft);
 
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft);
