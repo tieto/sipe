@@ -76,12 +76,21 @@ struct sipe_media_stream_private {
 
 	GSList *extra_sdp;
 
+	GQueue *async_reads;
+	gssize read_pos;
+
 	/* User data associated with the stream. */
 	gpointer data;
 	GDestroyNotify data_free_func;
 };
 #define SIPE_MEDIA_STREAM         ((struct sipe_media_stream *) stream_private)
 #define SIPE_MEDIA_STREAM_PRIVATE ((struct sipe_media_stream_private *) stream)
+
+struct async_read_data {
+	guint8 *buffer;
+	gssize len;
+	sipe_media_stream_read_callback callback;
+};
 
 static void sipe_media_codec_list_free(GList *codecs)
 {
@@ -108,6 +117,7 @@ remove_stream(struct sipe_media_call* call,
 	sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
 	g_free(SIPE_MEDIA_STREAM->id);
 	g_free(stream_private->encryption_key);
+	g_queue_free_full(stream_private->async_reads, g_free);
 	sipe_utils_nameval_free(stream_private->extra_sdp);
 	g_free(stream_private);
 }
@@ -1087,6 +1097,8 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 	}
 #endif
 
+	stream_private->async_reads = g_queue_new();
+
 	SIPE_MEDIA_CALL_PRIVATE->streams =
 			g_slist_append(SIPE_MEDIA_CALL_PRIVATE->streams,
 				       stream_private);
@@ -1852,6 +1864,72 @@ sipe_media_stream_add_extra_attribute(struct sipe_media_stream *stream,
 			sipe_utils_nameval_add(SIPE_MEDIA_STREAM_PRIVATE->extra_sdp,
 					       name, value);
 }
+
+#ifdef HAVE_XDATA
+void
+sipe_core_media_stream_readable(struct sipe_media_stream *stream)
+{
+	g_return_if_fail(stream);
+
+	if (g_queue_is_empty(SIPE_MEDIA_STREAM_PRIVATE->async_reads) &&
+	    stream->read_cb) {
+		stream->read_cb(stream);
+	}
+
+	while (!g_queue_is_empty(SIPE_MEDIA_STREAM_PRIVATE->async_reads)) {
+		struct async_read_data *data;
+		guint8 *pos;
+		gssize len;
+		gssize bytes_read;
+
+		data = g_queue_peek_head(SIPE_MEDIA_STREAM_PRIVATE->async_reads);
+		pos = data->buffer + SIPE_MEDIA_STREAM_PRIVATE->read_pos;
+		len = data->len - SIPE_MEDIA_STREAM_PRIVATE->read_pos;
+
+		bytes_read = sipe_backend_media_stream_read(stream, pos, len);
+		if (bytes_read == -1) {
+			struct sipe_media_call *call = stream->call;
+			struct sipe_core_private *sipe_private =
+					SIPE_MEDIA_CALL_PRIVATE->sipe_private;
+
+			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+						  _("Media error"),
+						  _("Error while reading from stream"));
+			sipe_media_hangup(SIPE_MEDIA_CALL_PRIVATE);
+			return;
+		}
+
+		SIPE_MEDIA_STREAM_PRIVATE->read_pos += bytes_read;
+
+		if (SIPE_MEDIA_STREAM_PRIVATE->read_pos == data->len) {
+			data->callback(stream, data->buffer, data->len);
+			SIPE_MEDIA_STREAM_PRIVATE->read_pos = 0;
+			g_queue_pop_head(SIPE_MEDIA_STREAM_PRIVATE->async_reads);
+			g_free(data);
+		} else {
+			// Still not enough data to finish the read.
+			return;
+		}
+	}
+}
+
+void
+sipe_media_stream_read_async(struct sipe_media_stream *stream,
+			     gpointer buffer, gsize len,
+			     sipe_media_stream_read_callback callback)
+{
+	struct async_read_data *data;
+
+	g_return_if_fail(stream && buffer && callback);
+
+	data = g_new0(struct async_read_data, 1);
+	data->buffer = buffer;
+	data->len = len;
+	data->callback = callback;
+
+	g_queue_push_tail(SIPE_MEDIA_STREAM_PRIVATE->async_reads, data);
+}
+#endif
 
 void
 sipe_media_stream_set_data(struct sipe_media_stream *stream, gpointer data,

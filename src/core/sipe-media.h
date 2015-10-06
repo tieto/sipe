@@ -26,6 +26,9 @@ struct sipe_core_private;
 struct sipe_media_call_private;
 struct sipe_media_stream;
 
+typedef void (* sipe_media_stream_read_callback)(struct sipe_media_stream *stream,
+						 guint8 *buffer, gsize len);
+
 /**
  * Adds a new media stream to a call.
  *
@@ -144,6 +147,26 @@ void sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private);
 void
 sipe_media_stream_add_extra_attribute(struct sipe_media_stream *stream,
 				      const gchar *name, const gchar *value);
+
+/**
+ * Schedules asynchronous read of @c len bytes from @c stream into @c buffer.
+ * When enough data becomes available in the stream, the buffer is filled and
+ * @c callback gets invoked.
+ *
+ * It's possible to call sipe_media_stream_read_async() multiple times; every
+ * request is placed into a FIFO queue. Media core does not call @c read_cb of
+ * @c stream while there is some asynchronous read in progress.
+ *
+ * @param stream (in) media stream data
+ * @param buffer (in) an empty data buffer
+ * @param len (in) length of @c buffer
+ * @param callback (in) a function to call when @c buffer gets filled with
+ *                 input data
+ */
+void
+sipe_media_stream_read_async(struct sipe_media_stream *stream,
+			     gpointer buffer, gsize len,
+			     sipe_media_stream_read_callback callback);
 
 /**
  * Associates user data with the media stream.

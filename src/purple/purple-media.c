@@ -459,8 +459,8 @@ stream_readable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
 
 	stream = sipe_core_media_get_stream_by_id(call, session_id);
 
-	if (stream && stream->read_cb) {
-		stream->read_cb(stream);
+	if (stream) {
+		sipe_core_media_stream_readable(stream);
 	}
 }
 
