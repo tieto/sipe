@@ -421,9 +421,9 @@ AS_IF([test "x$enable_purple" != xno],
 
 		 AC_COMPILE_IFELSE(
 			[AC_LANG_PROGRAM([[
-#include <ft.h>
+#include <media.h>
 				]],
-				[[purple_xfer_write_file(NULL, NULL, 0);]]
+				[[return (PURPLE_MEDIA_APPLICATION);]]
 			 )],
 			 [dnl libpurple supports raw data RTP connections
 			  ac_have_xdata=yes],
