@@ -281,11 +281,6 @@ create_xfer(PurpleAccount *account, PurpleXferType type, const char *who,
 		purple_xfer_set_cancel_recv_fnc(xfer, ft_free_xfer_struct);
 		purple_xfer_set_start_fnc(xfer, ft_start);
 		purple_xfer_set_end_fnc(xfer, ft_end);
-		if (type == PURPLE_XFER_TYPE_SEND) {
-			purple_xfer_set_write_fnc(xfer, ft_write);
-		} else if (type == PURPLE_XFER_TYPE_RECEIVE) {
-			purple_xfer_set_read_fnc(xfer, ft_read);
-		}
 	}
 
 	return xfer;
@@ -325,6 +320,13 @@ void
 sipe_backend_ft_start(struct sipe_file_transfer *ft, struct sipe_backend_fd *fd,
 		      const char* ip, unsigned port)
 {
+	PurpleXferType type = purple_xfer_get_xfer_type(FT_TO_PURPLE_XFER);
+	if (type == PURPLE_XFER_TYPE_SEND && ft->ft_write) {
+		purple_xfer_set_write_fnc(FT_TO_PURPLE_XFER, ft_write);
+	} else if (type == PURPLE_XFER_TYPE_RECEIVE && ft->ft_read) {
+		purple_xfer_set_read_fnc(FT_TO_PURPLE_XFER, ft_read);
+	}
+
 	if (ip && port && !sipe_backend_ft_is_incoming(ft)) {
 		/* Purple accepts ip & port only for incoming file transfers.
 		 * If we want to send file with Sender-Connect = TRUE negotiated,
