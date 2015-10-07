@@ -532,6 +532,7 @@ sipe_backend_network_listen_range(unsigned short port_min,
 				  gpointer data);
 void sipe_backend_network_listen_cancel(struct sipe_backend_listendata *ldata);
 
+struct sipe_backend_fd * sipe_backend_fd_from_int(int fd);
 gboolean sipe_backend_fd_is_valid(struct sipe_backend_fd *fd);
 void sipe_backend_fd_free(struct sipe_backend_fd *fd);
 

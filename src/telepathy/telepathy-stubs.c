@@ -280,6 +280,7 @@ struct sipe_backend_listendata *sipe_backend_network_listen_range(SIPE_UNUSED_PA
 								  SIPE_UNUSED_PARAMETER gpointer data) { return(NULL); }
 void sipe_backend_network_listen_cancel(SIPE_UNUSED_PARAMETER struct sipe_backend_listendata *ldata) {}
 
+struct sipe_backend_fd *sipe_backend_fd_from_int(SIPE_UNUSED_PARAMETER int fd) { return (NULL); }
 gboolean sipe_backend_fd_is_valid(SIPE_UNUSED_PARAMETER struct sipe_backend_fd *fd) { return(FALSE); }
 void sipe_backend_fd_free(SIPE_UNUSED_PARAMETER struct sipe_backend_fd *fd) {}
 

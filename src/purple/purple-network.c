@@ -176,9 +176,7 @@ client_connected_cb(struct sipe_backend_listendata *ldata, gint listenfd,
 	ldata->listenfd = -1;
 
 	if (ldata->connect_cb) {
-		struct sipe_backend_fd *sipe_fd = g_new(struct sipe_backend_fd, 1);
-		sipe_fd->fd = fd;
-		ldata->connect_cb(sipe_fd, ldata->data);
+		ldata->connect_cb(sipe_backend_fd_from_int(fd), ldata->data);
 	}
 
 	g_free(ldata);
@@ -247,6 +245,14 @@ void sipe_backend_network_listen_cancel(struct sipe_backend_listendata *ldata)
 	if (ldata->listenfd)
 		close(ldata->listenfd);
 	g_free(ldata);
+}
+
+struct sipe_backend_fd *
+sipe_backend_fd_from_int(int fd)
+{
+	struct sipe_backend_fd *sipe_fd = g_new(struct sipe_backend_fd, 1);
+	sipe_fd->fd = fd;
+	return sipe_fd;
 }
 
 gboolean
