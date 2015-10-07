@@ -122,13 +122,6 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 			     const guchar *data,
 			     gsize size)
 {
-#ifdef HAVE_XDATA
-	if (purple_xfer_write_file(FT_TO_PURPLE_XFER, data, size)) {
-		purple_xfer_update_progress(FT_TO_PURPLE_XFER);
-		return size;
-	}
-	return -1;
-#else
 	gssize bytes_written = write(purple_xfer_get_fd(FT_TO_PURPLE_XFER),
 				     data,
 				     size);
@@ -139,7 +132,6 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 			return -1;
 	}
 	return bytes_written;
-#endif
 }
 
 static gboolean
