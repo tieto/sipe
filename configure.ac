@@ -348,6 +348,7 @@ AC_ARG_ENABLE([purple],
 	[AC_HELP_STRING([--enable-purple], [build purple plugin @<:@default=yes@:>@])],
 	[],
 	[enable_purple=yes])
+ac_have_xdata=no
 with_purple_vv=no
 AS_IF([test "x$enable_purple" != xno],
 	[PKG_CHECK_MODULES(PURPLE, [purple-3],
@@ -409,26 +410,28 @@ AS_IF([test "x$enable_purple" != xno],
 				[AC_MSG_WARN([cross compiling: not checking])])
 			 ])
 
-		 AC_COMPILE_IFELSE(
-			[AC_LANG_PROGRAM([[
+		 dnl SRTP and XDATA require media backend
+		 AS_IF([test "x$with_purple_vv" != xno],
+			[AC_COMPILE_IFELSE(
+				[AC_LANG_PROGRAM([[
 #include <media.h>
-				]],
-				[[purple_media_set_encryption_parameters(NULL, "", "", "", "", 0);
-			          purple_media_set_decryption_parameters(NULL, "", "", "", "", "", 0);]]
-			 )],
-			 [AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])]
-		 )
+					]],
+					[[purple_media_set_encryption_parameters(NULL, "", "", "", "", 0);
+					  purple_media_set_decryption_parameters(NULL, "", "", "", "", "", 0);]]
+				 )],
+				 [AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])]
+			 )
 
-		 AC_COMPILE_IFELSE(
-			[AC_LANG_PROGRAM([[
+			 AC_COMPILE_IFELSE(
+				[AC_LANG_PROGRAM([[
 #include <media.h>
-				]],
-				[[return (PURPLE_MEDIA_APPLICATION);]]
-			 )],
-			 [dnl libpurple supports raw data RTP connections
-			  ac_have_xdata=yes],
-			 [ac_have_xdata=no]
-		 )
+					]],
+					[[return (PURPLE_MEDIA_APPLICATION);]]
+				 )],
+				 [dnl libpurple supports raw data RTP connections
+				  ac_have_xdata=yes]
+			 )
+			])
 
 		 CFLAGS=$ac_save_CFLAGS
 		 LIBS=$ac_save_LIBS])])
