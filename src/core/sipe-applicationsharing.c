@@ -530,6 +530,14 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *who,
 					      "x-applicationsharing-media-type",
 					      "rdp");
 
+	// These attributes are mandatory when sharing with a conference.
+	sipe_media_stream_add_extra_attribute(stream,
+					      "setup",
+					      "active");
+	sipe_media_stream_add_extra_attribute(stream,
+					      "connection",
+					      "new");
+
 	appshare = g_new0(struct sipe_appshare, 1);
 	appshare->media = call;
 	appshare->stream = stream;
@@ -651,6 +659,18 @@ sipe_core_connect_applicationsharing(struct sipe_core_public *sipe_public,
 			"setup", "active");
 
 	initialize_incoming_appshare(call, stream);
+}
+
+void
+sipe_core_conf_share_application(struct sipe_core_public *sipe_public,
+				 struct sipe_chat_session *chat_session)
+{
+	gchar * uri;
+
+	uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+	sipe_core_share_application(sipe_public, uri);
+
+	g_free(uri);
 }
 
 /*

@@ -1253,7 +1253,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 						audio_was_added = TRUE;
 #endif
 				} else if (sipe_strequal("applicationsharing", session_type)) {
-					if (!session->presentation_callid) {
+					if (!session->presentation_callid && !sipe_strequal(user_uri, self)) {
 						gchar *media_state =
 								sipe_xml_data(sipe_xml_child(endpoint, "media/media-state"));
 						gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "media/status"));

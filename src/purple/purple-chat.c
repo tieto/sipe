@@ -279,6 +279,13 @@ static void sipe_purple_chat_menu_show_presentation_cb(SIPE_UNUSED_PARAMETER Pur
 					     sipe_purple_chat_get_session(conv));
 }
 
+static void sipe_purple_chat_menu_share_desktop_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
+						   PurpleConversation *conv)
+{
+	sipe_core_conf_share_application(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+					 sipe_purple_chat_get_session(conv));
+}
+
 #endif
 
 static void sipe_purple_chat_menu_entry_info_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
@@ -334,6 +341,12 @@ sipe_purple_chat_menu(PurpleChat *chat)
 								sipe_purple_chat_get_session(conv))) {
 			act = purple_menu_action_new(_("Show presentation"),
 						     PURPLE_CALLBACK(sipe_purple_chat_menu_show_presentation_cb),
+						     conv, NULL);
+			menu = g_list_prepend(menu, act);
+		}
+		if (TRUE /* TODO: check we're not already sharing */) {
+			act = purple_menu_action_new(_("Share my desktop"),
+						     PURPLE_CALLBACK(sipe_purple_chat_menu_share_desktop_cb),
 						     conv, NULL);
 			menu = g_list_prepend(menu, act);
 		}
