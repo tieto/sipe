@@ -27,5 +27,3 @@ struct sipmsg;
 
 void process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_private,
 						struct sipmsg *msg);
-
-gboolean sipe_applicationsharing_is_presenting(struct sipe_media_call *call);

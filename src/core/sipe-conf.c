@@ -1364,7 +1364,8 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 								       session);
 #endif
 				} else if (sipe_strequal("applicationsharing", session_type)) {
-					if (!sipe_core_conf_get_presentation_media_call(SIPE_CORE_PUBLIC, session->chat_session)) {
+					if (!sipe_core_conf_get_presentation_media_call(SIPE_CORE_PUBLIC, session->chat_session) &&
+					    !sipe_strequal(user_uri, self)) {
 						gchar *media_state =
 								sipe_xml_data(sipe_xml_child(endpoint, "media/media-state"));
 						gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "media/status"));
