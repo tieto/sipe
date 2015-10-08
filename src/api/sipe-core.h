@@ -514,7 +514,12 @@ void
 sipe_core_share_application(struct sipe_core_public *sipe_public,
 			    const gchar *who);
 
+void
+sipe_core_conf_share_application(struct sipe_core_public *sipe_public,
+				 struct sipe_chat_session *chat_session);
+
 void sipe_core_applicationsharing_stop_presenting(struct sipe_appshare * appshare);
+gboolean sipe_core_applicationsharing_is_presenting(struct sipe_media_call *call);
 
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
