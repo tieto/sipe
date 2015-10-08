@@ -284,6 +284,13 @@ sipe_purple_chat_menu_show_presentation_cb(SIPE_UNUSED_PARAMETER PurpleChat *cha
 					      sipe_purple_chat_get_session(conv),
 					      FALSE);
 }
+
+static void sipe_purple_chat_menu_share_desktop_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
+						   PurpleConversation *conv)
+{
+	sipe_core_conf_share_application(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+					 sipe_purple_chat_get_session(conv));
+}
 #endif
 #endif // HAVE_VV
 
@@ -306,6 +313,9 @@ sipe_purple_chat_menu(PurpleChat *chat)
 	if (conv) {
 		PurpleMenuAction *act = NULL;
 		struct sipe_chat_session *chat_session;
+#ifdef HAVE_APPSHARE
+		sipe_appshare_role role;
+#endif
 
 		SIPE_DEBUG_INFO("sipe_purple_chat_menu: %p", conv);
 
@@ -344,10 +354,17 @@ sipe_purple_chat_menu(PurpleChat *chat)
 					menu = g_list_prepend(menu, act);
 			}
 #ifdef HAVE_APPSHARE
-			if (sipe_core_conf_get_appshare_role(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
-							     chat_session) == SIPE_APPSHARE_ROLE_NONE) {
+			role = sipe_core_conf_get_appshare_role(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+								chat_session);
+			if (role == SIPE_APPSHARE_ROLE_NONE) {
 				act = purple_menu_action_new(_("Show presentation"),
 							     PURPLE_CALLBACK(sipe_purple_chat_menu_show_presentation_cb),
+							     conv, NULL);
+				menu = g_list_prepend(menu, act);
+			}
+			if (role != SIPE_APPSHARE_ROLE_PRESENTER) {
+				act = purple_menu_action_new(_("Share my desktop"),
+							     PURPLE_CALLBACK(sipe_purple_chat_menu_share_desktop_cb),
 							     conv, NULL);
 				menu = g_list_prepend(menu, act);
 			}

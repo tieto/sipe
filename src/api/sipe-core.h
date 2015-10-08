@@ -551,6 +551,10 @@ void sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
 void sipe_core_appshare_share_desktop(struct sipe_core_public *sipe_public,
 				      const gchar *with);
 
+void
+sipe_core_conf_share_application(struct sipe_core_public *sipe_public,
+				 struct sipe_chat_session *chat_session);
+
 void sipe_core_appshare_stop_presenting(struct sipe_media_call *call);
 
 /* group chat */
