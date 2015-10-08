@@ -1409,7 +1409,8 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 				} else if (sipe_strequal("applicationsharing", session_type)) {
 #ifdef HAVE_APPSHARE
 					if (sipe_core_conf_get_appshare_role(SIPE_CORE_PUBLIC,
-									     session->chat_session) == SIPE_APPSHARE_ROLE_NONE) {
+									     session->chat_session) == SIPE_APPSHARE_ROLE_NONE &&
+					    !sipe_strequal(user_uri, self)) {
 						presentation_was_added = process_conference_appshare_endpoint(endpoint);
 					}
 #endif
