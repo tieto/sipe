@@ -551,6 +551,16 @@ void sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
 void sipe_core_appshare_share_desktop(struct sipe_core_public *sipe_public,
 				      const gchar *with);
 
+/**
+ * Starts presenting user's desktop with a conference call
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @param chat_session (in) chat session structure.
+ */
+void
+sipe_core_conf_share_desktop(struct sipe_core_public *sipe_public,
+			     struct sipe_chat_session *chat_session);
+
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
 void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
