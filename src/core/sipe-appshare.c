@@ -892,6 +892,14 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 					      "x-applicationsharing-media-type",
 					      "rdp");
 
+	// These attributes are mandatory when sharing with a conference.
+	sipe_media_stream_add_extra_attribute(stream,
+					      "setup",
+					      "active");
+	sipe_media_stream_add_extra_attribute(stream,
+					      "connection",
+					      "new");
+
 	appshare = g_new0(struct sipe_appshare, 1);
 	appshare->stream = stream;
 	appshare->monitor_id = monitor_id;
@@ -957,6 +965,36 @@ sipe_core_appshare_share_desktop(struct sipe_core_public *sipe_public,
 				 const gchar *with)
 {
 	present_monitor_choice(sipe_public, with);
+}
+
+void
+sipe_core_conf_share_application(struct sipe_core_public *sipe_public,
+				 struct sipe_chat_session *chat_session)
+{
+	gchar * uri;
+	sipe_appshare_role role;
+
+	role = sipe_core_conf_get_appshare_role(sipe_public, chat_session);
+
+	if (role == SIPE_APPSHARE_ROLE_PRESENTER) {
+		// We are already the presenting.
+		return;
+	} else if (role == SIPE_APPSHARE_ROLE_VIEWER) {
+		// Close RDP viewer before we start our own presentation.
+		gchar *mcu_uri;
+		struct sipe_media_call *call;
+
+		mcu_uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+		call = sipe_media_call_find(SIPE_CORE_PRIVATE, mcu_uri);
+		g_free(mcu_uri);
+
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+	}
+
+	uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+	sipe_core_appshare_share_desktop(sipe_public, uri);
+
+	g_free(uri);
 }
 #endif // HAVE_RDP_SERVER
 
