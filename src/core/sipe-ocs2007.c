@@ -1854,7 +1854,7 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 				token = sipe_status_activity_to_token(SIPE_ACTIVITY_IN_CONF);
 			}
 
-			if (sipe_applicationsharing_is_presenting(calls->data)) {
+			if (sipe_core_applicationsharing_is_presenting(calls->data)) {
 				availability_min = 9000;
 				availability_max = 11999;
 				token = "in-presentation";

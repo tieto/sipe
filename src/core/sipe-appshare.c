@@ -712,6 +712,14 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *who,
 					      "x-applicationsharing-media-type",
 					      "rdp");
 
+	// These attributes are mandatory when sharing with a conference.
+	sipe_media_stream_add_extra_attribute(stream,
+					      "setup",
+					      "active");
+	sipe_media_stream_add_extra_attribute(stream,
+					      "connection",
+					      "new");
+
 	appshare = g_new0(struct sipe_appshare, 1);
 	appshare->stream = stream;
 	appshare->monitor_id = choice_id;
@@ -780,7 +788,7 @@ sipe_core_share_application(struct sipe_core_public *sipe_public,
 }
 
 gboolean
-sipe_applicationsharing_is_presenting(struct sipe_media_call *call)
+sipe_core_applicationsharing_is_presenting(struct sipe_media_call *call)
 {
 	struct sipe_media_stream *stream;
 
@@ -793,6 +801,33 @@ sipe_applicationsharing_is_presenting(struct sipe_media_call *call)
 	}
 
 	return FALSE;
+}
+
+void
+sipe_core_conf_share_application(struct sipe_core_public *sipe_public,
+				 struct sipe_chat_session *chat_session)
+{
+	gchar * uri;
+	struct sipe_media_call *current_call;
+
+	current_call = sipe_core_conf_get_appshare_media_call(sipe_public,
+							      chat_session);
+	if (current_call) {
+		if (sipe_core_applicationsharing_is_presenting(current_call)) {
+			// We already are the presenter in this conference.
+			return;
+		} else {
+			// Stop viewing application share from the conference.
+			sipe_backend_media_hangup(current_call->backend_private,
+						  TRUE);
+		}
+	}
+
+
+	uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+	sipe_core_share_application(sipe_public, uri);
+
+	g_free(uri);
 }
 
 /*
