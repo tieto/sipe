@@ -368,7 +368,6 @@ ft_lync_deallocate(struct sipe_file_transfer *ft)
 	if (call) {
 		sipe_backend_media_hangup(call->backend_private, TRUE);
 	}
-	sipe_file_transfer_lync_free(SIPE_FILE_TRANSFER_PRIVATE);
 }
 
 void
@@ -413,7 +412,8 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	stream = sipe_core_media_get_stream_by_id(call, "data");
 	stream->read_cb = read_cb;
 	sipe_media_stream_add_extra_attribute(stream, "recvonly", NULL);
-	sipe_media_stream_set_data(stream, ft_private, NULL);
+	sipe_media_stream_set_data(stream, ft_private,
+				   (GDestroyNotify)sipe_file_transfer_lync_free);
 
 	sipe_backend_ft_incoming(SIPE_CORE_PUBLIC, SIPE_FILE_TRANSFER,
 				 call->with, ft_private->file_name,
