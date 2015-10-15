@@ -357,6 +357,11 @@ ft_lync_end(struct sipe_file_transfer *ft)
 {
 	send_transfer_progress(SIPE_FILE_TRANSFER_PRIVATE);
 
+	/* Don't let the call be hung up in ft_lync_deallocate() because we
+	 * have to wait for BYE from the sender in order for the transfer to be
+	 * reported as successful by Lync client. */
+	SIPE_FILE_TRANSFER_PRIVATE->call = NULL;
+
 	return TRUE;
 }
 
