@@ -4,9 +4,9 @@ Priority: optional
 Maintainer: Jakub Adam <jakub.adam@ktknet.cz>
 Homepage: http://sipe.sourceforge.net/
 Build-Depends: dpkg-dev (>= 1.16.1~), debhelper (>= 9), pkg-config,
- libglib2.0-dev (>= 2.12.0), libxml2-dev, libpurple-dev (>= 2.4.0), libtool,
+ libglib2.0-dev (>= 2.12.0), libxml2-dev, libpurple-dev (>= 2.10.11-1.1), libtool,
  intltool, libkrb5-dev, libzephyr-dev, libnss3-dev, libnice-dev (>= 0.1.4),
- libgstreamer0.10-dev
+ libgstreamer1.0-dev
 Standards-Version: 3.9.6
 Vcs-Git: git://anonscm.debian.org/collab-maint/pidgin-sipe.git
 Vcs-Browser: http://anonscm.debian.org/gitweb/?p=collab-maint/pidgin-sipe.git
@@ -15,7 +15,7 @@ Package: pidgin-sipe
 Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: gstreamer0.10-ffmpeg, gstreamer0.10-x
+Recommends: gstreamer1.0-libav, gstreamer1.0-x
 Description: Pidgin plugin for MS Office Communicator and MS Lync
  A third-party plugin for the Pidgin multi-protocol instant messenger.
  It implements the extended version of SIP/SIMPLE used by various products:
