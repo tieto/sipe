@@ -25,7 +25,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.20.0
+Version:        1.20.1
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source:         %{name}-%{git}.tar.bz2
@@ -293,6 +293,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Oct 24 2015 J. D. User <jduser@noreply.com> 1.20.1
+- update to 1.20.1
+
 * Thu Sep 03 2015 J. D. User <jduser@noreply.com> 1.20.0-*git*
 - we also support "Skype for Business"
 
