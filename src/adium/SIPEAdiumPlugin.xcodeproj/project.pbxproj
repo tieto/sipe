@@ -94,6 +94,9 @@
 		B13FAC13119D585A001CE037 /* sipmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD7119D585A001CE037 /* sipmsg.c */; };
 		B13FAC15119D585A001CE037 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD9119D585A001CE037 /* uuid.c */; };
 		B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAC60119D721E001CE037 /* libxml2.dylib */; };
+		B89F38821BDEB0D30017B509 /* sipe-ft-lync.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F38811BDEB0D30017B509 /* sipe-ft-lync.c */; };
+		B89F388D1BDEB0F00017B509 /* sipe-mime-common.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F388C1BDEB0F00017B509 /* sipe-mime-common.c */; };
+		B89F388F1BDEB10B0017B509 /* purple-plugin-common.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F388E1BDEB10B0017B509 /* purple-plugin-common.c */; };
 		C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE7E109ADC54004EEEAF /* Kerberos.framework */; };
 		C9FDAEF6109ADF97004EEEAF /* sipe.png in Resources */ = {isa = PBXBuildFile; fileRef = C9FDAEF4109ADF97004EEEAF /* sipe.png */; };
 /* End PBXBuildFile section */
@@ -274,6 +277,9 @@
 		B82FA4181847524B00AE581B /* sipe-cert-crypto-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-cert-crypto-openssl.c"; sourceTree = "<group>"; };
 		B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-crypt-openssl.c"; sourceTree = "<group>"; };
 		B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-digest-openssl.c"; sourceTree = "<group>"; };
+		B89F38811BDEB0D30017B509 /* sipe-ft-lync.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ft-lync.c"; sourceTree = "<group>"; };
+		B89F388C1BDEB0F00017B509 /* sipe-mime-common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-mime-common.c"; sourceTree = "<group>"; };
+		B89F388E1BDEB10B0017B509 /* purple-plugin-common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-plugin-common.c"; sourceTree = "<group>"; };
 		C948843B109B2F8100ABFAF7 /* ESSIPEService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPEService.h; sourceTree = "<group>"; };
 		C948843C109B2F8100ABFAF7 /* ESSIPEService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ESSIPEService.m; sourceTree = "<group>"; };
 		C9488444109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPELibpurpleServicePlugin.h; sourceTree = "<group>"; };
@@ -436,6 +442,7 @@
 		B13FAB4D119D5155001CE037 /* purple */ = {
 			isa = PBXGroup;
 			children = (
+				B89F388E1BDEB10B0017B509 /* purple-plugin-common.c */,
 				1CE4A01C14A180E100663393 /* purple-search.c */,
 				1CE4A01D14A180E100663393 /* purple-status.c */,
 				1CF260F112C2DFA00045B6CC /* purple-buddy.c */,
@@ -465,6 +472,8 @@
 		B13FAB9C119D585A001CE037 /* core */ = {
 			isa = PBXGroup;
 			children = (
+				B89F388C1BDEB0F00017B509 /* sipe-mime-common.c */,
+				B89F38811BDEB0D30017B509 /* sipe-ft-lync.c */,
 				B82FA4181847524B00AE581B /* sipe-cert-crypto-openssl.c */,
 				B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */,
 				B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */,
@@ -699,9 +708,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				1CF2612C12C2E73F0045B6CC /* ESPurpleSIPEAccount.m in Sources */,
+				B89F388F1BDEB10B0017B509 /* purple-plugin-common.c in Sources */,
 				1CF2612D12C2E7420045B6CC /* ESSIPEService.m in Sources */,
+				B89F38821BDEB0D30017B509 /* sipe-ft-lync.c in Sources */,
 				1CF2612E12C2E7430045B6CC /* ESSIPELibpurpleServicePlugin.m in Sources */,
 				7BBE151D184D4BEA0000FFC9 /* DCPurpleSIPEJoinChatViewController.m in Sources */,
+				B89F388D1BDEB0F00017B509 /* sipe-mime-common.c in Sources */,
 				1CDEE46112C35DAD00790CAF /* ESSIPEAccountViewController.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
