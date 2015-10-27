@@ -163,8 +163,7 @@ mime_mixed_cb(gpointer user_data, const GSList *fields, const gchar *body,
 }
 
 static void
-candidate_pair_established_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
-			      struct sipe_media_stream *stream)
+candidate_pairs_established_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_file_transfer_lync *ft_private;
 	static const gchar *DOWNLOAD_FILE_REQUEST =
@@ -467,7 +466,6 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	}
 
 	call = ft_private->call;
-	call->candidate_pair_established_cb = candidate_pair_established_cb;
 
 	ft_private->public.ft_init = ft_lync_incoming_init;
 	ft_private->public.ft_cancelled = ft_lync_incoming_cancelled;
@@ -478,6 +476,7 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	call->call_reject_cb = call_reject_cb;
 
 	stream = sipe_core_media_get_stream_by_id(call, "data");
+	stream->candidate_pairs_established_cb = candidate_pairs_established_cb;
 	stream->read_cb = read_cb;
 	sipe_media_stream_add_extra_attribute(stream, "recvonly", NULL);
 	sipe_media_stream_set_data(stream, ft_private,

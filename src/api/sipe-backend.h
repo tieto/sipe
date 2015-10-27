@@ -368,6 +368,7 @@ struct sipe_media_stream {
 	struct sipe_media_call *call;
 	gchar *id;
 
+	void (*candidate_pairs_established_cb)(struct sipe_media_stream *);
 	void (*read_cb)(struct sipe_media_stream *);
 };
 
@@ -385,8 +386,6 @@ struct sipe_media_call {
 	void (*call_reject_cb)(struct sipe_media_call *, gboolean local);
 	void (*call_hold_cb)  (struct sipe_media_call *, gboolean local,
 			       gboolean state);
-	void (*candidate_pair_established_cb)(struct sipe_media_call *,
-					      struct sipe_media_stream *);
 	void (*call_hangup_cb)(struct sipe_media_call *, gboolean local);
 	void (*error_cb)(struct sipe_media_call *, gchar *message);
 };

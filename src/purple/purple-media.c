@@ -244,22 +244,27 @@ on_stream_info_cb(PurpleMedia *media,
 
 static void
 on_candidate_pair_established_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
-				 SIPE_UNUSED_PARAMETER const gchar *sessionid,
+				 const gchar *sessionid,
 				 SIPE_UNUSED_PARAMETER const gchar *participant,
 				 SIPE_UNUSED_PARAMETER PurpleMediaCandidate *local_candidate,
 				 SIPE_UNUSED_PARAMETER PurpleMediaCandidate *remote_candidate,
-				 SIPE_UNUSED_PARAMETER struct sipe_media_call *call)
+				 struct sipe_media_call *call)
 {
+	struct sipe_media_stream *stream =
+			sipe_core_media_get_stream_by_id(call, sessionid);
+
+	if (!stream) {
+		return;
+	}
+
 #ifdef HAVE_PURPLE_NEW_TCP_ENUMS
 	if (purple_media_candidate_get_protocol(local_candidate) != PURPLE_MEDIA_NETWORK_PROTOCOL_UDP) {
 		purple_media_set_send_rtcp_mux(media, sessionid, participant, TRUE);
 	}
 #endif
 
-	if (call->candidate_pair_established_cb) {
-		struct sipe_media_stream *stream =
-				sipe_core_media_get_stream_by_id(call, sessionid);
-		call->candidate_pair_established_cb(call, stream);
+	if (stream->candidate_pairs_established_cb) {
+		stream->candidate_pairs_established_cb(stream);
 	}
 }
 
