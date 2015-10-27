@@ -200,10 +200,8 @@ gboolean sipe_backend_media_is_initiator(SIPE_UNUSED_PARAMETER struct sipe_media
 gboolean sipe_backend_media_accepted(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) { return(FALSE); }
 gboolean sipe_backend_stream_initialized(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
 					 SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(FALSE); }
-GList *sipe_backend_media_get_active_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
-						      SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
-GList *sipe_backend_media_get_active_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
-						       SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
+GList *sipe_backend_media_stream_get_active_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
+GList *sipe_backend_media_stream_get_active_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
 void sipe_backend_media_set_encryption_keys(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
 					    SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 					    SIPE_UNUSED_PARAMETER const guchar *encryption_key,

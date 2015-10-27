@@ -426,10 +426,6 @@ gboolean sipe_backend_media_is_initiator(struct sipe_media_call *media,
 gboolean sipe_backend_media_accepted(struct sipe_backend_media *media);
 gboolean sipe_backend_stream_initialized(struct sipe_media_call *media,
 					 struct sipe_media_stream *stream);
-GList *sipe_backend_media_get_active_local_candidates(struct sipe_media_call *media,
-						      struct sipe_media_stream *stream);
-GList *sipe_backend_media_get_active_remote_candidates(struct sipe_media_call *media,
-						       struct sipe_media_stream *stream);
 void sipe_backend_media_set_encryption_keys(struct sipe_media_call *media,
 					    struct sipe_media_stream *stream,
 					    const guchar *encryption_key,
@@ -443,6 +439,9 @@ void sipe_backend_stream_unhold(struct sipe_media_call *media,
 				struct sipe_media_stream *stream,
 				gboolean local);
 gboolean sipe_backend_stream_is_held(struct sipe_media_stream *stream);
+
+GList *sipe_backend_media_stream_get_active_local_candidates(struct sipe_media_stream *stream);
+GList *sipe_backend_media_stream_get_active_remote_candidates(struct sipe_media_stream *stream);
 
 gssize sipe_backend_media_stream_read(struct sipe_media_stream *stream,
 				     guint8 *buffer, gsize len);

@@ -117,16 +117,14 @@ sipe_backend_stream_initialized(struct sipe_media_call *media,
 }
 
 GList *
-sipe_backend_media_get_active_local_candidates(struct sipe_media_call *media,
-					       struct sipe_media_stream *stream)
+sipe_backend_media_stream_get_active_local_candidates(struct sipe_media_stream *stream)
 {
 	_NIF();
 	return NULL;
 }
 
 GList *
-sipe_backend_media_get_active_remote_candidates(struct sipe_media_call *media,
-						struct sipe_media_stream *stream)
+sipe_backend_media_stream_get_active_remote_candidates(struct sipe_media_stream *stream)
 {
 	_NIF();
 	return NULL;

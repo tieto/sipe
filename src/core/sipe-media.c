@@ -446,8 +446,7 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 	// Process local candidates
 	// If we have established candidate pairs, send them in SDP response.
 	// Otherwise send all available local candidates.
-	candidates = sipe_backend_media_get_active_local_candidates(SIPE_MEDIA_CALL,
-								    SIPE_MEDIA_STREAM);
+	candidates = sipe_backend_media_stream_get_active_local_candidates(SIPE_MEDIA_STREAM);
 	sdpcandidates = backend_candidates_to_sdpcandidate(candidates);
 	sipe_media_candidate_list_free(candidates);
 
@@ -506,8 +505,7 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 	}
 
 	// Process remote candidates
-	candidates = sipe_backend_media_get_active_remote_candidates(SIPE_MEDIA_CALL,
-								     SIPE_MEDIA_STREAM);
+	candidates = sipe_backend_media_stream_get_active_remote_candidates(SIPE_MEDIA_STREAM);
 	sdpmedia->remote_candidates = backend_candidates_to_sdpcandidate(candidates);
 	sipe_media_candidate_list_free(candidates);
 
@@ -1456,7 +1454,8 @@ reinvite_on_candidate_pair_cb(struct sipe_core_public *sipe_public,
 
 	for (; streams; streams = streams->next) {
 		struct sipe_media_stream *s = streams->data;
-		GList *remote_candidates =  sipe_backend_media_get_active_remote_candidates(&media_call->public, s);
+		GList *remote_candidates =
+				sipe_backend_media_stream_get_active_remote_candidates(s);
 		guint components = g_list_length(remote_candidates);
 
 		sipe_media_candidate_list_free(remote_candidates);
