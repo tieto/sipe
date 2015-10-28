@@ -370,6 +370,7 @@ struct sipe_media_stream {
 
 	void (*candidate_pairs_established_cb)(struct sipe_media_stream *);
 	void (*read_cb)(struct sipe_media_stream *);
+	void (*mute_cb)(struct sipe_media_stream *, gboolean is_muted);
 };
 
 struct sipe_media_call {

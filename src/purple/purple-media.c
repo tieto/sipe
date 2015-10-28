@@ -239,6 +239,13 @@ on_stream_info_cb(PurpleMedia *media,
 					call->call_reject_cb(call, local);
 			}
 		}
+	} else if (type == PURPLE_MEDIA_INFO_MUTE || type == PURPLE_MEDIA_INFO_UNMUTE) {
+		struct sipe_media_stream *stream =
+				sipe_core_media_get_stream_by_id(call, "audio");
+
+		if (stream && stream->mute_cb) {
+			stream->mute_cb(stream, type == PURPLE_MEDIA_INFO_MUTE);
+		}
 	}
 }
 
