@@ -68,6 +68,8 @@ struct sip_session {
 	struct sip_dialog *focus_dialog;
 	/** Key is Message-Id */
 	GHashTable *conf_unconfirmed_messages;
+	gchar *audio_video_entity;
+	guint audio_media_id;
 
 	/*
 	 * Media call related fields

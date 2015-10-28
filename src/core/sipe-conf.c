@@ -1029,6 +1029,45 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 
 static void
+process_conference_av_endpoint(const sipe_xml *endpoint,
+			       const gchar *user_uri,
+			       const gchar *self_uri,
+			       struct sip_session *session)
+{
+	const sipe_xml *media;
+	const gchar *new_entity;
+
+	if (!sipe_strequal(user_uri, self_uri)) {
+		/* We are interested only in our own endpoint data. */
+		return;
+	}
+
+	new_entity = sipe_xml_attribute(endpoint, "entity");
+	if (!sipe_strequal(session->audio_video_entity, new_entity)) {
+		g_free(session->audio_video_entity);
+		session->audio_video_entity = g_strdup(new_entity);
+	}
+
+	session->audio_media_id = 0;
+
+	media = sipe_xml_child(endpoint, "media");
+	for (; media; media = sipe_xml_twin(media)) {
+		gchar *type = sipe_xml_data(sipe_xml_child(media, "type"));
+
+		if (sipe_strequal(type, "audio")) {
+			session->audio_media_id =
+					sipe_xml_int_attribute(media, "id", 0);
+		}
+
+		g_free(type);
+
+		if (session->audio_media_id != 0) {
+			break;
+		}
+	}
+}
+
+static void
 call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
 {
 	struct sip_session *session;
@@ -1193,6 +1232,10 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 					if (!session->is_call)
 						audio_was_added = TRUE;
+					process_conference_av_endpoint(endpoint,
+								       user_uri,
+								       self,
+								       session);
 #endif
 				}
 			}
