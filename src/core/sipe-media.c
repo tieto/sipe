@@ -55,6 +55,8 @@ struct sipe_media_call_private {
 	/* private part starts here */
 	struct sipe_core_private	*sipe_private;
 
+	struct sip_session		*conference_session;
+
 	GSList				*streams;
 
 	struct sipmsg			*invitation;
@@ -1146,11 +1148,26 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 				 SIPE_ICE_RFC_5245, with_video);
 }
 
+static void
+conference_audio_muted_cb(struct sipe_media_stream *stream, gboolean is_muted)
+{
+	struct sipe_media_call *call = stream->call;
+
+	if (!SIPE_MEDIA_CALL_PRIVATE->conference_session) {
+		return;
+	}
+
+	sipe_conf_announce_audio_mute_state(SIPE_MEDIA_CALL_PRIVATE->sipe_private,
+					    SIPE_MEDIA_CALL_PRIVATE->conference_session,
+					    is_muted);
+}
+
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_media_call_private *call_private;
+	struct sipe_media_stream *stream;
 	struct sip_session *session;
 	SipeIceVersion ice_version;
 	gchar *av_uri;
@@ -1179,15 +1196,21 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 
 	call_private = sipe_media_call_new(sipe_private, av_uri, NULL,
 					   ice_version, 0);
+	call_private->conference_session = session;
 
-	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
-				   call_private->ice_version, TRUE)) {
+	stream = sipe_media_stream_add(SIPE_MEDIA_CALL, "audio",
+				       SIPE_MEDIA_AUDIO,
+				       call_private->ice_version,
+				       TRUE);
+	if (!stream) {
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occurred"),
 					  _("Error creating audio stream"));
 
 		sipe_media_hangup(call_private);
 	}
+
+	stream->mute_cb = conference_audio_muted_cb;
 
 	g_free(av_uri);
 

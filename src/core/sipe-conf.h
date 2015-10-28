@@ -108,6 +108,14 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		      const gchar* who);
 
 /**
+ * Notifies conference call participants of our microphone mute state.
+ */
+void
+sipe_conf_announce_audio_mute_state(struct sipe_core_private *sipe_private,
+				    struct sip_session *session,
+				    gboolean is_muted);
+
+/**
  * Invokes when we are ejected from conference
  * for example or conference has been timed out.
  */

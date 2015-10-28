@@ -657,6 +657,45 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		     session->focus_dialog->with, who);
 }
 
+void
+sipe_conf_announce_audio_mute_state(struct sipe_core_private *sipe_private,
+				    struct sip_session *session,
+				    gboolean is_muted)
+{
+	// See [MS-CONFAV] 3.2.5.4 and 4.3
+	static const gchar CCCP_MODIFY_ENDPOINT_MEDIA[] =
+		"<modifyEndpointMedia mscp:mcuUri=\"%s\""
+		" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\">"
+			"<mediaKeys confEntity=\"%s\" userEntity=\"%s\""
+			" endpointEntity=\"%s\" mediaId=\"%d\"/>"
+			"<ci:media"
+			" xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" id=\"%d\">"
+				"<ci:type>audio</ci:type>"
+				"<ci:status>%s</ci:status>"
+				"<media-ingress-filter"
+				" xmlns=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\">"
+					"%s"
+				"</media-ingress-filter>"
+			"</ci:media>"
+		"</modifyEndpointMedia>";
+
+	gchar *mcu_uri = sipe_conf_build_uri(session->focus_dialog->with,
+					     "audio-video");
+	gchar *self = sip_uri_self(sipe_private);
+
+	cccp_request(sipe_private, "INFO", session->focus_dialog->with,
+		     session->focus_dialog, NULL,
+		     CCCP_MODIFY_ENDPOINT_MEDIA,
+		     mcu_uri, session->focus_dialog->with, self,
+		     session->audio_video_entity,
+		     session->audio_media_id, session->audio_media_id,
+		     is_muted ? "recvonly" : "sendrecv",
+		     is_muted ? "block" : "unblock");
+
+	g_free(mcu_uri);
+	g_free(self);
+}
+
 /** Invite counterparty to join conference callback */
 static gboolean
 process_invite_conf_response(struct sipe_core_private *sipe_private,
