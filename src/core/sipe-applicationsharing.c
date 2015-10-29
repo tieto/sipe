@@ -619,7 +619,6 @@ sipe_core_connect_applicationsharing(struct sipe_core_public *sipe_public,
 {
 	struct sipe_media_call *call;
 	struct sipe_media_stream *stream;
-	struct sip_session *session;
 	gchar * uri;
 
 	uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
@@ -639,10 +638,6 @@ sipe_core_connect_applicationsharing(struct sipe_core_public *sipe_public,
 					  _("Error connecting to application sharing"));
 		sipe_backend_media_hangup(call->backend_private, FALSE);
 	}
-
-	session = sipe_session_find_chat(SIPE_CORE_PRIVATE, chat_session);
-	session->presentation_callid =
-			g_strdup(sipe_media_get_sip_dialog(call)->callid);
 
 	sipe_media_stream_add_extra_attribute(stream,
 			"connection", "new");

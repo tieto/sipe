@@ -1364,7 +1364,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 								       session);
 #endif
 				} else if (sipe_strequal("applicationsharing", session_type)) {
-					if (!session->presentation_callid) {
+					if (!sipe_core_conf_get_presentation_media_call(SIPE_CORE_PUBLIC, session->chat_session)) {
 						gchar *media_state =
 								sipe_xml_data(sipe_xml_child(endpoint, "media/media-state"));
 						gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "media/status"));
@@ -1573,14 +1573,27 @@ struct sipe_media_call *
 sipe_core_conf_get_presentation_media_call(struct sipe_core_public *sipe_public,
 					   struct sipe_chat_session *chat_session)
 {
-	struct sip_session *session =
-			sipe_session_find_chat(SIPE_CORE_PRIVATE, chat_session);
-	if (!session || !session->presentation_callid) {
-		return NULL;
+	gchar *mcu_uri;
+	GList *calls;
+	struct sipe_media_call *result = NULL;
+
+	g_return_val_if_fail(chat_session, result);
+
+	mcu_uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+
+	calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
+	for (; calls; calls = g_list_delete_link(calls, calls)) {
+		struct sipe_media_call *call = calls->data;
+		if (sipe_strequal(call->with, mcu_uri)) {
+			result = call;
+			break;
+		}
 	}
 
-	return g_hash_table_lookup(SIPE_CORE_PRIVATE->media_calls,
-				   session->presentation_callid);
+	g_list_free(calls);
+	g_free(mcu_uri);
+
+	return result;
 }
 
 static gchar *
