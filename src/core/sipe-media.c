@@ -218,9 +218,11 @@ backend_candidates_to_sdpcandidate(GList *candidates)
 
 static void
 get_stream_ip_and_ports(GSList *candidates,
-			gchar **ip, guint *rtp_port, guint *rtcp_port,
-			SipeCandidateType type)
+			gchar **ip, guint *rtp_port, guint *rtcp_port)
 {
+	guint32 rtp_max_priority = 0;
+	guint32 rtcp_max_priority = 0;
+
 	*ip = 0;
 	*rtp_port = 0;
 	*rtcp_port = 0;
@@ -228,21 +230,18 @@ get_stream_ip_and_ports(GSList *candidates,
 	for (; candidates; candidates = candidates->next) {
 		struct sdpcandidate *candidate = candidates->data;
 
-		if (type == SIPE_CANDIDATE_TYPE_ANY || candidate->type == type) {
-			if (!*ip) {
-				*ip = g_strdup(candidate->ip);
-			} else if (!sipe_strequal(*ip, candidate->ip)) {
-				continue;
-			}
+		if (candidate->component == SIPE_COMPONENT_RTP &&
+		    candidate->priority > rtp_max_priority) {
+			rtp_max_priority = candidate->priority;
+			*rtp_port = candidate->port;
 
-			if (candidate->component == SIPE_COMPONENT_RTP) {
-				*rtp_port = candidate->port;
-			} else if (candidate->component == SIPE_COMPONENT_RTCP)
-				*rtcp_port = candidate->port;
+			g_free(*ip);
+			*ip = g_strdup(candidate->ip);
+		} else if (candidate->component == SIPE_COMPONENT_RTCP &&
+			   candidate->priority > rtcp_max_priority) {
+			rtcp_max_priority = candidate->priority;
+			*rtcp_port = candidate->port;
 		}
-
-		if (*rtp_port != 0 && *rtcp_port != 0)
-			return;
 	}
 }
 
@@ -470,13 +469,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 					   (GDestroyNotify)sdpcandidate_free);
 	}
 
-	get_stream_ip_and_ports(sdpmedia->candidates, &sdpmedia->ip, &sdpmedia->port,
-				&rtcp_port, SIPE_CANDIDATE_TYPE_HOST);
-	// No usable HOST candidates, use any candidate
-	if (sdpmedia->ip == NULL && sdpmedia->candidates) {
-		get_stream_ip_and_ports(sdpmedia->candidates, &sdpmedia->ip, &sdpmedia->port,
-					&rtcp_port, SIPE_CANDIDATE_TYPE_ANY);
-	}
+	get_stream_ip_and_ports(sdpmedia->candidates, &sdpmedia->ip,
+				&sdpmedia->port, &rtcp_port);
 
 	if (sipe_backend_stream_is_held(SIPE_MEDIA_STREAM))
 		attributes = sipe_utils_nameval_add(attributes, "inactive", "");
