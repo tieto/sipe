@@ -75,7 +75,6 @@ struct sip_session {
 	 * Media call related fields
 	 */
 	gboolean is_call;
-	gchar *presentation_callid;
 
 	/*
 	 * Group Chat related fields
