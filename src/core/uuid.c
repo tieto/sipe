@@ -29,9 +29,6 @@
 #include "sipe-digest.h"
 #include "uuid.h"
 
-#define UUID_STRING_LENGTH 36
-static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";
-
 /*
  * This assumes that the structure is correctly packed on all target
  * platforms, i.e. sizeof(uuid_t) == 16
@@ -54,27 +51,6 @@ typedef struct {
 #ifdef _WIN32
 #pragma pack(pop)
 #endif
-
-#define UUID_OFFSET_TO_LAST_SEGMENT 24
-
-static void readUUID(const char *string, uuid_t *uuid)
-{
-	int i;
-	/* Some platforms don't allow scanning to char using %02hhx */
-	short tmp1, tmp2;
-
-	sscanf(string, "%08x-%04hx-%04hx-%02hx%02hx-", &uuid->time_low
-			, &uuid->time_mid, &uuid->time_hi_and_version
-			, &tmp1, &tmp2);
-	uuid->clock_seq_hi_and_reserved = tmp1;
-	uuid->clock_seq_low = tmp2;
-
-	for(i=0;i<6;i++)
-	{
-		sscanf(&string[UUID_OFFSET_TO_LAST_SEGMENT+i*2], "%02hx", &tmp1);
-		uuid->node[i] = tmp1;
-	}
-}
 
 static void printUUID(uuid_t *uuid, char *string)
 {
@@ -103,13 +79,19 @@ static void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
 
 char *generateUUIDfromEPID(const gchar *epid)
 {
-	uuid_t result;
+#define UUID_STRING_LENGTH 36
+	/* derived from "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe" */
+	uuid_t result = {
+		0xfcacfb03,
+		0x8a73,
+		0x46ef,
+		0x91, 0xb1,
+		{ 0xe5, 0xeb, 0xee, 0xab, 0xa4, 0xfe }
+	};
 	gchar *buf;
 	guchar digest[SIPE_DIGEST_SHA1_LENGTH];
 	uint digest_length = sizeof(uuid_t) + strlen(epid);
 	uint buf_length    = digest_length;
-
-	readUUID(epid_ns_uuid, &result);
 
 	result.time_low = GUINT32_FROM_LE(result.time_low);
 	result.time_mid = GUINT16_FROM_LE(result.time_mid);
