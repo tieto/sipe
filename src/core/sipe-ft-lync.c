@@ -487,11 +487,59 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 				 ft_private->file_size);
 }
 
+static void
+process_response_incoming(struct sipe_file_transfer_lync *ft_private,
+			  sipe_xml *xml)
+{
+	guint request_id = atoi(sipe_xml_attribute(xml, "requestId"));
+	const gchar *code;
+
+	if (request_id != ft_private->request_id) {
+		return;
+	}
+
+	code = sipe_xml_attribute(xml, "code");
+	if (sipe_strequal(code, "failure")) {
+		const gchar *reason = sipe_xml_attribute(xml, "reason");
+		if (sipe_strequal(reason, "requestCancelled")) {
+			sipe_backend_ft_cancel_remote(SIPE_FILE_TRANSFER);
+		}
+	}
+}
+
 void
 process_incoming_info_ft_lync(struct sipe_core_private *sipe_private,
 			      struct sipmsg *msg)
 {
+	struct sipe_media_call *call;
+	struct sipe_file_transfer_lync *ft_private;
+	sipe_xml *xml;
+
+	call = g_hash_table_lookup(sipe_private->media_calls,
+				   sipmsg_find_header(msg, "Call-ID"));
+	if (!call) {
+		return;
+	}
+
+	ft_private = ft_private_from_call(call);
+	if (!ft_private) {
+		return;
+	}
+
+	xml = sipe_xml_parse(msg->body, msg->bodylen);
+	if (!xml) {
+		return;
+	}
+
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+
+	if (sipe_backend_ft_is_incoming(SIPE_FILE_TRANSFER)) {
+		if (sipe_strequal(sipe_xml_name(xml), "response")) {
+			process_response_incoming(ft_private, xml);
+		}
+	}
+
+	sipe_xml_free(xml);
 }
 
 /*
