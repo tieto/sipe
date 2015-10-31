@@ -1276,6 +1276,16 @@ sipe_media_from_sipmsg(struct sipe_core_private *sipe_private,
 				   sipmsg_find_header(msg, "Call-ID"));
 }
 
+static void
+transport_response_unsupported_sdp(struct sipe_core_private *sipe_private,
+				   struct sipmsg *msg)
+{
+	sipmsg_add_header(msg, "ms-client-diagnostics",
+			  "52063;reason=\"Unsupported session description\"");
+	sip_transport_response(sipe_private, msg,
+			       488, "Not Acceptable Here", NULL);
+}
+
 struct sipe_media_call *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
@@ -1311,8 +1321,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 
 	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
-		sip_transport_response(sipe_private, msg,
-				       488, "Not Acceptable Here", NULL);
+		transport_response_unsupported_sdp(sipe_private, msg);
 		if (call_private) {
 			sipe_media_hangup(call_private);
 		}
@@ -1603,8 +1612,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	sipe_dialog_parse(dialog, msg, TRUE);
 	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
-		sip_transport_response(sipe_private, msg,
-				       488, "Not Acceptable Here", NULL);
+		transport_response_unsupported_sdp(sipe_private, msg);
 		sipe_media_hangup(call_private);
 		return FALSE;
 	}
