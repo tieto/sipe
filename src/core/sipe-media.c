@@ -1767,14 +1767,20 @@ process_get_av_edge_credentials_response(struct sipe_core_private *sipe_private,
 
 				node = sipe_xml_child(item, "udpPort");
 				if (node) {
-					relay->udp_port = atoi(tmp = sipe_xml_data(node));
-					g_free(tmp);
+					tmp = sipe_xml_data(node);
+					if (tmp) {
+						relay->udp_port = atoi(tmp);
+						g_free(tmp);
+					}
 				}
 
 				node = sipe_xml_child(item, "tcpPort");
 				if (node) {
-					relay->tcp_port = atoi(tmp = sipe_xml_data(node));
-					g_free(tmp);
+					tmp = sipe_xml_data(node);
+					if (tmp) {
+						relay->tcp_port = atoi(tmp);
+						g_free(tmp);
+					}
 				}
 
 				relays = g_slist_append(relays, relay);
