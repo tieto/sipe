@@ -90,8 +90,8 @@ char *generateUUIDfromEPID(const gchar *epid)
 	};
 	gchar *buf;
 	guchar digest[SIPE_DIGEST_SHA1_LENGTH];
-	uint digest_length = sizeof(uuid_t) + strlen(epid);
-	uint buf_length    = digest_length;
+	guint digest_length = sizeof(uuid_t) + strlen(epid);
+	guint buf_length    = digest_length;
 
 	result.time_low = GUINT32_FROM_LE(result.time_low);
 	result.time_mid = GUINT16_FROM_LE(result.time_mid);
