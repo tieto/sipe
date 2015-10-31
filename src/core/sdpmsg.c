@@ -57,11 +57,26 @@ parse_attributes(struct sdpmsg *smsg, gchar *msg) {
 	while (*ptr != NULL) {
 		if (g_str_has_prefix(*ptr, "o=")) {
 			gchar **parts = g_strsplit(*ptr + 2, " ", 6);
+			if (g_strv_length(parts) != 6) {
+				g_strfreev(parts);
+				g_strfreev(lines);
+				return FALSE;
+			}
+
 			smsg->ip = g_strdup(parts[5]);
 			g_strfreev(parts);
 		} else if (g_str_has_prefix(*ptr, "m=")) {
-			gchar **parts = g_strsplit(*ptr + 2, " ", 3);
-			struct sdpmedia *media = g_new0(struct sdpmedia, 1);
+			gchar **parts;
+			struct sdpmedia *media;
+
+			parts = g_strsplit(*ptr + 2, " ", 3);
+			if (g_strv_length(parts) < 3) {
+				g_strfreev(parts);
+				g_strfreev(lines);
+				return FALSE;
+			}
+
+			media = g_new0(struct sdpmedia, 1);
 
 			smsg->media = g_slist_append(smsg->media, media);
 
@@ -126,10 +141,16 @@ base64_pad(const gchar* str)
 		return g_strdup(str);
 }
 
-static GSList *
-parse_append_candidate_draft_6(gchar **tokens, GSList *candidates)
+static gboolean
+parse_append_candidate_draft_6(gchar **tokens, GSList **candidates)
 {
-	struct sdpcandidate *candidate = g_new0(struct sdpcandidate, 1);
+	struct sdpcandidate *candidate;
+
+	if (g_strv_length(tokens) < 7 || strlen(tokens[4]) < 3) {
+		return FALSE;
+	}
+
+	candidate = g_new0(struct sdpcandidate, 1);
 
 	candidate->username = base64_pad(tokens[0]);
 	candidate->component = parse_component(tokens[1]);
@@ -141,30 +162,35 @@ parse_append_candidate_draft_6(gchar **tokens, GSList *candidates)
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
 	else {
 		sdpcandidate_free(candidate);
-		return candidates;
+		return FALSE;
 	}
 
 	candidate->priority = atoi(tokens[4] + 2);
 	candidate->ip = g_strdup(tokens[5]);
 	candidate->port = atoi(tokens[6]);
 
-	candidates = g_slist_append(candidates, candidate);
+	*candidates = g_slist_append(*candidates, candidate);
 
 	// draft 6 candidates are both active and passive
 	if (candidate->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) {
 		candidate = sdpcandidate_copy(candidate);
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
-		candidates = g_slist_append(candidates, candidate);
+		*candidates = g_slist_append(*candidates, candidate);
 	}
 
-	return candidates;
+	return TRUE;
 }
 
-static GSList *
-parse_append_candidate_rfc_5245(gchar **tokens, GSList *candidates)
+static gboolean
+parse_append_candidate_rfc_5245(gchar **tokens, GSList **candidates)
 {
-	struct sdpcandidate *candidate = g_new0(struct sdpcandidate, 1);
+	struct sdpcandidate *candidate;
 
+	if (g_strv_length(tokens) < 8) {
+		return FALSE;
+	}
+
+	candidate = g_new0(struct sdpcandidate, 1);
 	candidate->foundation = g_strdup(tokens[0]);
 	candidate->component = parse_component(tokens[1]);
 
@@ -176,7 +202,7 @@ parse_append_candidate_rfc_5245(gchar **tokens, GSList *candidates)
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
 	else {
 		sdpcandidate_free(candidate);
-		return candidates;
+		return FALSE;
 	}
 
 	candidate->priority = atoi(tokens[3]);
@@ -193,44 +219,58 @@ parse_append_candidate_rfc_5245(gchar **tokens, GSList *candidates)
 		candidate->type = SIPE_CANDIDATE_TYPE_PRFLX;
 	else {
 		sdpcandidate_free(candidate);
-		return candidates;
+		return FALSE;
 	}
 
-	candidates = g_slist_append(candidates, candidate);
+	*candidates = g_slist_append(*candidates, candidate);
 
 	// TCP-ACT candidates are both active and passive
 	if (candidate->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) {
 		candidate = sdpcandidate_copy(candidate);
 		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
-		candidates = g_slist_append(candidates, candidate);
+		*candidates = g_slist_append(*candidates, candidate);
 	}
-	return candidates;
+
+	return TRUE;
 }
 
-static GSList *
-parse_candidates(GSList *attrs, SipeIceVersion *ice_version)
+static gboolean
+parse_candidates(GSList *attrs, SipeIceVersion *ice_version, GSList **candidates)
 {
-	GSList *candidates = NULL;
 	const gchar *attr;
 	int i = 0;
 
+	g_return_val_if_fail(*candidates == NULL, FALSE);
+
 	while ((attr = sipe_utils_nameval_find_instance(attrs, "candidate", i++))) {
 		gchar **tokens = g_strsplit_set(attr, " ", 0);
+		gboolean parsed_ok;
+
+		if (g_strv_length(tokens) < 7) {
+			g_strfreev(tokens);
+			return FALSE;
+		}
 
 		if (sipe_strequal(tokens[6], "typ")) {
-			candidates = parse_append_candidate_rfc_5245(tokens, candidates);
-			if (candidates)
+			parsed_ok = parse_append_candidate_rfc_5245(tokens,
+								    candidates);
+			if (*candidates)
 				*ice_version = SIPE_ICE_RFC_5245;
 		} else {
-			candidates = parse_append_candidate_draft_6(tokens, candidates);
-			if (candidates)
+			parsed_ok = parse_append_candidate_draft_6(tokens,
+								   candidates);
+			if (*candidates)
 				*ice_version = SIPE_ICE_DRAFT_6;
 		}
 
 		g_strfreev(tokens);
+
+		if (!parsed_ok) {
+			return FALSE;
+		}
 	}
 
-	if (!candidates)
+	if (!(*candidates))
 		*ice_version = SIPE_ICE_NO_ICE;
 
 	if (*ice_version == SIPE_ICE_RFC_5245) {
@@ -239,7 +279,7 @@ parse_candidates(GSList *attrs, SipeIceVersion *ice_version)
 
 		if (username && password) {
 			GSList *i;
-			for (i = candidates; i; i = i->next) {
+			for (i = *candidates; i; i = i->next) {
 				struct sdpcandidate *c = i->data;
 				c->username = g_strdup(username);
 				c->password = g_strdup(password);
@@ -247,7 +287,7 @@ parse_candidates(GSList *attrs, SipeIceVersion *ice_version)
 		}
 	}
 
-	return candidates;
+	return TRUE;
 }
 
 static GSList *
@@ -279,50 +319,83 @@ create_legacy_candidates(gchar *ip, guint16 port)
 	return candidates;
 }
 
-static GSList *
-parse_codecs(GSList *attrs, SipeMediaType type)
+static gboolean
+parse_codec_parameters(GSList *attrs, struct sdpcodec *codec)
+{
+	const gchar* params;
+	int i = 0;
+
+	while((params = sipe_utils_nameval_find_instance(attrs, "fmtp", i++))) {
+		gchar **tokens;
+		gchar **param;
+
+		tokens = g_strsplit(params, " ", 0);
+		if (g_strv_length(tokens) < 1) {
+			g_strfreev(tokens);
+			return FALSE;
+		}
+
+		if (atoi(tokens[0]) != codec->id) {
+			g_strfreev(tokens);
+			continue;
+		}
+
+		for (param = tokens + 1; *param; ++param) {
+			gchar **nameval = g_strsplit(*param, "=", 2);
+
+			if (g_strv_length(nameval) != 2) {
+				g_strfreev(nameval);
+				continue;
+			}
+
+			codec->parameters =
+					sipe_utils_nameval_add(codec->parameters,
+							       nameval[0],
+							       nameval[1]);
+
+			g_strfreev(nameval);
+		}
+
+		g_strfreev(tokens);
+	}
+
+	return TRUE;
+}
+
+
+static gboolean
+parse_codecs(GSList *attrs, SipeMediaType type, GSList **codecs)
 {
 	int i = 0;
 	const gchar *attr;
-	GSList *codecs = NULL;
 
 	while ((attr = sipe_utils_nameval_find_instance(attrs, "rtpmap", i++))) {
-		struct sdpcodec *codec = g_new0(struct sdpcodec, 1);
-		gchar **tokens = g_strsplit_set(attr, " /", 3);
+		struct sdpcodec *codec;
+		gchar **tokens;
 
-		int j = 0;
-		const gchar* params;
+		tokens = g_strsplit_set(attr, " /", 3);
+		if (g_strv_length(tokens) != 3) {
+			g_strfreev(tokens);
+			return FALSE;
+		}
 
+		codec = g_new0(struct sdpcodec, 1);
 		codec->id = atoi(tokens[0]);
 		codec->name = g_strdup(tokens[1]);
 		codec->clock_rate = atoi(tokens[2]);
 		codec->type = type;
 
-		// TODO: more secure and effective implementation
-		while((params = sipe_utils_nameval_find_instance(attrs, "fmtp", j++))) {
-			gchar **tokens = g_strsplit_set(params, " ", 0);
-			gchar **next = tokens + 1;
+		g_strfreev(tokens);
 
-			if (atoi(tokens[0]) == codec->id) {
-				while (*next) {
-					gchar name[50];
-					gchar value[50];
-
-					if (sscanf(*next, "%[a-zA-Z0-9]=%s", name, value) == 2)
-						codec->parameters = sipe_utils_nameval_add(codec->parameters, name, value);
-
-					++next;
-				}
-			}
-
-			g_strfreev(tokens);
+		if (!parse_codec_parameters(attrs, codec)) {
+			sdpcodec_free(codec);
+			return FALSE;
 		}
 
-		codecs = g_slist_append(codecs, codec);
-		g_strfreev(tokens);
+		*codecs = g_slist_append(*codecs, codec);
 	}
 
-	return codecs;
+	return TRUE;
 }
 
 static void
@@ -370,8 +443,11 @@ sdpmsg_parse_msg(gchar *msg)
 		struct sdpmedia *media = i->data;
 		SipeMediaType type;
 
-		media->candidates = parse_candidates(media->attributes,
-						     &smsg->ice_version);
+		if (!parse_candidates(media->attributes, &smsg->ice_version,
+				      &media->candidates)) {
+			sdpmsg_free(smsg);
+			return NULL;
+		}
 
 		if (!media->candidates && media->port != 0) {
 			// No a=candidate in SDP message, this seems to be MSOC 2005
@@ -390,7 +466,11 @@ sdpmsg_parse_msg(gchar *msg)
 			return NULL;
 		}
 
-		media->codecs = parse_codecs(media->attributes, type);
+		if (!parse_codecs(media->attributes, type, &media->codecs)) {
+			sdpmsg_free(smsg);
+			return NULL;
+		}
+
 		parse_encryption_key(media->attributes, &media->encryption_key,
 				&media->encryption_key_id);
 	}
