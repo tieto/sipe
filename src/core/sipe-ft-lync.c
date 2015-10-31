@@ -502,7 +502,7 @@ process_response_incoming(struct sipe_file_transfer_lync *ft_private,
 		return;
 	}
 
-	attr = sipe_xml_attribute(xml, "attr");
+	attr = sipe_xml_attribute(xml, "code");
 	if (sipe_strequal(attr, "failure")) {
 		const gchar *reason = sipe_xml_attribute(xml, "reason");
 		if (sipe_strequal(reason, "requestCancelled")) {
