@@ -491,15 +491,19 @@ static void
 process_response_incoming(struct sipe_file_transfer_lync *ft_private,
 			  sipe_xml *xml)
 {
-	guint request_id = atoi(sipe_xml_attribute(xml, "requestId"));
-	const gchar *code;
+	const gchar *attr;
+	guint request_id = 0;
 
+	attr = sipe_xml_attribute(xml, "requestId");
+	if (attr) {
+		request_id = atoi(attr);
+	}
 	if (request_id != ft_private->request_id) {
 		return;
 	}
 
-	code = sipe_xml_attribute(xml, "code");
-	if (sipe_strequal(code, "failure")) {
+	attr = sipe_xml_attribute(xml, "attr");
+	if (sipe_strequal(attr, "failure")) {
 		const gchar *reason = sipe_xml_attribute(xml, "reason");
 		if (sipe_strequal(reason, "requestCancelled")) {
 			sipe_backend_ft_cancel_remote(SIPE_FILE_TRANSFER);
