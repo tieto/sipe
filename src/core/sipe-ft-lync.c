@@ -134,10 +134,9 @@ mime_mixed_cb(gpointer user_data, const GSList *fields, const gchar *body,
 		sipe_xml *xml = sipe_xml_parse(body, length);
 		const sipe_xml *node;
 
-		const gchar *request_id_str = sipe_xml_attribute(xml, "requestId");
-		if (request_id_str) {
-			ft_private->request_id = atoi(request_id_str);
-		}
+		ft_private->request_id = sipe_xml_int_attribute(xml,
+								"requestId",
+								ft_private->request_id);
 
 		node = sipe_xml_child(xml, "publishFile/fileInfo/name");
 		if (node) {
@@ -492,12 +491,8 @@ process_response_incoming(struct sipe_file_transfer_lync *ft_private,
 			  sipe_xml *xml)
 {
 	const gchar *attr;
-	guint request_id = 0;
+	guint request_id = sipe_xml_int_attribute(xml, "requestId", 0);
 
-	attr = sipe_xml_attribute(xml, "requestId");
-	if (attr) {
-		request_id = atoi(attr);
-	}
 	if (request_id != ft_private->request_id) {
 		return;
 	}
