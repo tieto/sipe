@@ -132,31 +132,39 @@ mime_mixed_cb(gpointer user_data, const GSList *fields, const gchar *body,
 	/* Lync 2010 file transfer */
 	if (g_str_has_prefix(ctype, "application/ms-filetransfer+xml")) {
 		sipe_xml *xml = sipe_xml_parse(body, length);
-		const sipe_xml *node;
 
-		ft_private->request_id = sipe_xml_int_attribute(xml,
-								"requestId",
-								ft_private->request_id);
+		if (xml) {
+			const sipe_xml *node;
 
-		node = sipe_xml_child(xml, "publishFile/fileInfo/name");
-		if (node) {
-			ft_private->file_name = sipe_xml_data(node);
-		}
+			ft_private->request_id = sipe_xml_int_attribute(xml,
+									"requestId",
+									ft_private->request_id);
 
-		node = sipe_xml_child(xml, "publishFile/fileInfo/id");
-		if (node) {
-			ft_private->id = sipe_xml_data(node);
-		}
-
-		node = sipe_xml_child(xml, "publishFile/fileInfo/size");
-		if (node) {
-			gchar *size_str = sipe_xml_data(node);
-			if (size_str) {
-				ft_private->file_size = atoi(size_str);
-				g_free(size_str);
+			node = sipe_xml_child(xml, "publishFile/fileInfo/name");
+			if (node) {
+				g_free(ft_private->file_name);
+				ft_private->file_name = sipe_xml_data(node);
 			}
+
+			node = sipe_xml_child(xml, "publishFile/fileInfo/id");
+			if (node) {
+				g_free(ft_private->id);
+				ft_private->id = sipe_xml_data(node);
+			}
+
+			node = sipe_xml_child(xml, "publishFile/fileInfo/size");
+			if (node) {
+				gchar *size_str = sipe_xml_data(node);
+				if (size_str) {
+					ft_private->file_size = atoi(size_str);
+					g_free(size_str);
+				}
+			}
+
+			sipe_xml_free(xml);
 		}
 	} else if (g_str_has_prefix(ctype, "application/sdp")) {
+		g_free(ft_private->sdp);
 		ft_private->sdp = g_strndup(body, length);
 	}
 }
