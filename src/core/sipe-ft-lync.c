@@ -254,7 +254,7 @@ xdata_got_header_cb(struct sipe_media_stream *stream,
 			sipe_media_stream_get_data(stream);
 
 	guint8 type = buffer[0];
-	guint16 size = GUINT16_FROM_BE(*(guint16 *)(buffer + sizeof (guint8)));
+	guint16 size = (buffer[1] << 8) + buffer[2]; /* stored as big-endian */
 
 	switch (type) {
 		case SIPE_XDATA_START_OF_STREAM:
