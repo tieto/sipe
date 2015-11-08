@@ -54,11 +54,15 @@ BuildRequires:  gettext-devel
 %if !0%{?_without_vv:1}
 BuildRequires:  pkgconfig(purple) >= 2.8.0
 BuildRequires:  pkgconfig(nice) >= 0.1.0
+%if 0%{?fedora} >= 22
+BuildRequires:  pkgconfig(gstreamer-1.0)
+%else
 %if 0%{?fedora} >= 20
 # Dependency required when gstreamer support is split into two packages
 %define         requires_libnice_gstreamer 1
 %endif
 BuildRequires:  pkgconfig(gstreamer-0.10)
+%endif
 %endif
 # Use "--without telepathy" to disable telepathy
 %if !0%{?_without_telepathy:1}
@@ -293,6 +297,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Nov 08 2015 J. D. User <jduser@noreply.com> 1.20.1-*git*
+- add dependency on pkgconfig(gstreamer-1.0) for F22+
+
 * Sat Oct 24 2015 J. D. User <jduser@noreply.com> 1.20.1
 - update to 1.20.1
 

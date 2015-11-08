@@ -87,6 +87,12 @@
 %define has_gstreamer 1
 %define build_telepathy 1
 %define nice_gstreamer gstreamer-0_10-libnice
+# Leap 42.1 or SLES12
+%if 0%{?suse_version} >= 1315
+%define has_gstreamer 0
+%define has_gstreamer1 1
+%undefine nice_gstreamer
+%endif
 %endif
 %else
 %define nss_develname nss-devel
@@ -107,6 +113,11 @@
 %define nice_gstreamer libnice-gstreamer
 %if 0%{?fedora} >= 21
 %define has_gssntlmssp 1
+%if 0%{?fedora} >= 22
+%define has_gstreamer 0
+%define has_gstreamer1 1
+%undefine nice_gstreamer
+%endif
 %endif
 %endif
 %endif
@@ -184,6 +195,9 @@ Requires:       %{nice_gstreamer}
 %endif
 %if 0%{?has_gstreamer:1}
 BuildRequires:  pkgconfig(gstreamer-0.10)
+%endif
+%if 0%{?has_gstreamer1:1}
+BuildRequires:  pkgconfig(gstreamer-1.0)
 %endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
@@ -541,6 +555,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Nov 08 2015 J. D. User <jduser@noreply.com> 1.20.1-*git*
+- add dependency on pkgconfig(gstreamer-1.0) for F22+ & Leap 42.1+
+
 * Sat Oct 24 2015 J. D. User <jduser@noreply.com> 1.20.1
 - update to 1.20.1
 
