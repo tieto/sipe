@@ -466,14 +466,55 @@ static gchar *sipe_xml_extract_exact_raw(const gchar *xml, const gchar *tag,
 	return data;
 }
 
+static gchar *sipe_xml_extract_any_raw(const gchar *xml, const gchar *tag,
+				       gboolean include_tag)
+{
+	gchar *tag_start   = g_strdup_printf(":%s", tag);
+	gchar *data        = NULL;
+	const gchar *start = strstr(xml, tag_start);
+
+	if (start) {
+		const gchar *p = start - 1;
+
+		/* search for beginning of tag */
+		while ((*p != '<') && (p >= xml)) p--;
+
+		/* namespace identifier found? */
+		if ((p >= xml) && (p != (start - 1))) {
+			gchar *ns      = g_strndup(p + 1, start - p);
+			gchar *tag_end = g_strdup_printf("</%s%s>",
+							 ns,
+							 tag);
+			const gchar *end = strstr(start + strlen(tag_start),
+						  tag_end);
+			g_free(ns);
+
+			if (end) {
+				if (include_tag) {
+					data = g_strndup(p, end + strlen(tag_end) - p);
+				} else {
+					const gchar *tmp = strchr(start + strlen(tag_start), '>') + 1;
+					data = g_strndup(tmp, end - tmp);
+				}
+			}
+
+			g_free(tag_end);
+		}
+	}
+
+	g_free(tag_start);
+	return data;
+}
 gchar *sipe_xml_extract_raw(const gchar *xml, const gchar *tag,
 			    gboolean include_tag)
 {
 	/* first try exact match */
 	gchar *data = sipe_xml_extract_exact_raw(xml, tag, include_tag);
-	if (!data) {
-		/* match tag in any name space */
-	}
+
+	/* otherwise match tag in any name space */
+	if (!data)
+		data = sipe_xml_extract_any_raw(xml, tag, include_tag);
+
 	return(data);
 }
 

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -181,6 +181,39 @@ static void assert_stringify(const sipe_xml *xml,
 		printf("[%s]\nXML stringify all alternatives FAILED: '%s'\n",
 		       teststring, string ? string : "(nil)");
 		failed++;
+	}
+
+	g_free(string);
+}
+
+static void assert_raw(const gchar *raw,
+		       const gchar *tag,
+		       gboolean include_tag,
+		       const char *expected)
+{
+	gchar *string = sipe_xml_extract_raw(raw, tag, include_tag);
+	if (expected) {
+		if (string) {
+			if (sipe_strequal(string, expected)) {
+				succeeded++;
+			} else {
+				printf("[%s]\nXML raw extract FAILED: '%s' expected: '%s'\n",
+				       raw, string, expected);
+				failed++;
+			}
+		} else {
+			printf("[%s]\nXML raw extract not found FAILED: '%s' expected: '%s'\n",
+			       raw, tag, expected);
+			failed++;
+		}
+	} else {
+		if (string) {
+			printf("[%s]\nXML raw extract no match FAILED: '%s' matched: '%s'\n",
+			       raw, tag, string);
+			failed++;
+		} else {
+			succeeded++;
+		}
 	}
 
 	g_free(string);
@@ -400,6 +433,45 @@ int main(SIPE_UNUSED_PARAMETER int argc, SIPE_UNUSED_PARAMETER char **argv)
 	sipe_xml_free(xml);
 	xml = assert_parse("<a a=\"1\" a=\"2\"></a>", FALSE);
 	sipe_xml_free(xml);
+
+	/* XML raw extract */
+	assert_raw("<tag>data</tag>",        "tag",     FALSE, "data");
+	assert_raw("<tag>data</tag>",        "tag",     TRUE,  "<tag>data</tag>");
+	assert_raw("<tag>data</tag>",        "tag1",    FALSE, NULL);
+	assert_raw("<tag>data</tag>",        "tag1",    TRUE,  NULL);
+	assert_raw("<ns:tag>data</ns:tag>",  "tag",     FALSE, "data");
+	assert_raw("<ns:tag>data</ns:tag>",  "tag",     TRUE,  "<ns:tag>data</ns:tag>");
+	assert_raw("<ns:tag>data</ns:tag>",  "tag1",    FALSE, NULL);
+	assert_raw("<ns:tag>data</ns:tag>",  "tag1",    TRUE,  NULL);
+	assert_raw("<ns:tag>data</ns:tag>",  "ns:tag",  FALSE, "data");
+	assert_raw("<ns:tag>data</ns:tag>",  "ns:tag",  TRUE,  "<ns:tag>data</ns:tag>");
+	assert_raw("<ns:tag>data</ns:tag>",  "ns:tag1", FALSE, NULL);
+	assert_raw("<ns:tag>data</ns:tag>",  "ns:tag1", TRUE,  NULL);
+
+	assert_raw("<othertag>data</othertag><tag>data</tag>",                          "tag",  FALSE, "data");
+	assert_raw("<othertag>data</othertag><tag>data</tag>",                          "tag",  TRUE,  "<tag>data</tag>");
+	assert_raw("<othertag>data</othertag><tag>data</tag><othertag>data</othertag>", "tag",  FALSE, "data");
+	assert_raw("<othertag>data</othertag><tag>data</tag><othertag>data</othertag>", "tag",  TRUE,  "<tag>data</tag>");
+	assert_raw("<othertag>data</othertag><tag>data</tag>",                          "tag1", FALSE, NULL);
+	assert_raw("<othertag>data</othertag><tag>data</tag>",                          "tag1", TRUE,  NULL);
+	assert_raw("<othertag>data</othertag><tag>data</tag><othertag>data</othertag>", "tag1", FALSE, NULL);
+	assert_raw("<othertag>data</othertag><tag>data</tag><othertag>data</othertag>", "tag1", TRUE,  NULL);
+	assert_raw("<othertag>data</othertag><ns:tag>data</ns:tag>",                          "tag",  FALSE, "data");
+	assert_raw("<othertag>data</othertag><ns:tag>data</ns:tag>",                          "tag",  TRUE,  "<ns:tag>data</ns:tag>");
+	assert_raw("<othertag>data</othertag><ns:tag>data</ns:tag><othertag>data</othertag>", "tag",  FALSE, "data");
+	assert_raw("<othertag>data</othertag><ns:tag>data</ns:tag><othertag>data</othertag>", "tag",  TRUE,  "<ns:tag>data</ns:tag>");
+	assert_raw("<othertag>data</othertag><ns:tag>data</ns:tag>",                          "tag1", FALSE, NULL);
+	assert_raw("<othertag>data</othertag><ns:tag>data</ns:tag>",                          "tag1", TRUE,  NULL);
+	assert_raw("<othertag>data</othertag><ns:tag>data</ns:tag><othertag>data</othertag>", "tag1", FALSE, NULL);
+	assert_raw("<othertag>data</othertag><ns:tag>data</ns:tag><othertag>data</othertag>", "tag1", TRUE,  NULL);
+
+	/* broken XML raw extract */
+	assert_raw("tag>data</tag>",         "tag",     FALSE, NULL);
+	assert_raw(":tag>data</tag>",        "tag",     FALSE, NULL);
+	assert_raw("<tag>data</tag",         "tag",     FALSE, NULL);
+	assert_raw("<tag>data</tag1>",       "tag",     FALSE, NULL);
+	assert_raw("<ns:tag>data</tag1>",    "tag",     FALSE, NULL);
+	assert_raw("<ns:tag>data</ns:tag1>", "tag",     FALSE, NULL);
 
 	if (allocated) {
 		printf("MEMORY LEAK: %" G_GSIZE_FORMAT " still allocated\n", allocated);
