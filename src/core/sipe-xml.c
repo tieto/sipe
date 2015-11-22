@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -441,8 +441,8 @@ gchar *sipe_xml_exc_c14n(const gchar *string)
 	return(canon);
 }
 
-gchar *sipe_xml_extract_raw(const gchar *xml, const gchar *tag,
-			    gboolean include_tag)
+static gchar *sipe_xml_extract_exact_raw(const gchar *xml, const gchar *tag,
+					 gboolean include_tag)
 {
 	gchar *tag_start = g_strdup_printf("<%s", tag);
 	gchar *tag_end = g_strdup_printf("</%s>", tag);
@@ -464,6 +464,17 @@ gchar *sipe_xml_extract_raw(const gchar *xml, const gchar *tag,
 	g_free(tag_end);
 	g_free(tag_start);
 	return data;
+}
+
+gchar *sipe_xml_extract_raw(const gchar *xml, const gchar *tag,
+			    gboolean include_tag)
+{
+	/* first try exact match */
+	gchar *data = sipe_xml_extract_exact_raw(xml, tag, include_tag);
+	if (!data) {
+		/* match tag in any name space */
+	}
+	return(data);
 }
 
 /*
