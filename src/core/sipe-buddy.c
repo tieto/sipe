@@ -1810,7 +1810,7 @@ static void process_buddy_photo_response(struct sipe_core_private *sipe_private,
 
 static gchar *create_x_ms_webticket_header(const gchar *wsse_security)
 {
-	gchar *assertion = sipe_xml_extract_raw(wsse_security, "saml:Assertion", TRUE);
+	gchar *assertion = sipe_xml_extract_raw(wsse_security, "Assertion", TRUE);
 	gchar *wsse_security_base64;
 	gchar *x_ms_webticket_header;
 
