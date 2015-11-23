@@ -131,7 +131,7 @@ dnl check for availability of addition linker flags
 for newflag in \
 	"-Wl,-Bsymbolic-functions" \
 ; do
-	ac_save_LDLAGS=$LDLAGS
+	ac_save_LDFLAGS=$LDFLAGS
 	AC_MSG_CHECKING([if $CC supports $newflag])
 	LDFLAGS="$ADDITIONAL_LDFLAGS $newflag"
 	AC_LINK_IFELSE(
@@ -188,7 +188,7 @@ AS_IF([test "x$with_krb5" = xno], [], dnl disabled by user
       ])
 AS_IF([test "x$with_krb5" != xno],
       [ac_save_CFLAGS="$CFLAGS"
-       ac_save_LDFLAGS="$LDLAGS"
+       ac_save_LDFLAGS="$LDFLAGS"
        CFLAGS="$CFLAGS $KRB5_CFLAGS"
        LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
        AC_CHECK_HEADERS([gssapi/gssapi.h gssapi/gssapi_krb5.h],
