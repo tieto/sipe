@@ -341,14 +341,8 @@ parse_lync_join_url(const gchar *uri)
 
 		gchar **domain_parts = g_strsplit(parts[0], ".", 2);
 
-		if (domain_parts[1] && !strcmp(domain_parts[1], "lync.com")) {
-			const gchar *company_name = parts[parts_count - 3];
-			focus_uri = g_strdup_printf("sip:%s@%s.com;gruu;opaque=app:conf:focus:id:%s",
-						    organizer_alias,
-						    company_name,
-						    conference_id);
-		} else if (domain_parts[0] && domain_parts[1]) {
-			/* we need to drop the first sub-domain from the URL */
+		/* we need to drop the first sub-domain from the URL */
+		if (domain_parts[0] && domain_parts[1]) {
 			focus_uri = g_strdup_printf("sip:%s@%s;gruu;opaque=app:conf:focus:id:%s",
 						    organizer_alias,
 						    domain_parts[1],
