@@ -1,4 +1,5 @@
 version 1.21.0 "???" (????-??-??)
+	- Feature #87: Support multiple HTTP cookies (Stefan Becker)
 	- Feature #85: XML raw extract should ignore name space (Stefan Becker)
 	- Fixed #293: Mandatory wsa:MessageID node missing (Stefan Becker)
 
