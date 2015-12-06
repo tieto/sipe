@@ -316,58 +316,6 @@ parse_ocs_focus_uri(const gchar *uri)
 	return g_strndup(uri, uri_len);
 }
 
-static gchar *
-parse_lync_join_url(const gchar *uri)
-{
-	gchar *focus_uri = NULL;
-	gchar **parts;
-	int parts_count = 0;
-
-	if (!uri)
-		return NULL;
-
-	if (g_str_has_prefix(uri, "https://")) {
-		uri += 8;
-	} else if (g_str_has_prefix(uri, "http://")) {
-		uri += 7;
-	}
-
-	parts = g_strsplit(uri, "/", 0);
-
-	for (parts_count = 0; parts[parts_count]; ++parts_count);
-	if (parts_count >= 3) {
-		const gchar *conference_id   = parts[parts_count - 1];
-		const gchar *organizer_alias = parts[parts_count - 2];
-
-		gchar **domain_parts = g_strsplit(parts[0], ".", 2);
-
-		/* we need to drop the first sub-domain from the URL */
-		if (domain_parts[0] && domain_parts[1]) {
-			focus_uri = g_strdup_printf("sip:%s@%s;gruu;opaque=app:conf:focus:id:%s",
-						    organizer_alias,
-						    domain_parts[1],
-						    conference_id);
-		}
-
-		g_strfreev(domain_parts);
-	}
-
-	g_strfreev(parts);
-
-	return focus_uri;
-}
-
-static void sipe_conf_error(struct sipe_core_private *sipe_private,
-			    const gchar *uri)
-{
-	gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
-				       uri ? uri : "");
-	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-				  _("Failed to join the conference"),
-				  error);
-	g_free(error);
-}
-
 static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 				  guint status,
 				  SIPE_UNUSED_PARAMETER GSList *headers,
@@ -414,18 +362,18 @@ static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 			}
 		}
 
-		/* If we can't find a focus URI then fall back to URL parser */
-		if (!focus_uri) {
-			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI found. Falling back to parsing Lync URL '%s'",
-					uri);
-			focus_uri = parse_lync_join_url(uri);
-		}
-
 		if (focus_uri) {
 			sipe_conf_create(sipe_private, NULL, focus_uri);
 			g_free(focus_uri);
 		} else {
-			sipe_conf_error(sipe_private, uri);
+			gchar *error = g_strdup_printf(_("Can't find a conference URI on this page:\n\n%s"),
+						       uri);
+			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI found. Falling back to parsing Lync URL '%s'",
+					uri);
+			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+						  _("Failed to join the conference"),
+						  error);
+			g_free(error);
 		}
 	}
 
@@ -466,7 +414,12 @@ void sipe_core_conf_create(struct sipe_core_public *sipe_public,
 			sipe_conf_create(sipe_private, NULL, focus_uri);
 			g_free(focus_uri);
 		} else {
-			sipe_conf_error(sipe_private, uri);
+			gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
+						       uri ? uri : "");
+			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+						  _("Failed to join the conference"),
+						  error);
+			g_free(error);
 		}
 
 		g_free(uri_ue);
