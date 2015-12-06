@@ -684,17 +684,16 @@ static void sipe_purple_join_conference_cb(PurpleConnection *gc,
 	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
 
 	if (entries) {
-		PurpleRequestField *field = entries->data;
-		const char *id = purple_request_field_get_id(field);
-		const char *value = purple_request_field_string_get_value(field);
-
-		if (!sipe_strequal(id, "meetingLocation"))
-			return;
-
+		const gchar *location = purple_request_fields_get_string(fields,
+									 "meetingLocation");
+		const gchar *organizer = purple_request_fields_get_string(fields,
+									  "meetingOrganizer");
+		const gchar *meeting_id = purple_request_fields_get_string(fields,
+									   "meetingID");
 		sipe_core_conf_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
-				      value,
-				      NULL,
-				      NULL);
+				      location,
+				      organizer,
+				      meeting_id);
 	}
 }
 
@@ -765,6 +764,12 @@ static void sipe_purple_show_join_conference(PurpleProtocolAction *action)
 	purple_request_fields_add_group(fields, group);
 
 	field = purple_request_field_string_new("meetingLocation", _("Meeting location"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_label_new("separator", _("Alternatively"));
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("meetingOrganizer", _("Organizer email"), NULL, FALSE);
+	purple_request_field_group_add_field(group, field);
+	field = purple_request_field_string_new("meetingID", _("Meeting ID"), NULL, FALSE);
 	purple_request_field_group_add_field(group, field);
 
 	purple_request_fields(gc,
