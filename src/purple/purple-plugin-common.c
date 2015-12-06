@@ -704,16 +704,10 @@ static void sipe_purple_phone_call_cb(PurpleConnection *gc,
 {
 	GList *entries = purple_request_field_group_get_fields(purple_request_fields_get_groups(fields)->data);
 
-	if (entries) {
-		PurpleRequestField *field = entries->data;
-		const char *id = purple_request_field_get_id(field);
-		const char *value = purple_request_field_string_get_value(field);
-
-		if (!sipe_strequal(id, "phoneNumber"))
-			return;
-
-		sipe_core_media_phone_call(PURPLE_GC_TO_SIPE_CORE_PUBLIC, value);
-	}
+	if (entries)
+		sipe_core_media_phone_call(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+					   purple_request_fields_get_string(fields,
+									    "phoneNumber"));
 }
 
 static void sipe_purple_phone_call(PurpleProtocolAction *action)
