@@ -691,7 +691,10 @@ static void sipe_purple_join_conference_cb(PurpleConnection *gc,
 		if (!sipe_strequal(id, "meetingLocation"))
 			return;
 
-		sipe_core_conf_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC, value);
+		sipe_core_conf_create(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+				      value,
+				      NULL,
+				      NULL);
 	}
 }
 

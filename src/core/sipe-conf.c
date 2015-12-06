@@ -396,33 +396,66 @@ static gboolean sipe_conf_check_for_lync_url(struct sipe_core_private *sipe_priv
 	       != NULL);
 }
 
+static void sipe_conf_uri_error(struct sipe_core_private *sipe_private,
+				const gchar *uri)
+{
+	gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
+				       uri ? uri : "");
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				  _("Failed to join the conference"),
+				  error);
+	g_free(error);
+}
+
 void sipe_core_conf_create(struct sipe_core_public *sipe_public,
-			   const gchar *uri)
+			   const gchar *uri,
+			   const gchar *organizer,
+			   const gchar *meeting_id)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	gchar *uri_ue = sipe_utils_uri_unescape(uri);
 
-	SIPE_DEBUG_INFO("sipe_core_conf_create: URI '%s' unescaped '%s'",
-			uri    ? uri    : "<UNDEFINED>",
-			uri_ue ? uri_ue : "<UNDEFINED>");
+	/* SIP URI or HTTP URL */
+	if (uri) {
+		gchar *uri_ue = sipe_utils_uri_unescape(uri);
 
-	/* takes ownership of "uri_ue" if successful */
-	if (!sipe_conf_check_for_lync_url(sipe_private, uri_ue)) {
-		gchar *focus_uri = parse_ocs_focus_uri(uri_ue);
+		SIPE_DEBUG_INFO("sipe_core_conf_create: URI '%s' unescaped '%s'",
+				uri,
+				uri_ue ? uri_ue : "<UNDEFINED>");
+
+		/* takes ownership of "uri_ue" if successful */
+		if (!sipe_conf_check_for_lync_url(sipe_private, uri_ue)) {
+			gchar *focus_uri = parse_ocs_focus_uri(uri_ue);
+
+			if (focus_uri) {
+				sipe_conf_create(sipe_private, NULL, focus_uri);
+				g_free(focus_uri);
+			} else
+				sipe_conf_uri_error(sipe_private, uri);
+
+			g_free(uri_ue);
+		}
+
+	/* Organizer email and meeting ID */
+	} else if (organizer && meeting_id) {
+		gchar *tmp = g_strdup_printf("sip:%s;gruu;opaque=app:conf:focus:id:%s",
+					     organizer, meeting_id);
+		gchar *focus_uri = parse_ocs_focus_uri(tmp);
+
+		SIPE_DEBUG_INFO("sipe_core_conf_create: organizer '%s' meeting ID '%s'",
+				organizer,
+				meeting_id);
 
 		if (focus_uri) {
 			sipe_conf_create(sipe_private, NULL, focus_uri);
 			g_free(focus_uri);
-		} else {
-			gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
-						       uri ? uri : "");
-			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-						  _("Failed to join the conference"),
-						  error);
-			g_free(error);
-		}
+		} else
+			sipe_conf_uri_error(sipe_private, tmp);
+		g_free(tmp);
 
-		g_free(uri_ue);
+	} else {
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Failed to join the conference"),
+					  _("Incomplete conference information provided"));
 	}
 }
 

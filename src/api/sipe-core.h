@@ -394,7 +394,9 @@ void sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
  * @param focus_uri (in) focus URI string
  */
 void sipe_core_conf_create(struct sipe_core_public *sipe_public,
-			   const gchar *focus_uri);
+			   const gchar *focus_uri,
+			   const gchar *organizer,
+			   const gchar *meeting_id);
 
 /* buddy menu callback: parameter == chat_session */
 void sipe_core_conf_make_leader(struct sipe_core_public *sipe_public,
