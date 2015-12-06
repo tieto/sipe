@@ -368,7 +368,7 @@ static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 		} else {
 			gchar *error = g_strdup_printf(_("Can't find a conference URI on this page:\n\n%s"),
 						       uri);
-			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI found. Falling back to parsing Lync URL '%s'",
+			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI found from URL '%s'",
 					uri);
 			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 						  _("Failed to join the conference"),
