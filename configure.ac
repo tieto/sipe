@@ -412,7 +412,7 @@ AS_IF([test "x$enable_purple" != xno],
 
 		 dnl SRTP and XDATA require media backend
 		 AS_IF([test "x$with_purple_vv" != xno],
-			[AC_COMPILE_IFELSE(
+			[AC_LINK_IFELSE(
 				[AC_LANG_PROGRAM([[
 #include <media.h>
 					]],
