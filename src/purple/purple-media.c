@@ -951,6 +951,10 @@ gboolean sipe_backend_stream_is_held(struct sipe_media_stream *stream)
 struct sipe_backend_codec *
 sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock_rate)
 {
+	if (sipe_strequal(name, "X-H264UC")) {
+		name = "H264";
+	}
+
 	return (struct sipe_backend_codec *)purple_media_codec_new(id, name,
 						    sipe_media_to_purple(type),
 						    clock_rate);
@@ -1037,6 +1041,52 @@ sipe_backend_get_local_codecs(struct sipe_media_call *media,
 			tmp = i->next;
 			codecs = g_list_delete_link(codecs, i);
 			i = tmp;
+		} else if (sipe_strequal(encoding_name, "H264")) {
+			/*
+			 * Sanitize H264 codec:
+			 * - the encoding name must be "X-H264UC"
+			 * - remove "sprop-parameter-sets" parameter which is
+			 *   rejected by Lync
+			 * - add "packetization-mode" parameter if not already
+			 *   present
+			 */
+
+			PurpleMediaCodec *new_codec;
+			GList *it;
+
+			new_codec = purple_media_codec_new(
+					purple_media_codec_get_id(codec),
+					"X-H264UC",
+					PURPLE_MEDIA_VIDEO,
+					purple_media_codec_get_clock_rate(codec));
+
+			g_object_set(new_codec, "channels",
+					purple_media_codec_get_channels(codec),
+					NULL);
+
+			it = purple_media_codec_get_optional_parameters(codec);
+
+			for (; it; it = g_list_next(it)) {
+				PurpleKeyValuePair *pair = it->data;
+
+				if (sipe_strequal(pair->key, "sprop-parameter-sets")) {
+					continue;
+				}
+
+				purple_media_codec_add_optional_parameter(new_codec,
+						pair->key, pair->value);
+			}
+
+			if (!purple_media_codec_get_optional_parameter(new_codec,
+					"packetization-mode", NULL)) {
+				purple_media_codec_add_optional_parameter(new_codec,
+						"packetization-mode",
+						"1;mst-mode=NI-TC");
+			}
+
+			i->data = new_codec;
+
+			g_object_unref(codec);
 		} else
 			i = i->next;
 
