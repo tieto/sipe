@@ -1129,6 +1129,31 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		return NULL;
 	}
 
+	if (type == SIPE_MEDIA_VIDEO) {
+		/* Declare that we can send and receive Video Source Requests
+		 * as per [MS-SDPEXT] 3.1.5.30.2. */
+		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
+				"rtcp-fb", "* x-message app send:src recv:src");
+
+		/* For now, hardcode some sequence of SSRCs. These values aren't
+		 * passed down to Farstream, which picks our SSRC at random.
+		 * Since outgoing video doesn't work yet anyway, this doesn't
+		 * matter. In future we'll have to announce our synchronization
+		 * source identifier through SDP and thus know it beforehand.
+		 *
+		 * [MS-SDPEXT] 3.1.5.31.2 says a range size of 100 SHOULD be used
+		 * for video and some clients really demand this. */
+		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
+				"x-ssrc-range", "1-100");
+
+		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
+				"rtcp-rsize", NULL);
+		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
+				"label", "main-video");
+		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
+				"x-source", "main-video");
+	}
+
 #ifdef HAVE_SRTP
 	{
 		int i;
