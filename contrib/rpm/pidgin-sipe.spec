@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20150106gitced3e52
+%define git       20160101git8685dda
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -292,11 +292,15 @@ rm -rf %{buildroot}
 %files
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
+%{_datadir}/appdata/%{name}.metainfo.xml
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 
 
 %changelog
+* Fri Jan 01 2016 J. D. User <jduser@noreply.com> 1.20.1-*git*
+- add AppStream metadata file
+
 * Sun Nov 08 2015 J. D. User <jduser@noreply.com> 1.20.1-*git*
 - add dependency on pkgconfig(gstreamer-1.0) for F22+
 

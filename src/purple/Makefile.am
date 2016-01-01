@@ -4,6 +4,9 @@ noinst_LTLIBRARIES = libsipe_backend.la
 
 pkg_LTLIBRARIES = libsipe.la
 
+EXTRA_DIST = \
+	pidgin-sipe.metainfo.xml
+
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
@@ -130,3 +133,6 @@ TESTS = $(check_PROGRAMS)
 # Remove any libsipe.so from the old incorrect installation location
 install-exec-local:
 	rm -f $(DESTDIR)$(libdir)/pidgin/libsipe.so
+
+pidginmetainfofiledir   = $(datadir)/appdata
+pidginmetainfofile_DATA = pidgin-sipe.metainfo.xml

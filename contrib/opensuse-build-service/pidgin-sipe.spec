@@ -83,6 +83,7 @@
 %define nss_develname mozilla-nss-devel
 # SLES11 defines suse_version = 1110
 %if 0%{?suse_version} > 1110
+%define has_appdata 1
 %define has_libnice 1
 %define has_gstreamer 1
 %define build_telepathy 1
@@ -112,6 +113,7 @@
 %if 0%{?fedora} >= 20
 %define nice_gstreamer libnice-gstreamer
 %if 0%{?fedora} >= 21
+%define has_appdata 1
 %define has_gssntlmssp 1
 %if 0%{?fedora} >= 22
 %define has_gstreamer 0
@@ -471,6 +473,10 @@ rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
 rm -f \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/32/sipe.png
+%if !0%{?has_appdata:1}
+# We don't have AppStream, so we can't package metadata file at all
+rm -r %{buildroot}/%{_datadir}/appdata
+%endif
 %if !%{has_pidgin}
 # We don't have Pidgin, so we can't package icons at all
 rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin
@@ -534,10 +540,16 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
 %if 0%{?mingw_prefix:1}
+%if 0%{?has_appdata:1}
+%{mingw_datadir}/appdata/pidgin-sipe.metainfo.xml
+%endif
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 %else
 %if %{has_pidgin}
+%if 0%{?has_appdata:1}
+%{_datadir}/appdata/%{name}.metainfo.xml
+%endif
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 # SLES11 defines suse_version = 1110
 %if !0%{?suse_version} || 0%{?suse_version} >= 1120
@@ -555,6 +567,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Jan 01 2016 J. D. User <jduser@noreply.com> 1.20.1-*git*
+- add AppStream metadata file
+
 * Sun Nov 08 2015 J. D. User <jduser@noreply.com> 1.20.1-*git*
 - add dependency on pkgconfig(gstreamer-1.0) for F22+ & Leap 42.1+
 
