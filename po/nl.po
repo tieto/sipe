@@ -7,13 +7,14 @@
 # Translators:
 # fieona <sofiemuys@hotmail.com>, 2012
 # Stefan Becker <chemobejk@gmail.com>, 2011
+# Tonnes <tonnes.mb@gmail.com>, 2016
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2015-08-26 16:20+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2016-02-06 12:09+0000\n"
+"Last-Translator: Tonnes <tonnes.mb@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/stefanb/pidgin-sipe/language/nl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -23,16 +24,16 @@ msgstr ""
 
 #: ../src/core/sip-transport.c:235
 msgid "Failed to authenticate to server"
-msgstr "Kon niet autenticeren bij de server"
+msgstr "Authenticatie bij server mislukt"
 
 #: ../src/core/sip-transport.c:293
 #, c-format
 msgid "Can't request certificate from %s"
-msgstr ""
+msgstr "Kan geen certificaat aanvragen bij %s"
 
 #: ../src/core/sip-transport.c:303
 msgid "No URI for certificate provisioning service provided"
-msgstr ""
+msgstr "Geen URI voor certificaat verstrekkende service opgegeven"
 
 #: ../src/core/sip-transport.c:1281
 msgid "Authentication failed"
@@ -40,12 +41,12 @@ msgstr "Authenticatie mislukt"
 
 #: ../src/core/sip-transport.c:1338
 msgid "Incompatible authentication scheme chosen"
-msgstr "Incompatibel authenticatie schema gekozen"
+msgstr "Niet-compatibel authenticatieschema gekozen"
 
 #: ../src/core/sip-transport.c:1355 ../src/core/sipe-notify.c:1117
 #, c-format
 msgid "You have been rejected by the server: %s"
-msgstr "U werd geweigerd door de server: %s"
+msgstr "U bent geweigerd door de server %s"
 
 #: ../src/core/sip-transport.c:1356 ../src/core/sip-transport.c:1372
 #: ../src/core/sip-transport.c:1396 ../src/core/sip-transport.c:1420
@@ -56,28 +57,28 @@ msgstr "geen reden opgegeven"
 #: ../src/core/sip-transport.c:1371
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
-msgstr "Niet gevonden: %s. Contacteer de administrator"
+msgstr "Niet gevonden: %s. Neem contact op met uw beheerder"
 
 #: ../src/core/sip-transport.c:1373
 msgid "SIP is either not enabled for the destination URI or it does not exist"
-msgstr "SIP is ofwel niet aangezet voor de doel URI, ofwel bestaat hij niet"
+msgstr "SIP is niet ingeschakeld voor de bestemmings-URI, of deze bestaat niet"
 
 #: ../src/core/sip-transport.c:1396 ../src/core/sip-transport.c:1420
 #, c-format
 msgid "Service unavailable: %s"
-msgstr "Service onbeschikbaar: %s"
+msgstr "Service niet beschikbaar: %s"
 
 #: ../src/core/sip-transport.c:1766
 msgid "Corrupted message received"
-msgstr ""
+msgstr "Beschadigd bericht ontvangen"
 
 #: ../src/core/sip-transport.c:1790
 msgid "Invalid message signature received"
-msgstr "Ongeldige handtekening van het bericht ontvangen"
+msgstr "Ongeldige berichthandtekening ontvangen"
 
 #: ../src/core/sipe-buddy.c:536 ../src/core/sipe-buddy.c:2158
 msgid "Mobile"
-msgstr ""
+msgstr "Mobiel"
 
 #: ../src/core/sipe-buddy.c:824
 msgid "Status"
@@ -85,7 +86,7 @@ msgstr "Status"
 
 #: ../src/core/sipe-buddy.c:827
 msgid "Calendar"
-msgstr "Kalender"
+msgstr "Agenda"
 
 #: ../src/core/sipe-buddy.c:832
 msgid "Meeting in"
@@ -97,11 +98,11 @@ msgstr "Vergadering over"
 
 #: ../src/core/sipe-buddy.c:841
 msgid "Out of office note"
-msgstr "Out of Office Opmerking"
+msgstr "Afwezigheidsbericht"
 
 #: ../src/core/sipe-buddy.c:841
 msgid "Note"
-msgstr "Notitie"
+msgstr "Bericht"
 
 #: ../src/core/sipe-buddy.c:846 ../src/core/sipe-buddy.c:2203
 #: ../src/purple/purple-buddy.c:632
@@ -122,60 +123,60 @@ msgstr "(meer resultaten voor uw query)"
 #: ../src/core/sipe-buddy.c:1117 ../src/core/sipe-buddy.c:1255
 #: ../src/core/sipe-ucs.c:373
 msgid "No contacts found"
-msgstr ""
+msgstr "Geen contacten gevonden"
 
 #: ../src/core/sipe-buddy.c:1130 ../src/core/sipe-buddy.c:1268
 #: ../src/core/sipe-ucs.c:337
 msgid "Unable to display the search results"
-msgstr "Zoekresultaten kunnen niet getoond worden"
+msgstr "Kan de zoekresultaten niet weergeven"
 
 #: ../src/core/sipe-buddy.c:1233 ../src/core/sipe-buddy.c:1245
 #: ../src/core/sipe-ucs.c:450
 msgid "Contact search failed"
-msgstr ""
+msgstr "Zoeken naar contact mislukt"
 
 #: ../src/core/sipe-buddy.c:1408 ../src/core/sipe-ucs.c:454
 msgid "Invalid contact search query"
-msgstr ""
+msgstr "Ongeldige query voor zoeken naar contact"
 
 #: ../src/core/sipe-buddy.c:2095
 #, c-format
 msgid "Make leader of '%s'"
-msgstr "Maak leider van '%s'"
+msgstr "Leider maken van ‘%s’"
 
 #: ../src/core/sipe-buddy.c:2108
 #, c-format
 msgid "Remove from '%s'"
-msgstr "Verwijder van '%s'"
+msgstr "Verwijderen van ‘%s’"
 
 #: ../src/core/sipe-buddy.c:2122
 #, c-format
 msgid "Invite to '%s'"
-msgstr "Uitnodigen bij '%s'"
+msgstr "Uitnodigen voor ‘%s’"
 
 #: ../src/core/sipe-buddy.c:2138
 msgid "New chat"
-msgstr "Nieuw gesprek"
+msgstr "Nieuwe chat"
 
 #: ../src/core/sipe-buddy.c:2151
 msgid "Work"
-msgstr ""
+msgstr "Werk"
 
 #: ../src/core/sipe-buddy.c:2166
 msgid "Home"
-msgstr "Start"
+msgstr "Thuis"
 
 #: ../src/core/sipe-buddy.c:2174
 msgid "Other"
-msgstr ""
+msgstr "Anders"
 
 #: ../src/core/sipe-buddy.c:2182
 msgid "Custom1"
-msgstr ""
+msgstr "Aangepast1"
 
 #: ../src/core/sipe-buddy.c:2192
 msgid "Send email..."
-msgstr "Stuur e-mail..."
+msgstr "E-mail sturen..."
 
 #: ../src/core/sipe-cal.c:907
 msgid "Free"
@@ -193,7 +194,7 @@ msgstr "Bezet"
 #. SIPE_ACTIVITY_OOF
 #: ../src/core/sipe-cal.c:910 ../src/core/sipe-status.c:70
 msgid "Out of office"
-msgstr "Niet in bureau"
+msgstr "Niet aanwezig"
 
 #: ../src/core/sipe-cal.c:911
 msgid "No data"
@@ -206,7 +207,7 @@ msgstr "Momenteel %s"
 
 #: ../src/core/sipe-cal.c:1025
 msgid "Outside of working hours for next 8 hours"
-msgstr "Buiten werkuren voor de komende 8 uur"
+msgstr "Buiten werktijden voor de komende 8 uur"
 
 #: ../src/core/sipe-cal.c:1027
 #, c-format
@@ -215,7 +216,7 @@ msgstr "%s voor de komende 8 uur"
 
 #: ../src/core/sipe-cal.c:1036
 msgid "Not working"
-msgstr "Niet aan het werk"
+msgstr "Werkt niet op"
 
 #: ../src/core/sipe-cal.c:1040
 #, c-format
@@ -225,7 +226,7 @@ msgstr "%s tot %.2d:%.2d"
 #: ../src/core/sipe-cal.c:1048
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
-msgstr "%s. Buiten de werkuren om %.2d:%.2d"
+msgstr "%s. Buiten werktijden om %.2d:%.2d"
 
 #: ../src/core/sipe-cal.c:1053
 #, c-format
@@ -235,12 +236,12 @@ msgstr "%s. %s om %.2d:%.2d"
 #: ../src/core/sipe-certificate.c:233 ../src/core/sipe-certificate.c:277
 #, c-format
 msgid "Certificate request to %s failed"
-msgstr ""
+msgstr "Certificaataanvraag bij %s mislukt"
 
 #: ../src/core/sipe-certificate.c:284
 #, c-format
 msgid "Web ticket request to %s failed"
-msgstr ""
+msgstr "Webticketaanvraag bij %s mislukt"
 
 #. Generate next ID
 #: ../src/core/sipe-chat.c:237
@@ -250,47 +251,47 @@ msgstr "Chat #%d"
 
 #: ../src/core/sipe-conf.c:238 ../src/core/sipe-conf.c:344
 msgid "Failed to join the conference"
-msgstr ""
+msgstr "Deelnemen aan de vergadering mislukt"
 
 #: ../src/core/sipe-conf.c:341
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
-msgstr ""
+msgstr "‘%s’ is geen geldige vergaderings-URI"
 
 #: ../src/core/sipe-conf.c:951
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
-msgstr ""
+msgstr "\n\nAangezien deze client niet met ondersteuning voor audiogesprekken is gecompileerd, zult u bij accepteren alleen met de andere deelnemers in contact kunnen komen via een IM-sessie."
 
 #: ../src/core/sipe-conf.c:959
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
-msgstr ""
+msgstr "%s wil u uitnodigen voor de telefonische vergadering %s"
 
 #: ../src/core/sipe-conf.c:973
 msgid "Accept"
-msgstr ""
+msgstr "Accepteren"
 
 #: ../src/core/sipe-conf.c:974
 msgid "Decline"
-msgstr ""
+msgstr "Weigeren"
 
 #: ../src/core/sipe-conf.c:1188
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
-msgstr "Deze conferentie is niet langer geblokkeerd. Andere deelnemers kunnen zich nu bijvoegen."
+msgstr "Deze vergadering is niet meer vergrendeld. Er kunnen nu anderen aan de vergadering deelnemen."
 
 #: ../src/core/sipe-conf.c:1192
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
-msgstr "Deze conferentie is geblokkeerd. Andere deelnemers kunnen zich niet bijvoegen zolang ze geblokkeerd is."
+msgstr "Deze vergadering is vergrendeld. Er kunnen geen anderen aan de vergadering deelnemen zolang deze is vergrendeld."
 
 #: ../src/core/sipe-conf.c:1225
 msgid "You have been disconnected from this conference."
-msgstr "U bent niet langer verbonden met deze conferentie."
+msgstr "Uw verbinding met deze vergadering is verbroken."
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
@@ -298,32 +299,32 @@ msgstr "U bent niet langer verbonden met deze conferentie."
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
-msgstr "Een derde-partij plugin die een uitgebreide versie van het SIP/SIMPLE protocol implementeert, dat gebruikt wordt door meerdere producten."
+msgstr "Een plug-in van derden voor implementatie van een uitgebreide versie van SIP/SIMPLE, dat door diverse producten wordt gebruikt"
 
 #. About note, part 2/13: home page URL (label)
 #: ../src/core/sipe-core.c:181
 msgid "Home Page"
-msgstr ""
+msgstr "Startpagina"
 
 #. About note, part 3/13: support forum URL (label)
 #: ../src/core/sipe-core.c:183
 msgid "Support"
-msgstr ""
+msgstr "Ondersteuning"
 
 #. About note, part 4/13: support forum name (hyperlink text)
 #: ../src/core/sipe-core.c:185
 msgid "Help Forum"
-msgstr "Help Forum"
+msgstr "Helpforum"
 
 #. About note, part 5/13: bug tracker URL (label)
 #: ../src/core/sipe-core.c:187
 msgid "Report Problems"
-msgstr "Rapporteer Problemen"
+msgstr "Problemen melden"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
 #: ../src/core/sipe-core.c:189
 msgid "Bug Tracker"
-msgstr "Bug Tracker"
+msgstr "Bugtracker"
 
 #. About note, part 7/13: translation service URL (label)
 #: ../src/core/sipe-core.c:191
@@ -340,13 +341,13 @@ msgstr "Licentie"
 #. append a space if text is not empty
 #: ../src/core/sipe-core.c:197
 msgid "Please help us to translate SIPE to your native language here at "
-msgstr "Help ons met de vertaling van SIPE in jouw moedertaal op"
+msgstr "Help SIPE naar uw eigen taal te vertalen op "
 
 #. About note, part 11/13: translation request, text after Transifex.com URL
 #. start with a space if text is not empty
 #: ../src/core/sipe-core.c:200
 msgid " using convenient web interface"
-msgstr "gebruik makend van een makkelijke web interface"
+msgstr " via een handige webinterface"
 
 #. About note, part 12/13: author list (header)
 #: ../src/core/sipe-core.c:202
@@ -359,11 +360,11 @@ msgstr "Auteurs"
 #. "Localization for <language name> (<language code>): <name>"
 #: ../src/core/sipe-core.c:207
 msgid "Original texts in English (en): SIPE developers"
-msgstr "Originele teksten in Engels (en): SIPE ontwikkelaars"
+msgstr "Nederlandse vertaling (nl): Fieona, Tonnes"
 
 #: ../src/core/sipe-core.c:226
 msgid "SIP Exchange user name contains invalid characters"
-msgstr "SIP Exchange gebruikersnaam bevat ongeldige characters"
+msgstr "SIP Exchange-gebruikersnaam bevat ongeldige tekens"
 
 #: ../src/core/sipe-core.c:234 ../src/purple/purple-buddy.c:484
 #: ../src/telepathy/telepathy-protocol.c:89
@@ -372,82 +373,82 @@ msgstr "SIP Exchange gebruikersnaam bevat ongeldige characters"
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
-msgstr "Gebruikersnaam moet een correcte SIP URI zijn\nVoorbeeld: gebruiker@bedrijf.com"
+msgstr "Gebruikersnaam moet een geldige SIP-URI zijn\nVoorbeeld: gebruiker@bedrijf.com"
 
 #: ../src/core/sipe-core.c:241
 msgid "Password is required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Wachtwoord is vereist als eenmalige aanmelding niet is ingeschakeld"
 
 #: ../src/core/sipe-core.c:251
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
-msgstr "E-mailadres moet geldig zijn indien ingevuld\nVoorbeeld: gebruiker@bedrijf.com"
+msgstr "E-mailadres moet geldig zijn wanneer opgegeven\nVoorbeeld: gebruiker@bedrijf.com"
 
 #: ../src/core/sipe-core.c:260
 msgid "SIP Exchange user name contains whitespace"
-msgstr "SIP Exchange gebruikersnaam bevat spaties"
+msgstr "SIP Exchange-gebruikersnaam bevat spatie"
 
 #: ../src/core/sipe-core.c:274
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
 "Example: https://domino.corp.com/maildatabase.nsf"
-msgstr "De URL van de Email services moet in een correct formaat opgegeven worden\nVoorbeeld: https://exchange.corp.com/EWS/Exchange.asmx\nVoorbeeld: https://domino.corp.com/maildatabase.nsf"
+msgstr "URL van e-mailservices moet geldig zijn wanneer opgegeven\nVoorbeeld: https://exchange.corp.com/EWS/Exchange.asmx\nVoorbeeld: https://domino.corp.com/maildatabase.nsf"
 
 #. Translators: (!) should be as in localized Lotus Notes to be able to
 #. extract meeting location
 #: ../src/core/sipe-domino.c:260 ../src/core/sipe-domino.c:261
 msgid "Location:"
-msgstr "Plaats:"
+msgstr "Locatie:"
 
 #: ../src/core/sipe-ft.c:222 ../src/core/sipe-ft-tftp.c:108
 #: ../src/core/sipe-ft-tftp.c:388 ../src/core/sipe-ft-tftp.c:417
 #: ../src/core/sipe-ft-tftp.c:476
 msgid "Socket read failed"
-msgstr "Lezen van de socket mislukt"
+msgstr "Lezen van socket mislukt"
 
 #: ../src/core/sipe-ft.c:359
 msgid "Received encryption key has wrong size."
-msgstr "Ontvangen encryptie sleutel heeft de verkeerde grootte"
+msgstr "Ontvangen encryptiesleutel heeft onjuiste grootte."
 
 #: ../src/core/sipe-ft.c:374
 msgid "Received hash key has wrong size."
-msgstr "Ontvangen hash sleutel heeft de verkeerde grootte"
+msgstr "Ontvangen hash-sleutel heeft onjuiste grootte."
 
 #: ../src/core/sipe-ft.c:394
 msgid "Could not create listen socket"
-msgstr "Kon geen socket openen om te luisteren"
+msgstr "Kon geen listen-socket maken"
 
 #: ../src/core/sipe-ft-tftp.c:114 ../src/core/sipe-ft-tftp.c:520
 #: ../src/core/sipe-ft-tftp.c:529
 msgid "Socket write failed"
-msgstr "Schrijven naar de socket mislukt"
+msgstr "Schrijven naar socket mislukt"
 
 #: ../src/core/sipe-ft-tftp.c:207
 msgid "File size is different from the advertised value."
-msgstr "Bestandsgrootte is verschillend van de geadverteerde waarde"
+msgstr "Bestandsgrootte verschilt van de aangekondigde waarde."
 
 #: ../src/core/sipe-ft-tftp.c:246
 msgid "Received MAC is corrupted"
-msgstr "Ontvangen MAC is corrupt"
+msgstr "Ontvangen MAC is beschadigd"
 
 #: ../src/core/sipe-ft-tftp.c:257
 msgid "Received file is corrupted"
-msgstr "Ontvangen bestand is corrupt"
+msgstr "Ontvangen bestand is beschadigd"
 
 #: ../src/core/sipe-ft-tftp.c:284
 msgid "File transfer initialization failed."
-msgstr "Bestandsoverdracht initialisatie gefaald"
+msgstr "Initialisatie van bestandsoverdracht mislukt."
 
 #: ../src/core/sipe-ft-tftp.c:315
 msgid "File transfer authentication failed."
-msgstr "Bestandsoverdracht autenticatie gefaald"
+msgstr "Authenticatie voor bestandsoverdracht mislukt."
 
 #: ../src/core/sipe-ft-tftp.c:409 ../src/core/sipe-ft-tftp.c:427
 #: ../src/core/sipe-ft-tftp.c:490
 msgid "Out of memory"
-msgstr "Geen beschikbaar geheugen meer"
+msgstr "Onvoldoende geheugen"
 
 #: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1131
 #: ../src/core/sipe-notify.c:1158 ../src/core/sipe-notify.c:1262
@@ -463,78 +464,78 @@ msgid ""
 "\t%s\n"
 "\n"
 "Please update your Account."
-msgstr ""
+msgstr "Proxyinstelling voor groepschat is onjuist:\n\n\t%s\n\nWerk uw account bij."
 
 #: ../src/core/sipe-groupchat.c:332
 msgid "Couldn't find Group Chat server!"
-msgstr ""
+msgstr "Kon server voor groepschat niet vinden!"
 
 #: ../src/core/sipe-groupchat.c:508
 #, c-format
 msgid "This message was not delivered to chat room '%s'"
-msgstr ""
+msgstr "Dit bericht is niet afgeleverd bij chatruimte ‘%s’"
 
 #: ../src/core/sipe-groupchat.c:609
 msgid "Error retrieving room list"
-msgstr ""
+msgstr "Fout bij het ophalen van ruimtelijst"
 
 #: ../src/core/sipe-groupchat.c:713
 msgid "Error joining chat room"
-msgstr ""
+msgstr "Fout bij het bijwonen van chatruimte"
 
 #. generate one error and remove all unprocessed messages
 #: ../src/core/sipe-im.c:197
 #, c-format
 msgid "Failed to invite %s"
-msgstr "Uitnodiging van %s mislukt"
+msgstr "Uitnodigen van %s mislukt"
 
 #: ../src/core/sipe-incoming.c:749
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
-msgstr "Bericht ontvangen met onherkenbare inhoud van %s"
+msgstr "Bericht met niet-herkende inhoud ontvangen van %s"
 
 #: ../src/core/sipe-media.c:820 ../src/core/sipe-media.c:1187
 #: ../src/core/sipe-media.c:1197 ../src/core/sipe-media.c:1480
 #: ../src/core/sipe-media.c:1500
 msgid "Unable to establish a call"
-msgstr "Onmogelijk om een gesprek tot stand brengen."
+msgstr "Kan geen gesprek tot stand brengen"
 
 #: ../src/core/sipe-media.c:821 ../src/core/sipe-media.c:1481
 msgid "Encryption settings of peer are incompatible with ours."
-msgstr "De encryptie-instellingen van de 'peer' zijn onverenigbaar zijn met de onze."
+msgstr "Versleutelingsinstellingen van peer zijn niet compatibel met de onze."
 
 #: ../src/core/sipe-media.c:1059 ../src/core/sipe-media.c:1070
 #: ../src/core/sipe-media.c:1499
 msgid "Error occured"
-msgstr "Er heeft zich een fout voorgedaan"
+msgstr "Er is een fout opgetreden"
 
 #: ../src/core/sipe-media.c:1060 ../src/core/sipe-media.c:1137
 msgid "Error creating audio stream"
-msgstr "Fout bij het maken van de geluidsstroom"
+msgstr "Fout bij het maken van audiostream"
 
 #: ../src/core/sipe-media.c:1071
 msgid "Error creating video stream"
-msgstr "Fout bij het maken van de videostroom"
+msgstr "Fout bij het maken van videostream"
 
 #: ../src/core/sipe-media.c:1099 ../src/purple/purple-chat.c:305
 msgid "Join conference call"
-msgstr ""
+msgstr "Deelnemen aan telefonische vergadering"
 
 #: ../src/core/sipe-media.c:1100
 msgid "Conference calls are not supported on this server."
-msgstr ""
+msgstr "Telefonische vergaderingen worden niet ondersteund op deze server."
 
 #: ../src/core/sipe-media.c:1136
 msgid "Error occurred"
-msgstr ""
+msgstr "Er is een fout opgetreden"
 
 #: ../src/core/sipe-media.c:1188
 msgid "Invalid phone number"
-msgstr ""
+msgstr "Ongeldig telefoonnummer"
 
 #: ../src/core/sipe-media.c:1198
 msgid "Audio Test Service is not available."
-msgstr ""
+msgstr "Audiotestservice is niet beschikbaar."
 
 #: ../src/core/sipe-media.c:1444
 msgid "User unavailable"
@@ -557,20 +558,20 @@ msgstr "Oproep geweigerd"
 #: ../src/core/sipe-media.c:1455
 #, c-format
 msgid "User %s rejected call"
-msgstr "Gebruiker %s heeft de oproep geweigerd"
+msgstr "Gebruiker %s heeft oproep geweigerd"
 
 #: ../src/core/sipe-media.c:1463
 msgid "Unsupported media type"
-msgstr ""
+msgstr "Niet-ondersteund mediatype"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe-notify.c:1109
 msgid "you are already signed in at another location"
-msgstr "u bent reeds aangemeld op een andere locatie"
+msgstr "u bent al aangemeld op een andere locatie"
 
 #: ../src/core/sipe-notify.c:1111
 msgid "user disabled"
-msgstr "gebruiker geblokkeerd"
+msgstr "gebruiker uitgeschakeld"
 
 #: ../src/core/sipe-notify.c:1113
 msgid "user moved"
@@ -603,7 +604,7 @@ msgstr "Bedrijf"
 #: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:638
 #: ../src/purple/purple-buddy.c:645
 msgid "Public"
-msgstr "Publiek"
+msgstr "Openbaar"
 
 #: ../src/core/sipe-ocs2007.c:464
 msgid "Unknown"
@@ -612,7 +613,7 @@ msgstr "Onbekend"
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe-ocs2007.c:2557
 msgid "Unspecify"
-msgstr "De-specifiëer"
+msgstr "Wissen"
 
 #: ../src/core/sipe-ocs2007.c:2576
 msgid "People in my company"
@@ -624,20 +625,20 @@ msgstr "Personen in domeinen verbonden met mijn bedrijf"
 
 #: ../src/core/sipe-ocs2007.c:2595
 msgid "People in public domains"
-msgstr "Personen in publieke domeinen"
+msgstr "Personen in openbare domeinen"
 
 #: ../src/core/sipe-ocs2007.c:2605
 #, c-format
 msgid "People at %s"
-msgstr "Personen in %s"
+msgstr "Personen bij %s"
 
 #: ../src/core/sipe-ocs2007.c:2630
 msgid "Add new domain..."
-msgstr "Nieuw domein toevoegen"
+msgstr "Nieuw domein toevoegen..."
 
 #: ../src/core/sipe-ocs2007.c:2659
 msgid "Online help..."
-msgstr "Online hulp..."
+msgstr "Onlinehulp..."
 
 #: ../src/core/sipe-ocs2007.c:2667
 msgid "Access groups"
@@ -653,31 +654,31 @@ msgstr "Toegangsgroepen"
 #. SIPE_ACTIVITY_INACTIVE
 #: ../src/core/sipe-status.c:58
 msgid "Inactive"
-msgstr "Niet actief"
+msgstr "Inactief"
 
 #. SIPE_ACTIVITY_BUSYIDLE
 #: ../src/core/sipe-status.c:60
 msgid "Busy-Idle"
-msgstr "Bezig-Niet actief"
+msgstr "Bezig-Inactief"
 
 #. SIPE_ACTIVITY_DND
 #. SIPE_ACTIVITY_BRB
 #: ../src/core/sipe-status.c:62
 msgid "Be right back"
-msgstr "Ben even weg"
+msgstr "Ben zo terug"
 
 #. SIPE_ACTIVITY_AWAY
 #. SIPE_ACTIVITY_LUNCH
 #: ../src/core/sipe-status.c:64
 msgid "Out to lunch"
-msgstr "Gaan eten"
+msgstr "Lunchpauze"
 
 #. SIPE_ACTIVITY_INVISIBLE
 #. SIPE_ACTIVITY_OFFLINE
 #. SIPE_ACTIVITY_ON_PHONE
 #: ../src/core/sipe-status.c:67
 msgid "In a call"
-msgstr "Bezig met bellen"
+msgstr "In gesprek"
 
 #. SIPE_ACTIVITY_IN_CONF
 #: ../src/core/sipe-status.c:68
@@ -692,25 +693,25 @@ msgstr "In vergadering"
 #. SIPE_ACTIVITY_URGENT_ONLY
 #: ../src/core/sipe-status.c:71
 msgid "Urgent interruptions only"
-msgstr "Enkel dringende oproepen"
+msgstr "Alleen urgente onderbrekingen"
 
 #: ../src/core/sipe-ucs.c:733
 msgid "UCS initialization failed!"
-msgstr ""
+msgstr "UCS-initialisatie mislukt!"
 
 #: ../src/core/sipe-ucs.c:735
 msgid ""
 "Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n"
 "\n"
 "You'll need to provide Email settings in the account setup."
-msgstr ""
+msgstr "Kon geen Exchange-server vinden met de standaard e-mailinstellingen. Daardoor zal de contactenlijst niet werken.\n\nU dient e-mailinstellingen op te geven in de accountinstellingen."
 
 #: ../src/core/sipe-ucs.c:736
 msgid ""
 "Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n"
 "\n"
 "Please correct your Email settings."
-msgstr ""
+msgstr "Kon geen Exchange-server vinden met de opgegeven e-mailinstellingen in de accountinstellingen. Daardoor zal de contactenlijst niet werken.\n\nCorrigeer uw e-mailinstellingen."
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -719,13 +720,13 @@ msgstr ""
 msgid ""
 "Your message or invitation was not delivered, possibly because it contains a"
 " hyperlink or other content that the system administrator has blocked."
-msgstr "Uw bericht of uitnodiging werd niet afgeleverd, mogelijk bevat het een hyperlink of andere gegevens die door de systeem beheerder wordt geblokkeerd"
+msgstr "Uw bericht of uitnodiging is niet afgeleverd, omdat het mogelijk een hyperlink of andere inhoud bevat die de systeembeheerder heeft geblokkeerd."
 
 #: ../src/core/sipe-user.c:82
 #, c-format
 msgid ""
 "This message was not delivered to %s because the service is not available"
-msgstr "Dit bericht werd niet afgeleverd aan %s. De service is niet beschikbaar"
+msgstr "Dit bericht is niet bij %s afgeleverd, omdat de service niet beschikbaar is"
 
 #. Busy Here
 #: ../src/core/sipe-user.c:84
@@ -733,7 +734,7 @@ msgstr "Dit bericht werd niet afgeleverd aan %s. De service is niet beschikbaar"
 msgid ""
 "This message was not delivered to %s because one or more recipients do not "
 "want to be disturbed"
-msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers niet gestoord willen worden"
+msgstr "Dit bericht is niet bij %s afgeleverd, omdat een of meer ontvangers niet gestoord willen worden"
 
 #. Unsupported media type
 #: ../src/core/sipe-user.c:86
@@ -741,14 +742,14 @@ msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers n
 msgid ""
 "This message was not delivered to %s because one or more recipients don't "
 "support this type of message"
-msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers dit type van bericht niet ondersteunt."
+msgstr "Dit bericht is niet bij %s afgeleverd, omdat een of meer ontvangers dit type bericht niet ondersteunen"
 
 #: ../src/core/sipe-user.c:88
 #, c-format
 msgid ""
 "This message was not delivered to %s because one or more recipients are "
 "offline"
-msgstr "Dit bericht werd niet afgeleverd aan %s omdat 1 of meerdere ontvangers offline zijn."
+msgstr "Dit bericht is niet bij %s afgeleverd, omdat een of meer ontvangers offline zijn"
 
 #. SIPE_BUDDY_INFO_DISPLAY_NAME
 #: ../src/purple/purple-buddy.c:66
@@ -758,17 +759,17 @@ msgstr "Weergavenaam"
 #. SIPE_BUDDY_INFO_JOB_TITLE
 #: ../src/purple/purple-buddy.c:67
 msgid "Job title"
-msgstr "Job titel"
+msgstr "Functie"
 
 #. SIPE_BUDDY_INFO_CITY
 #: ../src/purple/purple-buddy.c:68
 msgid "City"
-msgstr "Stad"
+msgstr "Plaats"
 
 #. SIPE_BUDDY_INFO_STATE
 #: ../src/purple/purple-buddy.c:69
 msgid "State"
-msgstr "Staat"
+msgstr "Provincie"
 
 #. SIPE_BUDDY_INFO_OFFICE
 #: ../src/purple/purple-buddy.c:70
@@ -785,7 +786,7 @@ msgstr "Land"
 #. SIPE_BUDDY_INFO_WORK_PHONE
 #: ../src/purple/purple-buddy.c:73
 msgid "Business phone"
-msgstr "Werk telefoon"
+msgstr "Telefoon op werk"
 
 #. SIPE_BUDDY_INFO_EMAIL
 #: ../src/purple/purple-buddy.c:76
@@ -795,7 +796,7 @@ msgstr "E-mailadres"
 #. SIPE_BUDDY_INFO_SITE
 #: ../src/purple/purple-buddy.c:77
 msgid "Site"
-msgstr "Site"
+msgstr "Website"
 
 #. SIPE_BUDDY_INFO_ZIPCODE
 #. SIPE_BUDDY_INFO_STREET
@@ -815,7 +816,7 @@ msgstr "Alias"
 #. SIPE_BUDDY_INFO_DEVICE
 #: ../src/purple/purple-buddy.c:89
 msgid "Device"
-msgstr "Toestel"
+msgstr "Apparaat"
 
 #: ../src/purple/purple-buddy.c:259 ../src/purple/purple-buddy.c:277
 msgid "you"
@@ -844,44 +845,44 @@ msgstr "Annuleren"
 
 #: ../src/purple/purple-buddy.c:809
 msgid "Copy to"
-msgstr "Kopieer naar..."
+msgstr "Kopiëren naar"
 
 #: ../src/purple/purple-chat.c:286
 msgid "Lock"
-msgstr "Blokkeren"
+msgstr "Vergrendelen"
 
 #: ../src/purple/purple-chat.c:291
 msgid "Unlock"
-msgstr "Deblokkeren"
+msgstr "Ontgrendelen"
 
 #: ../src/purple/purple-groupchat.c:53
 msgid "_URI:"
-msgstr ""
+msgstr "_URI:"
 
 #: ../src/purple/purple-groupchat.c:157
 msgid "Users"
-msgstr ""
+msgstr "Gebruikers"
 
 #: ../src/purple/purple-groupchat.c:160
 msgid "Invite"
-msgstr ""
+msgstr "Uitnodigen"
 
 #: ../src/purple/purple-groupchat.c:163
 msgid "Private"
-msgstr ""
+msgstr "Privé"
 
 #: ../src/purple/purple-groupchat.c:166
 msgid "Log"
-msgstr ""
+msgstr "Logboek"
 
 #: ../src/purple/purple-groupchat.c:169
 msgid "Description"
-msgstr ""
+msgstr "Beschrijving"
 
 #: ../src/purple/purple-im.c:86
 #, c-format
 msgid "Conversation subject: %s"
-msgstr ""
+msgstr "Gespreksonderwerp: %s"
 
 #. Macro to reduce code repetition
 #. Translators: noun
@@ -891,11 +892,11 @@ msgstr "Bericht"
 
 #: ../src/purple/purple-plugin.c:441
 msgid "Connecting"
-msgstr "Bezig met verbinden"
+msgstr "Verbinding maken"
 
 #: ../src/purple/purple-plugin.c:471
 msgid "Password required"
-msgstr ""
+msgstr "Wachtwoord vereist"
 
 #: ../src/purple/purple-plugin.c:652
 msgid "user@company.com"
@@ -903,32 +904,32 @@ msgstr "gebruiker@bedrijf.com"
 
 #: ../src/purple/purple-plugin.c:918
 msgid "Phone number"
-msgstr ""
+msgstr "Telefoonnummer"
 
 #: ../src/purple/purple-plugin.c:922 ../src/purple/purple-plugin.c:923
 msgid "Call a phone number"
-msgstr ""
+msgstr "Een telefoonnummer bellen"
 
 #: ../src/purple/purple-plugin.c:926
 msgid "_Call"
-msgstr ""
+msgstr "_Bellen"
 
 #: ../src/purple/purple-plugin.c:927 ../src/purple/purple-plugin.c:969
 #: ../src/purple/purple-search.c:234
 msgid "_Cancel"
-msgstr "_Annuleer"
+msgstr "_Annuleren"
 
 #: ../src/purple/purple-plugin.c:954
 msgid "Meeting location"
-msgstr ""
+msgstr "Vergaderlocatie"
 
 #: ../src/purple/purple-plugin.c:958
 msgid "Join conference"
-msgstr ""
+msgstr "Deelnemen aan vergadering"
 
 #: ../src/purple/purple-plugin.c:959
 msgid "Join scheduled conference"
-msgstr ""
+msgstr "Deelnemen aan geplande vergadering"
 
 #: ../src/purple/purple-plugin.c:960
 msgid ""
@@ -939,19 +940,19 @@ msgid ""
 "conf:sip:someone@company.com;gruu;opaque=app:conf:focus:id:abcdef1234\n"
 "or\n"
 "https://meet.company.com/someone/abcdef1234"
-msgstr ""
+msgstr "Voer de locatie van de vergadering in die u in de uitnodiging hebt ontvangen.\n\nEen geldige locatie ziet eruit als\nmeet:sip:iemand@bedrijf.com;gruu;opaque=app:conf:focus:id:abcdef1234\nconf:sip:iemand@bedrijf.com;gruu;opaque=app:conf:focus:id:abcdef1234\nof\nhttps://meet.bedrijf.com/iemand/abcdef1234"
 
 #: ../src/purple/purple-plugin.c:968
 msgid "_Join"
-msgstr ""
+msgstr "_Deelnemen"
 
 #: ../src/purple/purple-plugin.c:985 ../src/purple/purple-plugin.c:999
 msgid "Publishing of calendar information has been disabled"
-msgstr ""
+msgstr "Het publiceren van agendagegevens is uitgeschakeld"
 
 #: ../src/purple/purple-plugin.c:1012
 msgid "About SIPE plugin..."
-msgstr "Over SIPE plugin..."
+msgstr "Over SIPE-plug-in..."
 
 #: ../src/purple/purple-plugin.c:1015
 msgid "Contact search..."
@@ -959,23 +960,23 @@ msgstr "Contacten zoeken..."
 
 #: ../src/purple/purple-plugin.c:1019
 msgid "Call a phone number..."
-msgstr ""
+msgstr "Een telefoonnummer bellen..."
 
 #: ../src/purple/purple-plugin.c:1022
 msgid "Test call"
-msgstr ""
+msgstr "Testgesprek"
 
 #: ../src/purple/purple-plugin.c:1026
 msgid "Join scheduled conference..."
-msgstr ""
+msgstr "Deelnemen aan geplande vergadering..."
 
 #: ../src/purple/purple-plugin.c:1029
 msgid "Republish Calendar"
-msgstr "Herpubliceer kalender"
+msgstr "Agenda opnieuw publiceren"
 
 #: ../src/purple/purple-plugin.c:1032
 msgid "Reset status"
-msgstr "Herinitialiseer status"
+msgstr "Status opnieuw instellen"
 
 #. *
 #. * When adding new string settings please make sure to keep these
@@ -988,13 +989,13 @@ msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
 "   user@company.com"
-msgstr "Login\n gebruiker of DOMEIN\\gebruiker of\n gebruiker@bedrijf.com"
+msgstr "Aanmelding\ngebruiker of DOMEIN\\gebruiker of\ngebruiker@bedrijf.com"
 
 #: ../src/purple/purple-plugin.c:1094
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
-msgstr "Server[:Port]\n(laat leeg voor automatische herkenning)"
+msgstr "Server[:Poort]\n(laat leeg voor automatische herkenning)"
 
 #: ../src/purple/purple-plugin.c:1097
 msgid "Connection type"
@@ -1018,23 +1019,23 @@ msgstr "TCP"
 #. g_list_append(sipe_prpl_info.protocol_options, option);
 #: ../src/purple/purple-plugin.c:1106
 msgid "User Agent"
-msgstr "User Agent"
+msgstr "Gebruikersagent"
 
 #: ../src/purple/purple-plugin.c:1109
 msgid "Authentication scheme"
-msgstr ""
+msgstr "Authenticatieschema"
 
 #: ../src/purple/purple-plugin.c:1111
 msgid "NTLM"
-msgstr ""
+msgstr "NTLM"
 
 #: ../src/purple/purple-plugin.c:1113
 msgid "Kerberos"
-msgstr ""
+msgstr "Kerberos"
 
 #: ../src/purple/purple-plugin.c:1115
 msgid "TLS-DSK"
-msgstr ""
+msgstr "TLS-DSK"
 
 #. * When the user selects Single Sign-On then SIPE will ignore the
 #. * settings for "login name" and "password". Instead it will use the
@@ -1050,25 +1051,25 @@ msgstr ""
 #. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 #: ../src/purple/purple-plugin.c:1133
 msgid "Use Single Sign-On"
-msgstr "Gebruik Single Sign-On"
+msgstr "Eenmalige aanmelding gebruiken"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 #: ../src/purple/purple-plugin.c:1140
 msgid "Don't publish my calendar information"
-msgstr ""
+msgstr "Mijn agendagegevens niet publiceren"
 
 #: ../src/purple/purple-plugin.c:1143
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
-msgstr "Email services URL\n(leeglaten om automatisch te bepalen)"
+msgstr "URL van e-mailservices\n(laat leeg voor automatische detectie)"
 
 #: ../src/purple/purple-plugin.c:1146
 msgid ""
 "Email address\n"
 "(if different from Username)"
-msgstr "Email adres\n(indien verschillend van Gebruikersnaam)"
+msgstr "E-mailadres\n(wanneer anders dan Gebruikersnaam)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
@@ -1076,13 +1077,13 @@ msgstr "Email adres\n(indien verschillend van Gebruikersnaam)"
 msgid ""
 "Email login\n"
 "(if different from Login)"
-msgstr "Email login\n(indien verschillend van Login)"
+msgstr "E-mailaanmelding\n(wanneer anders dan Aanmelding)"
 
 #: ../src/purple/purple-plugin.c:1155
 msgid ""
 "Email password\n"
 "(if different from Password)"
-msgstr "Email paswoord\n(Indien verschillend van Paswoord)"
+msgstr "E-mailwachtwoord\n(wanneer anders dan Wachtwoord)"
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
@@ -1091,27 +1092,27 @@ msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
 "(leave empty to determine from Username)"
-msgstr ""
+msgstr "Proxy voor groepschat\nbedrijf.com of gebruiker@bedrijf.com\n(laat leeg voor bepaling uit Gebruikersnaam)"
 
 #: ../src/purple/purple-plugin.c:1166
 msgid "Media encryption"
-msgstr ""
+msgstr "Mediaversleuteling"
 
 #: ../src/purple/purple-plugin.c:1167
 msgid "Obey server policy"
-msgstr ""
+msgstr "Serverbeleid volgen"
 
 #: ../src/purple/purple-plugin.c:1168
 msgid "Always"
-msgstr ""
+msgstr "Altijd"
 
 #: ../src/purple/purple-plugin.c:1169
 msgid "Optional"
-msgstr ""
+msgstr "Optioneel"
 
 #: ../src/purple/purple-plugin.c:1170
 msgid "Disabled"
-msgstr ""
+msgstr "Uitgeschakeld"
 
 #: ../src/purple/purple-search.c:60
 msgid "User name"
@@ -1131,15 +1132,15 @@ msgstr "Voornaam"
 
 #: ../src/purple/purple-search.c:217
 msgid "Last name"
-msgstr "Naam"
+msgstr "Achternaam"
 
 #: ../src/purple/purple-search.c:221
 msgid "SIP ID"
-msgstr ""
+msgstr "SIP-ID"
 
 #: ../src/purple/purple-search.c:229
 msgid "Search"
-msgstr "Zoek"
+msgstr "Zoeken"
 
 #: ../src/purple/purple-search.c:230
 msgid "Search for a contact"
@@ -1149,7 +1150,7 @@ msgstr "Contactpersoon zoeken"
 msgid ""
 "Enter the information for the person you wish to find. Empty fields will be "
 "ignored."
-msgstr "Vul de informatie in voor de persoon die u probeert te vinden. Lege velden worden genegeerd."
+msgstr "Vul de gegevens in voor de persoon die u probeert te vinden. Lege velden worden genegeerd."
 
 #: ../src/purple/purple-search.c:233
 msgid "_Search"
@@ -1162,15 +1163,15 @@ msgstr "Leesfout"
 #: ../src/purple/purple-transport.c:135
 #: ../src/telepathy/telepathy-transport.c:96
 msgid "Server has disconnected"
-msgstr "De server heeft de verbinding verbroken"
+msgstr "Server heeft verbinding verbroken"
 
 #: ../src/purple/purple-transport.c:197
 msgid "Could not connect"
-msgstr "Kon niet verbinden"
+msgstr "Kon geen verbinding maken"
 
 #: ../src/purple/purple-transport.c:267
 msgid "Could not create SSL context"
-msgstr "Kon geen SSL context creëeren"
+msgstr "Kon geen SSL-context maken"
 
 #: ../src/purple/purple-transport.c:289
 msgid "Could not create socket"

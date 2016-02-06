@@ -7,13 +7,14 @@
 # Translators:
 # Kyle Wang, 2014-2015
 # Stefan Becker <chemobejk@gmail.com>, 2011
+# Tommy He <lovenemesis@gmail.com>, 2015
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2015-08-27 01:15+0000\n"
-"Last-Translator: Kyle Wang\n"
+"PO-Revision-Date: 2015-11-24 04:39+0000\n"
+"Last-Translator: Tommy He <lovenemesis@gmail.com>\n"
 "Language-Team: Chinese (China) (http://www.transifex.com/stefanb/pidgin-sipe/language/zh_CN/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -162,7 +163,7 @@ msgstr "工作"
 
 #: ../src/core/sipe-buddy.c:2166
 msgid "Home"
-msgstr "主页"
+msgstr "家庭"
 
 #: ../src/core/sipe-buddy.c:2174
 msgid "Other"
@@ -178,7 +179,7 @@ msgstr "发送邮件..."
 
 #: ../src/core/sipe-cal.c:907
 msgid "Free"
-msgstr "自由"
+msgstr "空闲"
 
 #: ../src/core/sipe-cal.c:908
 msgid "Tentative"
@@ -611,7 +612,7 @@ msgstr "未知"
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe-ocs2007.c:2557
 msgid "Unspecify"
-msgstr "撤消指定"
+msgstr "未指定"
 
 #: ../src/core/sipe-ocs2007.c:2576
 msgid "People in my company"
@@ -702,14 +703,14 @@ msgid ""
 "Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n"
 "\n"
 "You'll need to provide Email settings in the account setup."
-msgstr "未找到默认电子邮件设置的Exchange服务器，联系人列表将无法使用。\n\n您需要在帐户设置中提供电子邮件设置。"
+msgstr "未找到默认电子邮件设置的 Exchange 服务器，联系人列表将无法使用。\n\n您需要在帐户设置中提供电子邮件设置。"
 
 #: ../src/core/sipe-ucs.c:736
 msgid ""
 "Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n"
 "\n"
 "Please correct your Email settings."
-msgstr "未找到帐户设置中电子邮件的Exchange服务器，联系人列表将无法使用。\n\n请更正您的电子邮件设置。"
+msgstr "未找到帐户设置中电子邮件的 Exchange 服务器，联系人列表将无法使用。\n\n请更正您的电子邮件设置。"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -740,7 +741,7 @@ msgstr "此消息没有被发送到 %s，因为有的收信人不想被打扰"
 msgid ""
 "This message was not delivered to %s because one or more recipients don't "
 "support this type of message"
-msgstr "此消息没有被发送到 %s，因为有的收信人支持此消息类型"
+msgstr "此消息没有被发送到 %s，因为有的收信人不支持此消息类型"
 
 #: ../src/core/sipe-user.c:88
 #, c-format
@@ -772,7 +773,7 @@ msgstr "省份"
 #. SIPE_BUDDY_INFO_OFFICE
 #: ../src/purple/purple-buddy.c:70
 msgid "Office"
-msgstr "职务"
+msgstr "办公室"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
