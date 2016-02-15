@@ -1,4 +1,12 @@
 -------------------------------------------------------------------
+Fri Feb 12 09:26:02 UTC 2016 - dimstar@opensuse.org
+
+- Pass --disable-quality-check to configure: the 'quality' checks
+  are a bunch of compiler flags like Werror and more warning. This
+  is more important for development versions than for released
+  ones.
+
+-------------------------------------------------------------------
 Wed Jan 13 16:44:50 UTC 2016 - dimstar@opensuse.org
 
 - Update to version 1.20.1:
