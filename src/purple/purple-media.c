@@ -54,7 +54,7 @@
  */
 #if defined(__GNUC__)
 #if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)) || (__GNUC__ >= 5)
-#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__) || (defined(__powerpc__) && defined(__NO_FPRS__))
+#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__hppa__) || defined(__mips__) || defined(__sparc__) || (defined(__powerpc__) && defined(__NO_FPRS__))
 #pragma GCC diagnostic ignored "-Wcast-align"
 #endif
 #endif
