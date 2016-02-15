@@ -169,6 +169,9 @@ struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_pu
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	GResolver *resolver = g_resolver_get_default();
+#endif
 
 	query->purple_private = purple_private;
 	query->callback       = callback;
@@ -182,11 +185,12 @@ struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_pu
 	query->port = port;
 	query->purple_query_data = g_cancellable_new();
 
-	g_resolver_lookup_by_name_async(g_resolver_get_default(),
+	g_resolver_lookup_by_name_async(resolver,
 					hostname,
 					query->purple_query_data,
 					dns_a_response,
 					query);
+	g_object_unref(resolver);
 #else
 	query->type = A;
 	query->purple_query_data =
@@ -271,6 +275,9 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	GResolver *resolver = g_resolver_get_default();
+#endif
 
 	query->purple_private = purple_private;
 	query->callback       = callback;
@@ -283,13 +290,14 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_
 #if PURPLE_VERSION_CHECK(3,0,0)
 	query->purple_query_data = g_cancellable_new();
 
-	g_resolver_lookup_service_async(g_resolver_get_default(),
+	g_resolver_lookup_service_async(resolver,
 					protocol,
 					transport,
 					domain,
 					query->purple_query_data,
 					dns_srv_response,
 					query);
+	g_object_unref(resolver);
 #else
 	query->type = SRV;
 	query->purple_query_data =
