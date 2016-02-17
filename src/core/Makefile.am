@@ -215,7 +215,8 @@ if SIPE_HAVE_XDATA
 libsipe_core_la_SOURCES += \
 	sipe-ft-lync.h sipe-ft-lync.c \
 	sipe-appshare.h sipe-appshare.c \
-	sipe-appshare-xfreerdp.h sipe-appshare-xfreerdp.c
+	sipe-appshare-xfreerdp.h sipe-appshare-xfreerdp.c \
+	sipe-appshare-remmina.h sipe-appshare-remmina.c
 endif
 
 check_PROGRAMS =
