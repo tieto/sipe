@@ -216,6 +216,7 @@ libsipe_core_la_SOURCES += \
 if SIPE_HAVE_GIO
 libsipe_core_la_SOURCES += \
 	sipe-appshare.h sipe-appshare.c \
+	sipe-appshare-remmina.h sipe-appshare-remmina.c \
 	sipe-appshare-xfreerdp.h sipe-appshare-xfreerdp.c
 
 libsipe_core_la_CFLAGS += $(GIO_CFLAGS)
