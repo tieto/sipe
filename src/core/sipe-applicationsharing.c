@@ -55,6 +55,7 @@ struct sipe_appshare {
 	GIOChannel *channel;
 	guint rdp_channel_readable_watch_id;
 	guint monitor_id;
+	gchar *config_file;
 	struct sipe_user_ask_ctx *ask_ctx;
 
 	gboolean writable;
@@ -100,6 +101,10 @@ sipe_appshare_free(struct sipe_appshare *appshare)
 
 	if (appshare->ask_ctx) {
 		sipe_user_close_ask(appshare->ask_ctx);
+	}
+
+	if (appshare->config_file) {
+		g_unlink(appshare->config_file);
 	}
 
 	g_free(appshare);
@@ -188,7 +193,6 @@ socket_connect_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 
 	data_socket = g_socket_accept(appshare->socket, NULL, &error);
 
-	unlink_appshare_socket(appshare->socket);
 	g_io_channel_shutdown(appshare->channel, TRUE, &error);
 	g_io_channel_unref(appshare->channel);
 	g_object_unref(appshare->socket);
@@ -205,6 +209,12 @@ socket_connect_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 	return FALSE;
 }
 
+static gchar *
+appshare_runtime_dir()
+{
+	return g_strdup_printf("%s/sipe", g_get_user_runtime_dir());
+}
+
 static gchar*
 build_socket_path(struct sipe_media_call *call)
 {
@@ -217,7 +227,7 @@ build_socket_path(struct sipe_media_call *call)
 		return NULL;
 	}
 
-	runtime_dir = g_strdup_printf("%s/sipe", g_get_user_runtime_dir());
+	runtime_dir = appshare_runtime_dir();
 
 	g_mkdir_with_parents(runtime_dir, 0700);
 
@@ -241,28 +251,138 @@ writable_cb(struct sipe_media_stream *stream)
 }
 
 static void
+cleanup_stale_remmina_files()
+{
+	gchar *runtime_dir;
+	const gchar *file_name;
+	GDir *dir;
+	GError *error = NULL;
+
+	runtime_dir = appshare_runtime_dir();
+
+	dir = g_dir_open(runtime_dir, 0, &error);
+	if (!error) {
+		gchar *prefix;
+
+		prefix = g_strdup_printf("applicationsharing-%u-", getpid());
+
+		while ((file_name = g_dir_read_name(dir))) {
+			if (!g_str_has_prefix(file_name, prefix)) {
+				gchar *file = g_build_filename(runtime_dir,
+							       file_name, NULL);
+				g_unlink(file);
+				g_free(file);
+			}
+		}
+
+		g_free(prefix);
+		g_dir_close(dir);
+	} else {
+		g_error_free(error);
+	}
+
+	g_free(runtime_dir);
+}
+
+static gboolean
+run_remmina(struct sipe_appshare *appshare)
+{
+	struct sipe_core_private *sipe_private;
+	GSocketAddress *socket_address;
+	GInetAddress *address;
+	gchar *address_string;
+	gchar *config_file_base;
+	gchar *config_file;
+	gchar *alias;
+	gchar *cmdline;
+	guint16 port;
+	GError *error = NULL;
+
+	cleanup_stale_remmina_files();
+
+	sipe_private = sipe_media_get_sipe_core_private(appshare->media);
+
+	socket_address = g_socket_get_local_address(appshare->socket, &error);
+	if (error) {
+		SIPE_DEBUG_ERROR("Couldn't get appshare socket address: %s",
+				 error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	address = g_inet_socket_address_get_address(G_INET_SOCKET_ADDRESS(socket_address));
+	address_string = g_inet_address_to_string(address);
+
+	port = g_inet_socket_address_get_port(G_INET_SOCKET_ADDRESS(socket_address));
+	g_object_unref(socket_address);
+
+	alias = sipe_buddy_get_alias(sipe_private, appshare->media->with);
+
+	config_file = g_strdup_printf("[remmina]\n"
+				      "name=%s (Sipe desktop)\n"
+				      "protocol=RDP\n"
+				      "server=%s:%u\n"
+				      "security=rdp\n"
+				      "scale=1\n"
+				      "aspectscale=1\n"
+				      "viewmode=1\n",
+				      alias ? alias : appshare->media->with,
+				      address_string,
+				      port);
+
+	g_free(alias);
+	g_free(address_string);
+	g_object_unref(address);
+
+	config_file_base = build_socket_path(appshare->media);
+	appshare->config_file = g_strdup_printf("%s.remmina", config_file_base);
+	g_free(config_file_base);
+
+	g_file_set_contents(appshare->config_file,
+			    config_file, strlen(config_file), &error);
+	g_free(config_file);
+	if (error) {
+		SIPE_DEBUG_ERROR("Couldn't write remmina config file: %s",
+				 error->message);
+		g_error_free(error);
+		return FALSE;
+	}
+
+	cmdline = g_strdup_printf("remmina -c %s", appshare->config_file);
+
+	g_spawn_command_line_async(cmdline, &error);
+	g_free(cmdline);
+	if (error) {
+		SIPE_DEBUG_ERROR("Couldn't launch remote desktop view: %s",
+				 error->message);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+static void
 launch_rdp_client(struct sipe_appshare *appshare)
 {
-	gchar *socket_path;
-	gchar *cmdline;
+	GInetAddress *iaddress;
 	GSocketAddress *address;
 	GError *error = NULL;
 
-	socket_path = build_socket_path(appshare->media);
-
-	appshare->socket = g_socket_new(G_SOCKET_FAMILY_UNIX,
+	appshare->socket = g_socket_new(G_SOCKET_FAMILY_IPV4,
 				     G_SOCKET_TYPE_STREAM,
 				     G_SOCKET_PROTOCOL_DEFAULT,
 				     &error);
 	g_assert_no_error(error);
 	g_socket_set_blocking(appshare->socket, FALSE);
 
-	address = g_unix_socket_address_new(socket_path);
-
-	g_unlink(socket_path);
+	iaddress = g_inet_address_new_loopback(G_SOCKET_FAMILY_IPV4);
+	address = g_inet_socket_address_new(iaddress, 0);
+	g_object_unref(iaddress);
 
 	g_socket_bind(appshare->socket, address, TRUE, &error);
+	g_object_unref(address);
 	g_assert_no_error(error);
+
 	g_socket_listen(appshare->socket, &error);
 	g_assert_no_error(error);
 
@@ -271,13 +391,9 @@ launch_rdp_client(struct sipe_appshare *appshare)
 			g_io_add_watch(appshare->channel, G_IO_IN,
 				       socket_connect_cb, appshare);
 
-	cmdline = g_strdup_printf("xfreerdp /v:%s /sec:rdp",socket_path);
-
-	g_spawn_command_line_async(cmdline, &error);
-	g_assert_no_error(error);
-
-	g_free(cmdline);
-	g_free(socket_path);
+	if (!run_remmina(appshare)) {
+		sipe_backend_media_hangup(appshare->media->backend_private, TRUE);
+	}
 }
 
 static void
