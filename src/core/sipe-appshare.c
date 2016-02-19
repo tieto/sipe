@@ -33,6 +33,7 @@
 #include "sipe-core.h"
 #include "sipe-media.h"
 #include "sipe-nls.h"
+#include "sipe-schedule.h"
 #include "sipe-user.h"
 #include "sipe-utils.h"
 
@@ -41,7 +42,12 @@ struct sipe_appshare {
 	GSocket *socket;
 	GIOChannel *channel;
 	guint rdp_channel_readable_watch_id;
+	guint rdp_channel_writable_watch_id;
 	struct sipe_user_ask_ctx *ask_ctx;
+
+	gchar rdp_channel_buffer[0x800];
+	gchar *rdp_channel_buffer_pos;
+	gsize rdp_channel_buffer_len;
 
 	struct sipe_rdp_client client;
 };
@@ -53,6 +59,11 @@ sipe_appshare_free(struct sipe_appshare *appshare)
 
 	g_source_destroy(g_main_context_find_source_by_id(NULL,
 			appshare->rdp_channel_readable_watch_id));
+
+	if (appshare->rdp_channel_writable_watch_id != 0) {
+		g_source_destroy(g_main_context_find_source_by_id(NULL,
+				appshare->rdp_channel_writable_watch_id));
+	}
 
 	g_io_channel_shutdown(appshare->channel, TRUE, &error);
 	if (error) {
@@ -246,39 +257,123 @@ launch_rdp_client(struct sipe_appshare *appshare)
 	g_object_unref(address);
 }
 
+static gssize
+rdp_client_channel_write(struct sipe_appshare *appshare)
+{
+	gsize bytes_written;
+	GError *error = NULL;
+
+	g_io_channel_write_chars(appshare->channel,
+				 appshare->rdp_channel_buffer_pos,
+				 appshare->rdp_channel_buffer_len,
+				 &bytes_written, &error);
+	if (error) {
+		SIPE_DEBUG_ERROR("Couldn't write data to RDP client: %s",
+				 error->message);
+		g_error_free(error);
+		return -1;
+	}
+
+	g_io_channel_flush(appshare->channel, &error);
+	if (error) {
+		if (g_error_matches(error, G_IO_CHANNEL_ERROR,
+				    G_IO_CHANNEL_ERROR_PIPE)) {
+			/* Ignore broken pipe here and wait for the call to be
+			 * hung up upon G_IO_HUP in client_channel_cb(). */
+			g_error_free(error);
+			return 0;
+		}
+
+		SIPE_DEBUG_ERROR("Couldn't flush RDP channel: %s",
+				 error->message);
+		g_error_free(error);
+		return -1;
+	}
+
+	appshare->rdp_channel_buffer_pos += bytes_written;
+	appshare->rdp_channel_buffer_len -= bytes_written;
+
+	return bytes_written;
+}
+
+static void
+delayed_hangup_cb(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+		  gpointer data)
+{
+	struct sipe_media_call *call = data;
+
+	sipe_backend_media_hangup(call->backend_private, TRUE);
+}
+
+static gboolean
+rdp_channel_writable_cb(SIPE_UNUSED_PARAMETER GIOChannel *channel,
+			SIPE_UNUSED_PARAMETER GIOCondition condition,
+			gpointer data)
+{
+	struct sipe_appshare *appshare = data;
+	struct sipe_media_call *call = appshare->stream->call;
+
+	if (rdp_client_channel_write(appshare) < 0) {
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+		return FALSE;
+	}
+
+	if (appshare->rdp_channel_buffer_len == 0) {
+		// Writing done, disconnect writable watch.
+		appshare->rdp_channel_writable_watch_id = 0;
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
 static void
 read_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
-	guint8 buffer[0x800];
-	gint bytes_read;
-	gsize bytes_written;
-	GError *error = NULL;
+	gint bytes_read = 0;
+	gssize bytes_written = 0;
 
-	SIPE_DEBUG_INFO_NOFORMAT("Incoming appshare data");
-	bytes_read = sipe_backend_media_stream_read(stream, buffer,
-						    sizeof (buffer));
-
-	if (bytes_read == 0) {
+	if (appshare->rdp_channel_writable_watch_id != 0) {
+		// Data still in the buffer. Let the client read it first.
 		return;
 	}
 
-	g_io_channel_write_chars(appshare->channel, (gchar *)buffer,
-				 bytes_read, &bytes_written, &error);
-	if (error) {
-		SIPE_DEBUG_ERROR("Error writing RDP data: %s", error->message);
-		g_error_free(error);
-		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
-		return;
-	}
-	if (g_io_channel_flush(appshare->channel, &error) == G_IO_STATUS_ERROR &&
-	    g_error_matches(error, G_IO_CHANNEL_ERROR, G_IO_CHANNEL_ERROR_PIPE)) {
-		g_error_free(error);
-		return;
+	while (bytes_read == (gint)bytes_written) {
+		bytes_read = sipe_backend_media_stream_read(stream,
+				(guint8 *)appshare->rdp_channel_buffer,
+				sizeof (appshare->rdp_channel_buffer));
+		if (bytes_read == 0) {
+			return;
+		}
+
+		appshare->rdp_channel_buffer_pos = appshare->rdp_channel_buffer;
+		appshare->rdp_channel_buffer_len = bytes_read;
+
+		bytes_written = rdp_client_channel_write(appshare);
+
+		if (bytes_written < 0) {
+			/* Don't deallocate stream while in its read callback.
+			 * Schedule call hangup to be executed after we're back
+			 * in the message loop. */
+			sipe_schedule_seconds(sipe_media_get_sipe_core_private(stream->call),
+					      "appshare delayed hangup",
+					      stream->call->backend_private,
+					      0,
+					      delayed_hangup_cb,
+					      NULL);
+			return;
+		}
 	}
 
-	// TODO: Buffer data not written to RDP socket.
-	g_assert(bytes_read == (gint)bytes_written);
+	if (bytes_read != (gint)bytes_written) {
+		/* Schedule writing of the buffer's remainder to when
+		 * RDP channel becomes writable again. */
+		appshare->rdp_channel_writable_watch_id =
+				g_io_add_watch(appshare->channel, G_IO_OUT,
+					       rdp_channel_writable_cb,
+					       appshare);
+	}
 }
 
 static void
