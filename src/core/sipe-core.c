@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -100,10 +100,49 @@
 #include "sipe-webticket.h"
 
 #ifdef PACKAGE_GIT_COMMIT
-#define SIPE_CORE_VERSION PACKAGE_VERSION " (git commit " PACKAGE_GIT_COMMIT ")"
+#define SIPE_CORE_VERSION PACKAGE_VERSION " (git commit " PACKAGE_GIT_COMMIT " / "
 #else
-#define SIPE_CORE_VERSION PACKAGE_VERSION
+#define SIPE_CORE_VERSION PACKAGE_VERSION " ("
 #endif
+
+/* translate config.h options to strings */
+static const gchar * const sipe_core_build_options[] = {
+
+	/* Authentication */
+#ifdef HAVE_SSPI
+	"SSPI",
+#elif defined(HAVE_GSSAPI_ONLY)
+	"GSSAPI",
+#ifndef HAVE_GSSAPI_PASSWORD_SUPPORT
+	"SSO only",
+#endif
+#else
+#ifdef HAVE_GSSAPI_GSSAPI_H
+	"Kerberos 5 & NTLM",
+#else
+	"NTLM",
+#endif
+#endif
+
+	/* Media */
+#ifdef HAVE_VV
+	"Voice & Video",
+#ifdef HAVE_SRTP
+	"SRTP",
+#endif
+#ifdef HAVE_XDATA
+	"Lync FT",
+#endif
+#endif
+
+	/* Development */
+#ifdef HAVE_VALGRIND
+	"Valgrind",
+#endif
+
+	NULL
+};
+
 
 /* locale_dir is unused if ENABLE_NLS is not defined */
 void sipe_core_init(SIPE_UNUSED_PARAMETER const char *locale_dir)
@@ -135,13 +174,14 @@ void sipe_core_destroy(void)
 
 gchar *sipe_core_about(void)
 {
-	return g_strdup_printf(
+	gchar *options = g_strjoinv(" / ", (gchar **) sipe_core_build_options);
+	gchar *about   = g_strdup_printf(
 		/*
 		 * Non-translatable parts, like markup, are hard-coded
 		 * into the format string. This requires more translatable
 		 * texts but it makes the translations less error prone.
 		 */
-		"<b><font size=\"+1\">SIPE " SIPE_CORE_VERSION " </font></b><br/>"
+		"<b><font size=\"+1\">SIPE " SIPE_CORE_VERSION "%s) </font></b><br/>"
 		"<br/>"
 		/* 1 */   "%s:<br/>"
 		" - Skype for Business<br/>"
@@ -174,7 +214,7 @@ gchar *sipe_core_about(void)
 		" - Tomáš Hrabčík (retired)<br/>"
 		"<br/>"
 		/* 13 */  "%s<br/>"
-		,
+		, options,
 		/* The next 13 texts make up the SIPE about note text */
 		/* About note, part 1/13: introduction */
 		_("A third-party plugin implementing extended version of SIP/SIMPLE used by various products"),
@@ -207,6 +247,8 @@ gchar *sipe_core_about(void)
 		/* "Localization for <language name> (<language code>): <name>" */
 		_("Original texts in English (en): SIPE developers")
 		);
+	g_free(options);
+	return(about);
 }
 
 struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
