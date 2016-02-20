@@ -204,24 +204,22 @@ development packages which where used to compile Pidgin!
 	libgstreamer0.10-dev
 or	libgstreamer1.0-dev
 	for encryption support (at compile time):
-	libpurple-dev               (>= 2.10.x with backports from 3.x.x)
-or	libpurple-dev               (>= 3.x.x)
+	libpurple-dev               (>= 2.10.12)
 	libnice-dev                 (>= 0.1.13)
 	libgstreamer1.0-dev
 	for encryption support (at run time):
-	libfarstream-0.2            (>= 0.2.7)
+	libfarstream-0.2
 	gstreamer1.0-plugins-bad
 
 	libnice-devel               (>= 0.1.0)
 	gstreamer-devel
 or	gstreamer1-devel
 	for encryption support (at compile time):
-	libpurple-devel             (>= 2.10.x with backports from 3.x.x)
-or	libpurple-devel             (>= 3.x.x)
+	libpurple-devel             (>= 2.10.12)
 	libnice-devel               (>= 0.1.13)
 	gstreamer1-devel
 	for encryption support (at run time):
-	farstream02                 (>= 0.2.7)
+	farstream02
 	gstreamer1-plugins-bad-free
 
 Now you should be able to compile the source code with
