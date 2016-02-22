@@ -807,7 +807,7 @@ call_initialized(struct sipe_media_call *call)
 // prepared, otherwise does nothing. If error response is sent, call_private is
 // disposed before function returns.
 static void
-send_invite_response_if_ready(struct sipe_media_call_private *call_private)
+maybe_send_first_invite_response(struct sipe_media_call_private *call_private)
 {
 	struct sipe_backend_media *backend_media;
 
@@ -850,7 +850,7 @@ stream_initialized_cb(struct sipe_media_call *call,
 			call_private->smsg = NULL;
 
 			apply_remote_message(call_private, smsg);
-			send_invite_response_if_ready(call_private);
+			maybe_send_first_invite_response(call_private);
 			sdpmsg_free(smsg);
 		}
 	}
@@ -888,7 +888,7 @@ static void
 call_accept_cb(struct sipe_media_call *call, gboolean local)
 {
 	if (local) {
-		send_invite_response_if_ready(SIPE_MEDIA_CALL_PRIVATE);
+		maybe_send_first_invite_response(SIPE_MEDIA_CALL_PRIVATE);
 	}
 	phone_state_publish(SIPE_MEDIA_CALL_PRIVATE->sipe_private);
 }
