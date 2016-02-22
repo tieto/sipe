@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -805,8 +805,8 @@ call_initialized(struct sipe_media_call *call)
 
 // Sends an invite response when the call is accepted and local candidates were
 // prepared, otherwise does nothing. If error response is sent, call_private is
-// disposed before function returns. Returns true when response was sent.
-static gboolean
+// disposed before function returns.
+static void
 send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 {
 	struct sipe_backend_media *backend_media;
@@ -815,7 +815,7 @@ send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 
 	if (!sipe_backend_media_accepted(backend_media) ||
 	    !call_initialized(&call_private->public))
-		return FALSE;
+		return;
 
 	if (!call_private->encryption_compatible) {
 		struct sipe_core_private *sipe_private = call_private->sipe_private;
@@ -833,8 +833,6 @@ send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 	} else {
 		send_response_with_session_description(call_private, 200, "OK");
 	}
-
-	return TRUE;
 }
 
 static void
