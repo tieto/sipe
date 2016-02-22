@@ -832,6 +832,8 @@ maybe_send_first_invite_response(struct sipe_media_call_private *call_private)
 					  _("Encryption settings of peer are incompatible with ours."));
 	} else {
 		send_response_with_session_description(call_private, 200, "OK");
+		sipmsg_free(call_private->invitation);
+		call_private->invitation = NULL;
 	}
 }
 
@@ -1327,6 +1329,28 @@ transport_response_unsupported_sdp(struct sipe_core_private *sipe_private,
 			       488, "Not Acceptable Here", NULL);
 }
 
+static void
+maybe_send_second_invite_response(struct sipe_media_call_private *call_private)
+{
+	GSList *it;
+
+	/* Second INVITE request had to be received and all streams must have
+	 * established candidate pairs before the response can be sent. */
+
+	if (!call_private->invitation) {
+		return;
+	}
+
+	for (it = call_private->streams; it; it = it->next) {
+		struct sipe_media_stream_private *stream_private = it->data;
+		if (!stream_private->established) {
+			return;
+		}
+	}
+
+	send_response_with_session_description(call_private, 200, "OK");
+}
+
 struct sipe_media_call *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
@@ -1418,9 +1442,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		// Processing continues in stream_initialized_cb
 	} else {
 		apply_remote_message(call_private, smsg);
-		send_response_with_session_description(call_private, 200, "OK");
-
 		sdpmsg_free(smsg);
+		maybe_send_second_invite_response(call_private);
 	}
 
 	return SIPE_MEDIA_CALL;
@@ -1511,6 +1534,10 @@ sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stre
 	}
 	SIPE_MEDIA_STREAM_PRIVATE->established = TRUE;
 
+	if (stream->candidate_pairs_established_cb) {
+		stream->candidate_pairs_established_cb(stream);
+	}
+
 	if (sipe_backend_media_is_initiator(stream->call, NULL)) {
 		GSList *streams = SIPE_MEDIA_CALL_PRIVATE->streams;
 		for (; streams; streams = streams->next) {
@@ -1525,10 +1552,8 @@ sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stre
 			sipe_invite_call(SIPE_MEDIA_CALL_PRIVATE,
 					 sipe_media_send_final_ack);
 		}
-	}
-
-	if (stream->candidate_pairs_established_cb) {
-		stream->candidate_pairs_established_cb(stream);
+	} else {
+		maybe_send_second_invite_response(SIPE_MEDIA_CALL_PRIVATE);
 	}
 }
 
