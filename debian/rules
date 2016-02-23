@@ -1,8 +1,5 @@
 #!/usr/bin/make -f
 
-export PKG_CONFIG_PATH = /opt/freerdp-sipe/usr/lib/$(DEB_HOST_MULTIARCH)/pkgconfig
-export LDFLAGS = -Wl,-rpath=/opt/freerdp-sipe/usr/lib/$(DEB_HOST_MULTIARCH)
-
 DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple=3 --disable-telepathy --enable-openssl=no
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
@@ -36,9 +33,6 @@ override_dh_auto_clean:
 		depcomp install-sh intltool-extract.in intltool-merge.in intltool-update.in ltmain.sh \
 		missing test-driver
 	find -type f -name Makefile.in\* -delete
-
-override_dh_shlibdeps:
-	dh_shlibdeps -lopt/freerdp-sipe/usr/lib/$(DEB_HOST_MULTIARCH)
 
 VERSION=$(shell dpkg-parsechangelog -S Version | cut -d- -f1)
 get-orig-source:
