@@ -214,7 +214,7 @@ libsipe_core_la_CFLAGS += \
 
 libsipe_core_la_LIBADD = \
 	$(FREERDP_LIBS) \
-	-lfreerdp-shadow
+	-lfreerdp-shadow -lfreerdp-shadow-subsystem
 endif
 endif
 
