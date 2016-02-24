@@ -14,8 +14,8 @@ Vcs-Browser: https://anonscm.debian.org/gitweb/?p=collab-maint/pidgin-sipe.git
 Package: pidgin-sipe
 Section: net
 Architecture: any
-Depends: gstreamer1.0-plugins-ugly, gstreamer1.0-libav, remmina-plugin-rdp,
- ${shlibs:Depends}, ${misc:Depends}
+Depends: gstreamer1.0-plugins-ugly, gstreamer1.0-libav,
+ remmina-plugin-rdp (>= 1.1.2-sipe), ${shlibs:Depends}, ${misc:Depends}
 Recommends: gstreamer1.0-x
 Description: Pidgin plugin for MS Office Communicator and MS Lync
  A third-party plugin for the Pidgin multi-protocol instant messenger.
