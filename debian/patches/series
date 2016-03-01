@@ -1,1 +1,2 @@
 cflags-remove-Wundef.patch
+fix-hppa-ftbfs.patch
