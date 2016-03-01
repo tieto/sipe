@@ -1,3 +1,3 @@
 version=3
 opts=downloadurlmangle=s|shortlog/refs/tags/(.*)|snapshot/$1.tar.gz|,filenamemangle=s|.*/(\d+\.\d+\.\d+)|$1.tar.gz| \
-http://repo.or.cz/w/siplcs.git/tags /w/siplcs.git/shortlog/refs/tags/(\d+\.\d+\.\d+)
+http://repo.or.cz/siplcs.git/tags /siplcs.git/shortlog/refs/tags/(\d+\.\d+\.\d+)
