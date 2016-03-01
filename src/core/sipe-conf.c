@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -316,6 +316,38 @@ parse_ocs_focus_uri(const gchar *uri)
 	return g_strndup(uri, uri_len);
 }
 
+static gchar *
+extract_uri_from_html(const gchar *body,
+		      const gchar *prefix,
+		      guint prefix_skip_chars)
+{
+	gchar *uri = NULL;
+	const gchar *start = g_strstr_len(body, -1, prefix);
+
+	if (start) {
+		const gchar *end;
+
+		start += prefix_skip_chars;
+		end = strchr(start, '"');
+
+		if (end) {
+			gchar *html = g_strndup(start, end - start);
+
+			/* decode HTML entities */
+			gchar *html_unescaped = sipe_backend_markup_strip_html(html);
+			g_free(html);
+
+			if (!is_empty(html_unescaped)) {
+				uri = sipe_utils_uri_unescape(html_unescaped);
+			}
+
+			g_free(html_unescaped);
+		}
+	}
+
+	return uri;
+}
+
 static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 				  guint status,
 				  SIPE_UNUSED_PARAMETER GSList *headers,
@@ -333,33 +365,11 @@ static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 			 *
 			 *  <a ... href="conf&#58;sip&#58;...ABCDEF&#37;3Frequired..." ... >
 			 */
-			const gchar *start = g_strstr_len(body,
-							  -1,
-							  "href=\"conf");
-			if (start) {
-				const gchar *end;
-
-				start += 6;
-				end = strchr(start, '"');
-
-				if (end) {
-					gchar *html = g_strndup(start,
-								end - start);
-
-					/* decode HTML entities */
-					gchar *html_unescaped = sipe_backend_markup_strip_html(html);
-					g_free(html);
-
-					if (!is_empty(html_unescaped)) {
-						gchar *uri_unescaped = sipe_utils_uri_unescape(html_unescaped);
-						SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: found focus URI '%s'",
-								uri_unescaped);
-						focus_uri = parse_ocs_focus_uri(uri_unescaped);
-						g_free(uri_unescaped);
-					}
-					g_free(html_unescaped);
-				}
-			}
+			gchar *uri = extract_uri_from_html(body, "href=\"conf", 6);
+			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: found focus URI '%s'",
+					uri);
+			focus_uri = parse_ocs_focus_uri(uri);
+			g_free(uri);
 		}
 
 		if (focus_uri) {
