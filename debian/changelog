@@ -1,4 +1,4 @@
-pidgin-sipe (1.20.1-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.20.1-1) unstable; urgency=medium
 
   * New upstream release.
         - add support for another type of ADFS response
@@ -9,7 +9,7 @@ pidgin-sipe (1.20.1-1) UNRELEASED; urgency=medium
   * Use secure URIs in Vcs-* fields.
   * Bump Standards-Version to 3.9.7 (no changes required).
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 01 Mar 2016 08:46:52 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 01 Mar 2016 09:41:50 +0100
 
 pidgin-sipe (1.20.0-2) unstable; urgency=medium
 
