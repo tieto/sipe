@@ -244,7 +244,7 @@ on_candidate_pair_established_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 				 SIPE_UNUSED_PARAMETER PurpleMediaCandidate *remote_candidate,
 				 SIPE_UNUSED_PARAMETER struct sipe_media_call *call)
 {
-#if PURPLE_VERSION_CHECK(2,10,12) || PURPLE_VERSION_CHECK(3,0,0)
+#ifdef HAVE_PURPLE_NEW_TCP_ENUMS
 	if (purple_media_candidate_get_protocol(local_candidate) != PURPLE_MEDIA_NETWORK_PROTOCOL_UDP) {
 		purple_media_set_send_rtcp_mux(media, sessionid, participant, TRUE);
 	}
@@ -399,7 +399,7 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 			append_relay(relay_info, relay->hostname, relay->udp_port,
 				     "udp", username, password);
 
-#if PURPLE_VERSION_CHECK(2,10,12) || PURPLE_VERSION_CHECK(3,0,0)
+#ifdef HAVE_PURPLE_NEW_TCP_ENUMS
 		if (relay->tcp_port != 0) {
 			gchar *type = "tcp";
 			if (relay->tcp_port == 443)
@@ -500,7 +500,8 @@ sipe_backend_media_add_remote_candidates(struct sipe_media_call *media,
 {
 	GList *udp_candidates = NULL;
 
-#if !(PURPLE_VERSION_CHECK(2,10,12) || PURPLE_VERSION_CHECK(3,0,0))
+#ifndef HAVE_PURPLE_NEW_TCP_ENUMS
+	/* Keep only UDP candidates in the list to set. */
 	while (candidates) {
 		PurpleMediaCandidate *candidate = candidates->data;
 		PurpleMediaNetworkProtocol proto;
@@ -1005,7 +1006,7 @@ static PurpleMediaNetworkProtocol
 sipe_network_protocol_to_purple(SipeNetworkProtocol proto)
 {
 	switch (proto) {
-#if PURPLE_VERSION_CHECK(2,10,12) || PURPLE_VERSION_CHECK(3,0,0)
+#ifdef HAVE_PURPLE_NEW_TCP_ENUMS
 		case SIPE_NETWORK_PROTOCOL_TCP_ACTIVE:
 			return PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE;
 		case SIPE_NETWORK_PROTOCOL_TCP_PASSIVE:
@@ -1028,7 +1029,7 @@ static SipeNetworkProtocol
 purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto)
 {
 	switch (proto) {
-#if PURPLE_VERSION_CHECK(2,10,12) || PURPLE_VERSION_CHECK(3,0,0)
+#ifdef HAVE_PURPLE_NEW_TCP_ENUMS
 		case PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_ACTIVE:
 			return SIPE_NETWORK_PROTOCOL_TCP_ACTIVE;
 		case PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE:

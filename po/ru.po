@@ -8,14 +8,15 @@
 # Amber <amber.really@gmail.com>, 2011
 # someone328 <someone328@gmail.com>, 2011
 # Stefan Becker <chemobejk@gmail.com>, 2011
+# summer.is.gone <summer.is.gone@gmail.com>, 2015
 # G0LDEN_key <the.golden.key@gmail.com>, 2013,2015
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2015-08-26 16:20+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2015-09-10 06:22+0000\n"
+"Last-Translator: summer.is.gone <summer.is.gone@gmail.com>\n"
 "Language-Team: Russian (http://www.transifex.com/stefanb/pidgin-sipe/language/ru/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -239,7 +240,7 @@ msgstr "%s. %s в %.2d:%.2d"
 #: ../src/core/sipe-certificate.c:233 ../src/core/sipe-certificate.c:277
 #, c-format
 msgid "Certificate request to %s failed"
-msgstr "Запрос сертификата  %s не успешен"
+msgstr "Не удалось запросить сертификат %s"
 
 #: ../src/core/sipe-certificate.c:284
 #, c-format
@@ -530,7 +531,7 @@ msgstr "Этот сервер не поддерживает конференци
 
 #: ../src/core/sipe-media.c:1136
 msgid "Error occurred"
-msgstr ""
+msgstr "Произошла ошибка"
 
 #: ../src/core/sipe-media.c:1188
 msgid "Invalid phone number"
@@ -700,21 +701,21 @@ msgstr "Беспокоить только по срочным делам"
 
 #: ../src/core/sipe-ucs.c:733
 msgid "UCS initialization failed!"
-msgstr ""
+msgstr "Ошибка инициализации USC."
 
 #: ../src/core/sipe-ucs.c:735
 msgid ""
 "Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n"
 "\n"
 "You'll need to provide Email settings in the account setup."
-msgstr ""
+msgstr "Не удалось найти сервер Exchange с настройками Email по умолчанию. Из-за этого список контактов не будет работать.\n\nНеобходимо указать настройки Email в конфигурации учётной записи."
 
 #: ../src/core/sipe-ucs.c:736
 msgid ""
 "Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n"
 "\n"
 "Please correct your Email settings."
-msgstr ""
+msgstr "Не удалось найти сервер Exchange с указанными настройками Email. Из-за этого список контактов не будет работать.\n\nНеобходимо исправить настройки Email."
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -1099,23 +1100,23 @@ msgstr "Прокси пруппового чата \ncompany.com или user@com
 
 #: ../src/purple/purple-plugin.c:1166
 msgid "Media encryption"
-msgstr ""
+msgstr "Шифрование данных"
 
 #: ../src/purple/purple-plugin.c:1167
 msgid "Obey server policy"
-msgstr ""
+msgstr "Следовать политике сервера"
 
 #: ../src/purple/purple-plugin.c:1168
 msgid "Always"
-msgstr ""
+msgstr "Всегда"
 
 #: ../src/purple/purple-plugin.c:1169
 msgid "Optional"
-msgstr ""
+msgstr "Не обязательно"
 
 #: ../src/purple/purple-plugin.c:1170
 msgid "Disabled"
-msgstr ""
+msgstr "Отключен"
 
 #: ../src/purple/purple-search.c:60
 msgid "User name"
