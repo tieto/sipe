@@ -6,6 +6,7 @@ pidgin-sipe (1.20.1-1) UNRELEASED; urgency=medium
         - updated translations: French (fr), Russian (ru)
   * Update source URL in d/watch.
   * Fix FTBFS on hppa (Closes: #814252).
+  * Use secure URIs in Vcs-* fields.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 01 Mar 2016 08:46:52 +0100
 
