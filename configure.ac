@@ -392,7 +392,16 @@ AS_IF([test "x$enable_purple" != xno],
 
 						AC_MSG_NOTICE([using package "$gstreamer_pkgconfig".])
 						PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
-							[with_purple_vv=yes],
+							[with_purple_vv=yes
+
+							 AC_COMPILE_IFELSE(
+								[AC_LANG_PROGRAM([[
+#include <media.h>
+									]],
+									[[return (PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE);]]
+								)],
+								[AC_DEFINE(HAVE_PURPLE_NEW_TCP_ENUMS, 1, [Define if libpurple has new TCP enums in media backend.])]
+							)],
 							[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
 						[AC_MSG_NOTICE(libpurple >= 2.8.0 required: disabling purple voice and video support)])],
 					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
@@ -400,10 +409,15 @@ AS_IF([test "x$enable_purple" != xno],
 				[AC_MSG_WARN([cross compiling: not checking])])
 			 ])
 
-		 dnl enable SRTP when building with libpurple 3.x
-		 AS_IF([test "x$purple_pkgconfig" = xpurple-3],
-			[AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])
-		 ])
+		 AC_COMPILE_IFELSE(
+			[AC_LANG_PROGRAM([[
+#include <media.h>
+				]],
+				[[purple_media_set_encryption_parameters(NULL, "", "", "", "", 0);
+			          purple_media_set_decryption_parameters(NULL, "", "", "", "", "", 0);]]
+			 )],
+			 [AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])]
+		 )
 
 		 CFLAGS=$ac_save_CFLAGS
 		 LIBS=$ac_save_LIBS])])

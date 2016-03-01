@@ -1,3 +1,8 @@
+version 1.20.1 "Bug Fixes I" (2015-10-24)
+	- add support for another type of ADFS response (Stefan Becker)
+	- improve configure check for back-ported features (Stefan Becker, Jakub Adam)
+	- updated translations: French (fr), Russian (ru)
+
 version 1.20.0 "SRTP, Conference URL & TLS-DSK Improvements" (2015-08-29)
 	- Feature #82: Parse HTML from Lync conference URL (Stefan Becker)
 	- Feature #69: SRTP Support (Jakub Adam)
