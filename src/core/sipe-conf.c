@@ -74,6 +74,10 @@
 	"</im>"\
 "</Conferencing>"
 
+static gboolean
+sipe_conf_check_for_lync_url(struct sipe_core_private *sipe_private,
+			     gchar *uri);
+
 static struct transaction *
 cccp_request(struct sipe_core_private *sipe_private, const gchar *method,
 	     const gchar *with, struct sip_dialog *dialog,
@@ -376,14 +380,40 @@ static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 			sipe_conf_create(sipe_private, NULL, focus_uri);
 			g_free(focus_uri);
 		} else {
-			gchar *error = g_strdup_printf(_("Can't find a conference URI on this page:\n\n%s"),
-						       uri);
-			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI found from URL '%s'",
-					uri);
-			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-						  _("Failed to join the conference"),
-						  error);
-			g_free(error);
+			/*
+			 * If present, domainOwnerJoinLauncherUrl redirects to
+			 * a page from where we still may extract the focus URI.
+			 */
+			gchar *launcher_url;
+			static const gchar launcher_url_prefix[] =
+					"var domainOwnerJoinLauncherUrl = \"";
+
+			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI "
+					"found from URL '%s'", uri);
+
+			launcher_url = extract_uri_from_html(body,
+							     launcher_url_prefix,
+							     sizeof (launcher_url_prefix) - 1);
+
+			if (launcher_url &&
+			    sipe_conf_check_for_lync_url(sipe_private, launcher_url)) {
+				SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: retrying with URL '%s'",
+						launcher_url);
+				/* Ownership taken by sipe_conf_check_for_lync_url() */
+				launcher_url = NULL;
+			} else {
+				gchar *error;
+
+				error = g_strdup_printf(_("Can't find a conference URI on this page:\n\n%s"),
+							uri);
+
+				sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+							  _("Failed to join the conference"),
+							  error);
+				g_free(error);
+			}
+
+			g_free(launcher_url);
 		}
 	}
 
