@@ -1,6 +1,9 @@
 pidgin-sipe (1.20.1-1) UNRELEASED; urgency=medium
 
   * New upstream release.
+        - add support for another type of ADFS response
+        - improve configure check for back-ported features
+        - updated translations: French (fr), Russian (ru)
   * Update source URL in d/watch.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 01 Mar 2016 08:46:52 +0100
