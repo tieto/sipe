@@ -492,7 +492,7 @@ AS_IF([test "x$ac_have_xdata" == xyes],
 
 dnl check for freerdp and enable if we have VV
 ac_enable_freerdp=no
-PKG_CHECK_MODULES(FREERDP, [freerdp2],
+PKG_CHECK_MODULES(FREERDP, [freerdp-shadow2],
 	[AS_IF([test "x$with_purple_vv" != xno],
 		[ac_enable_freerdp=yes])],
 	[]

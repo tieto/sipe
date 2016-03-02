@@ -44,8 +44,6 @@
 #include "sipe-user.h"
 #include "sipe-utils.h"
 
-extern int X11_ShadowSubsystemEntry(RDP_SHADOW_ENTRY_POINTS* pEntryPoints);
-
 struct sipe_appshare {
 	struct sipe_media_stream *stream;
 	GSocket *socket;
@@ -748,7 +746,7 @@ present_monitor_choice(struct sipe_core_public *sipe_public, const gchar *who)
 	MONITOR_DEF monitors[16];
 	int monitor_count;
 
-	shadow_subsystem_set_entry(X11_ShadowSubsystemEntry);
+	shadow_subsystem_set_entry_builtin("X11");
 	monitor_count = shadow_enum_monitors(monitors, 16);
 
 	if (monitor_count == 1) {
