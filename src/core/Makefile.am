@@ -218,8 +218,7 @@ libsipe_core_la_CFLAGS += \
 	$(FREERDP_CFLAGS)
 
 libsipe_core_la_LIBADD = \
-	$(FREERDP_LIBS) \
-	-lfreerdp-shadow -lfreerdp-shadow-subsystem
+	$(FREERDP_LIBS)
 endif
 >>>>>>> 04b3590 appshare: build optionally only when we have FreeRDP headers
 endif
