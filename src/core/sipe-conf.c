@@ -370,13 +370,14 @@ static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 			 *  <a ... href="conf&#58;sip&#58;...ABCDEF&#37;3Frequired..." ... >
 			 */
 			gchar *uri = extract_uri_from_html(body, "href=\"conf", 6);
-			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: found focus URI '%s'",
-					uri);
 			focus_uri = parse_ocs_focus_uri(uri);
 			g_free(uri);
 		}
 
 		if (focus_uri) {
+			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: found focus URI"
+					" '%s'", focus_uri);
+
 			sipe_conf_create(sipe_private, NULL, focus_uri);
 			g_free(focus_uri);
 		} else {
