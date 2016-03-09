@@ -1564,8 +1564,23 @@ maybe_retry_call_with_ice_version(struct sipe_media_call_private *call_private,
 {
 	if (call_private->ice_version != ice_version &&
 	    sip_transaction_cseq(trans) == 1) {
-		gchar *with = g_strdup(SIPE_MEDIA_CALL->with);
-		gboolean with_video = sipe_core_media_get_stream_by_id(SIPE_MEDIA_CALL, "video") != NULL;
+		GSList *i;
+		gchar *with;
+		gboolean with_video = FALSE;
+
+		for (i = call_private->streams; i; i = i->next) {
+			struct sipe_media_stream *stream = i->data;
+
+			if (sipe_strequal(stream->id, "video")) {
+				with_video = TRUE;
+			} else if (!sipe_strequal(stream->id, "audio")) {
+				/* Don't retry calls which are neither audio
+				 * nor video. */
+				return FALSE;
+			}
+		}
+
+		with = g_strdup(SIPE_MEDIA_CALL->with);
 
 		sipe_media_hangup(call_private);
 		SIPE_DEBUG_INFO("Retrying call with ICEv%d.",
