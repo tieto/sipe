@@ -91,7 +91,12 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 
 		if (stream) {
 			ssize_t length = 0;
-			const char *encoding = g_mime_object_get_header(part, "Content-Transfer-Encoding");
+			const char *encoding;
+			gchar buffer[4096];
+			GString *content;
+
+			encoding = g_mime_object_get_header(part,
+					"Content-Transfer-Encoding");
 			if (encoding) {
 				GMimeFilter *filter = g_mime_filter_basic_new(
 						g_mime_content_encoding_from_string(encoding), FALSE);
@@ -100,24 +105,23 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 				g_object_unref (filter);
 			}
 
-			length = g_mime_stream_length(stream);
+			content = g_string_new(NULL);
 
-			if (length != -1) {
-				gchar *content = g_malloc(length + 1);
-
-				length = g_mime_stream_read(stream, content, length);
-				/* Read length can be smaller than stream length because of
-				 * the conversion from transfer encoding. */
-				if (length > 0) {
-					struct gmime_callback_data *cd = user_data;
-					GSList *fields = gmime_fields_to_nameval(part);
-
-					(*(cd->callback))(cd->user_data, fields, content, length);
-
-					sipe_utils_nameval_free(fields);
-				}
-				g_free(content);
+			while ((length = g_mime_stream_read(stream, buffer, sizeof (buffer))) > 0) {
+				g_string_append_len(content, buffer, length);
 			}
+
+			if (length == 0) {
+				struct gmime_callback_data *cd = user_data;
+				GSList *fields = gmime_fields_to_nameval(part);
+
+				cd->callback(cd->user_data, fields,
+						content->str, content->len);
+
+				sipe_utils_nameval_free(fields);
+			}
+
+			g_string_free(content, TRUE);
 
 			if (encoding) {
 				// Unref GMimeStreamFilter wrapping GMimeStream.
