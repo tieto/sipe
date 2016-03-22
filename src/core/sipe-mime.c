@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -92,7 +92,7 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 		if (stream) {
 			ssize_t length = 0;
 			const char *encoding;
-			gchar buffer[4096];
+			gchar *buffer;
 			GString *content;
 
 			encoding = g_mime_object_get_header(part,
@@ -105,11 +105,13 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 				g_object_unref (filter);
 			}
 
+			/* g_mime_stream_read() might not read everything in one call */
 			content = g_string_new(NULL);
-
-			while ((length = g_mime_stream_read(stream, buffer, sizeof (buffer))) > 0) {
+			buffer = g_malloc(4096);
+			while ((length = g_mime_stream_read(stream, buffer, 4096)) > 0) {
 				g_string_append_len(content, buffer, length);
 			}
+			g_free(buffer);
 
 			if (length == 0) {
 				struct gmime_callback_data *cd = user_data;
