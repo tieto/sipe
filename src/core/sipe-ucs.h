@@ -27,31 +27,6 @@ struct sipe_buddy;
 struct sipe_core_private;
 struct sipe_group;
 struct sipe_ucs_transaction;
-struct _sipe_xml;
-
-/**
- * Process GetUserPhoto SOAP response
- *
- * @param sipe_private SIPE core private data
- * @param trans        UCS transaction (UNUSED)
- * @param body         parsed XML from response body
- * @param uri          SIP URI of the buddy (will be @c g_free()'d)
- */
-void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
-				      struct sipe_ucs_transaction *trans,
-				      const struct _sipe_xml *body,
-				      gpointer uri);
-
-/**
- * Get buddy photo
- *
- * This is not directly related to UCS, but we can reuse the code.
- *
- * @param sipe_private SIPE core private data
- * @param uri          SIP URI of the user
- */
-void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
-			const gchar *uri);
 
 /**
  * Search EWS contact list
@@ -84,6 +59,15 @@ void sipe_ucs_search(struct sipe_core_private *sipe_private,
  * @return @c TRUE if contact list has been migrated
  */
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private);
+
+/**
+ * Returns UCS EWS URL
+ *
+ * @param sipe_private SIPE core private data
+ *
+ * @return EWS URL string
+ */
+const gchar *sipe_ucs_ews_url(struct sipe_core_private *sipe_private);
 
 /**
  * Create new UCS transactions

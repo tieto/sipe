@@ -45,6 +45,7 @@
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-digest.h"
 #include "sipe-group.h"
 #include "sipe-http.h"
 #include "sipe-im.h"
@@ -1815,7 +1816,6 @@ static void process_buddy_photo_response(struct sipe_core_private *sipe_private,
 	photo_response_data_remove(sipe_private, rdata);
 }
 
-/* copied from sipe_ucs_http_request() */
 static void process_get_user_photo_response(struct sipe_core_private *sipe_private,
 					    guint status,
 					    SIPE_UNUSED_PARAMETER GSList *headers,
@@ -1826,13 +1826,36 @@ static void process_get_user_photo_response(struct sipe_core_private *sipe_priva
 
 	if ((status == SIPE_HTTP_STATUS_OK) && body) {
 		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
-		const sipe_xml *soap_body = sipe_xml_child(xml, "Body");
+		const sipe_xml *node = sipe_xml_child(xml,
+						      "Body/GetUserPhotoResponse/PictureData");
 
-		/* uri will be g_free'd() by this call */
-		sipe_ucs_get_user_photo_response(sipe_private,
-						 NULL,
-						 soap_body,
-						 g_strdup(rdata->who));
+		if (node) {
+			gchar *base64;
+			gsize photo_size;
+			guchar *photo;
+
+			/* decode photo data */
+			base64 = sipe_xml_data(node);
+			photo = g_base64_decode(base64, &photo_size);
+			g_free(base64);
+
+			/* EWS doesn't provide a hash -> calculate SHA-1 digest */
+			if (!rdata->photo_hash) {
+				guchar digest[SIPE_DIGEST_SHA1_LENGTH];
+				sipe_digest_sha1(photo, photo_size, digest);
+
+				/* rdata takes ownership of digest string */
+				rdata->photo_hash = buff_to_hex_str(digest,
+								    SIPE_DIGEST_SHA1_LENGTH);
+			}
+
+			/* backend frees "photo" */
+			sipe_backend_buddy_set_photo(SIPE_CORE_PUBLIC,
+						     rdata->who,
+						     photo,
+						     photo_size,
+						     rdata->photo_hash);
+		}
 
 		sipe_xml_free(xml);
 	}
@@ -1861,64 +1884,64 @@ static gchar *create_x_ms_webticket_header(const gchar *wsse_security)
 	return x_ms_webticket_header;
 }
 
-/* copied from sipe_ucs_get_photo() & friends */
-static struct sipe_http_request *photo_url_embedded_xml(struct sipe_core_private *sipe_private,
+/* see also sipe_ucs_http_request() */
+static struct sipe_http_request *get_user_photo_request(struct sipe_core_private *sipe_private,
 							struct photo_response_data *data,
-							const gchar *photo_url)
+							const gchar *ews_url,
+							const gchar *email)
 {
-	/* add dummy root to embedded XML string */
-	gchar *tmp = g_strdup_printf("<r>%s</r>", photo_url);
-	sipe_xml *xml = sipe_xml_parse(tmp, strlen(tmp));
-	struct sipe_http_request *request = NULL;
+	gchar *soap = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
+				      "<soap:Envelope"
+				      " xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\""
+				      " xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\""
+				      " xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\""
+				      " >"
+				      " <soap:Header>"
+				      "  <t:RequestServerVersion Version=\"Exchange2013\" />"
+				      " </soap:Header>"
+				      " <soap:Body>"
+				      "  <m:GetUserPhoto>"
+				      "   <m:Email>%s</m:Email>"
+				      "   <m:SizeRequested>HR48x48</m:SizeRequested>"
+				      "  </m:GetUserPhoto>"
+				      " </soap:Body>"
+				      "</soap:Envelope>",
+				      email);
+	struct sipe_http_request *request = sipe_http_request_post(sipe_private,
+								   ews_url,
+								   NULL,
+								   soap,
+								   "text/xml; charset=UTF-8",
+								   process_get_user_photo_response,
+								   data);
+	g_free(soap);
 
-	g_free(tmp);
-	if (xml) {
-		gchar *ews_url = sipe_xml_data(sipe_xml_child(xml, "ewsUrl"));
-		gchar *email = sipe_xml_data(sipe_xml_child(xml, "primarySMTP"));
-
-		if (!is_empty(ews_url) && !is_empty(email)) {
-			gchar *soap = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
-						      "<soap:Envelope"
-						      " xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\""
-						      " xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\""
-						      " xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\""
-						      " >"
-						      " <soap:Header>"
-						      "  <t:RequestServerVersion Version=\"Exchange2013\" />"
-						      " </soap:Header>"
-						      " <soap:Body>"
-						      "  <m:GetUserPhoto>"
-						      "   <m:Email>%s</m:Email>"
-						      "   <m:SizeRequested>HR48x48</m:SizeRequested>"
-						      "  </m:GetUserPhoto>"
-						      " </soap:Body>"
-						      "</soap:Envelope>",
-						      email);
-
-			request = sipe_http_request_post(sipe_private,
-							 ews_url,
-							 NULL,
-							 soap,
-							 "text/xml; charset=UTF-8",
-							 process_get_user_photo_response,
-							 data);
-			g_free(soap);
-
-			if (request) {
-				sipe_core_email_authentication(sipe_private,
-							       request);
-				sipe_http_request_allow_redirect(request);
-			} else {
-				SIPE_DEBUG_ERROR_NOFORMAT("photo_url_embedded_xml: failed to create HTTP connection");
-			}
-		}
-
-		g_free(email);
-		g_free(ews_url);
-		sipe_xml_free(xml);
+	if (request) {
+		sipe_core_email_authentication(sipe_private,
+					       request);
+		sipe_http_request_allow_redirect(request);
+	} else {
+		SIPE_DEBUG_ERROR_NOFORMAT("get_user_photo_request: failed to create HTTP connection");
 	}
 
 	return(request);
+}
+
+static void photo_response_data_finalize(struct sipe_core_private *sipe_private,
+					 struct photo_response_data *data,
+					 const gchar *uri,
+					 const gchar *photo_hash)
+{
+	if (data->request) {
+		data->who        = g_strdup(uri);
+		data->photo_hash = g_strdup(photo_hash);
+
+		sipe_private->buddies->pending_photo_requests =
+			g_slist_append(sipe_private->buddies->pending_photo_requests, data);
+		sipe_http_request_ready(data->request);
+	} else {
+		photo_response_data_free(data);
+	}
 }
 
 void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
@@ -1936,15 +1959,28 @@ void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
 		SIPE_DEBUG_INFO("sipe_buddy_update_photo: who '%s' url '%s' hash '%s'",
 				uri, photo_url, photo_hash);
 
-		data->who        = g_strdup(uri);
-		data->photo_hash = g_strdup(photo_hash);
-
 		/* Photo URL is embedded XML? */
 		if (g_str_has_prefix(photo_url, "<") &&
 		    g_str_has_suffix(photo_url, ">")) {
-			data->request = photo_url_embedded_xml(sipe_private,
-							       data,
-							       photo_url);
+			/* add dummy root to embedded XML string */
+			gchar *tmp = g_strdup_printf("<r>%s</r>", photo_url);
+			sipe_xml *xml = sipe_xml_parse(tmp, strlen(tmp));
+			g_free(tmp);
+
+			if (xml) {
+				gchar *ews_url = sipe_xml_data(sipe_xml_child(xml, "ewsUrl"));
+				gchar *email = sipe_xml_data(sipe_xml_child(xml, "primarySMTP"));
+
+				if (!is_empty(ews_url) && !is_empty(email))
+					data->request = get_user_photo_request(sipe_private,
+									       data,
+									       ews_url,
+									       email);
+
+				g_free(email);
+				g_free(ews_url);
+				sipe_xml_free(xml);
+			}
 		} else {
 			data->request = sipe_http_request_get(sipe_private,
 							      photo_url,
@@ -1953,13 +1989,10 @@ void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
 							      data);
 		}
 
-		if (data->request) {
-			sipe_private->buddies->pending_photo_requests =
-				g_slist_append(sipe_private->buddies->pending_photo_requests, data);
-			sipe_http_request_ready(data->request);
-		} else {
-			photo_response_data_free(data);
-		}
+		photo_response_data_finalize(sipe_private,
+					     data,
+					     uri,
+					     photo_hash);
 	}
 }
 
@@ -2036,8 +2069,17 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 		/* Lync 2013 or newer: use UCS if contacts are migrated */
 		if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) &&
 		    sipe_ucs_is_migrated(sipe_private)) {
+			struct photo_response_data *data = g_new(struct photo_response_data, 1);
 
-			sipe_ucs_get_photo(sipe_private, uri);
+			data->request = get_user_photo_request(sipe_private,
+							       data,
+							       sipe_ucs_ews_url(sipe_private),
+							       sipe_get_no_sip_uri(uri));
+			photo_response_data_finalize(sipe_private,
+						     data,
+						     uri,
+						     /* there is no hash */
+						     NULL);
 
 		/* Lync 2010: use [MS-DLX] */
 		} else if (sipe_private->dlx_uri         &&
