@@ -1819,12 +1819,23 @@ static void process_buddy_photo_response(struct sipe_core_private *sipe_private,
 static void process_get_user_photo_response(struct sipe_core_private *sipe_private,
 					    guint status,
 					    SIPE_UNUSED_PARAMETER GSList *headers,
-					    SIPE_UNUSED_PARAMETER const gchar *body,
+					    const gchar *body,
 					    gpointer data)
 {
 	struct photo_response_data *rdata = (struct photo_response_data *) data;
 
-	SIPE_DEBUG_INFO("process_get_user_photo_response: %d", status);
+	if ((status == SIPE_HTTP_STATUS_OK) && body) {
+		sipe_xml *xml = sipe_xml_parse(body, strlen(body));
+		const sipe_xml *soap_body = sipe_xml_child(xml, "Body");
+
+		/* uri will be g_free'd() by this call */
+		sipe_ucs_get_user_photo_response(sipe_private,
+						 NULL,
+						 soap_body,
+						 g_strdup(rdata->who));
+
+		sipe_xml_free(xml);
+	}
 
 	photo_response_data_remove(sipe_private, rdata);
 }

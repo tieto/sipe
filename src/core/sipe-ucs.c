@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -246,10 +246,10 @@ struct sipe_ucs_transaction *sipe_ucs_transaction(struct sipe_core_private *sipe
 	return(trans);
 }
 
-static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
-					     SIPE_UNUSED_PARAMETER struct sipe_ucs_transaction *trans,
-					     const sipe_xml *body,
-					     gpointer callback_data)
+void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
+				      SIPE_UNUSED_PARAMETER struct sipe_ucs_transaction *trans,
+				      const sipe_xml *body,
+				      gpointer callback_data)
 {
 	gchar *uri = callback_data;
 	const sipe_xml *node = sipe_xml_child(body,

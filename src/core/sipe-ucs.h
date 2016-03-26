@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,20 @@ struct sipe_buddy;
 struct sipe_core_private;
 struct sipe_group;
 struct sipe_ucs_transaction;
+struct _sipe_xml;
+
+/**
+ * Process GetUserPhoto SOAP response
+ *
+ * @param sipe_private SIPE core private data
+ * @param trans        UCS transaction (UNUSED)
+ * @param body         parsed XML from response body
+ * @param uri          SIP URI of the buddy (will be @c g_free()'d)
+ */
+void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
+				      struct sipe_ucs_transaction *trans,
+				      const struct _sipe_xml *body,
+				      gpointer uri);
 
 /**
  * Get buddy photo
