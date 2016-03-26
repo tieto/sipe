@@ -1776,6 +1776,15 @@ static void photo_response_data_free(struct photo_response_data *data)
 	g_free(data);
 }
 
+static void photo_response_data_remove(struct sipe_core_private *sipe_private,
+				       struct photo_response_data *data)
+{
+	data->request = NULL;
+	sipe_private->buddies->pending_photo_requests =
+		g_slist_remove(sipe_private->buddies->pending_photo_requests, data);
+	photo_response_data_free(data);
+}
+
 static void process_buddy_photo_response(struct sipe_core_private *sipe_private,
 					 guint status,
 					 GSList *headers,
@@ -1783,8 +1792,6 @@ static void process_buddy_photo_response(struct sipe_core_private *sipe_private,
 					 gpointer data)
 {
 	struct photo_response_data *rdata = (struct photo_response_data *) data;
-
-	rdata->request = NULL;
 
 	if (status == SIPE_HTTP_STATUS_OK) {
 		const gchar *len_str = sipe_utils_nameval_find(headers,
@@ -1805,10 +1812,21 @@ static void process_buddy_photo_response(struct sipe_core_private *sipe_private,
 		}
 	}
 
-	sipe_private->buddies->pending_photo_requests =
-		g_slist_remove(sipe_private->buddies->pending_photo_requests, rdata);
+	photo_response_data_remove(sipe_private, rdata);
+}
 
-	photo_response_data_free(rdata);
+/* copied from sipe_ucs_http_request() */
+static void process_get_user_photo_response(struct sipe_core_private *sipe_private,
+					    guint status,
+					    SIPE_UNUSED_PARAMETER GSList *headers,
+					    SIPE_UNUSED_PARAMETER const gchar *body,
+					    gpointer data)
+{
+	struct photo_response_data *rdata = (struct photo_response_data *) data;
+
+	SIPE_DEBUG_INFO("process_get_user_photo_response: %d", status);
+
+	photo_response_data_remove(sipe_private, rdata);
 }
 
 static gchar *create_x_ms_webticket_header(const gchar *wsse_security)
@@ -1832,7 +1850,9 @@ static gchar *create_x_ms_webticket_header(const gchar *wsse_security)
 	return x_ms_webticket_header;
 }
 
-static struct sipe_http_request *photo_url_embedded_xml(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+/* copied from sipe_ucs_get_photo() & friends */
+static struct sipe_http_request *photo_url_embedded_xml(struct sipe_core_private *sipe_private,
+							struct photo_response_data *data,
 							const gchar *photo_url)
 {
 	/* add dummy root to embedded XML string */
@@ -1842,7 +1862,48 @@ static struct sipe_http_request *photo_url_embedded_xml(SIPE_UNUSED_PARAMETER st
 
 	g_free(tmp);
 	if (xml) {
-		SIPE_DEBUG_INFO("photo_url_embedded_xml: %s", tmp);
+		gchar *ews_url = sipe_xml_data(sipe_xml_child(xml, "ewsUrl"));
+		gchar *email = sipe_xml_data(sipe_xml_child(xml, "primarySMTP"));
+
+		if (!is_empty(ews_url) && !is_empty(email)) {
+			gchar *soap = g_strdup_printf("<?xml version=\"1.0\"?>\r\n"
+						      "<soap:Envelope"
+						      " xmlns:m=\"http://schemas.microsoft.com/exchange/services/2006/messages\""
+						      " xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\""
+						      " xmlns:t=\"http://schemas.microsoft.com/exchange/services/2006/types\""
+						      " >"
+						      " <soap:Header>"
+						      "  <t:RequestServerVersion Version=\"Exchange2013\" />"
+						      " </soap:Header>"
+						      " <soap:Body>"
+						      "  <m:GetUserPhoto>"
+						      "   <m:Email>%s</m:Email>"
+						      "   <m:SizeRequested>HR48x48</m:SizeRequested>"
+						      "  </m:GetUserPhoto>"
+						      " </soap:Body>"
+						      "</soap:Envelope>",
+						      email);
+
+			request = sipe_http_request_post(sipe_private,
+							 ews_url,
+							 NULL,
+							 soap,
+							 "text/xml; charset=UTF-8",
+							 process_get_user_photo_response,
+							 data);
+			g_free(soap);
+
+			if (request) {
+				sipe_core_email_authentication(sipe_private,
+							       request);
+				sipe_http_request_allow_redirect(request);
+			} else {
+				SIPE_DEBUG_ERROR_NOFORMAT("photo_url_embedded_xml: failed to create HTTP connection");
+			}
+		}
+
+		g_free(email);
+		g_free(ews_url);
 		sipe_xml_free(xml);
 	}
 
@@ -1871,6 +1932,7 @@ void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
 		if (g_str_has_prefix(photo_url, "<") &&
 		    g_str_has_suffix(photo_url, ">")) {
 			data->request = photo_url_embedded_xml(sipe_private,
+							       data,
 							       photo_url);
 		} else {
 			data->request = sipe_http_request_get(sipe_private,
