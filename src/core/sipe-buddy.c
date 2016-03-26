@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +18,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * GetUserPhoto operation
+ *  <http://msdn.microsoft.com/en-us/library/office/jj900502.aspx>
  */
 
 #ifdef HAVE_CONFIG_H
@@ -1829,6 +1832,23 @@ static gchar *create_x_ms_webticket_header(const gchar *wsse_security)
 	return x_ms_webticket_header;
 }
 
+static struct sipe_http_request *photo_url_embedded_xml(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
+							const gchar *photo_url)
+{
+	/* add dummy root to embedded XML string */
+	gchar *tmp = g_strdup_printf("<r>%s</r>", photo_url);
+	sipe_xml *xml = sipe_xml_parse(tmp, strlen(tmp));
+	struct sipe_http_request *request = NULL;
+
+	g_free(tmp);
+	if (xml) {
+		SIPE_DEBUG_INFO("photo_url_embedded_xml: %s", tmp);
+		sipe_xml_free(xml);
+	}
+
+	return(request);
+}
+
 void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
 			     const gchar *uri,
 			     const gchar *photo_hash,
@@ -1847,11 +1867,18 @@ void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
 		data->who        = g_strdup(uri);
 		data->photo_hash = g_strdup(photo_hash);
 
-		data->request = sipe_http_request_get(sipe_private,
-						      photo_url,
-						      headers,
-						      process_buddy_photo_response,
-						      data);
+		/* Photo URL is embedded XML? */
+		if (g_str_has_prefix(photo_url, "<") &&
+		    g_str_has_suffix(photo_url, ">")) {
+			data->request = photo_url_embedded_xml(sipe_private,
+							       photo_url);
+		} else {
+			data->request = sipe_http_request_get(sipe_private,
+							      photo_url,
+							      headers,
+							      process_buddy_photo_response,
+							      data);
+		}
 
 		if (data->request) {
 			sipe_private->buddies->pending_photo_requests =
