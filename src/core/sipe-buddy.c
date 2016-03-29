@@ -1954,7 +1954,7 @@ void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
 		sipe_backend_buddy_get_photo_hash(SIPE_CORE_PUBLIC, uri);
 
 	if (!sipe_strequal(photo_hash, photo_hash_old)) {
-		struct photo_response_data *data = g_new(struct photo_response_data, 1);
+		struct photo_response_data *data = g_new0(struct photo_response_data, 1);
 
 		SIPE_DEBUG_INFO("sipe_buddy_update_photo: who '%s' url '%s' hash '%s'",
 				uri, photo_url, photo_hash);
@@ -2069,7 +2069,7 @@ static void buddy_fetch_photo(struct sipe_core_private *sipe_private,
 		/* Lync 2013 or newer: use UCS if contacts are migrated */
 		if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) &&
 		    sipe_ucs_is_migrated(sipe_private)) {
-			struct photo_response_data *data = g_new(struct photo_response_data, 1);
+			struct photo_response_data *data = g_new0(struct photo_response_data, 1);
 
 			data->request = get_user_photo_request(sipe_private,
 							       data,
