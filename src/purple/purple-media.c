@@ -293,12 +293,13 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 		SIPE_DEBUG_ERROR_NOFORMAT("Purple doesn't support private media");
 #endif
 	} else {
-		const char *conf_factory_name = "fslyncconference";
+		const char *conf_factory_name = "fsmsrtpconference";
 		GstElementFactory *conf_factory =
 				gst_element_factory_find(conf_factory_name);
 		if (!conf_factory) {
-			SIPE_DEBUG_WARNING_NOFORMAT("FsLyncConference not found."
-					" H264 video will not be available.");
+			SIPE_DEBUG_WARNING_NOFORMAT("FsMsRtpConference not "
+					"found. H264 video will not be "
+					"available.");
 			conf_factory_name = "fsrtpconference";
 		} else {
 			gst_object_unref(conf_factory);
