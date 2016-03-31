@@ -282,29 +282,30 @@ sipe_backend_media_new(struct sipe_core_public *sipe_public,
 	struct sipe_backend_media *media = g_new0(struct sipe_backend_media, 1);
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleMediaManager *manager = purple_media_manager_get();
+	GstElementFactory *conf_factory;
+	const char *conf_factory_name;
 	GstElement *pipeline;
+
+	conf_factory_name = "fsmsrtpconference";
+	conf_factory = gst_element_factory_find(conf_factory_name);
+	if (!conf_factory) {
+		SIPE_DEBUG_WARNING_NOFORMAT("FsMsRtpConference not found. H264 "
+				"video and bandwidth management will not be "
+				"available.");
+		conf_factory_name = "fsrtpconference";
+	} else {
+		gst_object_unref(conf_factory);
+	}
 
 	if (flags & SIPE_MEDIA_CALL_NO_UI) {
 #ifdef HAVE_XDATA
 		media->m = purple_media_manager_create_private_media(manager,
-				purple_private->account, "fsrtpconference",
+				purple_private->account, conf_factory_name,
 				participant, flags & SIPE_MEDIA_CALL_INITIATOR);
 #else
 		SIPE_DEBUG_ERROR_NOFORMAT("Purple doesn't support private media");
 #endif
 	} else {
-		const char *conf_factory_name = "fsmsrtpconference";
-		GstElementFactory *conf_factory =
-				gst_element_factory_find(conf_factory_name);
-		if (!conf_factory) {
-			SIPE_DEBUG_WARNING_NOFORMAT("FsMsRtpConference not "
-					"found. H264 video will not be "
-					"available.");
-			conf_factory_name = "fsrtpconference";
-		} else {
-			gst_object_unref(conf_factory);
-		}
-
 		media->m = purple_media_manager_create_media(manager,
 				purple_private->account, conf_factory_name,
 				participant, flags & SIPE_MEDIA_CALL_INITIATOR);
