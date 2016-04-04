@@ -439,10 +439,10 @@ rm -rf %{buildroot}
 * Sun Oct 24 2010 J. D. User <jduser@noreply.com> 1.11.1
 - update to 1.11.1
 
-* Mon Oct 04 2010 J. D. User <jduser@noreply.com> 1.11.0
+* Sun Oct 04 2010 J. D. User <jduser@noreply.com> 1.11.0
 - update to 1.11.0
 
-* Thu Sep 02 2010 J. D. User <jduser@noreply.com> 1.10.1-*git*
+* Fri Sep 02 2010 J. D. User <jduser@noreply.com> 1.10.1-*git*
 - add (commented out) BR libnice-devel
 
 * Sun Jun 27 2010 J. D. User <jduser@noreply.com> 1.10.1
@@ -502,10 +502,10 @@ rm -rf %{buildroot}
 * Sat Dec 12 2009 J. D. User <jduser@noreply.com> 1.7.1-*git*
 - add Epoch: for git packages to avoid update clash with official packages
 
-* Thu Nov 19 2009 J. D. User <jduser@noreply.com> 1.7.1
+* Mon Nov 19 2009 J. D. User <jduser@noreply.com> 1.7.1
 - update to 1.7.1
 
-* Wed Oct 28 2009 J. D. User <jduser@noreply.com> 1.7.0-*git*
+* Mon Oct 28 2009 J. D. User <jduser@noreply.com> 1.7.0-*git*
 - add missing Group: to purple-sipe
 
 * Mon Oct 19 2009 J. D. User <jduser@noreply.com> 1.7.0
