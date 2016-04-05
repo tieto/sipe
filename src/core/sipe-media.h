@@ -203,6 +203,26 @@ sipe_media_stream_read_async(struct sipe_media_stream *stream,
 			     sipe_media_stream_read_callback callback);
 
 /**
+ * Writes @c len bytes from @c buffer into @c stream.
+ *
+ * If @c stream is not in writable state, Sipe will store the data in
+ * an internal queue which gets emptied once the stream becomes writable again.
+ * Users should check the stream state using sipe_media_stream_is_writable()
+ * before sending excessive data into the stream.
+ *
+ * @param stream (in) media stream data
+ * @param buffer (in) data to send
+ * @param len (in) length of @c buffer
+ *
+ * @return @c TRUE when @c buffer was written into the stream as a whole,
+ *         @c FALSE when some data had to be queued for later (and thus
+ *         the stream is now in unwritable state).
+ */
+gboolean
+sipe_media_stream_write(struct sipe_media_stream *stream,
+			gpointer buffer, gsize len);
+
+/**
  * Checks whether a @c SIPE_MEDIA_APPLICATION stream is in writable state.
  *
  * @param stream (in) media stream data

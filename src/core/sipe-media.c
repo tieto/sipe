@@ -83,6 +83,7 @@ struct sipe_media_stream_private {
 
 	gboolean writable;
 
+	GQueue *write_queue;
 	GQueue *async_reads;
 	gssize read_pos;
 
@@ -124,6 +125,8 @@ remove_stream(struct sipe_media_call* call,
 	sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
 	g_free(SIPE_MEDIA_STREAM->id);
 	g_free(stream_private->encryption_key);
+	g_queue_free_full(stream_private->write_queue,
+			  (GDestroyNotify)g_byte_array_unref);
 	g_queue_free_full(stream_private->async_reads, g_free);
 	sipe_utils_nameval_free(stream_private->extra_sdp);
 	g_free(stream_private);
@@ -1091,6 +1094,7 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 	}
 #endif
 
+	stream_private->write_queue = g_queue_new();
 	stream_private->async_reads = g_queue_new();
 
 	SIPE_MEDIA_CALL_PRIVATE->streams =
@@ -2049,11 +2053,61 @@ sipe_media_stream_read_async(struct sipe_media_stream *stream,
 	g_queue_push_tail(SIPE_MEDIA_STREAM_PRIVATE->async_reads, data);
 }
 
+static void
+stream_append_buffer(struct sipe_media_stream *stream,
+		     guint8 *buffer, guint len)
+{
+	GByteArray *b = g_byte_array_sized_new(len);
+	g_byte_array_append(b, buffer, len);
+	g_queue_push_tail(SIPE_MEDIA_STREAM_PRIVATE->write_queue, b);
+}
+
+gboolean
+sipe_media_stream_write(struct sipe_media_stream *stream,
+			gpointer buffer, gsize len)
+{
+	if (!sipe_media_stream_is_writable(stream)) {
+		stream_append_buffer(stream, buffer, len);
+		return FALSE;
+	} else {
+		guint written;
+
+		written = sipe_backend_media_stream_write(stream, buffer, len);
+		if (written == len) {
+			return TRUE;
+		}
+
+		stream_append_buffer(stream,
+				     (guint8 *)buffer + written, len - written);
+		return FALSE;
+	}
+}
+
 void
 sipe_core_media_stream_writable(struct sipe_media_stream *stream,
 				gboolean writable)
 {
 	SIPE_MEDIA_STREAM_PRIVATE->writable = writable;
+
+	if (!writable) {
+		return;
+	}
+
+	while (!g_queue_is_empty(SIPE_MEDIA_STREAM_PRIVATE->write_queue)) {
+		GByteArray *b;
+		guint written;
+
+		b = g_queue_peek_head(SIPE_MEDIA_STREAM_PRIVATE->write_queue);
+
+		written = sipe_backend_media_stream_write(stream, b->data, b->len);
+		if (written != b->len) {
+			g_byte_array_remove_range(b, 0, written);
+			return;
+		}
+
+		g_byte_array_unref(b);
+		g_queue_pop_head(SIPE_MEDIA_STREAM_PRIVATE->write_queue);
+	}
 
 	if (sipe_media_stream_is_writable(stream) && stream->writable_cb) {
 		stream->writable_cb(stream);
@@ -2063,7 +2117,8 @@ sipe_core_media_stream_writable(struct sipe_media_stream *stream,
 gboolean
 sipe_media_stream_is_writable(struct sipe_media_stream *stream)
 {
-	return SIPE_MEDIA_STREAM_PRIVATE->writable;
+	return SIPE_MEDIA_STREAM_PRIVATE->writable &&
+	       g_queue_is_empty(SIPE_MEDIA_STREAM_PRIVATE->write_queue);
 }
 #endif
 
