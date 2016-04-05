@@ -102,7 +102,7 @@
 %if 0%{?suse_version} || 0%{?sles_version}
 %define pkg_group Productivity/Networking/Instant Messenger
 %else
-%define pkg_group Applications/Internet
+%define pkg_group Applications/Communications
 %endif
 
 %if 0%{?fedora}
@@ -150,7 +150,7 @@ Version:        1.20.1
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -209,6 +209,7 @@ BuildRequires:  glib2-devel >= 2.28.0
 %endif
 
 # Configurable components
+# Use "--without kerberos" to disable krb5
 %if !0%{?_without_kerberos:1}
 BuildRequires:  krb5-devel
 %if 0%{?has_gssntlmssp}
@@ -256,7 +257,7 @@ This package provides the icon set for Pidgin.
 %package -n %{purple_plugin}
 Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 Obsoletes:      purple-sipe
 %if 0%{?build_telepathy:1}
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
@@ -281,7 +282,7 @@ This package provides the protocol plugin for libpurple clients.
 %package -n %{empathy_files}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 Requires:       empathy
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
@@ -304,7 +305,7 @@ This package provides the icon set for Empathy.
 %package -n %{ktp_files}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{ktp_files}
@@ -326,7 +327,7 @@ This package provides the profile for KTP account manager.
 %package -n %{telepathy_plugin}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{telepathy_plugin}
@@ -347,7 +348,7 @@ This package provides the protocol support for Telepathy clients.
 %package -n %{common_files}
 Summary:        Common files for SIPE protocol plugins
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 BuildArch:      noarch
 
 %description -n %{common_files}
@@ -361,7 +362,7 @@ This package provides common files for the SIPE protocol plugins:
 %package -n %{nsis_package}
 Summary:        Windows Pidgin protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 
 %description -n %{nsis_package}
 A third-party plugin for the Pidgin multi-protocol instant messenger.
@@ -396,27 +397,30 @@ echo "lt_cv_deplibs_check_method='pass_all'" >>%{mingw_cache}
 autoreconf --verbose --install --force
 %{mingw_ldflags}="-Wl,--exclude-libs=libintl.a -Wl,--exclude-libs=libiconv.a -lws2_32"
 %{mingw_configure} \
-        --enable-purple \
+    --enable-purple \
 %if 0%{?build_telepathy:1}
-        --enable-telepathy
+    --enable-telepathy
 %else
-        --disable-telepathy
+    --disable-telepathy
 %endif
-%{mingw_make} %{_smp_mflags} || %{mingw_make}
+%{mingw_make} %{?_smp_mflags} || %{mingw_make}
 
 %else
 #
 # Standard Linux build
 #
 %configure \
-	--enable-purple \
-%if 0%{?build_telepathy:1}
-        --enable-telepathy
-%else
-	--disable-telepathy
+%if !0%{?_without_kerberos:1}
+    --with-krb5 \
 %endif
-make %{_smp_mflags}
-make %{_smp_mflags} check
+    --enable-purple \
+%if 0%{?build_telepathy:1}
+    --enable-telepathy
+%else
+    --disable-telepathy
+%endif
+make %{?_smp_mflags}
+make %{?_smp_mflags} check
 
 # End Windows cross-compilation/Linux build setup
 %endif
@@ -433,25 +437,25 @@ rm -f %{buildroot}%{mingw_libdir}/purple-2/*.dll.a
 # generate .dbgsym file
 rm -f %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym
 mv \
-	%{buildroot}%{mingw_libdir}/purple-2/libsipe.dll \
-	%{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym
+    %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll \
+    %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym
 %{__strip} --strip-unneeded \
-	%{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym \
-	-o %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll \
+    %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll.dbgsym \
+    -o %{buildroot}%{mingw_libdir}/purple-2/libsipe.dll \
 
 # generate NSIS installer package
 perl contrib/opensuse-build-service/generate_nsi.pl po/LINGUAS \
-	<contrib/opensuse-build-service/pidgin-sipe.nsi.template \
-	>%{buildroot}/pidgin-sipe.nsi
+    <contrib/opensuse-build-service/pidgin-sipe.nsi.template \
+    >%{buildroot}/pidgin-sipe.nsi
 ( \
-	set -e; \
-	cd %{buildroot}; \
-	makensis \
-		-DPIDGIN_VERSION=UNKNOWN \
-		-DVERSION=%{version} \
-		-DMINGW_LIBDIR=%{buildroot}%{mingw_libdir} \
-		-DMINGW_DATADIR=%{buildroot}%{mingw_datadir} \
-		pidgin-sipe.nsi \
+    set -e; \
+    cd %{buildroot}; \
+    makensis \
+        -DPIDGIN_VERSION=UNKNOWN \
+        -DVERSION=%{version} \
+        -DMINGW_LIBDIR=%{buildroot}%{mingw_libdir} \
+        -DMINGW_DATADIR=%{buildroot}%{mingw_datadir} \
+        pidgin-sipe.nsi \
 )
 rm -f %{buildroot}/pidgin-sipe.nsi
 
@@ -511,7 +515,6 @@ rm -rf %{buildroot}
 %if 0%{?build_telepathy:1}
 %files -n %{empathy_files}
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING
 %{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.png
 %{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.svg
 
@@ -567,6 +570,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Tue Apr 05 2016 J. D. User <jduser@noreply.com> 1.20.1-*git*
+- align with Fedora SPEC file
+
 * Fri Jan 01 2016 J. D. User <jduser@noreply.com> 1.20.1-*git*
 - add AppStream metadata file
 
@@ -615,7 +621,7 @@ rm -rf %{buildroot}
 * Sat Apr 12 2014 J. D. User <jduser@noreply.com> 1.18.1
 - update to 1.18.1
 
-* Sat Mar 04 2014 J. D. User <jduser@noreply.com> 1.18.0-*git*
+* Tue Mar 04 2014 J. D. User <jduser@noreply.com> 1.18.0-*git*
 - F20+/openSUSE 12.2+ require libnice gstreamer-0.10 plugin
 
 * Sat Jan 11 2014 J. D. User <jduser@noreply.com> 1.18.0
@@ -739,7 +745,7 @@ rm -rf %{buildroot}
 * Mon Apr 12 2010 J. D. User <jduser@noreply.com> 1.10.0-*git*
 - add NSS build information discovered through OBS testing
 
-* Wed Apr 04 2010 pier11 <pier11@operamail.com> 1.10.0
+* Sun Apr 04 2010 pier11 <pier11@operamail.com> 1.10.0
 - release
 
 * Fri Apr 02 2010 J. D. User <jduser@noreply.com> pre-1.10.0-*git*
@@ -748,7 +754,7 @@ rm -rf %{buildroot}
 * Fri Apr 02 2010 J. D. User <jduser@noreply.com> pre-1.10.0-*git*
 - SLE11, openSUSE 11.0/1 don't have pidgin/protocols/scalable directory
 
-* Sun Mar 07 2010 pier11 <pier11@operamail.com> pre-1.10.0-*git*
+* Thu Apr 01 2010 pier11 <pier11@operamail.com> pre-1.10.0-*git*
 - OBS tests of pre-1.10.0 git-snapshot 4fa20cd65e5be0e469d4aa55d861f11c5b08b816
 
 * Sun Mar 28 2010 J. D. User <jduser@noreply.com> 1.9.1-*git*
@@ -786,7 +792,7 @@ rm -rf %{buildroot}
 * Sun Mar 07 2010 J. D. User <jduser@noreply.com> 1.8.1-*git*
 - sync with RPM SPEC from contrib/rpm
 
-* Sun Feb 08 2010 pier11 <pier11@operamail.com> 1.8.0
+* Mon Feb 08 2010 pier11 <pier11@operamail.com> 1.8.0
 - source is an original 1.8.0 with patch: git(upstream) 9c34cc3557daa3d61a002002492c71d0343c8cae
 - temp hack - renamed source in spec from .bz2 to .gz as the latter was prepared with the patch. 
 

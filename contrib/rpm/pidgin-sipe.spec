@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20160101git8685dda
+%define git       20160405git4fedafa
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -21,35 +21,36 @@
 %define common_files     sipe-common
 %define empathy_files    empathy-sipe
 %define ktp_files        ktp-accounts-kcm-sipe
-%define pkg_group        Applications/Internet
+%define pkg_group        Applications/Communications
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
 Version:        1.20.1
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
-Source:         %{name}-%{git}.tar.bz2
+Source0:        %{name}-%{git}.tar.bz2
 # git package overrides official released package
 Epoch:          1
 %else
 Release:        1%{?dist}
-Source:         http://downloads.sourceforge.net/sipe/%{name}-%{version}.tar.bz2
+Source0:        http://downloads.sourceforge.net/project/sipe/sipe/%{name}-%{version}/%{name}-%{version}.tar.bz2
 %endif
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 URL:            http://sipe.sourceforge.net/
 
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-
-BuildRequires:  pkgconfig(purple) >= 2.4.0
 BuildRequires:  pkgconfig(glib-2.0) >= 2.12.0
 BuildRequires:  pkgconfig(gmodule-2.0) >= 2.12.0
-BuildRequires:  gmime-devel
 BuildRequires:  pkgconfig(libxml-2.0)
 BuildRequires:  pkgconfig(nss)
-BuildRequires:  libtool
+BuildRequires:  pkgconfig(purple) >= 2.4.0
+%if 0%{?_with_git:1}
+BuildRequires:  autoconf
+BuildRequires:  automake
+%endif
+BuildRequires:  gettext
 BuildRequires:  intltool
-BuildRequires:  gettext-devel
+BuildRequires:  libtool
 # Use "--without vv" to disable Voice & Video features
 %if !0%{?_without_vv:1}
 BuildRequires:  pkgconfig(purple) >= 2.8.0
@@ -71,6 +72,7 @@ BuildRequires:  pkgconfig(glib-2.0) >= 2.28.0
 BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
 BuildRequires:  pkgconfig(gobject-2.0)
 BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  gmime-devel
 %endif
 
 # Configurable components
@@ -107,7 +109,7 @@ This package provides the icon set for Pidgin.
 %package -n %{purple_plugin}
 Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %if 0%{?requires_libnice_gstreamer}
@@ -136,7 +138,7 @@ This package provides the protocol plugin for libpurple clients.
 %package -n %{empathy_files}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{empathy_files}
@@ -157,7 +159,7 @@ This package provides the icon set for Empathy.
 %package -n %{ktp_files}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{ktp_files}
@@ -178,7 +180,7 @@ This package provides the profile for KTP account manager.
 %package -n %{telepathy_plugin}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %if 0%{?requires_libnice_gstreamer}
@@ -208,7 +210,7 @@ This package provides the protocol support for Telepathy clients.
 %package -n %{common_files}
 Summary:        Common files for SIPE protocol plugins
 Group:          %{pkg_group}
-License:        GPL-2.0+
+License:        GPLv2+
 BuildArch:      noarch
 
 %description -n %{common_files}
@@ -231,16 +233,19 @@ This package provides common files for the SIPE protocol plugins:
 %endif
 %configure \
 %if 0%{?_without_vv:1}
-	--without-vv \
+    --without-vv \
 %endif
-	--enable-purple \
+%if !0%{?_without_kerberos:1}
+    --with-krb5 \
+%endif
+    --enable-purple \
 %if !0%{?_without_telepathy:1}
-	--enable-telepathy
+    --enable-telepathy
 %else
-	--disable-telepathy
+    --disable-telepathy
 %endif
-make %{_smp_mflags}
-make %{_smp_mflags} check
+make %{?_smp_mflags}
+make %{?_smp_mflags} check
 
 
 %install
@@ -266,7 +271,6 @@ rm -rf %{buildroot}
 %if !0%{?_without_telepathy:1}
 %files -n %{empathy_files}
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING
 %{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.png
 %{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.svg
 
@@ -291,13 +295,15 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%doc AUTHORS COPYING
 %{_datadir}/appdata/%{name}.metainfo.xml
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 
 
 %changelog
+* Tue Apr 05 2016 J. D. User <jduser@noreply.com> 1.20.1-*git*
+- align with Fedora SPEC file
+
 * Fri Jan 01 2016 J. D. User <jduser@noreply.com> 1.20.1-*git*
 - add AppStream metadata file
 
@@ -439,10 +445,10 @@ rm -rf %{buildroot}
 * Sun Oct 24 2010 J. D. User <jduser@noreply.com> 1.11.1
 - update to 1.11.1
 
-* Sun Oct 04 2010 J. D. User <jduser@noreply.com> 1.11.0
+* Mon Oct 04 2010 J. D. User <jduser@noreply.com> 1.11.0
 - update to 1.11.0
 
-* Fri Sep 02 2010 J. D. User <jduser@noreply.com> 1.10.1-*git*
+* Thu Sep 02 2010 J. D. User <jduser@noreply.com> 1.10.1-*git*
 - add (commented out) BR libnice-devel
 
 * Sun Jun 27 2010 J. D. User <jduser@noreply.com> 1.10.1
@@ -502,10 +508,10 @@ rm -rf %{buildroot}
 * Sat Dec 12 2009 J. D. User <jduser@noreply.com> 1.7.1-*git*
 - add Epoch: for git packages to avoid update clash with official packages
 
-* Mon Nov 19 2009 J. D. User <jduser@noreply.com> 1.7.1
+* Thu Nov 19 2009 J. D. User <jduser@noreply.com> 1.7.1
 - update to 1.7.1
 
-* Mon Oct 28 2009 J. D. User <jduser@noreply.com> 1.7.0-*git*
+* Wed Oct 28 2009 J. D. User <jduser@noreply.com> 1.7.0-*git*
 - add missing Group: to purple-sipe
 
 * Mon Oct 19 2009 J. D. User <jduser@noreply.com> 1.7.0
@@ -518,7 +524,7 @@ rm -rf %{buildroot}
 - remove directory for emoticon theme icons
 
 * Sun Oct 11 2009 J. D. User <jduser@noreply.com> 1.6.3-*git*
-- libpurple protocol plugins are located under %{_libdir}/purple-2
+- libpurple protocol plugins are located under %%{_libdir}/purple-2
 
 * Mon Sep 28 2009 J. D. User <jduser@noreply.com> 1.6.3-*git*
 - added directory for emoticon theme icons
