@@ -141,6 +141,10 @@ void sipe_backend_ft_incoming(SIPE_UNUSED_PARAMETER struct sipe_core_public *sip
 			      SIPE_UNUSED_PARAMETER const gchar *who,
 			      SIPE_UNUSED_PARAMETER const gchar *file_name,
 			      SIPE_UNUSED_PARAMETER gsize file_size) {}
+void sipe_backend_ft_outgoing(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+			      SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
+			      SIPE_UNUSED_PARAMETER const gchar *who,
+			      SIPE_UNUSED_PARAMETER const gchar *file_name) {}
 void sipe_backend_ft_start(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
 			   SIPE_UNUSED_PARAMETER struct sipe_backend_fd *fd,
 			   SIPE_UNUSED_PARAMETER const char* ip,

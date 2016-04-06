@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -316,6 +316,23 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 	}
 }
 
+void
+sipe_backend_ft_outgoing(struct sipe_core_public *sipe_public,
+			 struct sipe_file_transfer *ft,
+			 const gchar *who,
+			 const gchar *file_name)
+{
+	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	PurpleXfer *xfer = create_xfer(purple_private->account,
+				       PURPLE_XFER_TYPE_SEND, who, ft);
+	if (xfer) {
+		if (file_name != NULL)
+			purple_xfer_request_accepted(xfer, file_name);
+		else
+			purple_xfer_request(xfer);
+	}
+}
+
 static void
 connect_cb(gpointer data, gint fd, SIPE_UNUSED_PARAMETER const gchar *error_message)
 {
@@ -361,16 +378,7 @@ void sipe_purple_ft_send_file(PurpleConnection *gc,
 			      const char *who,
 			      const char *file)
 {
-	struct sipe_file_transfer *ft =
-			sipe_core_ft_create_outgoing(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
-	PurpleXfer *xfer = create_xfer(purple_connection_get_account(gc),
-				       PURPLE_XFER_TYPE_SEND, who, ft);
-	if (xfer) {
-		if (file != NULL)
-			purple_xfer_request_accepted(xfer, file);
-		else
-			purple_xfer_request(xfer);
-	}
+	sipe_core_ft_create_outgoing(PURPLE_GC_TO_SIPE_CORE_PUBLIC, who, file);
 }
 
 gboolean

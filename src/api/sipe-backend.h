@@ -241,6 +241,18 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 			      const gchar *file_name,
 			      gsize file_size);
 /**
+ * Allocates and initializes backend file transfer structure for sending a file.
+ *
+ * @param sipe_public (in) the handle representing the protocol instance
+ * @param ft (in) sipe core file transfer structure
+ * @param who (in) SIP URI of the file recipient
+ * @param file_name (in) filesystem path of the file being sent
+ */
+void sipe_backend_ft_outgoing(struct sipe_core_public *sipe_public,
+			      struct sipe_file_transfer *ft,
+			      const gchar *who,
+			      const gchar *file_name);
+/**
  * Begins file transfer with remote peer.
  *
  * You can provide either opened file descriptor to use for read/write operations

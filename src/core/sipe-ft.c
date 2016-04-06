@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -78,7 +78,9 @@ static void generate_key(guchar *buffer, gsize size)
 }
 
 struct sipe_file_transfer *
-sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public)
+sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
+			     const gchar *who,
+			     const gchar *file)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_file_transfer_private *ft_private =
@@ -93,6 +95,10 @@ sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public)
 	ft_private->public.ft_deallocate = sipe_ft_free;
 
 	ft_private->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
+
+	sipe_backend_ft_outgoing(sipe_public,
+				 (struct sipe_file_transfer *)ft_private,
+				 who, file);
 
 	return(SIPE_FILE_TRANSFER_PUBLIC);
 }

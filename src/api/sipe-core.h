@@ -486,7 +486,9 @@ void sipe_core_media_test_call(struct sipe_core_public *sipe_public);
 
 /* file transfer */
 struct sipe_file_transfer *
-sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public);
+sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
+			     const gchar *who,
+			     const gchar *file);
 
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);

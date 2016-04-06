@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -372,6 +372,41 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 
 }
 
+void
+sipe_backend_ft_outgoing(struct sipe_core_public *sipe_public,
+			 struct sipe_file_transfer *ft,
+			 const gchar *who,
+			 const gchar *file_name)
+{
+	SIPPROTO *pr = sipe_public->backend_private;
+	HANDLE hContact;
+	int result;
+	struct __stat64 buf;
+
+	LOCK;
+	hContact = sipe_backend_buddy_find( sipe_public, who, NULL );
+	ft->backend_private = new_xfer(pr, ft, hContact);
+	ft->backend_private->incoming = FALSE;
+	result = _tstat64( file_name, &buf );
+	if (result != 0)
+	{
+		FT_SIPE_DEBUG_INFO("Could not stat file, error<%d>", result);
+		ft->backend_private->file_size = 0;
+	}
+	else
+	{
+		ft->backend_private->file_size = buf.st_size;
+		ft->backend_private->bytes_remaining = ft->backend_private->file_size;
+		ft->backend_private->bytes_sent = 0;
+	}
+	ft->backend_private->local_filename = g_strdup(file_name);
+	ft->backend_private->filename = g_path_get_basename(ft->backend_private->local_filename);
+	FT_SIPE_DEBUG_INFO("set filename to <%s>", ft->backend_private->filename);
+	ft->init(ft, ft->backend_private->filename, ft->backend_private->file_size, who);
+	sipe_miranda_SendBroadcast(pr, hContact, ACKTYPE_FILE, ACKRESULT_CONNECTING, (HANDLE)ft->backend_private, 0);
+	UNLOCK;
+}
+
 gboolean
 sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
 				const gchar *ip,
@@ -673,40 +708,21 @@ sipe_backend_ft_is_incoming(struct sipe_file_transfer *ft)
 HANDLE
 sipe_miranda_SendFile( SIPPROTO *pr, HANDLE hContact, const PROTOCHAR* szDescription, PROTOCHAR** ppszFiles )
 {
-	struct sipe_file_transfer *ft = sipe_core_ft_create_outgoing(pr->sip);
 	DBVARIANT dbv;
 
 	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
-		int result;
-		struct __stat64 buf;
+		struct sipe_file_transfer *ft;
 
-		LOCK;
-		ft->backend_private = new_xfer(pr, ft, hContact);
-		ft->backend_private->incoming = FALSE;
-		result = _tstat64( ppszFiles[0], &buf );
-		if (result != 0)
-		{
-			FT_SIPE_DEBUG_INFO("Could not stat file, error<%d>", result);
-			ft->backend_private->file_size = 0;
-		}
-		else
-		{
-			ft->backend_private->file_size = buf.st_size;
-			ft->backend_private->bytes_remaining = ft->backend_private->file_size;
-			ft->backend_private->bytes_sent = 0;
-		}
+		ft = sipe_core_ft_create_outgoing(pr->sip, dbv.pszVal, TCHAR2CHAR(ppszFiles[0]));
+
 		FT_SIPE_DEBUG_INFO("SendFile: desc <%ls> name <%s> size <%d> to <%s>", szDescription, TCHAR2CHAR(ppszFiles[0]), ft->backend_private->file_size, dbv.pszVal);
-		ft->backend_private->local_filename = g_strdup(TCHAR2CHAR(ppszFiles[0]));
-		ft->backend_private->filename = g_path_get_basename(ft->backend_private->local_filename);
-		FT_SIPE_DEBUG_INFO("set filename to <%s>", ft->backend_private->filename);
-		ft->init(ft, ft->backend_private->filename, ft->backend_private->file_size, dbv.pszVal);
-		sipe_miranda_SendBroadcast(pr, hContact, ACKTYPE_FILE, ACKRESULT_CONNECTING, (HANDLE)ft->backend_private, 0);
-		UNLOCK;
 
 		DBFreeVariant( &dbv );
+
+		return ft->backend_private;
 	}
 
-	return ft->backend_private;
+	return NULL;
 }
 
 int
