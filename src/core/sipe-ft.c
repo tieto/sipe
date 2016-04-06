@@ -77,16 +77,14 @@ static void generate_key(guchar *buffer, gsize size)
 	while (i < size) buffer[i++] = rand();
 }
 
-struct sipe_file_transfer *
-sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
-			     const gchar *who,
-			     const gchar *file)
+static struct sipe_file_transfer *
+sipe_file_transfer_new_outgoing(struct sipe_core_private *sipe_private)
 {
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_file_transfer_private *ft_private =
-		g_new0(struct sipe_file_transfer_private, 1);
+	struct sipe_file_transfer_private *ft_private;
 
-	ft_private->sipe_private      = sipe_private;
+	ft_private = g_new0(struct sipe_file_transfer_private, 1);
+
+	ft_private->sipe_private         = sipe_private;
 
 	ft_private->public.ft_init       = ft_outgoing_init;
 	ft_private->public.ft_start      = sipe_ft_tftp_start_sending;
@@ -94,13 +92,29 @@ sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
 	ft_private->public.ft_end        = sipe_ft_tftp_stop_sending;
 	ft_private->public.ft_deallocate = sipe_ft_free;
 
-	ft_private->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
+	ft_private->invitation_cookie = g_strdup_printf("%u",
+							rand() % 1000000000);
 
-	sipe_backend_ft_outgoing(sipe_public,
-				 (struct sipe_file_transfer *)ft_private,
-				 who, file);
+	return SIPE_FILE_TRANSFER_PUBLIC;
+}
 
-	return(SIPE_FILE_TRANSFER_PUBLIC);
+struct sipe_file_transfer *
+sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
+			     const gchar *who,
+			     const gchar *file)
+{
+	struct sipe_file_transfer *ft;
+
+	ft = sipe_file_transfer_new_outgoing(SIPE_CORE_PRIVATE);
+	if (!ft) {
+		SIPE_DEBUG_ERROR_NOFORMAT("Couldn't initialize core file "
+					  "transfer structure");
+		return NULL;
+	}
+
+	sipe_backend_ft_outgoing(sipe_public, ft, who, file);
+
+	return ft;
 }
 
 void
