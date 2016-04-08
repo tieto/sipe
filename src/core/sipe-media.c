@@ -1162,11 +1162,10 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		 * matter. In future we'll have to announce our synchronization
 		 * source identifier through SDP and thus know it beforehand.
 		 *
-		 * It seems there must be always 99 elements in the sequence for
-		 * the message not to get rejected (at least in the case of
-		 * video). */
+		 * [MS-SDPEXT] 3.1.5.31.2 says a range size of 100 SHOULD be used
+		 * for video and some clients really demand this. */
 		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
-				"x-ssrc-range", "1-99");
+				"x-ssrc-range", "1-100");
 
 		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
 				"rtcp-rsize", NULL);
