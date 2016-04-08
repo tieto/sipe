@@ -104,10 +104,11 @@ sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
 			     const gchar *who,
 			     const gchar *file)
 {
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_file_transfer *ft;
 
 #ifdef HAVE_XDATA
-	if (g_getenv("SIPE_LEGACY_FILETRANSFER") == NULL) {
+	if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013)) {
 		ft = sipe_file_transfer_lync_new_outgoing(SIPE_CORE_PRIVATE);
 	} else
 #endif
