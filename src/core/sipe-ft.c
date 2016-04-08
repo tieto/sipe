@@ -109,11 +109,11 @@ sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
 
 #ifdef HAVE_XDATA
 	if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013)) {
-		ft = sipe_file_transfer_lync_new_outgoing(SIPE_CORE_PRIVATE);
+		ft = sipe_file_transfer_lync_new_outgoing(sipe_private);
 	} else
 #endif
 	{
-		ft = sipe_file_transfer_new_outgoing(SIPE_CORE_PRIVATE);
+		ft = sipe_file_transfer_new_outgoing(sipe_private);
 	}
 
 	if (!ft) {
