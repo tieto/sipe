@@ -5,7 +5,7 @@ version 1.21.0 "Lync File Transfer" (????-??-??)
 	- Feature #87: Support multiple HTTP cookies (Stefan Becker)
 	- Feature #85: XML raw extract should ignore name space (Stefan Becker)
 	- Fixed #293: Mandatory wsa:MessageID node missing (Stefan Becker)
-	- add suppport for (receive-only) Lync File Transfer (Jakub Adam)
+	- add support for Lync File Transfer protocol (Jakub Adam)
 	- add build options to "About SIPE plugin" message (Stefan Becker)
 
 version 1.20.1 "Bug Fixes I" (2015-10-24)
