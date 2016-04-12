@@ -1,4 +1,9 @@
 -------------------------------------------------------------------
+Tue Apr 12 17:32:00 UTC 2016 - chemobejk@gmail.com
+
+- Update to version 1.21.0:
+
+-------------------------------------------------------------------
 Fri Feb 12 09:26:02 UTC 2016 - dimstar@opensuse.org
 
 - Pass --disable-quality-check to configure: the 'quality' checks
