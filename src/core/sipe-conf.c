@@ -859,7 +859,6 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	struct transaction *trans;
 	time_t expiry = time(NULL) + 7*60*60; /* 7 hours */
 	char *expiry_time;
-	struct transaction_payload *payload;
 
 	/* addConference request to the focus factory.
 	 *
@@ -911,10 +910,13 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	g_free(expiry_time);
 	g_string_free(conference_view, TRUE);
 
-	payload = g_new0(struct transaction_payload, 1);
-	payload->destroy = g_free;
-	payload->data = g_strdup(who);
-	trans->payload = payload;
+	if (trans) {
+		struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+
+		payload->destroy = g_free;
+		payload->data = g_strdup(who);
+		trans->payload = payload;
+	}
 }
 
 static void

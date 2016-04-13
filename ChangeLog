@@ -4,6 +4,7 @@ version 1.21.0 "Lync File Transfer" (2016-??-??)
 	- Feature #89: Improve "Join scheduled conference" dialog  (Stefan Becker)
 	- Feature #87: Support multiple HTTP cookies (Stefan Becker)
 	- Feature #85: XML raw extract should ignore name space (Stefan Becker)
+	- Fixed #311: Crash when SIP transport becomes invalid (Stefan Becker)
 	- Fixed #293: Mandatory wsa:MessageID node missing (Stefan Becker)
 	- add support for Lync File Transfer protocol (Jakub Adam)
 	  * requires libpurple >= 2.12.0

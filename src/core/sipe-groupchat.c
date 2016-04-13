@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -549,7 +549,6 @@ static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *s
 							     groupchat->session->with);
 
 		if (dialog) {
-			struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
 			struct transaction *trans;
 
 			msg = generate_xccos_message(groupchat, cmd);
@@ -559,9 +558,17 @@ static struct sipe_groupchat_msg *chatserver_command(struct sipe_core_private *s
 						   dialog,
 						   chatserver_command_response);
 
-			payload->destroy = sipe_groupchat_msg_remove;
-			payload->data    = msg;
-			trans->payload   = payload;
+			if (trans) {
+				struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+
+				payload->destroy = sipe_groupchat_msg_remove;
+				payload->data    = msg;
+				trans->payload   = payload;
+			} else {
+				/* SIP transport is no longer valid - give up */
+				sipe_groupchat_msg_remove(msg);
+				msg = NULL;
+			}
 		}
 	}
 
