@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -261,6 +261,8 @@ sipe_ft_tftp_stop_receiving(struct sipe_file_transfer *ft)
 	g_free(mac1);
 	g_free(mac);
 
+	sipe_ft_free(ft);
+
 	return(TRUE);
 }
 
@@ -360,6 +362,8 @@ sipe_ft_tftp_stop_sending(struct sipe_file_transfer *ft)
 		raise_ft_socket_write_error_and_cancel(ft_private);
 		return FALSE;
 	}
+
+	sipe_ft_free(ft);
 
 	return TRUE;
 }

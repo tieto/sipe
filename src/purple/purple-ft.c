@@ -161,18 +161,12 @@ void sipe_backend_ft_cancel_remote(struct sipe_file_transfer *ft)
 static void
 ft_free_xfer_struct(PurpleXfer *xfer)
 {
-	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
-
-	if (ft) {
-		if (purple_xfer_get_watcher(xfer)) {
-			purple_input_remove(purple_xfer_get_watcher(xfer));
-			purple_xfer_set_watcher(xfer, 0);
-		}
-		if (ft->ft_deallocate) {
-			ft->ft_deallocate(ft);
-		}
-		purple_xfer_set_protocol_data(xfer, NULL);
+	if (purple_xfer_get_watcher(xfer)) {
+		purple_input_remove(purple_xfer_get_watcher(xfer));
+		purple_xfer_set_watcher(xfer, 0);
 	}
+
+	purple_xfer_set_protocol_data(xfer, NULL);
 }
 
 static void
