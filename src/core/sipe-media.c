@@ -1627,8 +1627,23 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 
 	dialog->outgoing_invite = NULL;
 
+	if (msg->response == 603 || msg->response == 605) {
+		// Call rejected by remote peer
+		gchar *desc;
+
+		desc = g_strdup_printf(_("User %s rejected call"), with);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC, _("Call rejected"),
+					  desc);
+		g_free(desc);
+
+		sipe_media_send_ack(sipe_private, msg, trans);
+		sipe_backend_media_reject(SIPE_MEDIA_CALL->backend_private, FALSE);
+
+		return TRUE;
+	}
+
 	if (msg->response >= 400) {
-		// Call rejected by remote peer or an error occurred
+		// An error occurred
 		const gchar *title;
 		GString *desc = g_string_new("");
 		gboolean append_responsestr = FALSE;
@@ -1643,11 +1658,6 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 					g_string_append_printf(desc, _("User %s is not available"), with);
 				break;
 			}
-			case 603:
-			case 605:
-				title = _("Call rejected");
-				g_string_append_printf(desc, _("User %s rejected call"), with);
-				break;
 			case 415:
 				// OCS/Lync really sends response string with 'Mutipart' typo.
 				if (sipe_strequal(msg->responsestr, "Mutipart mime in content type not supported by Archiving CDR service") &&
