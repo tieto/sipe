@@ -919,6 +919,24 @@ call_reject_cb(struct sipe_media_call *call, gboolean local)
 	}
 }
 
+static void
+av_call_reject_cb(struct sipe_media_call *call, gboolean local)
+{
+	if (!local) {
+		struct sipe_core_private *sipe_private;
+		gchar *desc;
+
+		sipe_private = SIPE_MEDIA_CALL_PRIVATE->sipe_private;
+
+		desc = g_strdup_printf(_("User %s rejected call"), call->with);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC, _("Call rejected"),
+					  desc);
+		g_free(desc);
+	}
+
+	call_reject_cb(call, local);
+}
+
 static gboolean
 sipe_media_send_ack(struct sipe_core_private *sipe_private, struct sipmsg *msg,
 					struct transaction *trans);
@@ -1145,6 +1163,8 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 				sipe_media_call_new(sipe_private, with, NULL,
 						    ice_version, 0);
 
+	SIPE_MEDIA_CALL->call_reject_cb = av_call_reject_cb;
+
 	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
 				   call_private->ice_version,
 				   TRUE)) {
@@ -1230,6 +1250,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 				sipe_media_call_new(sipe_private, av_uri, NULL,
 						    ice_version, 0);
 	call_private->conference_session = session;
+	SIPE_MEDIA_CALL->call_reject_cb = av_call_reject_cb;
 
 	stream = sipe_media_stream_add(SIPE_MEDIA_CALL, "audio",
 				       SIPE_MEDIA_AUDIO,
@@ -1413,6 +1434,10 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 					sipe_media_call_new(sipe_private, with,
 							    msg, smsg->ice_version,
 							    flags);
+
+		if (!(flags & SIPE_MEDIA_CALL_NO_UI)) {
+			SIPE_MEDIA_CALL->call_reject_cb = av_call_reject_cb;
+		}
 		g_free(with);
 	}
 
@@ -1629,13 +1654,6 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 
 	if (msg->response == 603 || msg->response == 605) {
 		// Call rejected by remote peer
-		gchar *desc;
-
-		desc = g_strdup_printf(_("User %s rejected call"), with);
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC, _("Call rejected"),
-					  desc);
-		g_free(desc);
-
 		sipe_media_send_ack(sipe_private, msg, trans);
 		sipe_backend_media_reject(SIPE_MEDIA_CALL->backend_private, FALSE);
 
