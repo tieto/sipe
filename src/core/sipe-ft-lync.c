@@ -747,6 +747,9 @@ ft_lync_outgoing_init(struct sipe_file_transfer *ft, const gchar *filename,
 
 	ft_private->call = call;
 
+	ft_private->call_reject_parent_cb = call->call_reject_cb;
+	call->call_reject_cb = call_reject_cb;
+
 	stream = sipe_media_stream_add(call, "data", SIPE_MEDIA_APPLICATION,
 				       SIPE_ICE_RFC_5245, TRUE);
 	if (!stream) {
