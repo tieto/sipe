@@ -352,6 +352,21 @@ ft_lync_incoming_init(struct sipe_file_transfer *ft,
 	}
 }
 
+static void
+ft_lync_request_denied(struct sipe_file_transfer *ft)
+{
+	struct sipe_file_transfer_lync *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
+	struct sipe_media_call *call;
+
+	g_return_if_fail(ft_private);
+
+	call = ft_private->call;
+
+	if (call && call->backend_private) {
+		sipe_backend_media_reject(call->backend_private, TRUE);
+	}
+}
+
 static struct sipe_file_transfer_lync *
 ft_private_from_call(struct sipe_media_call *call)
 {
@@ -474,6 +489,7 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	call = ft_private->call;
 
 	ft_private->public.ft_init = ft_lync_incoming_init;
+	ft_private->public.ft_request_denied = ft_lync_request_denied;
 	ft_private->public.ft_cancelled = ft_lync_incoming_cancelled;
 	ft_private->public.ft_end = ft_lync_end;
 
