@@ -388,11 +388,6 @@ ft_lync_end(struct sipe_file_transfer *ft)
 {
 	send_transfer_progress(SIPE_FILE_TRANSFER_PRIVATE);
 
-	/* Don't let the call be hung up in ft_lync_deallocate() because we
-	 * have to wait for BYE from the sender in order for the transfer to be
-	 * reported as successful by Lync client. */
-	SIPE_FILE_TRANSFER_PRIVATE->call = NULL;
-
 	return TRUE;
 }
 
@@ -440,16 +435,8 @@ ft_lync_incoming_cancelled(struct sipe_file_transfer *ft)
 	if (stream) {
 		stream->read_cb = NULL;
 	}
-}
 
-static void
-ft_lync_deallocate(struct sipe_file_transfer *ft)
-{
-	struct sipe_media_call *call = SIPE_FILE_TRANSFER_PRIVATE->call;
-
-	if (call) {
-		sipe_backend_media_hangup(call->backend_private, TRUE);
-	}
+	sipe_backend_media_hangup(ft_private->call->backend_private, FALSE);
 }
 
 void
@@ -489,7 +476,6 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	ft_private->public.ft_init = ft_lync_incoming_init;
 	ft_private->public.ft_cancelled = ft_lync_incoming_cancelled;
 	ft_private->public.ft_end = ft_lync_end;
-	ft_private->public.ft_deallocate = ft_lync_deallocate;
 
 	ft_private->call_reject_parent_cb = call->call_reject_cb;
 	call->call_reject_cb = call_reject_cb;
@@ -650,9 +636,7 @@ process_notify(struct sipe_file_transfer_lync *ft_private, sipe_xml *xml)
 			send_ms_filetransfer_msg(g_strdup_printf(DOWNLOAD_SUCCESS_RESPONSE,
 								 ft_private->request_id),
 						 ft_private, NULL);
-			/* This also hangs up the call and sends BYE to the
-			 * other party. */
-			ft_lync_deallocate(SIPE_FILE_TRANSFER);
+			sipe_backend_media_hangup(ft_private->call->backend_private, TRUE);
 		}
 		g_free(to_str);
 	}
