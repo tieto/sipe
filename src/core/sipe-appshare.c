@@ -121,13 +121,25 @@ rdp_channel_readable_cb(GIOChannel *channel,
 
 	buffer = g_malloc(2048);
 	while (sipe_media_stream_is_writable(appshare->stream)) {
-		g_io_channel_read_chars(channel, buffer, 2048, &bytes_read, &error);
+		GIOStatus status;
+
+		status = g_io_channel_read_chars(channel,
+						 buffer, 2048,
+						 &bytes_read, &error);
 		if (error) {
 			struct sipe_media_call *call = appshare->stream->call;
 
 			SIPE_DEBUG_ERROR("Error reading from RDP channel: %s",
 					 error->message);
 			g_error_free(error);
+			sipe_backend_media_hangup(call->backend_private, TRUE);
+			g_free(buffer);
+			return FALSE;
+		}
+
+		if (status == G_IO_STATUS_EOF) {
+			struct sipe_media_call *call = appshare->stream->call;
+
 			sipe_backend_media_hangup(call->backend_private, TRUE);
 			g_free(buffer);
 			return FALSE;
