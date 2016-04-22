@@ -259,8 +259,18 @@ rdp_channel_readable_cb(GIOChannel *channel,
 	}
 
 	while (sipe_media_stream_is_writable(appshare->stream)) {
-		g_io_channel_read_chars(channel, buffer, sizeof (buffer), &bytes_read, &error);
+		GIOStatus status;
+
+		status = g_io_channel_read_chars(channel,
+						 buffer, sizeof (buffer),
+						 &bytes_read, &error);
 		g_assert_no_error(error);
+
+		if (status == G_IO_STATUS_EOF) {
+			sipe_backend_media_hangup(appshare->media->backend_private,
+						  TRUE);
+			return FALSE;
+		}
 
 		if (bytes_read == 0) {
 			break;
