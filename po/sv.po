@@ -6,15 +6,15 @@
 # 
 # Translators:
 # Göran Uddeborg <goeran@uddeborg.se>, 2014-2015
-# Karl-Johan Karlsson <karl.johan.karlsson@gmail.com>, 2015
+# Karl-Johan Karlsson <karl.johan.karlsson@gmail.com>, 2015-2016
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2016-04-12 16:00+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2016-04-17 16:20+0000\n"
+"Last-Translator: Göran Uddeborg <goeran@uddeborg.se>\n"
 "Language-Team: Swedish (http://www.transifex.com/stefanb/pidgin-sipe/language/sv/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -260,7 +260,7 @@ msgid ""
 "Can't find a conference URI on this page:\n"
 "\n"
 "%s"
-msgstr ""
+msgstr "Kan inte hitta någon konferens-URI på denna sida:\n\n%s"
 
 #: ../src/core/sipe-conf.c:443
 #, c-format
@@ -269,7 +269,7 @@ msgstr "”%s” är inte en giltig konferens-URI"
 
 #: ../src/core/sipe-conf.c:499
 msgid "Incomplete conference information provided"
-msgstr ""
+msgstr "Ofullständig konferens information angiven"
 
 #: ../src/core/sipe-conf.c:1039
 msgid ""
@@ -308,27 +308,27 @@ msgstr "Du har kopplats bort från denna konferens."
 
 #: ../src/core/sipe-conf.c:1540
 msgid "Dial-in info"
-msgstr ""
+msgstr "Inkommande information"
 
 #: ../src/core/sipe-conf.c:1541
 msgid "Number"
-msgstr ""
+msgstr "Nummer"
 
 #: ../src/core/sipe-conf.c:1543
 msgid "Conference ID"
-msgstr ""
+msgstr "Konferens-ID"
 
 #: ../src/core/sipe-conf.c:1545
 msgid "Meeting link"
-msgstr ""
+msgstr "Möteslänk"
 
 #: ../src/core/sipe-conf.c:1547
 msgid "Organizer"
-msgstr ""
+msgstr "Organisatör"
 
 #: ../src/core/sipe-conf.c:1549
 msgid "Alternative dial-in numbers"
-msgstr ""
+msgstr "Alternativa inkommande nummer"
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
@@ -459,11 +459,11 @@ msgstr "Det gick inte att skapa lyssnaruttag"
 
 #: ../src/core/sipe-ft-lync.c:754 ../src/core/sipe-media.c:1240
 msgid "Error occurred"
-msgstr ""
+msgstr "Ett fel inträffade"
 
 #: ../src/core/sipe-ft-lync.c:755
 msgid "Error creating data stream"
-msgstr ""
+msgstr "Fel när dataström skapades"
 
 #: ../src/core/sipe-ft-tftp.c:115 ../src/core/sipe-ft-tftp.c:521
 #: ../src/core/sipe-ft-tftp.c:530
@@ -607,11 +607,11 @@ msgstr "Ej stödd mediatyp"
 
 #: ../src/core/sipe-media.c:2019
 msgid "Media error"
-msgstr ""
+msgstr "Mediafel"
 
 #: ../src/core/sipe-media.c:2020
 msgid "Error while reading from stream"
-msgstr ""
+msgstr "Fel vid läsning från strömmen"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe-notify.c:1109
@@ -746,21 +746,21 @@ msgstr "Enbart brådskade ärenden får avbryta"
 
 #: ../src/core/sipe-ucs.c:674
 msgid "UCS initialization failed!"
-msgstr ""
+msgstr "UCS-initiering misslyckades!"
 
 #: ../src/core/sipe-ucs.c:676
 msgid ""
 "Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n"
 "\n"
 "You'll need to provide Email settings in the account setup."
-msgstr ""
+msgstr "Kunde inte hitta en Exchange-server med standard E-postinställningar.  Därför kommer kontaktlistan inte att fungera.\n\nDu behöver ange E-postinställningar i kontoinställningen."
 
 #: ../src/core/sipe-ucs.c:677
 msgid ""
 "Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n"
 "\n"
 "Please correct your Email settings."
-msgstr ""
+msgstr "Kunde inte hitta en Exchange-server med E-postinställningarna som gavs i kontoinställningen.  Därför kommer kontaktlistan inte att fungera.\n\nRätta dina E-postinställningar.<"
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -906,7 +906,7 @@ msgstr "Lås upp"
 
 #: ../src/purple/purple-chat.c:321
 msgid "Meeting entry info"
-msgstr ""
+msgstr "Mötespostinformation"
 
 #: ../src/purple/purple-groupchat.c:56
 msgid "_URI:"
@@ -979,15 +979,15 @@ msgstr "Mötesplats"
 
 #: ../src/purple/purple-plugin-common.c:762
 msgid "Alternatively"
-msgstr ""
+msgstr "Alternativt"
 
 #: ../src/purple/purple-plugin-common.c:764
 msgid "Organizer email"
-msgstr ""
+msgstr "Organisatörens e-post"
 
 #: ../src/purple/purple-plugin-common.c:766
 msgid "Meeting ID"
-msgstr ""
+msgstr "Mötes-ID"
 
 #: ../src/purple/purple-plugin-common.c:770
 msgid "Join conference"
@@ -1157,11 +1157,11 @@ msgstr "Mellanserver för gruppchatt\n   foretag.se  eller  person@foretag.se\n(
 
 #: ../src/purple/purple-plugin-common.c:933
 msgid "Media encryption"
-msgstr ""
+msgstr "Mediakryptering"
 
 #: ../src/purple/purple-plugin-common.c:934
 msgid "Obey server policy"
-msgstr ""
+msgstr "Följ serverpolicyn"
 
 #: ../src/purple/purple-plugin-common.c:935
 msgid "Always"

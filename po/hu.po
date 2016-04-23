@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Laszlo Pal <vlad@vlad.hu>, 2012-2013
+# Laszlo Pal <vlad@vlad.hu>, 2012-2013,2016
 # Stefan Becker <chemobejk@gmail.com>, 2011,2013
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2016-04-12 16:00+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2016-04-13 10:02+0000\n"
+"Last-Translator: Laszlo Pal <vlad@vlad.hu>\n"
 "Language-Team: Hungarian (http://www.transifex.com/stefanb/pidgin-sipe/language/hu/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -69,7 +69,7 @@ msgstr "A(z) %s szolgáltatás nem érhető el"
 
 #: ../src/core/sip-transport.c:1766
 msgid "Corrupted message received"
-msgstr ""
+msgstr "Sérült üzenet"
 
 #: ../src/core/sip-transport.c:1790
 msgid "Invalid message signature received"
@@ -259,7 +259,7 @@ msgid ""
 "Can't find a conference URI on this page:\n"
 "\n"
 "%s"
-msgstr ""
+msgstr "A megadott oldalon konferencia URI nem található:\n\n\n%s"
 
 #: ../src/core/sipe-conf.c:443
 #, c-format
@@ -268,7 +268,7 @@ msgstr "A következő URI nem valós konferencia cím: \"%s\""
 
 #: ../src/core/sipe-conf.c:499
 msgid "Incomplete conference information provided"
-msgstr ""
+msgstr "Hiányos konferencia információ"
 
 #: ../src/core/sipe-conf.c:1039
 msgid ""
@@ -307,27 +307,27 @@ msgstr "Ön eltávolításra került a megbeszélésről"
 
 #: ../src/core/sipe-conf.c:1540
 msgid "Dial-in info"
-msgstr ""
+msgstr "Behívási adatok"
 
 #: ../src/core/sipe-conf.c:1541
 msgid "Number"
-msgstr ""
+msgstr "Szám"
 
 #: ../src/core/sipe-conf.c:1543
 msgid "Conference ID"
-msgstr ""
+msgstr "Konferencia azonosító"
 
 #: ../src/core/sipe-conf.c:1545
 msgid "Meeting link"
-msgstr ""
+msgstr "A megbeszéléshez tartozó link"
 
 #: ../src/core/sipe-conf.c:1547
 msgid "Organizer"
-msgstr ""
+msgstr "Szervező"
 
 #: ../src/core/sipe-conf.c:1549
 msgid "Alternative dial-in numbers"
-msgstr ""
+msgstr "Alternatív behívószám"
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
@@ -413,7 +413,7 @@ msgstr "A felhasználó névnek egy valós SIP URI-nak kell lennie⏎\nmint pél
 
 #: ../src/core/sipe-core.c:284
 msgid "Password is required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "A jelszó megadása kötelező amennyiben az Egyszeri bejelentkezés (Single Sign-On) nincs engedélyezve"
 
 #: ../src/core/sipe-core.c:294
 msgid ""
@@ -458,11 +458,11 @@ msgstr "Nem sikerült létrehozni a figyelő foglalatot"
 
 #: ../src/core/sipe-ft-lync.c:754 ../src/core/sipe-media.c:1240
 msgid "Error occurred"
-msgstr ""
+msgstr "Hiba történt"
 
 #: ../src/core/sipe-ft-lync.c:755
 msgid "Error creating data stream"
-msgstr ""
+msgstr "Adatfolyam létrehozása sikertelen"
 
 #: ../src/core/sipe-ft-tftp.c:115 ../src/core/sipe-ft-tftp.c:521
 #: ../src/core/sipe-ft-tftp.c:530
@@ -567,7 +567,7 @@ msgstr "Csatlakozás telefon konferenciához"
 
 #: ../src/core/sipe-media.c:1209
 msgid "Conference calls are not supported on this server."
-msgstr ""
+msgstr "A konferenciahívások nem támogatottak ezen a kiszolgálón"
 
 #: ../src/core/sipe-media.c:1304
 msgid "Invalid phone number"
@@ -606,11 +606,11 @@ msgstr "Nem támogatott médiatípus "
 
 #: ../src/core/sipe-media.c:2019
 msgid "Media error"
-msgstr ""
+msgstr "Média hiba"
 
 #: ../src/core/sipe-media.c:2020
 msgid "Error while reading from stream"
-msgstr ""
+msgstr "Hiba az adatfolyam olvasásakor"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe-notify.c:1109
@@ -745,7 +745,7 @@ msgstr "Csak sürgős esetben elérhető"
 
 #: ../src/core/sipe-ucs.c:674
 msgid "UCS initialization failed!"
-msgstr ""
+msgstr "UCS inicializálás sikertelen!"
 
 #: ../src/core/sipe-ucs.c:676
 msgid ""
@@ -905,7 +905,7 @@ msgstr "Kizárást felold"
 
 #: ../src/purple/purple-chat.c:321
 msgid "Meeting entry info"
-msgstr ""
+msgstr "A megbeszélés belépési adatai"
 
 #: ../src/purple/purple-groupchat.c:56
 msgid "_URI:"
@@ -982,11 +982,11 @@ msgstr ""
 
 #: ../src/purple/purple-plugin-common.c:764
 msgid "Organizer email"
-msgstr ""
+msgstr "A szervező e-mail címe"
 
 #: ../src/purple/purple-plugin-common.c:766
 msgid "Meeting ID"
-msgstr ""
+msgstr "Megbeszélés azonosítója"
 
 #: ../src/purple/purple-plugin-common.c:770
 msgid "Join conference"
@@ -1156,7 +1156,7 @@ msgstr "Csoportos beszélgetés proxy\nceg.hu  vagy  felhasznalo@ceg.hu\n(hagyja
 
 #: ../src/purple/purple-plugin-common.c:933
 msgid "Media encryption"
-msgstr ""
+msgstr "Média titkosítás"
 
 #: ../src/purple/purple-plugin-common.c:934
 msgid "Obey server policy"
@@ -1164,15 +1164,15 @@ msgstr ""
 
 #: ../src/purple/purple-plugin-common.c:935
 msgid "Always"
-msgstr ""
+msgstr "Mindig"
 
 #: ../src/purple/purple-plugin-common.c:936
 msgid "Optional"
-msgstr ""
+msgstr "Opcionális"
 
 #: ../src/purple/purple-plugin-common.c:937
 msgid "Disabled"
-msgstr ""
+msgstr "Letiltva"
 
 #: ../src/purple/purple-plugin-common.c:947
 msgid ""
@@ -1203,7 +1203,7 @@ msgstr "Vezetéknév"
 
 #: ../src/purple/purple-search.c:227
 msgid "SIP ID"
-msgstr ""
+msgstr "SIP azonosító"
 
 #: ../src/purple/purple-search.c:235
 msgid "Search"

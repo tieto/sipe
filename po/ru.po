@@ -6,17 +6,18 @@
 # 
 # Translators:
 # Amber <amber.really@gmail.com>, 2011
+# Ivan Gromov <summer.is.gone@gmail.com>, 2016
 # someone328 <someone328@gmail.com>, 2011
 # Stefan Becker <chemobejk@gmail.com>, 2011
-# summer.is.gone <summer.is.gone@gmail.com>, 2015
+# Ivan Gromov <summer.is.gone@gmail.com>, 2015
 # G0LDEN_key <the.golden.key@gmail.com>, 2013,2015
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2016-04-12 16:00+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2016-04-13 02:59+0000\n"
+"Last-Translator: Ivan Gromov <summer.is.gone@gmail.com>\n"
 "Language-Team: Russian (http://www.transifex.com/stefanb/pidgin-sipe/language/ru/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -264,7 +265,7 @@ msgid ""
 "Can't find a conference URI on this page:\n"
 "\n"
 "%s"
-msgstr ""
+msgstr "URL aдрес конференции отсутствует на этой странице:\n\n%s"
 
 #: ../src/core/sipe-conf.c:443
 #, c-format
@@ -273,7 +274,7 @@ msgstr "\"%s\" не верный URI конференции"
 
 #: ../src/core/sipe-conf.c:499
 msgid "Incomplete conference information provided"
-msgstr ""
+msgstr "Предоставлена неполная информация о конференции"
 
 #: ../src/core/sipe-conf.c:1039
 msgid ""
@@ -312,27 +313,27 @@ msgstr "Ведущий конференции удалил вас из конф�
 
 #: ../src/core/sipe-conf.c:1540
 msgid "Dial-in info"
-msgstr ""
+msgstr "Информация о подключении по телефону"
 
 #: ../src/core/sipe-conf.c:1541
 msgid "Number"
-msgstr ""
+msgstr "Номер"
 
 #: ../src/core/sipe-conf.c:1543
 msgid "Conference ID"
-msgstr ""
+msgstr "Идентификатор конференции"
 
 #: ../src/core/sipe-conf.c:1545
 msgid "Meeting link"
-msgstr ""
+msgstr "Сылка на собрание"
 
 #: ../src/core/sipe-conf.c:1547
 msgid "Organizer"
-msgstr ""
+msgstr "Организатор"
 
 #: ../src/core/sipe-conf.c:1549
 msgid "Alternative dial-in numbers"
-msgstr ""
+msgstr "Другие номера для дозвона"
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
@@ -467,7 +468,7 @@ msgstr "Произошла ошибка"
 
 #: ../src/core/sipe-ft-lync.c:755
 msgid "Error creating data stream"
-msgstr ""
+msgstr "Ошибка при создании потока данных"
 
 #: ../src/core/sipe-ft-tftp.c:115 ../src/core/sipe-ft-tftp.c:521
 #: ../src/core/sipe-ft-tftp.c:530
@@ -611,11 +612,11 @@ msgstr "Неподдерживаемый тип носителя"
 
 #: ../src/core/sipe-media.c:2019
 msgid "Media error"
-msgstr ""
+msgstr "Ошибка данных"
 
 #: ../src/core/sipe-media.c:2020
 msgid "Error while reading from stream"
-msgstr ""
+msgstr "Ошибка чтения из потока"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
 #: ../src/core/sipe-notify.c:1109
@@ -910,7 +911,7 @@ msgstr "Разблокировать"
 
 #: ../src/purple/purple-chat.c:321
 msgid "Meeting entry info"
-msgstr ""
+msgstr "Информация о собрании"
 
 #: ../src/purple/purple-groupchat.c:56
 msgid "_URI:"
@@ -983,15 +984,15 @@ msgstr "Место совещания"
 
 #: ../src/purple/purple-plugin-common.c:762
 msgid "Alternatively"
-msgstr ""
+msgstr "Другие варианты"
 
 #: ../src/purple/purple-plugin-common.c:764
 msgid "Organizer email"
-msgstr ""
+msgstr "Email организатора"
 
 #: ../src/purple/purple-plugin-common.c:766
 msgid "Meeting ID"
-msgstr ""
+msgstr "Идентификатор собрания"
 
 #: ../src/purple/purple-plugin-common.c:770
 msgid "Join conference"
