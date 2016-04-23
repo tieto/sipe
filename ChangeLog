@@ -1,4 +1,4 @@
-version 1.21.0 "Lync File Transfer" (2016-??-??)
+version 1.21.0 "Lync File Transfer" (2016-04-23)
 	- Feature #91: Support embedded XML as buddy photo URL (Stefan Becker)
 	- Feature #90: Add AppStream metadata file (Jiri Eischmann, Stefan Becker)
 	- Feature #89: Improve "Join scheduled conference" dialog  (Stefan Becker)

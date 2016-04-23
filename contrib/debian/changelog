@@ -1,6 +1,6 @@
 pidgin-sipe (1.21.0-1) unstable; urgency=low
 
-  * New upstream version 1.21.0 "Lync File Transfer" (2016-??-??)
+  * New upstream version 1.21.0 "Lync File Transfer" (2016-04-23)
 	- Feature #91: Support embedded XML as buddy photo URL (Stefan Becker)
 	- Feature #90: Add AppStream metadata file (Jiri Eischmann, Stefan Becker)
 	- Feature #89: Improve "Join scheduled conference" dialog  (Stefan Becker)
@@ -13,7 +13,7 @@ pidgin-sipe (1.21.0-1) unstable; urgency=low
 	  * Lync FT will be used for sending files when Lync 2013 is detected
 	- add build options to "About SIPE plugin" message (Stefan Becker)
 
- -- Stefan Becker <chemobejk@gmail.com>  Tue, 12 Apr 2016 20:41:00 +0300
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 23 Apr 2016 15:55:00 +0300
 
 pidgin-sipe (1.20.1-1) unstable; urgency=low
 

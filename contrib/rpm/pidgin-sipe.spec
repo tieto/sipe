@@ -301,7 +301,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* DDD MMM DD 2016 J. D. User <jduser@noreply.com> 1.21.0
+* Sat Apr 23 2016 J. D. User <jduser@noreply.com> 1.21.0
 - update to 1.21.0
 
 * Tue Apr 05 2016 J. D. User <jduser@noreply.com> 1.20.1-*git*
