@@ -1,4 +1,4 @@
-pidgin-sipe (1.21.0-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.21.0-1) unstable; urgency=medium
 
   * New upstream release.
         - Feature #91: Support embedded XML as buddy photo URL
@@ -15,7 +15,7 @@ pidgin-sipe (1.21.0-1) UNRELEASED; urgency=medium
   * Remove obsolete build dependency on libzephyr-dev.
   * Enable bindnow hardening flag.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Wed, 27 Apr 2016 10:16:53 +0200
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Wed, 27 Apr 2016 11:57:44 +0200
 
 pidgin-sipe (1.20.1-1) unstable; urgency=medium
 
