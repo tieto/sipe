@@ -1,3 +1,18 @@
+pidgin-sipe (1.21.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+        - Feature #91: Support embedded XML as buddy photo URL
+        - Feature #90: Add AppStream metadata file
+        - Feature #89: Improve "Join scheduled conference" dialog
+        - Feature #87: Support multiple HTTP cookies
+        - Feature #85: XML raw extract should ignore name space
+        - Fixed #311: Crash when SIP transport becomes invalid
+        - Fixed #293: Mandatory wsa:MessageID node missing
+        - add support for Lync File Transfer protocol
+        - add build options to "About SIPE plugin" message
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Wed, 27 Apr 2016 10:16:53 +0200
+
 pidgin-sipe (1.20.1-1) unstable; urgency=medium
 
   * New upstream release.
