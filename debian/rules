@@ -2,6 +2,8 @@
 
 DEB_CONFIGURE_EXTRA_FLAGS := --libdir=/usr/lib --enable-purple --disable-telepathy --enable-openssl=no
 
+export DEB_BUILD_MAINT_OPTIONS = hardening=+bindnow
+
 %:
 	dh $@
 
