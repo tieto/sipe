@@ -106,3 +106,10 @@ GSList *sipe_ft_parse_msg_body(const gchar *body);
 
 void sipe_ft_raise_error_and_cancel(struct sipe_file_transfer_private *ft_private,
 				    const gchar *errmsg);
+
+/**
+ * Deallocates a sipe_file_transfer structure.
+ *
+ * @param ft [in] a sipe_file_transfer structure.
+ */
+void sipe_ft_free(struct sipe_file_transfer *ft);

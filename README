@@ -30,8 +30,8 @@ The plugin has support for
     * Contact details information - company, phones, photo, web site, etc.
     * Unified Contact Store (Lync 2013) - [MS-OXWSCOS]
     * Contact search - [MS-PRES] and [MS-DLX] methods supported
-    * Encrypted file transfer (old OCS2007 method only)
-    * Voice & Video calls (unencrypted only)
+    * Encrypted file transfer (OCS2007: send & receive, Lync: receive only)
+    * Voice & Video calls
     * Call initiation through PBX
     * NTLMv2, Kerberos & TLS-DSK authentication methods
     * Single Sign-On (depends on OS and authentication method)
@@ -115,9 +115,16 @@ Installing from a distribution repository
 =========================================
 
 Many Open Source OS distributions have a ready-made package "pidgin-sipe".
-Before trying to compile it from the source code yourself, you should try
+Before trying to compile it from the source code yourself you should try
 to install this package with the standard installation method provided by
 your OS.
+
+Once you have SIPE installed and are connected to your account you can check
+from the following Pidgin menu
+
+	Accounts -> <SIPE Account> -> About SIPE plugin...
+
+which optional features have been enabled in your SIPE build.
 
 
 Do It Yourself I: compiling against "pidgin" package
@@ -190,13 +197,30 @@ packages
 	gssntlmssp-devel
 
 If you want to enable Voice & Video features then you'll need some of the
-following packages
+following packages. You need to install the same version of the GStreamer
+development packages which where used to compile Pidgin!
 
-	libnice-dev           (>= 0.1.0)
+	libnice-dev                 (>= 0.1.0)
 	libgstreamer0.10-dev
+or	libgstreamer1.0-dev
+	for encryption support (at compile time):
+	libpurple-dev               (>= 2.10.12)
+	libnice-dev                 (>= 0.1.13)
+	libgstreamer1.0-dev
+	for encryption support (at run time):
+	libfarstream-0.2
+	gstreamer1.0-plugins-bad
 
-	libnice-devel         (>= 0.1.0)
+	libnice-devel               (>= 0.1.0)
 	gstreamer-devel
+or	gstreamer1-devel
+	for encryption support (at compile time):
+	libpurple-devel             (>= 2.10.12)
+	libnice-devel               (>= 0.1.13)
+	gstreamer1-devel
+	for encryption support (at run time):
+	farstream02
+	gstreamer1-plugins-bad-free
 
 Now you should be able to compile the source code with
 

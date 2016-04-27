@@ -217,6 +217,13 @@ void sipe_backend_network_listen_cancel(struct sipe_backend_listendata *ldata)
 	_NIF();
 }
 
+struct sipe_backend_fd *
+sipe_backend_fd_from_int(int fd)
+{
+	_NIF();
+	return NULL;
+}
+
 gboolean
 sipe_backend_fd_is_valid(struct sipe_backend_fd *fd)
 {

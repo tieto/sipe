@@ -1,3 +1,16 @@
+version 1.21.0 "Lync File Transfer" (2016-04-23)
+	- Feature #91: Support embedded XML as buddy photo URL (Stefan Becker)
+	- Feature #90: Add AppStream metadata file (Jiri Eischmann, Stefan Becker)
+	- Feature #89: Improve "Join scheduled conference" dialog  (Stefan Becker)
+	- Feature #87: Support multiple HTTP cookies (Stefan Becker)
+	- Feature #85: XML raw extract should ignore name space (Stefan Becker)
+	- Fixed #311: Crash when SIP transport becomes invalid (Stefan Becker)
+	- Fixed #293: Mandatory wsa:MessageID node missing (Stefan Becker)
+	- add support for Lync File Transfer protocol (Jakub Adam)
+	  * requires libpurple >= 2.12.0
+	  * Lync FT will be used for sending files when Lync 2013 is detected
+	- add build options to "About SIPE plugin" message (Stefan Becker)
+
 version 1.20.1 "Bug Fixes I" (2015-10-24)
 	- add support for another type of ADFS response (Stefan Becker)
 	- improve configure check for back-ported features (Stefan Becker, Jakub Adam)

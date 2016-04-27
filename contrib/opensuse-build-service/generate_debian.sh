@@ -57,13 +57,14 @@ rm checksums.txt
 
 # All current platforms currently support telepathy - use only default .dsc
 cp pidgin-sipe-telepathy.dsc pidgin-sipe.dsc
-# Overwrite those .dsc's that have support for telepathy
-#for os in \
-#    Debian_x.y \
-#    xUbuntu_xx.yy; \
-#do \
-#    cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
-#done
+# Overwrite those .dsc's that have support for gstreamer1.0
+#    Debian_x.y
+for os in \
+    xUbuntu_15.10 \
+    xUbuntu_16.04; \
+do \
+    cp pidgin-sipe-gstreamer1.dsc pidgin-sipe-${os}.dsc; \
+done
 
 # Update SHA-2 256 checksum in Arch Linux PKGBUILD
 sed -i -e "s/@@SHA256SUM@@/$(sha256sum pidgin-sipe-${version}.tar.gz | cut -d' ' -f1)/" PKGBUILD

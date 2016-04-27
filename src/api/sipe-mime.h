@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -55,3 +55,16 @@ void sipe_mime_parts_foreach(const gchar *type,
 			     const gchar *body,
 			     sipe_mime_parts_cb callback,
 			     gpointer user_data);
+
+/**
+ * Checks whether MIME document contains a part with given type.
+ *
+ * @param type      content type of the whole MIME document.
+ * @param body      body of the MIME document.
+ * @param part_type the MIME type to search for in document parts.
+ *
+ * @return @c TRUE if @c body contains such part, otherwise @c FALSE.
+ */
+gboolean sipe_mime_parts_contain(const gchar *type,
+				 const gchar *body,
+				 const gchar *part_type);

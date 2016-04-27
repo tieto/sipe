@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,6 +20,15 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#include <glib.h>
+
+#include "version.h"
+
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "protocols.h"
+#include <gio/gio.h>
+#else
+
 #ifdef _WIN32
 /* wrappers for write() & friends for socket handling */
 #include "win32/win32dep.h"
@@ -31,10 +40,10 @@
 #include <arpa/inet.h>
 #endif
 
-#include <glib.h>
-
 #include "dnsquery.h"
 #include "dnssrv.h"
+
+#endif
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
@@ -43,17 +52,64 @@
 #include "purple-private.h"
 
 struct sipe_dns_query {
-	enum {
-		A,
-		SRV
-	} type;
 	struct sipe_backend_private *purple_private;
 	sipe_dns_resolved_cb  callback;
 	gpointer	      extradata;
 	gpointer	      purple_query_data;
 	gboolean              is_valid;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	guint		      port;
+#else
+	enum {
+		A,
+		SRV
+	} type;
+#endif
 };
 
+static void sipe_dns_query_free(struct sipe_dns_query *query)
+{
+#if PURPLE_VERSION_CHECK(3,0,0)
+	g_object_unref(query->purple_query_data);
+#endif
+	g_free(query);
+}
+
+#if PURPLE_VERSION_CHECK(3,0,0)
+static void dns_a_response(GObject *source,
+			   GAsyncResult *res,
+			   gpointer user_data)
+{
+	struct sipe_dns_query *query = user_data;
+	GList *hosts;
+	GError *error = NULL;
+	gchar *address_str = NULL;
+
+	if (!query->is_valid) {
+		/* Ignore spurious responses after disconnect */
+		return;
+	}
+
+	query->purple_private->dns_queries =
+			g_slist_remove(query->purple_private->dns_queries,
+				       query);
+
+	hosts = g_resolver_lookup_by_name_finish(G_RESOLVER(source), res,
+						 &error);
+
+	if (!error && g_list_length(hosts) > 0) {
+		address_str = g_inet_address_to_string(hosts->data);
+	}
+
+	query->callback(query->extradata, address_str,
+			address_str ? query->port : 0);
+
+	g_free(address_str);
+	g_error_free(error);
+	g_resolver_free_addresses(hosts);
+	sipe_dns_query_free(query);
+}
+#else
 static void dns_a_response(GSList *hosts,
 			   struct sipe_dns_query *query,
 			   const char *error_message)
@@ -103,6 +159,7 @@ static void dns_a_response(GSList *hosts,
 		g_free(hosts->data);
 	}
 }
+#endif
 
 struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_public,
 						const gchar *hostname,
@@ -112,8 +169,10 @@ struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_pu
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	GResolver *resolver = g_resolver_get_default();
+#endif
 
-	query->type           = A;
 	query->purple_private = purple_private;
 	query->callback       = callback;
 	query->extradata      = data;
@@ -122,11 +181,20 @@ struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_pu
 	purple_private->dns_queries = g_slist_prepend(purple_private->dns_queries,
 						      query);
 
-	query->purple_query_data =
 #if PURPLE_VERSION_CHECK(3,0,0)
-					purple_dnsquery_a(
-						     purple_private->account,
-#elif PURPLE_VERSION_CHECK(2,8,0)
+	query->port = port;
+	query->purple_query_data = g_cancellable_new();
+
+	g_resolver_lookup_by_name_async(resolver,
+					hostname,
+					query->purple_query_data,
+					dns_a_response,
+					query);
+	g_object_unref(resolver);
+#else
+	query->type = A;
+	query->purple_query_data =
+#if PURPLE_VERSION_CHECK(2,8,0)
 					purple_dnsquery_a_account(
 						     purple_private->account,
 #else
@@ -136,11 +204,45 @@ struct sipe_dns_query *sipe_backend_dns_query_a(struct sipe_core_public *sipe_pu
 						     port,
 						     (PurpleDnsQueryConnectFunction) dns_a_response,
 						     query);
+#endif
 
 	return query;
 }
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+static void dns_srv_response(GObject *source,
+			     GAsyncResult *res,
+			     gpointer user_data)
+{
+	struct sipe_dns_query *query = user_data;
+	GError *error = NULL;
+	GList *targets;
 
+	if (!query->is_valid) {
+		/* Ignore spurious responses after disconnect */
+		return;
+	}
+
+	query->purple_private->dns_queries =
+			g_slist_remove(query->purple_private->dns_queries,
+				       query);
+
+	targets = g_resolver_lookup_service_finish(G_RESOLVER(source), res,
+						   &error);
+
+	if (error || g_list_length(targets) == 0) {
+		query->callback(query->extradata, NULL, 0);
+	} else {
+		query->callback(query->extradata,
+				g_srv_target_get_hostname(targets->data),
+				g_srv_target_get_port(targets->data));
+	}
+
+	g_error_free(error);
+	g_resolver_free_targets(targets);
+	sipe_dns_query_free(query);
+}
+#else
 static void dns_srv_response(PurpleSrvResponse *resp,
 			     int results,
 			     struct sipe_dns_query *query)
@@ -162,6 +264,7 @@ static void dns_srv_response(PurpleSrvResponse *resp,
 
 	g_free(resp);
 }
+#endif
 
 struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_public,
 						  const gchar *protocol,
@@ -172,8 +275,10 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_
 {
 	struct sipe_dns_query *query = g_new(struct sipe_dns_query, 1);
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+#if PURPLE_VERSION_CHECK(3,0,0)
+	GResolver *resolver = g_resolver_get_default();
+#endif
 
-	query->type           = SRV;
 	query->purple_private = purple_private;
 	query->callback       = callback;
 	query->extradata      = data;
@@ -182,11 +287,21 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_
 	purple_private->dns_queries = g_slist_prepend(purple_private->dns_queries,
 						      query);
 
-	query->purple_query_data =
 #if PURPLE_VERSION_CHECK(3,0,0)
-					purple_srv_resolve(
-						      purple_private->account,
-#elif PURPLE_VERSION_CHECK(2,8,0)
+	query->purple_query_data = g_cancellable_new();
+
+	g_resolver_lookup_service_async(resolver,
+					protocol,
+					transport,
+					domain,
+					query->purple_query_data,
+					dns_srv_response,
+					query);
+	g_object_unref(resolver);
+#else
+	query->type = SRV;
+	query->purple_query_data =
+#if PURPLE_VERSION_CHECK(2,8,0)
 					purple_srv_resolve_account(
 						      purple_private->account,
 #else
@@ -197,6 +312,7 @@ struct sipe_dns_query *sipe_backend_dns_query_srv(struct sipe_core_public *sipe_
 						      domain,
 						      (PurpleSrvCallback) dns_srv_response,
 						      query);
+#endif
 
 	return query;
 }
@@ -208,7 +324,7 @@ static gboolean dns_query_deferred_destroy(gpointer user_data)
 	 * Now it is safe to destroy the data structure.
 	 */
 	SIPE_DEBUG_INFO("dns_query_deferred_destroy: %p", user_data);
-	g_free(user_data);
+	sipe_dns_query_free(user_data);
 	return(FALSE);
 }
 
@@ -221,18 +337,22 @@ void sipe_backend_dns_query_cancel(struct sipe_dns_query *query)
 		purple_private->dns_queries = g_slist_remove(purple_private->dns_queries,
 							     query);
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+		g_cancellable_cancel(query->purple_query_data);
+#else
 		switch (query->type) {
 		case A:
 			purple_dnsquery_destroy(query->purple_query_data);
 			break;
 		case SRV:
-#if PURPLE_VERSION_CHECK(2,8,0) || PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(2,8,0)
 			purple_srv_txt_query_destroy(query->purple_query_data);
 #else
 			purple_srv_cancel(query->purple_query_data);
 #endif
 			break;
 		}
+#endif
 
 		/* defer deletion of query data structure to idle callback */
 		query->is_valid = FALSE;

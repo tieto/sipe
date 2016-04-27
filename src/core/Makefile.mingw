@@ -1,6 +1,6 @@
 ################################### tell Emacs this is a -*- makefile-gmake -*-
 #
-# Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #
@@ -92,6 +92,7 @@ CLEAN_C_SRC =		sip-soap.c \
 			sipe-http-transport.c \
 			sipe-im.c \
 			sipe-incoming.c \
+			sipe-mime-common.c \
 			sipe-notify.c \
 			sipe-ocs2005.c \
 			sipe-ocs2007.c \
@@ -131,6 +132,7 @@ PURPLE_C_SRC = 		../purple/purple-buddy.c \
 			../purple/purple-network.c \
 			../purple/purple-notify.c \
 			../purple/purple-plugin.c \
+			../purple/purple-plugin-common.c \
 			../purple/purple-schedule.c \
 			../purple/purple-search.c \
 			../purple/purple-setting.c \

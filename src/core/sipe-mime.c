@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,20 @@
 #include "sipe-common.h"
 
 #include <glib.h>
+
+/*
+ * GMIME interfaces fail to compile on ARM architecture with -Wcast-align
+ *
+ * Diagnostic #pragma was added in GCC 4.2.0
+ */
+#if defined(__GNUC__)
+#if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)) || (__GNUC__ >= 5)
+#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__) || (defined(__powerpc__) && defined(__NO_FPRS__))
+#pragma GCC diagnostic ignored "-Wcast-align"
+#endif
+#endif
+#endif
+
 #include <gmime/gmime.h>
 
 #include "sipe-mime.h"
@@ -76,20 +90,44 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 		GMimeStream *stream = g_mime_data_wrapper_get_stream(data);
 
 		if (stream) {
-			ssize_t length = g_mime_stream_length(stream);
+			ssize_t length = 0;
+			const char *encoding;
+			gchar *buffer;
+			GString *content;
 
-			if (length != -1) {
-				gchar *content = g_malloc(length + 1);
+			encoding = g_mime_object_get_header(part,
+					"Content-Transfer-Encoding");
+			if (encoding) {
+				GMimeFilter *filter = g_mime_filter_basic_new(
+						g_mime_content_encoding_from_string(encoding), FALSE);
+				stream = g_mime_stream_filter_new (stream);
+				g_mime_stream_filter_add(GMIME_STREAM_FILTER(stream), filter);
+				g_object_unref (filter);
+			}
 
-				if (g_mime_stream_read(stream, content, length) == length) {
-					struct gmime_callback_data *cd = user_data;
-					GSList *fields = gmime_fields_to_nameval(part);
+			/* g_mime_stream_read() might not read everything in one call */
+			content = g_string_new(NULL);
+			buffer = g_malloc(4096);
+			while ((length = g_mime_stream_read(stream, buffer, 4096)) > 0) {
+				g_string_append_len(content, buffer, length);
+			}
+			g_free(buffer);
 
-					(*(cd->callback))(cd->user_data, fields, content, length);
+			if (length == 0) {
+				struct gmime_callback_data *cd = user_data;
+				GSList *fields = gmime_fields_to_nameval(part);
 
-					sipe_utils_nameval_free(fields);
-				}
-				g_free(content);
+				cd->callback(cd->user_data, fields,
+						content->str, content->len);
+
+				sipe_utils_nameval_free(fields);
+			}
+
+			g_string_free(content, TRUE);
+
+			if (encoding) {
+				// Unref GMimeStreamFilter wrapping GMimeStream.
+				g_object_unref(stream);
 			}
 		}
 	}

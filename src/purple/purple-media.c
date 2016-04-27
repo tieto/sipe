@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -54,7 +54,7 @@
  */
 #if defined(__GNUC__)
 #if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 2)) || (__GNUC__ >= 5)
-#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__mips__) || defined(__sparc__) || (defined(__powerpc__) && defined(__NO_FPRS__))
+#if defined(__ARMEL__) || defined(__ARMEB__) || defined(__hppa__) || defined(__mips__) || defined(__sparc__) || (defined(__powerpc__) && defined(__NO_FPRS__))
 #pragma GCC diagnostic ignored "-Wcast-align"
 #endif
 #endif
@@ -227,45 +227,76 @@ on_stream_info_cb(PurpleMedia *media,
 			struct sipe_media_stream *stream;
 			stream = sipe_core_media_get_stream_by_id(call, sessionid);
 
+#ifdef HAVE_XDATA
+			purple_media_manager_set_application_data_callbacks(
+					purple_media_manager_get(), media,
+					sessionid, participant, NULL, NULL, NULL);
+#endif
+
 			if (stream) {
 				if (local && --call->backend_private->unconfirmed_streams == 0 &&
 				    call->call_reject_cb)
 					call->call_reject_cb(call, local);
 			}
 		}
+	} else if (type == PURPLE_MEDIA_INFO_MUTE || type == PURPLE_MEDIA_INFO_UNMUTE) {
+		struct sipe_media_stream *stream =
+				sipe_core_media_get_stream_by_id(call, "audio");
+
+		if (stream && stream->mute_cb) {
+			stream->mute_cb(stream, type == PURPLE_MEDIA_INFO_MUTE);
+		}
 	}
 }
 
 static void
 on_candidate_pair_established_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
-				 SIPE_UNUSED_PARAMETER const gchar *sessionid,
+				 const gchar *sessionid,
 				 SIPE_UNUSED_PARAMETER const gchar *participant,
 				 SIPE_UNUSED_PARAMETER PurpleMediaCandidate *local_candidate,
 				 SIPE_UNUSED_PARAMETER PurpleMediaCandidate *remote_candidate,
-				 SIPE_UNUSED_PARAMETER struct sipe_media_call *call)
+				 struct sipe_media_call *call)
 {
+	struct sipe_media_stream *stream =
+			sipe_core_media_get_stream_by_id(call, sessionid);
+
+	if (!stream) {
+		return;
+	}
+
 #ifdef HAVE_PURPLE_NEW_TCP_ENUMS
 	if (purple_media_candidate_get_protocol(local_candidate) != PURPLE_MEDIA_NETWORK_PROTOCOL_UDP) {
 		purple_media_set_send_rtcp_mux(media, sessionid, participant, TRUE);
 	}
 #endif
+
+	sipe_core_media_stream_candidate_pair_established(stream);
 }
 
 struct sipe_backend_media *
 sipe_backend_media_new(struct sipe_core_public *sipe_public,
 		       struct sipe_media_call *call,
 		       const gchar *participant,
-		       gboolean initiator)
+		       SipeMediaCallFlags flags)
 {
 	struct sipe_backend_media *media = g_new0(struct sipe_backend_media, 1);
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleMediaManager *manager = purple_media_manager_get();
 	GstElement *pipeline;
 
-	media->m = purple_media_manager_create_media(manager,
-						     purple_private->account,
-						     "fsrtpconference",
-						     participant, initiator);
+	if (flags & SIPE_MEDIA_CALL_NO_UI) {
+#ifdef HAVE_XDATA
+		media->m = purple_media_manager_create_private_media(manager,
+				purple_private->account, "fsrtpconference",
+				participant, flags & SIPE_MEDIA_CALL_INITIATOR);
+#else
+		SIPE_DEBUG_ERROR_NOFORMAT("Purple doesn't support private media");
+#endif
+	} else {
+		media->m = purple_media_manager_create_media(manager,
+				purple_private->account, "fsrtpconference",
+				participant, flags & SIPE_MEDIA_CALL_INITIATOR);
+	}
 
 	g_signal_connect(G_OBJECT(media->m), "candidates-prepared",
 			 G_CALLBACK(on_candidates_prepared_cb), call);
@@ -423,6 +454,72 @@ sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
 #endif
 }
 
+#ifdef HAVE_XDATA
+static void
+stream_readable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
+		 SIPE_UNUSED_PARAMETER PurpleMedia *media,
+		 const gchar *session_id,
+		 SIPE_UNUSED_PARAMETER const gchar *participant,
+		 gpointer user_data)
+{
+	struct sipe_media_call *call = (struct sipe_media_call *)user_data;
+	struct sipe_media_stream *stream;
+
+	SIPE_DEBUG_INFO("stream_readable_cb: %s is readable", session_id);
+
+	stream = sipe_core_media_get_stream_by_id(call, session_id);
+
+	if (stream) {
+		sipe_core_media_stream_readable(stream);
+	}
+}
+
+gssize
+sipe_backend_media_stream_read(struct sipe_media_stream *stream,
+			       guint8 *buffer, gsize len)
+{
+	return purple_media_manager_receive_application_data(
+			purple_media_manager_get(),
+			stream->call->backend_private->m,
+			stream->id, stream->call->with, buffer, len, FALSE);
+}
+
+gssize
+sipe_backend_media_stream_write(struct sipe_media_stream *stream,
+				guint8 *buffer, gsize len)
+{
+	return purple_media_manager_send_application_data(
+			purple_media_manager_get(),
+			stream->call->backend_private->m,
+			stream->id, stream->call->with, buffer, len, FALSE);
+}
+
+static void
+stream_writable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
+		   SIPE_UNUSED_PARAMETER PurpleMedia *media,
+		   const gchar *session_id,
+		   SIPE_UNUSED_PARAMETER const gchar *participant,
+		   gboolean writable,
+		   gpointer user_data)
+{
+	struct sipe_media_call *call = (struct sipe_media_call *)user_data;
+	struct sipe_media_stream *stream;
+
+	stream = sipe_core_media_get_stream_by_id(call, session_id);
+
+	if (!stream) {
+		SIPE_DEBUG_ERROR("stream_writable_cb: stream %s not found!",
+				 session_id);
+		return;
+	}
+
+	SIPE_DEBUG_INFO("stream_writable_cb: %s has become %swritable",
+			session_id, writable ? "" : "not ");
+
+	sipe_core_media_stream_writable(stream, writable);
+}
+#endif
+
 struct sipe_backend_media_stream *
 sipe_backend_media_add_stream(struct sipe_media_call *call,
 			      const gchar *id,
@@ -440,6 +537,11 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 	guint params_cnt = 0;
 	gchar *transmitter;
 	GValue *relay_info = NULL;
+#ifdef HAVE_XDATA
+	PurpleMediaAppDataCallbacks callbacks = {
+			stream_readable_cb, stream_writable_cb
+	};
+#endif
 
 	if (ice_version != SIPE_ICE_NO_ICE) {
 		transmitter = "nice";
@@ -459,6 +561,18 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 			relay_info = &params[params_cnt].value;
 			++params_cnt;
 		}
+
+		if (type == SIPE_MEDIA_APPLICATION) {
+			params[params_cnt].name = "ice-udp";
+			g_value_init(&params[params_cnt].value, G_TYPE_BOOLEAN);
+			g_value_set_boolean(&params[params_cnt].value, FALSE);
+			++params_cnt;
+
+			params[params_cnt].name = "reliable";
+			g_value_init(&params[params_cnt].value, G_TYPE_BOOLEAN);
+			g_value_set_boolean(&params[params_cnt].value, TRUE);
+			++params_cnt;
+		}
 	} else {
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
@@ -466,6 +580,15 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 	}
 
 	ensure_codecs_conf();
+
+#ifdef HAVE_XDATA
+	if (type == SIPE_MEDIA_APPLICATION) {
+		purple_media_manager_set_application_data_callbacks(
+				purple_media_manager_get(),
+				media->m, id, participant, &callbacks,
+				call, NULL);
+	}
+#endif
 
 	if (purple_media_add_stream(media->m, id, participant, prpl_type,
 				    initiator, transmitter, params_cnt,
@@ -594,20 +717,20 @@ duplicate_tcp_candidates(GList *candidates)
 }
 
 GList *
-sipe_backend_media_get_active_local_candidates(struct sipe_media_call *media,
-					       struct sipe_media_stream *stream)
+sipe_backend_media_stream_get_active_local_candidates(struct sipe_media_stream *stream)
 {
 	GList *candidates = purple_media_get_active_local_candidates(
-			media->backend_private->m, stream->id, media->with);
+			stream->call->backend_private->m, stream->id,
+			stream->call->with);
 	return duplicate_tcp_candidates(candidates);
 }
 
 GList *
-sipe_backend_media_get_active_remote_candidates(struct sipe_media_call *media,
-						struct sipe_media_stream *stream)
+sipe_backend_media_stream_get_active_remote_candidates(struct sipe_media_stream *stream)
 {
 	GList *candidates = purple_media_get_active_remote_candidates(
-			media->backend_private->m, stream->id, media->with);
+			stream->call->backend_private->m, stream->id,
+			stream->call->with);
 	return duplicate_tcp_candidates(candidates);
 }
 
@@ -965,18 +1088,12 @@ static PurpleMediaSessionType sipe_media_to_purple(SipeMediaType type)
 	switch (type) {
 		case SIPE_MEDIA_AUDIO: return PURPLE_MEDIA_AUDIO;
 		case SIPE_MEDIA_VIDEO: return PURPLE_MEDIA_VIDEO;
+#ifdef HAVE_XDATA
+		case SIPE_MEDIA_APPLICATION: return PURPLE_MEDIA_APPLICATION;
+#endif
 		default:               return PURPLE_MEDIA_NONE;
 	}
 }
-
-/*SipeMediaType purple_media_to_sipe(PurpleMediaSessionType type)
-{
-	switch (type) {
-		case PURPLE_MEDIA_AUDIO: return SIPE_MEDIA_AUDIO;
-		case PURPLE_MEDIA_VIDEO: return SIPE_MEDIA_VIDEO;
-		default:				 return SIPE_MEDIA_AUDIO;
-	}
-}*/
 
 static PurpleMediaCandidateType
 sipe_candidate_type_to_purple(SipeCandidateType type)

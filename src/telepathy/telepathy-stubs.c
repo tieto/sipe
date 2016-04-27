@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -125,7 +125,15 @@ void sipe_backend_chat_topic(SIPE_UNUSED_PARAMETER struct sipe_backend_chat_sess
 
 void sipe_backend_ft_error(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
 			   SIPE_UNUSED_PARAMETER const gchar *errmsg) {}
+const gchar *sipe_backend_ft_get_error(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft) { return(""); }
 void sipe_backend_ft_deallocate(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft) {}
+gssize sipe_backend_ft_read(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
+			    SIPE_UNUSED_PARAMETER guchar *data,
+			    SIPE_UNUSED_PARAMETER gsize size) { return(-1); }
+gssize sipe_backend_ft_write(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
+			     SIPE_UNUSED_PARAMETER const guchar *data,
+			     SIPE_UNUSED_PARAMETER gsize size) { return(-1); }
+void sipe_backend_ft_set_completed(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft) {}
 void sipe_backend_ft_cancel_local(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft) {}
 void sipe_backend_ft_cancel_remote(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft) {}
 void sipe_backend_ft_incoming(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -133,6 +141,10 @@ void sipe_backend_ft_incoming(SIPE_UNUSED_PARAMETER struct sipe_core_public *sip
 			      SIPE_UNUSED_PARAMETER const gchar *who,
 			      SIPE_UNUSED_PARAMETER const gchar *file_name,
 			      SIPE_UNUSED_PARAMETER gsize file_size) {}
+void sipe_backend_ft_outgoing(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
+			      SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
+			      SIPE_UNUSED_PARAMETER const gchar *who,
+			      SIPE_UNUSED_PARAMETER const gchar *file_name) {}
 void sipe_backend_ft_start(SIPE_UNUSED_PARAMETER struct sipe_file_transfer *ft,
 			   SIPE_UNUSED_PARAMETER struct sipe_backend_fd *fd,
 			   SIPE_UNUSED_PARAMETER const char* ip,
@@ -169,7 +181,7 @@ gchar *sipe_backend_markup_strip_html(SIPE_UNUSED_PARAMETER SIPE_UNUSED_PARAMETE
 struct sipe_backend_media *sipe_backend_media_new(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
 						  SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
 						  SIPE_UNUSED_PARAMETER const gchar *participant,
-						  SIPE_UNUSED_PARAMETER gboolean initiator) { return(NULL); }
+						  SIPE_UNUSED_PARAMETER SipeMediaCallFlags flags) { return(NULL); }
 void sipe_backend_media_free(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) {}
 void sipe_backend_media_set_cname(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
 				  SIPE_UNUSED_PARAMETER gchar *cname) {}
@@ -192,10 +204,8 @@ gboolean sipe_backend_media_is_initiator(SIPE_UNUSED_PARAMETER struct sipe_media
 gboolean sipe_backend_media_accepted(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media) { return(FALSE); }
 gboolean sipe_backend_stream_initialized(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
 					 SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(FALSE); }
-GList *sipe_backend_media_get_active_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
-						      SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
-GList *sipe_backend_media_get_active_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
-						       SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
+GList *sipe_backend_media_stream_get_active_local_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
+GList *sipe_backend_media_stream_get_active_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream) { return(NULL); }
 void sipe_backend_media_set_encryption_keys(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
 					    SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 					    SIPE_UNUSED_PARAMETER const guchar *encryption_key,
@@ -258,6 +268,12 @@ void sipe_backend_media_hangup(SIPE_UNUSED_PARAMETER struct sipe_backend_media *
 void sipe_backend_media_reject(SIPE_UNUSED_PARAMETER struct sipe_backend_media *media,
 			       SIPE_UNUSED_PARAMETER gboolean local) {}
 SipeEncryptionPolicy sipe_backend_media_get_encryption_policy(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(SIPE_ENCRYPTION_POLICY_REJECTED); }
+gssize sipe_backend_media_stream_read(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
+				      SIPE_UNUSED_PARAMETER guint8 *buffer,
+				      SIPE_UNUSED_PARAMETER gsize len) { return(-1); }
+gssize sipe_backend_media_stream_write(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
+				       SIPE_UNUSED_PARAMETER guint8 *buffer,
+				       SIPE_UNUSED_PARAMETER gsize len) { return(-1); }
 #endif
 
 /** NETWORK ******************************************************************/
@@ -269,6 +285,7 @@ struct sipe_backend_listendata *sipe_backend_network_listen_range(SIPE_UNUSED_PA
 								  SIPE_UNUSED_PARAMETER gpointer data) { return(NULL); }
 void sipe_backend_network_listen_cancel(SIPE_UNUSED_PARAMETER struct sipe_backend_listendata *ldata) {}
 
+struct sipe_backend_fd *sipe_backend_fd_from_int(SIPE_UNUSED_PARAMETER int fd) { return (NULL); }
 gboolean sipe_backend_fd_is_valid(SIPE_UNUSED_PARAMETER struct sipe_backend_fd *fd) { return(FALSE); }
 void sipe_backend_fd_free(SIPE_UNUSED_PARAMETER struct sipe_backend_fd *fd) {}
 

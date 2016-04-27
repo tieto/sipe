@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,8 +27,6 @@
  *  <http://msdn.microsoft.com/en-us/library/office/bb204119.aspx>
  * Photo Web Service Protocol [MS-OXWSPHOTO]
  *  <http://msdn.microsoft.com/en-us/library/jj194353.aspx>
- * GetUserPhoto operation
- *  <http://msdn.microsoft.com/en-us/library/office/jj900502.aspx>
  * FindPeople operation
  *  <http://msdn.microsoft.com/en-us/library/office/jj191039.aspx>
  */
@@ -43,7 +41,6 @@
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
-#include "sipe-digest.h"
 #include "sipe-ews-autodiscover.h"
 #include "sipe-group.h"
 #include "sipe-http.h"
@@ -244,62 +241,6 @@ struct sipe_ucs_transaction *sipe_ucs_transaction(struct sipe_core_private *sipe
 						  trans);
 
 	return(trans);
-}
-
-static void sipe_ucs_get_user_photo_response(struct sipe_core_private *sipe_private,
-					     SIPE_UNUSED_PARAMETER struct sipe_ucs_transaction *trans,
-					     const sipe_xml *body,
-					     gpointer callback_data)
-{
-	gchar *uri = callback_data;
-	const sipe_xml *node = sipe_xml_child(body,
-					      "GetUserPhotoResponse/PictureData");
-
-	if (node) {
-		gchar *base64;
-		gsize photo_size;
-		guchar *photo;
-		guchar digest[SIPE_DIGEST_SHA1_LENGTH];
-		gchar *digest_string;
-
-		/* decode photo data */
-		base64 = sipe_xml_data(node);
-		photo = g_base64_decode(base64, &photo_size);
-		g_free(base64);
-
-		/* EWS doesn't provide a hash -> calculate SHA-1 digest */
-		sipe_digest_sha1(photo, photo_size, digest);
-		digest_string = buff_to_hex_str(digest,
-						SIPE_DIGEST_SHA1_LENGTH);
-
-		/* backend frees "photo" */
-		sipe_backend_buddy_set_photo(SIPE_CORE_PUBLIC,
-					     uri,
-					     photo,
-					     photo_size,
-					     digest_string);
-		g_free(digest_string);
-	}
-
-	g_free(uri);
-}
-
-void sipe_ucs_get_photo(struct sipe_core_private *sipe_private,
-			const gchar *uri)
-{
-	gchar *payload = g_strdup(uri);
-	gchar *body = g_strdup_printf("<m:GetUserPhoto>"
-				      " <m:Email>%s</m:Email>"
-				      " <m:SizeRequested>HR48x48</m:SizeRequested>"
-				      "</m:GetUserPhoto>",
-				      sipe_get_no_sip_uri(uri));
-
-	if (!sipe_ucs_http_request(sipe_private,
-				   NULL,
-				   body,
-				   sipe_ucs_get_user_photo_response,
-				   payload))
-		g_free(payload);
 }
 
 static void sipe_ucs_search_response(struct sipe_core_private *sipe_private,
@@ -884,6 +825,11 @@ static void ucs_ews_autodiscover_cb(struct sipe_core_private *sipe_private,
 gboolean sipe_ucs_is_migrated(struct sipe_core_private *sipe_private)
 {
 	return(sipe_private->ucs ? sipe_private->ucs->migrated : FALSE);
+}
+
+const gchar *sipe_ucs_ews_url(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->ucs ? sipe_private->ucs->ews_url : NULL);
 }
 
 void sipe_ucs_init(struct sipe_core_private *sipe_private,

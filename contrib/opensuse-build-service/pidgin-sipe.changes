@@ -1,12 +1,28 @@
 -------------------------------------------------------------------
-Sat Oct 24 12:28:00 UTC 2015 - chemobejk@gmail.com
+Sat Apr 23 12:56:00 UTC 2016 - chemobejk@gmail.com
 
-- Update to version 1.20.1:
+- Update to version 1.21.0:
 
 -------------------------------------------------------------------
-Sat Aug 29 15:07:00 UTC 2015 - chemobejk@gmail.com
+Fri Feb 12 09:26:02 UTC 2016 - dimstar@opensuse.org
 
-- Update to version 1.20.0:
+- Pass --disable-quality-check to configure: the 'quality' checks
+  are a bunch of compiler flags like Werror and more warning. This
+  is more important for development versions than for released
+  ones.
+
+-------------------------------------------------------------------
+Wed Jan 13 16:44:50 UTC 2016 - dimstar@opensuse.org
+
+- Update to version 1.20.1:
+  + Add support for another type of ADFS response.
+  + Improve configure check for back-ported features.
+  + Updated translations.
+- Changes from version 1.20.0:
+  + Parse HTML from Lync conference URL (Stefan Becker)
+  + SRTP Support.
+  + Office365 rejects RC4 in TLS-DSK: added support for
+    AES-128/256-CBC.
 
 -------------------------------------------------------------------
 Tue Jun 30 15:14:25 UTC 2015 - dimstar@opensuse.org

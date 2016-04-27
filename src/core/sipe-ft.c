@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -34,12 +34,15 @@
 #include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-crypt.h"
 #include "sipe-dialog.h"
 #include "sipe-digest.h"
 #include "sipe-ft.h"
+#include "sipe-ft-lync.h"
+#include "sipe-ft-tftp.h"
 #include "sipe-im.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
@@ -58,6 +61,10 @@
 #define SIPE_FT_TCP_PORT_MIN 6891
 #define SIPE_FT_TCP_PORT_MAX 6901
 
+static void
+ft_outgoing_init(struct sipe_file_transfer *ft, const gchar *filename,
+		 gsize size, const gchar *who);
+
 void sipe_ft_raise_error_and_cancel(struct sipe_file_transfer_private *ft_private,
 				    const gchar *errmsg)
 {
@@ -71,21 +78,64 @@ static void generate_key(guchar *buffer, gsize size)
 	while (i < size) buffer[i++] = rand();
 }
 
-struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public)
+static struct sipe_file_transfer *
+sipe_file_transfer_new_outgoing(struct sipe_core_private *sipe_private)
 {
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_file_transfer_private *ft_private =
-		g_new0(struct sipe_file_transfer_private, 1);
+	struct sipe_file_transfer_private *ft_private;
 
-	ft_private->sipe_private      = sipe_private;
-	ft_private->invitation_cookie = g_strdup_printf("%u", rand() % 1000000000);
+	ft_private = g_new0(struct sipe_file_transfer_private, 1);
 
-	return(SIPE_FILE_TRANSFER_PUBLIC);
+	ft_private->sipe_private         = sipe_private;
+
+	ft_private->public.ft_init       = ft_outgoing_init;
+	ft_private->public.ft_start      = sipe_ft_tftp_start_sending;
+	ft_private->public.ft_write      = sipe_ft_tftp_write;
+	ft_private->public.ft_cancelled  = sipe_ft_free;
+	ft_private->public.ft_end        = sipe_ft_tftp_stop_sending;
+
+	ft_private->invitation_cookie = g_strdup_printf("%u",
+							rand() % 1000000000);
+
+	return SIPE_FILE_TRANSFER_PUBLIC;
 }
 
-static void sipe_ft_deallocate(struct sipe_file_transfer *ft)
+struct sipe_file_transfer *
+sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
+			     const gchar *who,
+			     const gchar *file)
+{
+	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_file_transfer *ft;
+
+#ifdef HAVE_XDATA
+	if (SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013)) {
+		ft = sipe_file_transfer_lync_new_outgoing(sipe_private);
+	} else
+#endif
+	{
+		ft = sipe_file_transfer_new_outgoing(sipe_private);
+	}
+
+	if (!ft) {
+		SIPE_DEBUG_ERROR_NOFORMAT("Couldn't initialize core file "
+					  "transfer structure");
+		return NULL;
+	}
+
+	sipe_backend_ft_outgoing(sipe_public, ft, who, file);
+
+	return ft;
+}
+
+void
+sipe_ft_free(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
+	struct sip_dialog *dialog = ft_private->dialog;
+
+	if (dialog)
+		dialog->filetransfers =
+				g_slist_remove(dialog->filetransfers, ft_private);
 
 	if (ft->backend_private)
 		sipe_backend_ft_deallocate(ft);
@@ -104,17 +154,6 @@ static void sipe_ft_deallocate(struct sipe_file_transfer *ft)
 	g_free(ft_private);
 }
 
-void sipe_core_ft_deallocate(struct sipe_file_transfer *ft)
-{
-	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
-	struct sip_dialog *dialog = ft_private->dialog;
-
-	if (dialog)
-		dialog->filetransfers = g_slist_remove(dialog->filetransfers, ft_private);
-
-	sipe_ft_deallocate(ft);
-}
-
 static void sipe_ft_request(struct sipe_file_transfer_private *ft_private,
 			    const gchar *body)
 {
@@ -129,7 +168,8 @@ static void sipe_ft_request(struct sipe_file_transfer_private *ft_private,
 			      NULL);
 }
 
-void sipe_core_ft_cancel(struct sipe_file_transfer *ft)
+static void
+ft_request_denied(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 
@@ -139,6 +179,8 @@ void sipe_core_ft_cancel(struct sipe_file_transfer *ft)
 				      ft_private->invitation_cookie);
 	sipe_ft_request(ft_private, body);
 	g_free(body);
+
+	sipe_ft_free(ft);
 }
 
 static void
@@ -228,7 +270,11 @@ client_connected_cb(struct sipe_backend_fd *fd, gpointer data)
 	sipe_backend_fd_free(fd);
 }
 
-void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft)
+static void
+ft_incoming_init(struct sipe_file_transfer *ft,
+		 SIPE_UNUSED_PARAMETER const gchar *filename,
+		 SIPE_UNUSED_PARAMETER gsize size,
+		 SIPE_UNUSED_PARAMETER const gchar *who)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 
@@ -244,9 +290,9 @@ void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft)
 	}
 }
 
-void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
-				const gchar *filename, gsize size,
-				const gchar *who)
+static void
+ft_outgoing_init(struct sipe_file_transfer *ft, const gchar *filename,
+		 gsize size, const gchar *who)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	struct sipe_core_private *sipe_private = ft_private->sipe_private;
@@ -296,6 +342,13 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
 	ft_private = g_new0(struct sipe_file_transfer_private, 1);
 	ft_private->sipe_private = sipe_private;
 
+	ft_private->public.ft_init           = ft_incoming_init;
+	ft_private->public.ft_start          = sipe_ft_tftp_start_receiving;
+	ft_private->public.ft_read           = sipe_ft_tftp_read;
+	ft_private->public.ft_cancelled      = sipe_ft_free;
+	ft_private->public.ft_end            = sipe_ft_tftp_stop_receiving;
+	ft_private->public.ft_request_denied = ft_request_denied;
+
 	generate_key(ft_private->encryption_key, SIPE_FT_KEY_LENGTH);
 	generate_key(ft_private->hash_key, SIPE_FT_KEY_LENGTH);
 
@@ -316,7 +369,7 @@ void sipe_ft_incoming_transfer(struct sipe_core_private *sipe_private,
 	if (ft_private->public.backend_private != NULL) {
 		ft_private->dialog->filetransfers = g_slist_append(ft_private->dialog->filetransfers, ft_private);
 	} else {
-		sipe_ft_deallocate(SIPE_FILE_TRANSFER_PUBLIC);
+		sipe_ft_free(SIPE_FILE_TRANSFER_PUBLIC);
 	}
 }
 

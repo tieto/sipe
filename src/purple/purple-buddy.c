@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@
 #define purple_buddy_set_name(b, n)                    purple_blist_rename_buddy(b, n)
 #define purple_group_set_name(g, n)                    purple_blist_rename_group(g, n)
 #define purple_notify_user_info_add_pair_html(i, k, v) purple_notify_user_info_add_pair(i, k, v)
+#define purple_protocol_got_user_status                purple_prpl_got_user_status
 #define PURPLE_IS_BUDDY(b)                             PURPLE_BLIST_NODE_IS_BUDDY(b)
 #define PURPLE_IS_GROUP(b)                             PURPLE_BLIST_NODE_IS_GROUP(b)
 #endif
@@ -328,15 +329,15 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 					     purple_status_get_name(status));
 
 	if (tmp) {
-		purple_prpl_got_user_status(purple_private->account, who,
-					    sipe_purple_activity_to_token(activity),
-					    SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
-					    NULL);
+		purple_protocol_got_user_status(purple_private->account, who,
+						sipe_purple_activity_to_token(activity),
+						SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
+						NULL);
 		g_free(tmp);
 	} else
-		purple_prpl_got_user_status(purple_private->account, who,
-					    sipe_purple_activity_to_token(activity),
-					    NULL);
+		purple_protocol_got_user_status(purple_private->account, who,
+						sipe_purple_activity_to_token(activity),
+						NULL);
 }
 
 gboolean sipe_backend_uses_photo(void)
@@ -765,11 +766,11 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 							  TRUE);
 
 			/* update UI */
-			purple_prpl_got_user_status(purple_buddy_get_account(clone),
-						    purple_buddy_get_name(clone),
-						    tmp,
-						    SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
-						    NULL);
+			purple_protocol_got_user_status(purple_buddy_get_account(clone),
+							purple_buddy_get_name(clone),
+							tmp,
+							SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
+							NULL);
 		}
 	}
 

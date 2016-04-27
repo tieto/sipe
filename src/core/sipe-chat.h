@@ -48,6 +48,10 @@ struct sipe_chat_session {
 	gchar *title;
 
 	enum sipe_chat_type type;
+
+	gchar *join_url;
+	gchar *dial_in_conf_id;
+	gchar *organizer;
 };
 
 /**

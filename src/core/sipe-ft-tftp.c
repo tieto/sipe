@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -38,6 +38,7 @@
 #include "sipe-dialog.h"
 #include "sipe-digest.h"
 #include "sipe-ft.h"
+#include "sipe-ft-tftp.h"
 #include "sipe-nls.h"
 #include "sipe-utils.h"
 
@@ -166,7 +167,7 @@ sipe_hmac_finalize(gpointer hmac_context)
 }
 
 void
-sipe_core_tftp_incoming_start(struct sipe_file_transfer *ft, gsize total_size)
+sipe_ft_tftp_start_receiving(struct sipe_file_transfer *ft, gsize total_size)
 {
 	static const guchar VER[]    = "VER MSN_SECURE_FTP\r\n";
 	static const guchar TFR[]    = "TFR\r\n";
@@ -208,7 +209,7 @@ sipe_core_tftp_incoming_start(struct sipe_file_transfer *ft, gsize total_size)
 		return;
 	}
 
-	if (!sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, TFR, sizeof(TFR) - 1)) {
+	if (sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, TFR, sizeof(TFR) - 1) != (sizeof(TFR) - 1)) {
 		raise_ft_socket_write_error_and_cancel(ft_private);
 		return;
 	}
@@ -219,7 +220,7 @@ sipe_core_tftp_incoming_start(struct sipe_file_transfer *ft, gsize total_size)
 }
 
 gboolean
-sipe_core_tftp_incoming_stop(struct sipe_file_transfer *ft)
+sipe_ft_tftp_stop_receiving(struct sipe_file_transfer *ft)
 {
 	static const guchar BYE[] = "BYE 16777989\r\n";
 	const gsize MAC_OFFSET    = 4;
@@ -230,7 +231,7 @@ sipe_core_tftp_incoming_stop(struct sipe_file_transfer *ft)
 	gchar *mac;
 	gchar *mac1;
 
-	if (!sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, BYE, sizeof(BYE) - 1)) {
+	if (sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, BYE, sizeof(BYE) - 1) != (sizeof(BYE) - 1)) {
 		raise_ft_socket_write_error_and_cancel(ft_private);
 		return FALSE;
 	}
@@ -260,11 +261,13 @@ sipe_core_tftp_incoming_stop(struct sipe_file_transfer *ft)
 	g_free(mac1);
 	g_free(mac);
 
+	sipe_ft_free(ft);
+
 	return(TRUE);
 }
 
 void
-sipe_core_tftp_outgoing_start(struct sipe_file_transfer *ft, gsize total_size)
+sipe_ft_tftp_start_sending(struct sipe_file_transfer *ft, gsize total_size)
 {
 	static const guchar VER[] = "VER MSN_SECURE_FTP\r\n";
 
@@ -334,7 +337,7 @@ sipe_core_tftp_outgoing_start(struct sipe_file_transfer *ft, gsize total_size)
 }
 
 gboolean
-sipe_core_tftp_outgoing_stop(struct sipe_file_transfer *ft)
+sipe_ft_tftp_stop_sending(struct sipe_file_transfer *ft)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	guchar buffer[BUFFER_SIZE];
@@ -360,6 +363,8 @@ sipe_core_tftp_outgoing_stop(struct sipe_file_transfer *ft)
 		return FALSE;
 	}
 
+	sipe_ft_free(ft);
+
 	return TRUE;
 }
 
@@ -373,8 +378,8 @@ static void raise_ft_error(struct sipe_file_transfer_private *ft_private,
 }
 
 gssize
-sipe_core_tftp_read(struct sipe_file_transfer *ft, guchar **buffer,
-		    gsize bytes_remaining, gsize bytes_available)
+sipe_ft_tftp_read(struct sipe_file_transfer *ft, guchar **buffer,
+		  gsize bytes_remaining, gsize bytes_available)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	gsize  bytes_to_read;
@@ -446,8 +451,8 @@ sipe_core_tftp_read(struct sipe_file_transfer *ft, guchar **buffer,
 }
 
 gssize
-sipe_core_tftp_write(struct sipe_file_transfer *ft, const guchar *buffer,
-		     gsize size)
+sipe_ft_tftp_write(struct sipe_file_transfer *ft, const guchar *buffer,
+		   gsize size)
 {
 	struct sipe_file_transfer_private *ft_private = SIPE_FILE_TRANSFER_PRIVATE;
 	gssize bytes_written;
@@ -515,7 +520,7 @@ sipe_core_tftp_write(struct sipe_file_transfer *ft, const guchar *buffer,
 		hdr_buf[2] = (ft_private->bytes_remaining_chunk & 0xFF00) >> 8;
 
 		/* write chunk header */
-		if (!sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, hdr_buf, sizeof(hdr_buf))) {
+		if (sipe_backend_ft_write(SIPE_FILE_TRANSFER_PUBLIC, hdr_buf, sizeof(hdr_buf)) != sizeof(hdr_buf)) {
 			sipe_backend_ft_error(SIPE_FILE_TRANSFER_PUBLIC,
 					      _("Socket write failed"));
 			return -1;

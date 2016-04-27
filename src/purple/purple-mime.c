@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -70,13 +70,28 @@ void sipe_mime_parts_foreach(const gchar *type,
 			const gchar *content_type = purple_mime_part_get_field(parts->data,
 									       "Content-Type");
 			if (content_type) {
-				const gchar *content = purple_mime_part_get_data(parts->data);
-				gsize length = purple_mime_part_get_length(parts->data);
+				const gchar *content = NULL;
+				guchar *content_decoded = NULL;
+				gsize length = 0;
+
 				GSList *fields = mime_fields_to_nameval(parts->data);
+
+				purple_mime_part_get_data_decoded(parts->data,
+								  &content_decoded,
+								  &length);
+				if (content_decoded) {
+					content = (gchar *) content_decoded;
+				} else {
+					/* Unknown encoding in Content-Transfer-Encoding
+					 * field; revert to the plain content extraction. */
+					content = purple_mime_part_get_data(parts->data);
+					length = purple_mime_part_get_length(parts->data);
+				}
 
 				(*callback)(user_data, fields, content, length);
 
 				sipe_utils_nameval_free(fields);
+				g_free(content_decoded);
 			}
 			parts = parts->next;
 		}
