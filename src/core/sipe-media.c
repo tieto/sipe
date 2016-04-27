@@ -1169,7 +1169,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 				   call_private->ice_version,
 				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("Error occured"),
+					  _("Error occurred"),
 					  _("Error creating audio stream"));
 		sipe_media_hangup(call_private);
 		return;
@@ -1180,7 +1180,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 				   call_private->ice_version,
 				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("Error occured"),
+					  _("Error occurred"),
 					  _("Error creating video stream"));
 		sipe_media_hangup(call_private);
 		return;
@@ -1718,7 +1718,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				// Break intentionally omitted
 			}
 			default:
-				title = _("Error occured");
+				title = _("Error occurred");
 				g_string_append(desc, _("Unable to establish a call"));
 				append_responsestr = TRUE;
 				break;
