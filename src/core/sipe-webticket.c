@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -254,10 +254,9 @@ static gchar *extract_raw_xml_attribute(const gchar *xml,
 	return(data);
 }
 
-static gchar *generate_timestamp(const gchar *raw,
-				 const gchar *lifetime_tag)
+static gchar *generate_timestamp(const gchar *raw)
 {
-	gchar *lifetime = sipe_xml_extract_raw(raw, lifetime_tag, FALSE);
+	gchar *lifetime = sipe_xml_extract_raw(raw, "Lifetime", FALSE);
 	gchar *timestamp = NULL;
 	if (lifetime)
 		timestamp = g_strdup_printf("<wsu:Timestamp xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"timestamp\">%s</wsu:Timestamp>",
@@ -266,9 +265,19 @@ static gchar *generate_timestamp(const gchar *raw,
 	return(timestamp);
 }
 
+static gchar *generate_keydata(const gchar *raw)
+{
+	return(sipe_xml_extract_raw(raw, "Assertion", TRUE));
+}
+
+static gchar *generate_expires(const gchar *timestamp)
+{
+	return(sipe_xml_extract_raw(timestamp, "Expires", FALSE));
+}
+
 static gchar *generate_fedbearer_wsse(const gchar *raw)
 {
-	gchar *timestamp = generate_timestamp(raw, "wst:Lifetime");
+	gchar *timestamp = generate_timestamp(raw);
 	gchar *keydata   = sipe_xml_extract_raw(raw, "EncryptedData", TRUE);
 	gchar *wsse_security = NULL;
 
@@ -285,35 +294,16 @@ static gchar *generate_fedbearer_wsse(const gchar *raw)
 static void generate_federation_wsse(struct sipe_webticket *webticket,
 				     const gchar *raw)
 {
-	gchar *timestamp = generate_timestamp(raw, "t:Lifetime");
-	gchar *keydata   = sipe_xml_extract_raw(raw, "saml:Assertion", TRUE);
-
-	/* try alternative names */
-	if (!timestamp)
-		timestamp = generate_timestamp(raw, "wst:Lifetime");
-	if (!keydata)
-		keydata   = sipe_xml_extract_raw(raw, "saml1:Assertion", TRUE);
-
-	/* try other alternative names */
-	if (!timestamp)
-		timestamp = generate_timestamp(raw, "Lifetime");
-	if (!keydata)
-		keydata   = sipe_xml_extract_raw(raw, "ns1:Assertion", TRUE);
+	gchar *timestamp = generate_timestamp(raw);
+	gchar *keydata   = generate_keydata(raw);
 
 	/* clear old ADFS token */
 	g_free(webticket->adfs_token);
 	webticket->adfs_token = NULL;
 
 	if (timestamp && keydata) {
-		gchar *expires_string = sipe_xml_extract_raw(timestamp,
-							     "wsu:Expires",
-							     FALSE);
+		gchar *expires_string = generate_expires(timestamp);
 
-		/* try alternative names */
-		if (!expires_string)
-			expires_string = sipe_xml_extract_raw(timestamp,
-							      "ns3:Expires",
-							      FALSE);
 		if (expires_string) {
 
 			SIPE_DEBUG_INFO("generate_federation_wsse: found timestamp & keydata, expires %s",
@@ -336,14 +326,12 @@ static gchar *generate_sha1_proof_wsse(const gchar *raw,
 				       struct sipe_tls_random *entropy,
 				       time_t *expires)
 {
-	gchar *timestamp = generate_timestamp(raw, "Lifetime");
-	gchar *keydata   = sipe_xml_extract_raw(raw, "saml:Assertion", TRUE);
+	gchar *timestamp = generate_timestamp(raw);
+	gchar *keydata   = generate_keydata(raw);
 	gchar *wsse_security = NULL;
 
 	if (timestamp && keydata) {
-		gchar *expires_string = sipe_xml_extract_raw(timestamp,
-							     "Expires",
-							     FALSE);
+		gchar *expires_string = generate_expires(timestamp);
 
 		if (entropy) {
 			gchar *assertionID = extract_raw_xml_attribute(keydata,

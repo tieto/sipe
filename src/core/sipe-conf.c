@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -73,6 +73,10 @@
 		"<first-im/>"\
 	"</im>"\
 "</Conferencing>"
+
+static gboolean
+sipe_conf_check_for_lync_url(struct sipe_core_private *sipe_private,
+			     gchar *uri);
 
 static struct transaction *
 cccp_request(struct sipe_core_private *sipe_private, const gchar *method,
@@ -145,15 +149,37 @@ process_conf_get_capabilities(SIPE_UNUSED_PARAMETER struct sipe_core_private *si
 	}
 	if (msg->response == 200) {
 		sipe_xml *xn_response = sipe_xml_parse(msg->body, msg->bodylen);
+		const sipe_xml *node;
+		gchar *default_region;
 
-		if (sipe_strequal("success", sipe_xml_attribute(xn_response, "code"))) {
-			const sipe_xml *node = sipe_xml_child(xn_response, "getConferencingCapabilities/mcu-types/mcuType");
-			for (;node; node = sipe_xml_twin(node)) {
-				sipe_private->conf_mcu_types =
-						g_slist_append(sipe_private->conf_mcu_types,
-							       sipe_xml_data(node));
+		if (!sipe_strequal("success", sipe_xml_attribute(xn_response, "code"))) {
+			return TRUE;
+		}
+
+		node = sipe_xml_child(xn_response, "getConferencingCapabilities/mcu-types/mcuType");
+		for (;node; node = sipe_xml_twin(node)) {
+			sipe_private->conf_mcu_types =
+					g_slist_append(sipe_private->conf_mcu_types,
+						       sipe_xml_data(node));
+		}
+
+		g_hash_table_remove_all(sipe_private->access_numbers);
+		node = sipe_xml_child(xn_response, "getConferencingCapabilities/pstn-bridging/access-numbers/region");
+		for (;node; node = sipe_xml_twin(node)) {
+			gchar *name = g_strdup(sipe_xml_attribute(node, "name"));
+			gchar *number = sipe_xml_data(sipe_xml_child(node, "access-number/number"));
+			if (name && number) {
+				g_hash_table_insert(sipe_private->access_numbers, name, number);
 			}
 		}
+
+		node = sipe_xml_child(xn_response, "getConferencingCapabilities/pstn-bridging/access-numbers/default-region");
+		default_region = sipe_xml_data(node);
+		if (default_region) {
+			sipe_private->default_access_number =
+					g_hash_table_lookup(sipe_private->access_numbers, default_region);
+		}
+		g_free(default_region);
 
 		sipe_xml_free(xn_response);
 	}
@@ -295,55 +321,35 @@ parse_ocs_focus_uri(const gchar *uri)
 }
 
 static gchar *
-parse_lync_join_url(const gchar *uri)
+extract_uri_from_html(const gchar *body,
+		      const gchar *prefix,
+		      guint prefix_skip_chars)
 {
-	gchar *focus_uri = NULL;
-	gchar **parts;
-	int parts_count = 0;
+	gchar *uri = NULL;
+	const gchar *start = g_strstr_len(body, -1, prefix);
 
-	if (!uri)
-		return NULL;
+	if (start) {
+		const gchar *end;
 
-	if (g_str_has_prefix(uri, "https://")) {
-		uri += 8;
-	} else if (g_str_has_prefix(uri, "http://")) {
-		uri += 7;
-	}
+		start += prefix_skip_chars;
+		end = strchr(start, '"');
 
-	parts = g_strsplit(uri, "/", 0);
+		if (end) {
+			gchar *html = g_strndup(start, end - start);
 
-	for (parts_count = 0; parts[parts_count]; ++parts_count);
-	if (parts_count >= 3) {
-		const gchar *conference_id   = parts[parts_count - 1];
-		const gchar *organizer_alias = parts[parts_count - 2];
+			/* decode HTML entities */
+			gchar *html_unescaped = sipe_backend_markup_strip_html(html);
+			g_free(html);
 
-		gchar **domain_parts = g_strsplit(parts[0], ".", 2);
+			if (!is_empty(html_unescaped)) {
+				uri = sipe_utils_uri_unescape(html_unescaped);
+			}
 
-		/* we need to drop the first sub-domain from the URL */
-		if (domain_parts[0] && domain_parts[1]) {
-			focus_uri = g_strdup_printf("sip:%s@%s;gruu;opaque=app:conf:focus:id:%s",
-						    organizer_alias,
-						    domain_parts[1],
-						    conference_id);
+			g_free(html_unescaped);
 		}
-
-		g_strfreev(domain_parts);
 	}
 
-	g_strfreev(parts);
-
-	return focus_uri;
-}
-
-static void sipe_conf_error(struct sipe_core_private *sipe_private,
-			    const gchar *uri)
-{
-	gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
-				       uri ? uri : "");
-	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-				  _("Failed to join the conference"),
-				  error);
-	g_free(error);
+	return uri;
 }
 
 static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
@@ -363,47 +369,52 @@ static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 			 *
 			 *  <a ... href="conf&#58;sip&#58;...ABCDEF&#37;3Frequired..." ... >
 			 */
-			const gchar *start = g_strstr_len(body,
-							  -1,
-							  "href=\"conf");
-			if (start) {
-				const gchar *end;
-
-				start += 6;
-				end = strchr(start, '"');
-
-				if (end) {
-					gchar *html = g_strndup(start,
-								end - start);
-
-					/* decode HTML entities */
-					gchar *html_unescaped = sipe_backend_markup_strip_html(html);
-					g_free(html);
-
-					if (!is_empty(html_unescaped)) {
-						gchar *uri_unescaped = sipe_utils_uri_unescape(html_unescaped);
-						SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: found focus URI '%s'",
-								uri_unescaped);
-						focus_uri = parse_ocs_focus_uri(uri_unescaped);
-						g_free(uri_unescaped);
-					}
-					g_free(html_unescaped);
-				}
-			}
-		}
-
-		/* If we can't find a focus URI then fall back to URL parser */
-		if (!focus_uri) {
-			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI found. Falling back to parsing Lync URL '%s'",
-					uri);
-			focus_uri = parse_lync_join_url(uri);
+			gchar *uri = extract_uri_from_html(body, "href=\"conf", 6);
+			focus_uri = parse_ocs_focus_uri(uri);
+			g_free(uri);
 		}
 
 		if (focus_uri) {
+			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: found focus URI"
+					" '%s'", focus_uri);
+
 			sipe_conf_create(sipe_private, NULL, focus_uri);
 			g_free(focus_uri);
 		} else {
-			sipe_conf_error(sipe_private, uri);
+			/*
+			 * If present, domainOwnerJoinLauncherUrl redirects to
+			 * a page from where we still may extract the focus URI.
+			 */
+			gchar *launcher_url;
+			static const gchar launcher_url_prefix[] =
+					"var domainOwnerJoinLauncherUrl = \"";
+
+			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI "
+					"found from URL '%s'", uri);
+
+			launcher_url = extract_uri_from_html(body,
+							     launcher_url_prefix,
+							     sizeof (launcher_url_prefix) - 1);
+
+			if (launcher_url &&
+			    sipe_conf_check_for_lync_url(sipe_private, launcher_url)) {
+				SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: retrying with URL '%s'",
+						launcher_url);
+				/* Ownership taken by sipe_conf_check_for_lync_url() */
+				launcher_url = NULL;
+			} else {
+				gchar *error;
+
+				error = g_strdup_printf(_("Can't find a conference URI on this page:\n\n%s"),
+							uri);
+
+				sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+							  _("Failed to join the conference"),
+							  error);
+				g_free(error);
+			}
+
+			g_free(launcher_url);
 		}
 	}
 
@@ -426,28 +437,66 @@ static gboolean sipe_conf_check_for_lync_url(struct sipe_core_private *sipe_priv
 	       != NULL);
 }
 
+static void sipe_conf_uri_error(struct sipe_core_private *sipe_private,
+				const gchar *uri)
+{
+	gchar *error = g_strdup_printf(_("\"%s\" is not a valid conference URI"),
+				       uri ? uri : "");
+	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				  _("Failed to join the conference"),
+				  error);
+	g_free(error);
+}
+
 void sipe_core_conf_create(struct sipe_core_public *sipe_public,
-			   const gchar *uri)
+			   const gchar *uri,
+			   const gchar *organizer,
+			   const gchar *meeting_id)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	gchar *uri_ue = sipe_utils_uri_unescape(uri);
 
-	SIPE_DEBUG_INFO("sipe_core_conf_create: URI '%s' unescaped '%s'",
-			uri    ? uri    : "<UNDEFINED>",
-			uri_ue ? uri_ue : "<UNDEFINED>");
+	/* SIP URI or HTTP URL */
+	if (uri) {
+		gchar *uri_ue = sipe_utils_uri_unescape(uri);
 
-	/* takes ownership of "uri_ue" if successful */
-	if (!sipe_conf_check_for_lync_url(sipe_private, uri_ue)) {
-		gchar *focus_uri = parse_ocs_focus_uri(uri_ue);
+		SIPE_DEBUG_INFO("sipe_core_conf_create: URI '%s' unescaped '%s'",
+				uri,
+				uri_ue ? uri_ue : "<UNDEFINED>");
+
+		/* takes ownership of "uri_ue" if successful */
+		if (!sipe_conf_check_for_lync_url(sipe_private, uri_ue)) {
+			gchar *focus_uri = parse_ocs_focus_uri(uri_ue);
+
+			if (focus_uri) {
+				sipe_conf_create(sipe_private, NULL, focus_uri);
+				g_free(focus_uri);
+			} else
+				sipe_conf_uri_error(sipe_private, uri);
+
+			g_free(uri_ue);
+		}
+
+	/* Organizer email and meeting ID */
+	} else if (organizer && meeting_id) {
+		gchar *tmp = g_strdup_printf("sip:%s;gruu;opaque=app:conf:focus:id:%s",
+					     organizer, meeting_id);
+		gchar *focus_uri = parse_ocs_focus_uri(tmp);
+
+		SIPE_DEBUG_INFO("sipe_core_conf_create: organizer '%s' meeting ID '%s'",
+				organizer,
+				meeting_id);
 
 		if (focus_uri) {
 			sipe_conf_create(sipe_private, NULL, focus_uri);
 			g_free(focus_uri);
-		} else {
-			sipe_conf_error(sipe_private, uri);
-		}
+		} else
+			sipe_conf_uri_error(sipe_private, tmp);
+		g_free(tmp);
 
-		g_free(uri_ue);
+	} else {
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Failed to join the conference"),
+					  _("Incomplete conference information provided"));
 	}
 }
 
@@ -635,6 +684,45 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		     session->focus_dialog->with, who);
 }
 
+void
+sipe_conf_announce_audio_mute_state(struct sipe_core_private *sipe_private,
+				    struct sip_session *session,
+				    gboolean is_muted)
+{
+	// See [MS-CONFAV] 3.2.5.4 and 4.3
+	static const gchar CCCP_MODIFY_ENDPOINT_MEDIA[] =
+		"<modifyEndpointMedia mscp:mcuUri=\"%s\""
+		" xmlns:mscp=\"http://schemas.microsoft.com/rtc/2005/08/cccpextensions\">"
+			"<mediaKeys confEntity=\"%s\" userEntity=\"%s\""
+			" endpointEntity=\"%s\" mediaId=\"%d\"/>"
+			"<ci:media"
+			" xmlns:ci=\"urn:ietf:params:xml:ns:conference-info\" id=\"%d\">"
+				"<ci:type>audio</ci:type>"
+				"<ci:status>%s</ci:status>"
+				"<media-ingress-filter"
+				" xmlns=\"http://schemas.microsoft.com/rtc/2005/08/confinfoextensions\">"
+					"%s"
+				"</media-ingress-filter>"
+			"</ci:media>"
+		"</modifyEndpointMedia>";
+
+	gchar *mcu_uri = sipe_conf_build_uri(session->focus_dialog->with,
+					     "audio-video");
+	gchar *self = sip_uri_self(sipe_private);
+
+	cccp_request(sipe_private, "INFO", session->focus_dialog->with,
+		     session->focus_dialog, NULL,
+		     CCCP_MODIFY_ENDPOINT_MEDIA,
+		     mcu_uri, session->focus_dialog->with, self,
+		     session->audio_video_entity,
+		     session->audio_media_id, session->audio_media_id,
+		     is_muted ? "recvonly" : "sendrecv",
+		     is_muted ? "block" : "unblock");
+
+	g_free(mcu_uri);
+	g_free(self);
+}
+
 /** Invite counterparty to join conference callback */
 static gboolean
 process_invite_conf_response(struct sipe_core_private *sipe_private,
@@ -771,7 +859,6 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	struct transaction *trans;
 	time_t expiry = time(NULL) + 7*60*60; /* 7 hours */
 	char *expiry_time;
-	struct transaction_payload *payload;
 
 	/* addConference request to the focus factory.
 	 *
@@ -823,10 +910,13 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 	g_free(expiry_time);
 	g_string_free(conference_view, TRUE);
 
-	payload = g_new0(struct transaction_payload, 1);
-	payload->destroy = g_free;
-	payload->data = g_strdup(who);
-	trans->payload = payload;
+	if (trans) {
+		struct transaction_payload *payload = g_new0(struct transaction_payload, 1);
+
+		payload->destroy = g_free;
+		payload->data = g_strdup(who);
+		trans->payload = payload;
+	}
 }
 
 static void
@@ -1007,6 +1097,45 @@ process_incoming_invite_conf(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 
 static void
+process_conference_av_endpoint(const sipe_xml *endpoint,
+			       const gchar *user_uri,
+			       const gchar *self_uri,
+			       struct sip_session *session)
+{
+	const sipe_xml *media;
+	const gchar *new_entity;
+
+	if (!sipe_strequal(user_uri, self_uri)) {
+		/* We are interested only in our own endpoint data. */
+		return;
+	}
+
+	new_entity = sipe_xml_attribute(endpoint, "entity");
+	if (!sipe_strequal(session->audio_video_entity, new_entity)) {
+		g_free(session->audio_video_entity);
+		session->audio_video_entity = g_strdup(new_entity);
+	}
+
+	session->audio_media_id = 0;
+
+	media = sipe_xml_child(endpoint, "media");
+	for (; media; media = sipe_xml_twin(media)) {
+		gchar *type = sipe_xml_data(sipe_xml_child(media, "type"));
+
+		if (sipe_strequal(type, "audio")) {
+			session->audio_media_id =
+					sipe_xml_int_attribute(media, "id", 0);
+		}
+
+		g_free(type);
+
+		if (session->audio_media_id != 0) {
+			break;
+		}
+	}
+}
+
+static void
 call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
 {
 	struct sip_session *session;
@@ -1104,6 +1233,30 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		}
 	}
 
+	/* organizer */
+	if (!session->chat_session->organizer) {
+		node = sipe_xml_child(xn_conference_info, "conference-description/organizer/display-name");
+		if (node) {
+			session->chat_session->organizer = sipe_xml_data(node);
+		}
+	}
+
+	/* join URL */
+	if (!session->chat_session->join_url) {
+		node = sipe_xml_child(xn_conference_info, "conference-description/join-url");
+		if (node) {
+			session->chat_session->join_url = sipe_xml_data(node);
+		}
+	}
+
+	/* dial-in conference id */
+	if (!session->chat_session->dial_in_conf_id) {
+		node = sipe_xml_child(xn_conference_info, "conference-description/pstn-access/id");
+		if (node) {
+			session->chat_session->dial_in_conf_id = sipe_xml_data(node);
+		}
+	}
+
 	/* users */
 	for (node = sipe_xml_child(xn_conference_info, "users/user"); node; node = sipe_xml_twin(node)) {
 		const gchar *user_uri = sipe_xml_attribute(node, "entity");
@@ -1147,6 +1300,10 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 					if (!session->is_call)
 						audio_was_added = TRUE;
+					process_conference_av_endpoint(endpoint,
+								       user_uri,
+								       self,
+								       session);
 #endif
 				}
 			}
@@ -1322,6 +1479,81 @@ void sipe_core_conf_remove_from(struct sipe_core_public *sipe_public,
 
 	session = sipe_session_find_chat(sipe_private, chat_session);
 	sipe_conf_delete_user(sipe_private, session, buddy_name);
+}
+
+gchar *
+sipe_conf_build_uri(const gchar *focus_uri, const gchar *session_type)
+{
+	gchar **parts = g_strsplit(focus_uri, ":focus:", 2);
+	gchar *result = NULL;
+
+	if (g_strv_length(parts) == 2) {
+		result = g_strconcat(parts[0], ":", session_type, ":", parts[1],
+				     NULL);
+	}
+
+	g_strfreev(parts);
+	return result;
+}
+
+static gchar *
+access_numbers_info(struct sipe_core_public *sipe_public)
+{
+	GString *result = g_string_new("");
+
+#if GLIB_CHECK_VERSION(2,16,0)
+	GList *keys = g_hash_table_get_keys(SIPE_CORE_PRIVATE->access_numbers);
+	keys = g_list_sort(keys, (GCompareFunc)g_strcmp0);
+
+	for (; keys; keys = g_list_delete_link(keys, keys)) {
+		gchar *value;
+		value = g_hash_table_lookup(SIPE_CORE_PRIVATE->access_numbers,
+					    keys->data);
+
+		g_string_append(result, keys->data);
+		g_string_append(result, "&nbsp;&nbsp;&nbsp;&nbsp;");
+		g_string_append(result, value);
+		g_string_append(result, "<br/>");
+	}
+#else
+	(void)sipe_public; /* keep compiler happy */
+#endif
+
+	return g_string_free(result, FALSE);
+}
+
+gchar *
+sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
+			  struct sipe_chat_session *chat_session)
+{
+	gchar *access_info = access_numbers_info(sipe_public);
+	gchar *result = g_strdup_printf(
+			"<b><font size=\"+1\">%s</font></b><br/>"
+			"<b>%s:</b> %s<br/>"
+			"<b>%s:</b> %s<br/>"
+			"<br/>"
+			"<b>%s:</b><br/>"
+			"%s<br/>"
+			"<br/>"
+			"<b>%s:</b> %s<br/>"
+			"<br/>"
+			"<b><font size=\"+1\">%s</font></b><br/>"
+			"%s",
+			_("Dial-in info"),
+			_("Number"),
+			SIPE_CORE_PRIVATE->default_access_number ? SIPE_CORE_PRIVATE->default_access_number : "",
+			_("Conference ID"),
+			chat_session->dial_in_conf_id ? chat_session->dial_in_conf_id : "",
+			_("Meeting link"),
+			chat_session->join_url ? chat_session->join_url : "",
+			_("Organizer"),
+			chat_session->organizer ? chat_session->organizer : "",
+			_("Alternative dial-in numbers"),
+			access_info);
+
+	g_free(access_info);
+
+	return result;
 }
 
 /*

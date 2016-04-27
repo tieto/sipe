@@ -4,6 +4,9 @@ noinst_LTLIBRARIES = libsipe_backend.la
 
 pkg_LTLIBRARIES = libsipe.la
 
+EXTRA_DIST = \
+	pidgin-sipe.metainfo.xml
+
 MAINTAINERCLEANFILES = \
 	Makefile.in
 
@@ -28,7 +31,13 @@ libsipe_backend_la_SOURCES = \
 	purple-user.c
 
 libsipe_la_SOURCES = \
-	purple-plugin.c
+	purple-plugin-common.c
+
+if SIPE_PURPLE3
+libsipe_la_SOURCES += purple-plugin3.c
+else
+libsipe_la_SOURCES += purple-plugin.c
+endif
 
 AM_CFLAGS = $(st)
 
@@ -124,3 +133,6 @@ TESTS = $(check_PROGRAMS)
 # Remove any libsipe.so from the old incorrect installation location
 install-exec-local:
 	rm -f $(DESTDIR)$(libdir)/pidgin/libsipe.so
+
+pidginmetainfofiledir   = $(datadir)/appdata
+pidginmetainfofile_DATA = pidgin-sipe.metainfo.xml

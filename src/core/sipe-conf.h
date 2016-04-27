@@ -108,6 +108,14 @@ sipe_conf_delete_user(struct sipe_core_private *sipe_private,
 		      const gchar* who);
 
 /**
+ * Notifies conference call participants of our microphone mute state.
+ */
+void
+sipe_conf_announce_audio_mute_state(struct sipe_core_private *sipe_private,
+				    struct sip_session *session,
+				    gboolean is_muted);
+
+/**
  * Invokes when we are ejected from conference
  * for example or conference has been timed out.
  */
@@ -125,6 +133,17 @@ sipe_conf_immcu_closed(struct sipe_core_private *sipe_private,
 void
 sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
 			    struct sipmsg *msg);
+
+/**
+ * Creates URI for given session type within a conference specified by its
+ * focus URI.
+ *
+ * @param focus_uri conference focus URI
+ * @param session_type type of session for which to build the URI,
+ *                     e.g. "audio-video"
+ */
+gchar *
+sipe_conf_build_uri(const gchar *focus_uri, const gchar *session_type);
 
 /**
  * Invokes when we leave conversation.

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 
 #include "sipe-core.h"
 #include "sipe-common.h"
+#include "sipe-ft.h"
 #include "sipmsg.h"
 #include "sipe-backend.h"
 #include "sipe-dialog.h"
@@ -58,7 +59,7 @@ void sipe_dialog_free(struct sip_dialog *dialog)
 
 	while (dialog->filetransfers) {
 		struct sipe_file_transfer *ft = dialog->filetransfers->data;
-		sipe_core_ft_deallocate(ft);
+		sipe_ft_free(ft);
 	}
 
 	g_free(dialog->callid);

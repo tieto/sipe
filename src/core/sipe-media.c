@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -55,11 +55,15 @@ struct sipe_media_call_private {
 	/* private part starts here */
 	struct sipe_core_private	*sipe_private;
 
+	struct sip_session		*conference_session;
+
 	GSList				*streams;
 
 	struct sipmsg			*invitation;
 	SipeIceVersion			 ice_version;
 	gboolean			 encryption_compatible;
+	gchar				*extra_invite_section;
+	gchar				*invite_content_type;
 
 	struct sdpmsg			*smsg;
 	GSList				*failed_media;
@@ -73,9 +77,28 @@ struct sipe_media_stream_private {
 	guchar *encryption_key;
 	int encryption_key_id;
 	gboolean remote_candidates_and_codecs_set;
+	gboolean established;
+
+	GSList *extra_sdp;
+
+	gboolean writable;
+
+	GQueue *write_queue;
+	GQueue *async_reads;
+	gssize read_pos;
+
+	/* User data associated with the stream. */
+	gpointer data;
+	GDestroyNotify data_free_func;
 };
 #define SIPE_MEDIA_STREAM         ((struct sipe_media_stream *) stream_private)
 #define SIPE_MEDIA_STREAM_PRIVATE ((struct sipe_media_stream_private *) stream)
+
+struct async_read_data {
+	guint8 *buffer;
+	gssize len;
+	sipe_media_stream_read_callback callback;
+};
 
 static void sipe_media_codec_list_free(GList *codecs)
 {
@@ -94,12 +117,27 @@ remove_stream(struct sipe_media_call* call,
 	      struct sipe_media_stream_private *stream_private)
 {
 	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+
+	sipe_media_stream_set_data(SIPE_MEDIA_STREAM, NULL, NULL);
+
 	call_private->streams =
 			g_slist_remove(call_private->streams, stream_private);
 	sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
 	g_free(SIPE_MEDIA_STREAM->id);
 	g_free(stream_private->encryption_key);
+	g_queue_free_full(stream_private->write_queue,
+			  (GDestroyNotify)g_byte_array_unref);
+	g_queue_free_full(stream_private->async_reads, g_free);
+	sipe_utils_nameval_free(stream_private->extra_sdp);
 	g_free(stream_private);
+}
+
+static gboolean
+call_private_equals(SIPE_UNUSED_PARAMETER const gchar *callid,
+		    struct sipe_media_call_private *call_private1,
+		    struct sipe_media_call_private *call_private2)
+{
+	return call_private1 == call_private2;
 }
 
 static void
@@ -107,6 +145,9 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 {
 	if (call_private) {
 		struct sip_session *session;
+
+		g_hash_table_foreach_remove(call_private->sipe_private->media_calls,
+					    (GHRFunc) call_private_equals, call_private);
 
 		while (call_private->streams) {
 			remove_stream(SIPE_MEDIA_CALL,
@@ -122,6 +163,9 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 
 		if (call_private->invitation)
 			sipmsg_free(call_private->invitation);
+
+		// Frees any referenced extra invite data.
+		sipe_media_add_extra_invite_section(SIPE_MEDIA_CALL, NULL, NULL);
 
 		sdpmsg_free(call_private->smsg);
 		sipe_utils_slist_free_full(call_private->failed_media,
@@ -186,9 +230,11 @@ backend_candidates_to_sdpcandidate(GList *candidates)
 
 static void
 get_stream_ip_and_ports(GSList *candidates,
-			gchar **ip, guint *rtp_port, guint *rtcp_port,
-			SipeCandidateType type)
+			gchar **ip, guint *rtp_port, guint *rtcp_port)
 {
+	guint32 rtp_max_priority = 0;
+	guint32 rtcp_max_priority = 0;
+
 	*ip = 0;
 	*rtp_port = 0;
 	*rtcp_port = 0;
@@ -196,21 +242,18 @@ get_stream_ip_and_ports(GSList *candidates,
 	for (; candidates; candidates = candidates->next) {
 		struct sdpcandidate *candidate = candidates->data;
 
-		if (type == SIPE_CANDIDATE_TYPE_ANY || candidate->type == type) {
-			if (!*ip) {
-				*ip = g_strdup(candidate->ip);
-			} else if (!sipe_strequal(*ip, candidate->ip)) {
-				continue;
-			}
+		if (candidate->component == SIPE_COMPONENT_RTP &&
+		    candidate->priority > rtp_max_priority) {
+			rtp_max_priority = candidate->priority;
+			*rtp_port = candidate->port;
 
-			if (candidate->component == SIPE_COMPONENT_RTP) {
-				*rtp_port = candidate->port;
-			} else if (candidate->component == SIPE_COMPONENT_RTCP)
-				*rtcp_port = candidate->port;
+			g_free(*ip);
+			*ip = g_strdup(candidate->ip);
+		} else if (candidate->component == SIPE_COMPONENT_RTCP &&
+			   candidate->priority > rtcp_max_priority) {
+			rtcp_max_priority = candidate->priority;
+			*rtcp_port = candidate->port;
 		}
-
-		if (*rtp_port != 0 && *rtcp_port != 0)
-			return;
 	}
 }
 
@@ -361,6 +404,7 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 	GSList *all_sdpcandidates;
 	GList *candidates;
 	GList *i;
+	GSList *j;
 
 	sdpmedia->name = g_strdup(SIPE_MEDIA_STREAM->id);
 
@@ -368,6 +412,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		type = SIPE_MEDIA_AUDIO;
 	else if (sipe_strequal(sdpmedia->name, "video"))
 		type = SIPE_MEDIA_VIDEO;
+	else if (sipe_strequal(sdpmedia->name, "data"))
+		type = SIPE_MEDIA_APPLICATION;
 	else {
 		// TODO: incompatible media, should not happen here
 		g_free(sdpmedia->name);
@@ -412,8 +458,7 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 	// Process local candidates
 	// If we have established candidate pairs, send them in SDP response.
 	// Otherwise send all available local candidates.
-	candidates = sipe_backend_media_get_active_local_candidates(SIPE_MEDIA_CALL,
-								    SIPE_MEDIA_STREAM);
+	candidates = sipe_backend_media_stream_get_active_local_candidates(SIPE_MEDIA_STREAM);
 	sdpcandidates = backend_candidates_to_sdpcandidate(candidates);
 	sipe_media_candidate_list_free(candidates);
 
@@ -436,13 +481,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 					   (GDestroyNotify)sdpcandidate_free);
 	}
 
-	get_stream_ip_and_ports(sdpmedia->candidates, &sdpmedia->ip, &sdpmedia->port,
-				&rtcp_port, SIPE_CANDIDATE_TYPE_HOST);
-	// No usable HOST candidates, use any candidate
-	if (sdpmedia->ip == NULL && sdpmedia->candidates) {
-		get_stream_ip_and_ports(sdpmedia->candidates, &sdpmedia->ip, &sdpmedia->port,
-					&rtcp_port, SIPE_CANDIDATE_TYPE_ANY);
-	}
+	get_stream_ip_and_ports(sdpmedia->candidates, &sdpmedia->ip,
+				&sdpmedia->port, &rtcp_port);
 
 	if (sipe_backend_stream_is_held(SIPE_MEDIA_STREAM))
 		attributes = sipe_utils_nameval_add(attributes, "inactive", "");
@@ -471,11 +511,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		attributes = sipe_utils_nameval_add(attributes, "encryption", encryption);
 	}
 
-	sdpmedia->attributes = attributes;
-
 	// Process remote candidates
-	candidates = sipe_backend_media_get_active_remote_candidates(SIPE_MEDIA_CALL,
-								     SIPE_MEDIA_STREAM);
+	candidates = sipe_backend_media_stream_get_active_remote_candidates(SIPE_MEDIA_STREAM);
 	sdpmedia->remote_candidates = backend_candidates_to_sdpcandidate(candidates);
 	sipe_media_candidate_list_free(candidates);
 
@@ -491,6 +528,15 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 						    SIPE_SRTP_KEY_LEN);
 		sdpmedia->encryption_key_id = stream_private->encryption_key_id;
 	}
+
+	// Append extra attributes assigned to the stream.
+	for (j = stream_private->extra_sdp; j; j = g_slist_next(j)) {
+		struct sipnameval *attr = j->data;
+		attributes = sipe_utils_nameval_add(attributes,
+						    attr->name, attr->value);
+	}
+
+	sdpmedia->attributes = attributes;
 
 	return sdpmedia;
 }
@@ -521,23 +567,19 @@ sipe_media_to_sdpmsg(struct sipe_media_call_private *call_private)
 }
 
 static void
-sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
+sipe_invite_call(struct sipe_media_call_private *call_private, TransCallback tc)
 {
+	struct sipe_core_private *sipe_private = call_private->sipe_private;
 	gchar *hdr;
 	gchar *contact;
 	gchar *p_preferred_identity = NULL;
 	gchar *body;
-	struct sipe_media_call_private *call_private = sipe_private->media_call;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	struct sdpmsg *msg;
-	gboolean add_2007_fallback = FALSE;
 
 	session = sipe_session_find_call(sipe_private, SIPE_MEDIA_CALL->with);
 	dialog = session->dialogs->data;
-	add_2007_fallback = dialog->cseq == 0 &&
-		call_private->ice_version == SIPE_ICE_RFC_5245 &&
-		!sipe_strequal(SIPE_MEDIA_CALL->with, sipe_private->test_call_bot_uri);
 
 	contact = get_contact(sipe_private);
 
@@ -553,30 +595,25 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 		"ms-keep-alive: UAC;hop-hop=yes\r\n"
 		"Contact: %s\r\n"
 		"%s"
-		"Content-Type: %s\r\n",
+		"Content-Type: %s%s\r\n",
 		contact,
 		p_preferred_identity ? p_preferred_identity : "",
-		add_2007_fallback ?
-			  "multipart/alternative;boundary=\"----=_NextPart_000_001E_01CB4397.0B5EB570\""
-			: "application/sdp");
+		call_private->invite_content_type ?
+			  call_private->invite_content_type : "application/sdp",
+		call_private->invite_content_type ?
+			";boundary=\"----=_NextPart_000_001E_01CB4397.0B5EB570\"" : "");
+
 	g_free(contact);
 	g_free(p_preferred_identity);
 
 	msg = sipe_media_to_sdpmsg(call_private);
 	body = sdpmsg_to_string(msg);
 
-	if (add_2007_fallback) {
+	if (call_private->extra_invite_section) {
 		gchar *tmp;
 		tmp = g_strdup_printf(
 			"------=_NextPart_000_001E_01CB4397.0B5EB570\r\n"
-			"Content-Type: application/sdp\r\n"
-			"Content-Transfer-Encoding: 7bit\r\n"
-			"Content-Disposition: session; handling=optional; ms-proxy-2007fallback\r\n"
-			"\r\n"
-			"o=- 0 0 IN IP4 %s\r\n"
-			"s=session\r\n"
-			"c=IN IP4 %s\r\n"
-			"m=audio 0 RTP/AVP\r\n"
+			"%s"
 			"\r\n"
 			"------=_NextPart_000_001E_01CB4397.0B5EB570\r\n"
 			"Content-Type: application/sdp\r\n"
@@ -586,9 +623,10 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 			"%s"
 			"\r\n"
 			"------=_NextPart_000_001E_01CB4397.0B5EB570--\r\n",
-			msg->ip, msg->ip, body);
+			call_private->extra_invite_section, body);
 		g_free(body);
 		body = tmp;
+		sipe_media_add_extra_invite_section(SIPE_MEDIA_CALL, NULL, NULL);
 	}
 
 	sdpmsg_free(msg);
@@ -601,28 +639,6 @@ sipe_invite_call(struct sipe_core_private *sipe_private, TransCallback tc)
 
 	g_free(body);
 	g_free(hdr);
-}
-
-static struct sip_dialog *
-sipe_media_dialog_init(struct sip_session* session, struct sipmsg *msg)
-{
-	gchar *newTag = gentag();
-	const gchar *oldHeader;
-	gchar *newHeader;
-	struct sip_dialog *dialog;
-
-	oldHeader = sipmsg_find_header(msg, "To");
-	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
-	sipmsg_remove_header_now(msg, "To");
-	sipmsg_add_header_now(msg, "To", newHeader);
-	g_free(newHeader);
-
-	dialog = sipe_dialog_add(session);
-	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
-	dialog->with = parse_from(sipmsg_find_header(msg, "From"));
-	sipe_dialog_parse(dialog, msg, FALSE);
-
-	return dialog;
 }
 
 static void
@@ -794,9 +810,9 @@ call_initialized(struct sipe_media_call *call)
 
 // Sends an invite response when the call is accepted and local candidates were
 // prepared, otherwise does nothing. If error response is sent, call_private is
-// disposed before function returns. Returns true when response was sent.
-static gboolean
-send_invite_response_if_ready(struct sipe_media_call_private *call_private)
+// disposed before function returns.
+static void
+maybe_send_first_invite_response(struct sipe_media_call_private *call_private)
 {
 	struct sipe_backend_media *backend_media;
 
@@ -804,7 +820,7 @@ send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 
 	if (!sipe_backend_media_accepted(backend_media) ||
 	    !call_initialized(&call_private->public))
-		return FALSE;
+		return;
 
 	if (!call_private->encryption_compatible) {
 		struct sipe_core_private *sipe_private = call_private->sipe_private;
@@ -821,9 +837,9 @@ send_invite_response_if_ready(struct sipe_media_call_private *call_private)
 					  _("Encryption settings of peer are incompatible with ours."));
 	} else {
 		send_response_with_session_description(call_private, 200, "OK");
+		sipmsg_free(call_private->invitation);
+		call_private->invitation = NULL;
 	}
-
-	return TRUE;
 }
 
 static void
@@ -834,14 +850,14 @@ stream_initialized_cb(struct sipe_media_call *call,
 		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 
 		if (sipe_backend_media_is_initiator(call, stream)) {
-			sipe_invite_call(call_private->sipe_private,
+			sipe_invite_call(call_private,
 					 process_invite_call_response);
 		} else if (call_private->smsg) {
 			struct sdpmsg *smsg = call_private->smsg;
 			call_private->smsg = NULL;
 
 			apply_remote_message(call_private, smsg);
-			send_invite_response_if_ready(call_private);
+			maybe_send_first_invite_response(call_private);
 			sdpmsg_free(smsg);
 		}
 	}
@@ -865,18 +881,21 @@ stream_end_cb(struct sipe_media_call* call, struct sipe_media_stream* stream)
 static void
 media_end_cb(struct sipe_media_call *call)
 {
+	struct sipe_core_private *sipe_private;
+
 	g_return_if_fail(call);
 
-	SIPE_MEDIA_CALL_PRIVATE->sipe_private->media_call = NULL;
-	phone_state_publish(SIPE_MEDIA_CALL_PRIVATE->sipe_private);
+	sipe_private = SIPE_MEDIA_CALL_PRIVATE->sipe_private;
+
 	sipe_media_call_free(SIPE_MEDIA_CALL_PRIVATE);
+	phone_state_publish(sipe_private);
 }
 
 static void
 call_accept_cb(struct sipe_media_call *call, gboolean local)
 {
 	if (local) {
-		send_invite_response_if_ready(SIPE_MEDIA_CALL_PRIVATE);
+		maybe_send_first_invite_response(SIPE_MEDIA_CALL_PRIVATE);
 	}
 	phone_state_publish(SIPE_MEDIA_CALL_PRIVATE->sipe_private);
 }
@@ -886,10 +905,36 @@ call_reject_cb(struct sipe_media_call *call, gboolean local)
 {
 	if (local) {
 		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+		struct sip_session *session = NULL;
+
 		sip_transport_response(call_private->sipe_private,
 				       call_private->invitation,
 				       603, "Decline", NULL);
+
+		session = sipe_session_find_call(call_private->sipe_private,
+						 call->with);
+		if (session) {
+			sipe_session_remove(call_private->sipe_private, session);
+		}
 	}
+}
+
+static void
+av_call_reject_cb(struct sipe_media_call *call, gboolean local)
+{
+	if (!local) {
+		struct sipe_core_private *sipe_private;
+		gchar *desc;
+
+		sipe_private = SIPE_MEDIA_CALL_PRIVATE->sipe_private;
+
+		desc = g_strdup_printf(_("User %s rejected call"), call->with);
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC, _("Call rejected"),
+					  desc);
+		g_free(desc);
+	}
+
+	call_reject_cb(call, local);
 }
 
 static gboolean
@@ -900,9 +945,9 @@ static void call_hold_cb(struct sipe_media_call *call,
 			 gboolean local,
 			 SIPE_UNUSED_PARAMETER gboolean state)
 {
-	if (local)
-		sipe_invite_call(SIPE_MEDIA_CALL_PRIVATE->sipe_private,
-				 sipe_media_send_ack);
+	if (local) {
+		sipe_invite_call(SIPE_MEDIA_CALL_PRIVATE, sipe_media_send_ack);
+	}
 }
 
 static void call_hangup_cb(struct sipe_media_call *call, gboolean local)
@@ -940,14 +985,54 @@ error_cb(struct sipe_media_call *call, gchar *message)
 	sipe_backend_media_hangup(call->backend_private, initiator || accepted);
 }
 
-static struct sipe_media_call_private *
-sipe_media_call_new(struct sipe_core_private *sipe_private,
-		    const gchar* with, gboolean initiator, SipeIceVersion ice_version)
+struct sipe_media_call *
+sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
+		    struct sipmsg *msg, SipeIceVersion ice_version,
+		    SipeMediaCallFlags flags)
 {
-	struct sipe_media_call_private *call_private = g_new0(struct sipe_media_call_private, 1);
+	struct sipe_media_call_private *call_private;
+	struct sip_session *session;
+	struct sip_dialog *dialog;
 	gchar *cname;
 
+	session = sipe_session_add_call(sipe_private, with);
+
+	dialog = sipe_dialog_add(session);
+	dialog->with = g_strdup(with);
+
+	if (msg) {
+		gchar *newTag = gentag();
+		const gchar *oldHeader;
+		gchar *newHeader;
+
+		oldHeader = sipmsg_find_header(msg, "To");
+		newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
+		sipmsg_remove_header_now(msg, "To");
+		sipmsg_add_header_now(msg, "To", newHeader);
+		g_free(newTag);
+		g_free(newHeader);
+
+		dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+		sipe_dialog_parse(dialog, msg, FALSE);
+	} else {
+		dialog->callid = gencallid();
+		dialog->ourtag = gentag();
+		flags |= SIPE_MEDIA_CALL_INITIATOR;
+	}
+
+	if (g_hash_table_lookup(sipe_private->media_calls, dialog->callid)) {
+		SIPE_DEBUG_ERROR("sipe_media_call_new: call already exists for "
+				 "Call-ID %s", dialog->callid);
+		sipe_session_remove(sipe_private, session);
+		return NULL;
+	}
+
+	call_private = g_new0(struct sipe_media_call_private, 1);
 	call_private->sipe_private = sipe_private;
+	SIPE_MEDIA_CALL->with = g_strdup(with);
+
+	g_hash_table_insert(sipe_private->media_calls,
+			    g_strdup(dialog->callid), call_private);
 
 	cname = g_strdup(sipe_private->contact + 1);
 	cname[strlen(cname) - 1] = '\0';
@@ -955,7 +1040,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private,
 	call_private->public.backend_private = sipe_backend_media_new(SIPE_CORE_PUBLIC,
 								      SIPE_MEDIA_CALL,
 								      with,
-								      initiator);
+								      flags);
 	sipe_backend_media_set_cname(call_private->public.backend_private, cname);
 
 	call_private->ice_version = ice_version;
@@ -972,7 +1057,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private,
 
 	g_free(cname);
 
-	return call_private;
+	return SIPE_MEDIA_CALL;
 }
 
 void sipe_media_hangup(struct sipe_media_call_private *call_private)
@@ -983,32 +1068,36 @@ void sipe_media_hangup(struct sipe_media_call_private *call_private)
 	}
 }
 
-static gboolean
-sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
-		      const gchar *with, SipeMediaType type,
-		      SipeIceVersion ice_version, gboolean initiator)
+struct sipe_media_stream *
+sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
+		      SipeMediaType type, SipeIceVersion ice_version,
+		      gboolean initiator)
 {
-	struct sipe_media_call_private *call_private = sipe_private->media_call;
+	struct sipe_core_private *sipe_private;
 	struct sipe_media_stream_private *stream_private;
 	struct sipe_backend_media_stream *backend_stream;
 	struct sipe_backend_media_relays *backend_media_relays;
+
+	sipe_private = SIPE_MEDIA_CALL_PRIVATE->sipe_private;
 
 	backend_media_relays = sipe_backend_media_relays_convert(
 						sipe_private->media_relays,
 						sipe_private->media_relay_username,
 						sipe_private->media_relay_password);
 
-	backend_stream = sipe_backend_media_add_stream(SIPE_MEDIA_CALL,
-						id, with, type, ice_version,
-						initiator, backend_media_relays);
+	backend_stream = sipe_backend_media_add_stream(call, id, call->with,
+						       type, ice_version,
+						       initiator,
+						       backend_media_relays);
 
 	sipe_backend_media_relays_free(backend_media_relays);
 
 	if (!backend_stream) {
-		return FALSE;
+		return NULL;
 	}
 
 	stream_private = g_new0(struct sipe_media_stream_private, 1);
+	SIPE_MEDIA_STREAM->call = call;
 	SIPE_MEDIA_STREAM->id = g_strdup(id);
 	SIPE_MEDIA_STREAM->backend_private = backend_stream;
 
@@ -1023,11 +1112,40 @@ sipe_media_stream_add(struct sipe_core_private *sipe_private, const gchar *id,
 	}
 #endif
 
-	sipe_private->media_call->streams =
-			g_slist_append(sipe_private->media_call->streams,
+	stream_private->write_queue = g_queue_new();
+	stream_private->async_reads = g_queue_new();
+
+	SIPE_MEDIA_CALL_PRIVATE->streams =
+			g_slist_append(SIPE_MEDIA_CALL_PRIVATE->streams,
 				       stream_private);
 
-	return TRUE;
+	return SIPE_MEDIA_STREAM;
+}
+
+static void
+append_2007_fallback_if_needed(struct sipe_media_call_private *call_private)
+{
+	struct sipe_core_private *sipe_private = call_private->sipe_private;
+	const gchar *ip = sipe_backend_network_ip_address(SIPE_CORE_PUBLIC);
+	gchar *body;
+
+	if (sipe_media_get_sip_dialog(SIPE_MEDIA_CALL)->cseq != 0 ||
+	    call_private->ice_version != SIPE_ICE_RFC_5245 ||
+	    sipe_strequal(SIPE_MEDIA_CALL->with, sipe_private->test_call_bot_uri)) {
+		return;
+	}
+
+	body = g_strdup_printf("Content-Type: application/sdp\r\n"
+			       "Content-Transfer-Encoding: 7bit\r\n"
+			       "Content-Disposition: session; handling=optional; ms-proxy-2007fallback\r\n"
+			       "\r\n"
+			       "o=- 0 0 IN IP4 %s\r\n"
+			       "s=session\r\n"
+			       "c=IN IP4 %s\r\n"
+			       "m=audio 0 RTP/AVP\r\n",
+			       ip, ip);
+	sipe_media_add_extra_invite_section(SIPE_MEDIA_CALL,
+					    "multipart/alternative", body);
 }
 
 static void
@@ -1035,43 +1153,40 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 			 const char *with, SipeIceVersion ice_version,
 			 gboolean with_video)
 {
-	struct sip_session *session;
-	struct sip_dialog *dialog;
+	struct sipe_media_call_private *call_private;
 
-	if (sipe_private->media_call)
+	if (sipe_core_media_get_call(SIPE_CORE_PUBLIC)) {
 		return;
+	}
 
-	sipe_private->media_call = sipe_media_call_new(sipe_private, with, TRUE,
-						       ice_version);
+	call_private = (struct sipe_media_call_private *)
+				sipe_media_call_new(sipe_private, with, NULL,
+						    ice_version, 0);
 
-	session = sipe_session_add_call(sipe_private, with);
-	dialog = sipe_dialog_add(session);
-	dialog->callid = gencallid();
-	dialog->with = g_strdup(session->with);
-	dialog->ourtag = gentag();
+	SIPE_MEDIA_CALL->call_reject_cb = av_call_reject_cb;
 
-	sipe_private->media_call->public.with = g_strdup(session->with);
-
-	if (!sipe_media_stream_add(sipe_private, "audio", with, SIPE_MEDIA_AUDIO,
-				   sipe_private->media_call->ice_version,
+	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
+				   call_private->ice_version,
 				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating audio stream"));
-		sipe_media_hangup(sipe_private->media_call);
+		sipe_media_hangup(call_private);
 		return;
 	}
 
 	if (with_video &&
-	    !sipe_media_stream_add(sipe_private, "video", with, SIPE_MEDIA_VIDEO,
-				   sipe_private->media_call->ice_version,
+	    !sipe_media_stream_add(SIPE_MEDIA_CALL, "video", SIPE_MEDIA_VIDEO,
+				   call_private->ice_version,
 				   TRUE)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occured"),
 					  _("Error creating video stream"));
-		sipe_media_hangup(sipe_private->media_call);
+		sipe_media_hangup(call_private);
 		return;
 	}
+
+	append_2007_fallback_if_needed(call_private);
 
 	// Processing continues in stream_initialized_cb
 }
@@ -1085,14 +1200,28 @@ sipe_core_media_initiate_call(struct sipe_core_public *sipe_public,
 				 SIPE_ICE_RFC_5245, with_video);
 }
 
+static void
+conference_audio_muted_cb(struct sipe_media_stream *stream, gboolean is_muted)
+{
+	struct sipe_media_call *call = stream->call;
+
+	if (!SIPE_MEDIA_CALL_PRIVATE->conference_session) {
+		return;
+	}
+
+	sipe_conf_announce_audio_mute_state(SIPE_MEDIA_CALL_PRIVATE->sipe_private,
+					    SIPE_MEDIA_CALL_PRIVATE->conference_session,
+					    is_muted);
+}
+
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					struct sipe_chat_session *chat_session)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+	struct sipe_media_call_private *call_private;
+	struct sipe_media_stream *stream;
 	struct sip_session *session;
-	struct sip_dialog *dialog;
 	SipeIceVersion ice_version;
-	gchar **parts;
 	gchar *av_uri;
 
 	if (!sipe_conf_supports_mcu_type(sipe_private, "audio-video")) {
@@ -1103,51 +1232,59 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 
 	session = sipe_session_find_chat(sipe_private, chat_session);
 
-	if (sipe_private->media_call || !session)
+	if (sipe_core_media_get_call(sipe_public) || !session) {
 		return;
+	}
+
+	av_uri = sipe_conf_build_uri(chat_session->id, "audio-video");
+	if (!av_uri) {
+		return;
+	}
 
 	session->is_call = TRUE;
-
-	parts = g_strsplit(chat_session->id, "app:conf:focus:", 2);
-	av_uri = g_strjoinv("app:conf:audio-video:", parts);
-	g_strfreev(parts);
 
 	ice_version = SIPE_CORE_PRIVATE_FLAG_IS(LYNC2013) ? SIPE_ICE_RFC_5245 :
 							    SIPE_ICE_DRAFT_6;
 
-	sipe_private->media_call = sipe_media_call_new(sipe_private, av_uri,
-						       TRUE, ice_version);
+	call_private = (struct sipe_media_call_private *)
+				sipe_media_call_new(sipe_private, av_uri, NULL,
+						    ice_version, 0);
+	call_private->conference_session = session;
+	SIPE_MEDIA_CALL->call_reject_cb = av_call_reject_cb;
 
-	session = sipe_session_add_call(sipe_private, av_uri);
-	dialog = sipe_dialog_add(session);
-	dialog->callid = gencallid();
-	dialog->with = g_strdup(session->with);
-	dialog->ourtag = gentag();
-
-	g_free(av_uri);
-
-	sipe_private->media_call->public.with = g_strdup(session->with);
-
-	if (!sipe_media_stream_add(sipe_private, "audio", dialog->with,
-				   SIPE_MEDIA_AUDIO,
-				   sipe_private->media_call->ice_version,
-				   TRUE)) {
+	stream = sipe_media_stream_add(SIPE_MEDIA_CALL, "audio",
+				       SIPE_MEDIA_AUDIO,
+				       call_private->ice_version,
+				       TRUE);
+	if (!stream) {
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occurred"),
 					  _("Error creating audio stream"));
-		sipe_media_hangup(sipe_private->media_call);
-		sipe_private->media_call = NULL;
+
+		sipe_media_hangup(call_private);
 	}
+
+	stream->mute_cb = conference_audio_muted_cb;
+
+	g_free(av_uri);
 
 	// Processing continues in stream_initialized_cb
 }
 
-gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public)
+struct sipe_media_call *
+sipe_core_media_get_call(struct sipe_core_public *sipe_public)
 {
-	if (sipe_public) {
-		return SIPE_CORE_PRIVATE->media_call != NULL;
+	struct sipe_media_call * result = NULL;
+	GList *calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
+
+	for (; calls; calls = g_list_delete_link(calls, calls)) {
+		if (sipe_core_media_get_stream_by_id(calls->data, "audio")) {
+			result = calls->data;
+			break;
+		}
 	}
-	return FALSE;
+
+	return result;
 }
 
 static gboolean phone_number_is_valid(const gchar *phone_number)
@@ -1203,50 +1340,104 @@ void sipe_core_media_test_call(struct sipe_core_public *sipe_public)
 				      sipe_private->test_call_bot_uri, FALSE);
 }
 
-void
+static struct sipe_media_call_private *
+sipe_media_from_sipmsg(struct sipe_core_private *sipe_private,
+		       struct sipmsg *msg)
+{
+	return g_hash_table_lookup(sipe_private->media_calls,
+				   sipmsg_find_header(msg, "Call-ID"));
+}
+
+static void
+transport_response_unsupported_sdp(struct sipe_core_private *sipe_private,
+				   struct sipmsg *msg)
+{
+	sipmsg_add_header(msg, "ms-client-diagnostics",
+			  "52063;reason=\"Unsupported session description\"");
+	sip_transport_response(sipe_private, msg,
+			       488, "Not Acceptable Here", NULL);
+}
+
+static void
+maybe_send_second_invite_response(struct sipe_media_call_private *call_private)
+{
+	GSList *it;
+
+	/* Second INVITE request had to be received and all streams must have
+	 * established candidate pairs before the response can be sent. */
+
+	if (!call_private->invitation) {
+		return;
+	}
+
+	for (it = call_private->streams; it; it = it->next) {
+		struct sipe_media_stream_private *stream_private = it->data;
+		if (!stream_private->established) {
+			return;
+		}
+	}
+
+	send_response_with_session_description(call_private, 200, "OK");
+}
+
+struct sipe_media_call *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
-	struct sipe_media_call_private *call_private = sipe_private->media_call;
+	struct sipe_media_call_private *call_private;
 	struct sdpmsg *smsg;
 	gboolean has_new_media = FALSE;
 	GSList *i;
 
-	if (call_private) {
-		char *self;
-
-		if (!is_media_session_msg(call_private, msg)) {
-			sip_transport_response(sipe_private, msg, 486, "Busy Here", NULL);
-			return;
+	// Don't allow two voice calls in parallel.
+	if (!strstr(msg->body, "m=data") &&
+	    !strstr(msg->body, "m=applicationsharing")) {
+		struct sipe_media_call *call =
+				sipe_core_media_get_call(SIPE_CORE_PUBLIC);
+		if (call && !is_media_session_msg(SIPE_MEDIA_CALL_PRIVATE, msg)) {
+			sip_transport_response(sipe_private, msg,
+					       486, "Busy Here", NULL);
+			return NULL;
 		}
+	}
 
-		self = sip_uri_self(sipe_private);
+	call_private = sipe_media_from_sipmsg(sipe_private, msg);
+
+	if (call_private) {
+		char *self = sip_uri_self(sipe_private);
 		if (sipe_strequal(SIPE_MEDIA_CALL->with, self)) {
 			g_free(self);
 			sip_transport_response(sipe_private, msg, 488, "Not Acceptable Here", NULL);
-			return;
+			return NULL;
 		}
 		g_free(self);
 	}
 
 	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
-		sip_transport_response(sipe_private, msg,
-				       488, "Not Acceptable Here", NULL);
-		sipe_media_hangup(call_private);
-		return;
+		transport_response_unsupported_sdp(sipe_private, msg);
+		if (call_private) {
+			sipe_media_hangup(call_private);
+		}
+		return NULL;
 	}
 
 	if (!call_private) {
 		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
-		struct sip_session *session;
+		SipeMediaCallFlags flags = 0;
 
-		call_private = sipe_media_call_new(sipe_private, with, FALSE, smsg->ice_version);
-		session = sipe_session_add_call(sipe_private, with);
-		sipe_media_dialog_init(session, msg);
+		if (strstr(msg->body, "m=data")) {
+			flags |= SIPE_MEDIA_CALL_NO_UI;
+		}
 
-		SIPE_MEDIA_CALL->with = g_strdup(session->with);
-		sipe_private->media_call = call_private;
+		call_private = (struct sipe_media_call_private *)
+					sipe_media_call_new(sipe_private, with,
+							    msg, smsg->ice_version,
+							    flags);
+
+		if (!(flags & SIPE_MEDIA_CALL_NO_UI)) {
+			SIPE_MEDIA_CALL->call_reject_cb = av_call_reject_cb;
+		}
 		g_free(with);
 	}
 
@@ -1262,20 +1453,18 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 
 		if (   media->port != 0
 		    && !sipe_core_media_get_stream_by_id(SIPE_MEDIA_CALL, id)) {
-			gchar *with;
-
 			if (sipe_strequal(id, "audio"))
 				type = SIPE_MEDIA_AUDIO;
 			else if (sipe_strequal(id, "video"))
 				type = SIPE_MEDIA_VIDEO;
+			else if (sipe_strequal(id, "data"))
+				type = SIPE_MEDIA_APPLICATION;
 			else
 				continue;
 
-			with = parse_from(sipmsg_find_header(msg, "From"));
-			sipe_media_stream_add(sipe_private, id, with, type,
+			sipe_media_stream_add(SIPE_MEDIA_CALL, id, type,
 					      smsg->ice_version, FALSE);
 			has_new_media = TRUE;
-			g_free(with);
 		}
 	}
 
@@ -1287,27 +1476,27 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		// Processing continues in stream_initialized_cb
 	} else {
 		apply_remote_message(call_private, smsg);
-		send_response_with_session_description(call_private, 200, "OK");
-
 		sdpmsg_free(smsg);
+		maybe_send_second_invite_response(call_private);
 	}
+
+	return SIPE_MEDIA_CALL;
 }
 
-void process_incoming_cancel_call(struct sipe_core_private *sipe_private,
+void process_incoming_cancel_call(struct sipe_media_call_private *call_private,
 				  struct sipmsg *msg)
 {
-	struct sipe_media_call_private *call_private = sipe_private->media_call;
-
 	// We respond to the CANCEL request with 200 OK response and
 	// with 487 Request Terminated to the remote INVITE in progress.
-	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
+	sip_transport_response(call_private->sipe_private, msg, 200, "OK", NULL);
 
 	if (call_private->invitation) {
-		sip_transport_response(sipe_private, call_private->invitation,
+		sip_transport_response(call_private->sipe_private,
+				       call_private->invitation,
 				       487, "Request Terminated", NULL);
 	}
 
-	sipe_media_hangup(call_private);
+	sipe_backend_media_reject(SIPE_MEDIA_CALL->backend_private, FALSE);
 }
 
 static gboolean
@@ -1315,10 +1504,12 @@ sipe_media_send_ack(struct sipe_core_private *sipe_private,
 		    struct sipmsg *msg,
 		    struct transaction *trans)
 {
-	struct sipe_media_call_private *call_private = sipe_private->media_call;
+	struct sipe_media_call_private *call_private;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	int tmp_cseq;
+
+	call_private = sipe_media_from_sipmsg(sipe_private, msg);
 
 	if (!is_media_session_msg(call_private, msg))
 		return FALSE;
@@ -1344,66 +1535,92 @@ sipe_media_send_final_ack(struct sipe_core_private *sipe_private,
 			  struct sipmsg *msg,
 			  struct transaction *trans)
 {
+	struct sipe_media_call_private *call_private;
+
 	if (!sipe_media_send_ack(sipe_private, msg, trans))
 		return FALSE;
 
-	sipe_backend_media_accept(sipe_private->media_call->public.backend_private,
-				  FALSE);
+	call_private = sipe_media_from_sipmsg(sipe_private, msg);
+
+	sipe_backend_media_accept(SIPE_MEDIA_CALL->backend_private, FALSE);
 
 	return TRUE;
 }
 
-static void
-reinvite_on_candidate_pair_cb(struct sipe_core_public *sipe_public)
+void
+sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stream)
 {
-	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
-	struct sipe_media_call_private *media_call = sipe_private->media_call;
-	GSList *streams;
+	struct sipe_media_call *call = stream->call;
 
-	if (!media_call)
+	GList *active_candidates =
+			sipe_backend_media_stream_get_active_local_candidates(stream);
+	guint ready_components = g_list_length(active_candidates);
+
+	sipe_media_candidate_list_free(active_candidates);
+
+	if (ready_components != 2) {
+		// We must have both RTP+RTCP candidate pairs established first.
 		return;
-
-	streams = media_call->streams;
-
-	for (; streams; streams = streams->next) {
-		struct sipe_media_stream *s = streams->data;
-		GList *remote_candidates =  sipe_backend_media_get_active_remote_candidates(&media_call->public, s);
-		guint components = g_list_length(remote_candidates);
-
-		sipe_media_candidate_list_free(remote_candidates);
-
-		// We must have candidates for both (RTP + RTCP) components ready
-		if (components < 2) {
-			sipe_schedule_mseconds(sipe_private,
-					       "<+media-reinvite-on-candidate-pair>",
-					       NULL,
-					       500,
-					       (sipe_schedule_action) reinvite_on_candidate_pair_cb,
-					       NULL);
-			return;
-		}
 	}
 
-	sipe_invite_call(sipe_private, sipe_media_send_final_ack);
+	if (SIPE_MEDIA_STREAM_PRIVATE->established) {
+		return;
+	}
+	SIPE_MEDIA_STREAM_PRIVATE->established = TRUE;
+
+	if (stream->candidate_pairs_established_cb) {
+		stream->candidate_pairs_established_cb(stream);
+	}
+
+	if (sipe_backend_media_is_initiator(stream->call, NULL)) {
+		GSList *streams = SIPE_MEDIA_CALL_PRIVATE->streams;
+		for (; streams; streams = streams->next) {
+			struct sipe_media_stream_private *s = streams->data;
+			if (!s->established) {
+				break;
+			}
+		}
+
+		if (streams == NULL) {
+			// All call streams have been established.
+			sipe_invite_call(SIPE_MEDIA_CALL_PRIVATE,
+					 sipe_media_send_final_ack);
+		}
+	} else {
+		maybe_send_second_invite_response(SIPE_MEDIA_CALL_PRIVATE);
+	}
 }
 
 static gboolean
-maybe_retry_call_with_ice_version(struct sipe_core_private *sipe_private,
+maybe_retry_call_with_ice_version(struct sipe_media_call_private *call_private,
 				  SipeIceVersion ice_version,
 				  struct transaction *trans)
 {
-	struct sipe_media_call_private *call_private = sipe_private->media_call;
-
 	if (call_private->ice_version != ice_version &&
 	    sip_transaction_cseq(trans) == 1) {
-		gchar *with = g_strdup(SIPE_MEDIA_CALL->with);
-		gboolean with_video = sipe_core_media_get_stream_by_id(SIPE_MEDIA_CALL, "video") != NULL;
+		GSList *i;
+		gchar *with;
+		gboolean with_video = FALSE;
+
+		for (i = call_private->streams; i; i = i->next) {
+			struct sipe_media_stream *stream = i->data;
+
+			if (sipe_strequal(stream->id, "video")) {
+				with_video = TRUE;
+			} else if (!sipe_strequal(stream->id, "audio")) {
+				/* Don't retry calls which are neither audio
+				 * nor video. */
+				return FALSE;
+			}
+		}
+
+		with = g_strdup(SIPE_MEDIA_CALL->with);
 
 		sipe_media_hangup(call_private);
 		SIPE_DEBUG_INFO("Retrying call with ICEv%d.",
 				ice_version == SIPE_ICE_DRAFT_6 ? 6 : 19);
-		sipe_media_initiate_call(sipe_private, with, ice_version,
-					 with_video);
+		sipe_media_initiate_call(call_private->sipe_private, with,
+					 ice_version, with_video);
 
 		g_free(with);
 		return TRUE;
@@ -1418,10 +1635,12 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 			     struct transaction *trans)
 {
 	const gchar *with;
-	struct sipe_media_call_private *call_private = sipe_private->media_call;
+	struct sipe_media_call_private *call_private;
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	struct sdpmsg *smsg;
+
+	call_private = sipe_media_from_sipmsg(sipe_private,msg);
 
 	if (!is_media_session_msg(call_private, msg))
 		return FALSE;
@@ -1433,8 +1652,16 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 
 	dialog->outgoing_invite = NULL;
 
+	if (msg->response == 603 || msg->response == 605) {
+		// Call rejected by remote peer
+		sipe_media_send_ack(sipe_private, msg, trans);
+		sipe_backend_media_reject(SIPE_MEDIA_CALL->backend_private, FALSE);
+
+		return TRUE;
+	}
+
 	if (msg->response >= 400) {
-		// Call rejected by remote peer or an error occurred
+		// An error occurred
 		const gchar *title;
 		GString *desc = g_string_new("");
 		gboolean append_responsestr = FALSE;
@@ -1449,15 +1676,10 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 					g_string_append_printf(desc, _("User %s is not available"), with);
 				break;
 			}
-			case 603:
-			case 605:
-				title = _("Call rejected");
-				g_string_append_printf(desc, _("User %s rejected call"), with);
-				break;
 			case 415:
 				// OCS/Lync really sends response string with 'Mutipart' typo.
 				if (sipe_strequal(msg->responsestr, "Mutipart mime in content type not supported by Archiving CDR service") &&
-				    maybe_retry_call_with_ice_version(sipe_private, SIPE_ICE_DRAFT_6, trans)) {
+				    maybe_retry_call_with_ice_version(call_private, SIPE_ICE_DRAFT_6, trans)) {
 					return TRUE;
 				}
 				title = _("Unsupported media type");
@@ -1490,7 +1712,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 					retry_ice_version = SIPE_ICE_RFC_5245;
 				}
 
-				if (maybe_retry_call_with_ice_version(sipe_private, retry_ice_version, trans)) {
+				if (maybe_retry_call_with_ice_version(call_private, retry_ice_version, trans)) {
 					return TRUE;
 				}
 				// Break intentionally omitted
@@ -1525,8 +1747,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	sipe_dialog_parse(dialog, msg, TRUE);
 	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
-		sip_transport_response(sipe_private, msg,
-				       488, "Not Acceptable Here", NULL);
+		transport_response_unsupported_sdp(sipe_private, msg);
 		sipe_media_hangup(call_private);
 		return FALSE;
 	}
@@ -1535,29 +1756,26 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 	sdpmsg_free(smsg);
 
 	sipe_media_send_ack(sipe_private, msg, trans);
-	reinvite_on_candidate_pair_cb(SIPE_CORE_PUBLIC);
 
 	return TRUE;
+
+	// Waits until sipe_core_media_candidate_pair_established() is invoked.
 }
 
 gboolean is_media_session_msg(struct sipe_media_call_private *call_private,
 			      struct sipmsg *msg)
 {
-	if (call_private) {
-		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-		struct sip_session *session;
-
-		session = sipe_session_find_call(call_private->sipe_private,
-						 SIPE_MEDIA_CALL->with);
-		if (session) {
-			struct sip_dialog *dialog = session->dialogs->data;
-			return sipe_strequal(dialog->callid, callid);
-		}
+	if (!call_private) {
+		return FALSE;
 	}
-	return FALSE;
+
+	return sipe_media_from_sipmsg(call_private->sipe_private, msg) == call_private;
 }
 
-void sipe_media_handle_going_offline(struct sipe_media_call_private *call_private)
+static void
+end_call(SIPE_UNUSED_PARAMETER gpointer key,
+	 struct sipe_media_call_private *call_private,
+	 SIPE_UNUSED_PARAMETER gpointer user_data)
 {
 	struct sipe_backend_media *backend_private;
 
@@ -1580,9 +1798,40 @@ void sipe_media_handle_going_offline(struct sipe_media_call_private *call_privat
 	sipe_media_hangup(call_private);
 }
 
+void
+sipe_media_handle_going_offline(struct sipe_core_private *sipe_private)
+{
+	g_hash_table_foreach(sipe_private->media_calls, (GHFunc) end_call, NULL);
+}
+
 gboolean sipe_media_is_conference_call(struct sipe_media_call_private *call_private)
 {
 	return g_strstr_len(SIPE_MEDIA_CALL->with, -1, "app:conf:audio-video:") != NULL;
+}
+
+struct sipe_core_private *
+sipe_media_get_sipe_core_private(struct sipe_media_call *call)
+{
+	g_return_val_if_fail(call, NULL);
+
+	return SIPE_MEDIA_CALL_PRIVATE->sipe_private;
+}
+
+struct sip_dialog *
+sipe_media_get_sip_dialog(struct sipe_media_call *call)
+{
+	struct sip_session *session;
+
+	g_return_val_if_fail(call, NULL);
+
+	session = sipe_session_find_call(SIPE_MEDIA_CALL_PRIVATE->sipe_private,
+					 call->with);
+
+	if (!session || !session->dialogs) {
+		return NULL;
+	}
+
+	return session->dialogs->data;
 }
 
 static void
@@ -1661,14 +1910,20 @@ process_get_av_edge_credentials_response(struct sipe_core_private *sipe_private,
 
 				node = sipe_xml_child(item, "udpPort");
 				if (node) {
-					relay->udp_port = atoi(tmp = sipe_xml_data(node));
-					g_free(tmp);
+					tmp = sipe_xml_data(node);
+					if (tmp) {
+						relay->udp_port = atoi(tmp);
+						g_free(tmp);
+					}
 				}
 
 				node = sipe_xml_child(item, "tcpPort");
 				if (node) {
-					relay->tcp_port = atoi(tmp = sipe_xml_data(node));
-					g_free(tmp);
+					tmp = sipe_xml_data(node);
+					if (tmp) {
+						relay->tcp_port = atoi(tmp);
+						g_free(tmp);
+					}
 				}
 
 				relays = g_slist_append(relays, relay);
@@ -1738,6 +1993,186 @@ sipe_media_get_av_edge_credentials(struct sipe_core_private *sipe_private)
 			      process_get_av_edge_credentials_response);
 
 	g_free(body);
+}
+
+void
+sipe_media_add_extra_invite_section(struct sipe_media_call *call,
+				    const gchar *invite_content_type,
+				    gchar *body)
+{
+	g_free(SIPE_MEDIA_CALL_PRIVATE->extra_invite_section);
+	g_free(SIPE_MEDIA_CALL_PRIVATE->invite_content_type);
+	SIPE_MEDIA_CALL_PRIVATE->extra_invite_section = body;
+	SIPE_MEDIA_CALL_PRIVATE->invite_content_type =
+			g_strdup(invite_content_type);
+}
+
+void
+sipe_media_stream_add_extra_attribute(struct sipe_media_stream *stream,
+				      const gchar *name, const gchar *value)
+{
+	SIPE_MEDIA_STREAM_PRIVATE->extra_sdp =
+			sipe_utils_nameval_add(SIPE_MEDIA_STREAM_PRIVATE->extra_sdp,
+					       name, value);
+}
+
+#ifdef HAVE_XDATA
+void
+sipe_core_media_stream_readable(struct sipe_media_stream *stream)
+{
+	g_return_if_fail(stream);
+
+	if (g_queue_is_empty(SIPE_MEDIA_STREAM_PRIVATE->async_reads) &&
+	    stream->read_cb) {
+		stream->read_cb(stream);
+	}
+
+	while (!g_queue_is_empty(SIPE_MEDIA_STREAM_PRIVATE->async_reads)) {
+		struct async_read_data *data;
+		guint8 *pos;
+		gssize len;
+		gssize bytes_read;
+
+		data = g_queue_peek_head(SIPE_MEDIA_STREAM_PRIVATE->async_reads);
+		pos = data->buffer + SIPE_MEDIA_STREAM_PRIVATE->read_pos;
+		len = data->len - SIPE_MEDIA_STREAM_PRIVATE->read_pos;
+
+		bytes_read = sipe_backend_media_stream_read(stream, pos, len);
+		if (bytes_read == -1) {
+			struct sipe_media_call *call = stream->call;
+			struct sipe_core_private *sipe_private =
+					SIPE_MEDIA_CALL_PRIVATE->sipe_private;
+
+			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+						  _("Media error"),
+						  _("Error while reading from stream"));
+			sipe_media_hangup(SIPE_MEDIA_CALL_PRIVATE);
+			return;
+		}
+
+		SIPE_MEDIA_STREAM_PRIVATE->read_pos += bytes_read;
+
+		if (SIPE_MEDIA_STREAM_PRIVATE->read_pos == data->len) {
+			data->callback(stream, data->buffer, data->len);
+			SIPE_MEDIA_STREAM_PRIVATE->read_pos = 0;
+			g_queue_pop_head(SIPE_MEDIA_STREAM_PRIVATE->async_reads);
+			g_free(data);
+		} else {
+			// Still not enough data to finish the read.
+			return;
+		}
+	}
+}
+
+void
+sipe_media_stream_read_async(struct sipe_media_stream *stream,
+			     gpointer buffer, gsize len,
+			     sipe_media_stream_read_callback callback)
+{
+	struct async_read_data *data;
+
+	g_return_if_fail(stream && buffer && callback);
+
+	data = g_new0(struct async_read_data, 1);
+	data->buffer = buffer;
+	data->len = len;
+	data->callback = callback;
+
+	g_queue_push_tail(SIPE_MEDIA_STREAM_PRIVATE->async_reads, data);
+}
+
+static void
+stream_append_buffer(struct sipe_media_stream *stream,
+		     guint8 *buffer, guint len)
+{
+	GByteArray *b = g_byte_array_sized_new(len);
+	g_byte_array_append(b, buffer, len);
+	g_queue_push_tail(SIPE_MEDIA_STREAM_PRIVATE->write_queue, b);
+}
+
+gboolean
+sipe_media_stream_write(struct sipe_media_stream *stream,
+			gpointer buffer, gsize len)
+{
+	if (!sipe_media_stream_is_writable(stream)) {
+		stream_append_buffer(stream, buffer, len);
+		return FALSE;
+	} else {
+		guint written;
+
+		written = sipe_backend_media_stream_write(stream, buffer, len);
+		if (written == len) {
+			return TRUE;
+		}
+
+		stream_append_buffer(stream,
+				     (guint8 *)buffer + written, len - written);
+		return FALSE;
+	}
+}
+
+void
+sipe_core_media_stream_writable(struct sipe_media_stream *stream,
+				gboolean writable)
+{
+	SIPE_MEDIA_STREAM_PRIVATE->writable = writable;
+
+	if (!writable) {
+		return;
+	}
+
+	while (!g_queue_is_empty(SIPE_MEDIA_STREAM_PRIVATE->write_queue)) {
+		GByteArray *b;
+		guint written;
+
+		b = g_queue_peek_head(SIPE_MEDIA_STREAM_PRIVATE->write_queue);
+
+		written = sipe_backend_media_stream_write(stream, b->data, b->len);
+		if (written != b->len) {
+			g_byte_array_remove_range(b, 0, written);
+			return;
+		}
+
+		g_byte_array_unref(b);
+		g_queue_pop_head(SIPE_MEDIA_STREAM_PRIVATE->write_queue);
+	}
+
+	if (sipe_media_stream_is_writable(stream) && stream->writable_cb) {
+		stream->writable_cb(stream);
+	}
+}
+
+gboolean
+sipe_media_stream_is_writable(struct sipe_media_stream *stream)
+{
+	return SIPE_MEDIA_STREAM_PRIVATE->writable &&
+	       g_queue_is_empty(SIPE_MEDIA_STREAM_PRIVATE->write_queue);
+}
+#endif
+
+void
+sipe_media_stream_set_data(struct sipe_media_stream *stream, gpointer data,
+			   GDestroyNotify free_func)
+{
+	struct sipe_media_stream_private *stream_private =
+			SIPE_MEDIA_STREAM_PRIVATE;
+
+	g_return_if_fail(stream_private);
+
+	if (stream_private->data && stream_private->data_free_func) {
+		stream_private->data_free_func(stream_private->data);
+	}
+
+	stream_private->data = data;
+	stream_private->data_free_func = free_func;
+}
+
+gpointer
+sipe_media_stream_get_data(struct sipe_media_stream *stream)
+{
+	g_return_val_if_fail(stream, NULL);
+
+	return SIPE_MEDIA_STREAM_PRIVATE->data;
 }
 
 /*

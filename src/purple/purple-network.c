@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,6 +27,8 @@
 #include <string.h>
 
 #include "glib.h"
+
+#include "conversation.h"
 #include "network.h"
 #include "eventloop.h"
 
@@ -174,9 +176,7 @@ client_connected_cb(struct sipe_backend_listendata *ldata, gint listenfd,
 	ldata->listenfd = -1;
 
 	if (ldata->connect_cb) {
-		struct sipe_backend_fd *sipe_fd = g_new(struct sipe_backend_fd, 1);
-		sipe_fd->fd = fd;
-		ldata->connect_cb(sipe_fd, ldata->data);
+		ldata->connect_cb(sipe_backend_fd_from_int(fd), ldata->data);
 	}
 
 	g_free(ldata);
@@ -245,6 +245,14 @@ void sipe_backend_network_listen_cancel(struct sipe_backend_listendata *ldata)
 	if (ldata->listenfd)
 		close(ldata->listenfd);
 	g_free(ldata);
+}
+
+struct sipe_backend_fd *
+sipe_backend_fd_from_int(int fd)
+{
+	struct sipe_backend_fd *sipe_fd = g_new(struct sipe_backend_fd, 1);
+	sipe_fd->fd = fd;
+	return sipe_fd;
 }
 
 gboolean

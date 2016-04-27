@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,6 +40,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-ft.h"
+#include "sipe-ft-lync.h"
 #include "sipe-groupchat.h"
 #include "sipe-im.h"
 #include "sipe-incoming.h"
@@ -61,9 +62,11 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 	struct sip_dialog *dialog;
 
 #ifdef HAVE_VV
-	if (is_media_session_msg(sipe_private->media_call, msg)) {
+	struct sipe_media_call_private *call_private =
+			g_hash_table_lookup(sipe_private->media_calls, callid);
+	if (is_media_session_msg(call_private, msg)) {
 		// BYE ends a media call
-		sipe_media_hangup(sipe_private->media_call);
+		sipe_media_hangup(call_private);
 	}
 #endif
 
@@ -121,15 +124,16 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 void process_incoming_cancel(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
-	const gchar *callid;
+	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 
 #ifdef HAVE_VV
-	if (is_media_session_msg(sipe_private->media_call, msg)) {
-		process_incoming_cancel_call(sipe_private, msg);
+	struct sipe_media_call_private *call_private =
+			g_hash_table_lookup(sipe_private->media_calls, callid);
+	if (is_media_session_msg(call_private, msg)) {
+		process_incoming_cancel_call(call_private, msg);
 		return;
 	}
 #endif
-	callid = sipmsg_find_header(msg, "Call-ID");
 
 	if (!sipe_session_find_chat_by_callid(sipe_private, callid))
 		sipe_conf_cancel_unaccepted(sipe_private, msg);
@@ -156,6 +160,13 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 		process_incoming_info_conversation(sipe_private, msg);
 		return;
 	}
+#ifdef HAVE_XDATA
+	else if (g_str_has_prefix(contenttype, "application/ms-filetransfer+xml"))
+	{
+		process_incoming_info_ft_lync(sipe_private, msg);
+		return;
+	}
+#endif
 
 	from = parse_from(sipmsg_find_header(msg, "From"));
 	session = sipe_session_find_chat_or_im(sipe_private, callid, from);
@@ -284,28 +295,6 @@ static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 }
 #endif
 
-static void sipe_invite_mime_mixed_cb(gpointer user_data, const GSList *fields,
-	SIPE_UNUSED_PARAMETER const gchar *body, SIPE_UNUSED_PARAMETER gsize length)
-{
-	const gchar *ctype = sipe_utils_nameval_find(fields, "Content-Type");
-
-	/* Lync 2010 file transfer */
-	if (g_str_has_prefix(ctype, "application/ms-filetransfer+xml")) {
-		struct sipmsg *msg = user_data;
-
-		sipmsg_remove_header_now(msg, "Content-Type");
-		sipmsg_add_header_now(msg, "Content-Type", ctype);
-
-		/* Right now, we do not care about the message body, only detect new
-		 * file transfer protocol from Content-Type and reply with
-		 * 488 Not Acceptable Here to force the old MSOC behavior.
-		 *
-		 * TODO: Extend sipmsg so that it supports multipart messages, as to
-		 * implement the new protocol, we need access to both parts of the
-		 * message for further processing. */
-	}
-}
-
 static void send_invite_response(struct sipe_core_private *sipe_private,
 				 struct sipmsg *msg)
 {
@@ -403,15 +392,17 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 #endif
 
 	if (g_str_has_prefix(content_type, "multipart/mixed")) {
-		sipe_mime_parts_foreach(content_type, msg->body, sipe_invite_mime_mixed_cb, msg);
-		/* Reload Content-Type to get type of the selected message part */
-		content_type = sipmsg_find_header(msg, "Content-Type");
-	}
-
-	/* Lync 2010 file transfer */
-	if (g_str_has_prefix(content_type, "application/ms-filetransfer+xml")) {
-		sip_transport_response(sipe_private, msg, 488, "Not Acceptable Here", NULL);
-		return;
+		if (sipe_mime_parts_contain(content_type, msg->body,
+					    "application/ms-filetransfer+xml")) {
+			/* Lync 2010 file transfer */
+#ifdef HAVE_XDATA
+			process_incoming_invite_ft_lync(sipe_private, msg);
+#else
+			sip_transport_response(sipe_private, msg,
+					       488, "Not Acceptable Here", NULL);
+#endif
+			return;
+		}
 	}
 
 	/* Invitation to join conference */
@@ -421,8 +412,9 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 
 #ifdef HAVE_VV
-	/* Invitation to audio call */
-	if (msg->body && strstr(msg->body, "m=audio")) {
+	/* Invitation to audio call or file transfer */
+	if (msg->body &&
+	    (strstr(msg->body, "m=audio") || strstr(msg->body, "m=data"))) {
 		process_incoming_invite_call(sipe_private, msg);
 		return;
 	}

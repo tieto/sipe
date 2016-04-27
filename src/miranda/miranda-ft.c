@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -156,7 +156,9 @@ free_xfer_struct(struct sipe_backend_file_transfer *xfer)
 			sipe_miranda_input_remove(xfer->watcher);
 			xfer->watcher = 0;
 		}
-		sipe_core_ft_deallocate(ft);
+		if (ft->deallocate) {
+			ft->deallocate(ft);
+		}
 		xfer->ft = NULL;
 	}
 }
@@ -292,6 +294,11 @@ cancel_local(struct sipe_backend_file_transfer *xfer)
 	g_free(xfer);
 }
 
+void sipe_backend_ft_set_completed(struct sipe_file_transfer *ft)
+{
+	_NIF();
+}
+
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft)
 {
 	cancel_local(ft->backend_private);
@@ -365,6 +372,41 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 
 }
 
+void
+sipe_backend_ft_outgoing(struct sipe_core_public *sipe_public,
+			 struct sipe_file_transfer *ft,
+			 const gchar *who,
+			 const gchar *file_name)
+{
+	SIPPROTO *pr = sipe_public->backend_private;
+	HANDLE hContact;
+	int result;
+	struct __stat64 buf;
+
+	LOCK;
+	hContact = sipe_backend_buddy_find( sipe_public, who, NULL );
+	ft->backend_private = new_xfer(pr, ft, hContact);
+	ft->backend_private->incoming = FALSE;
+	result = _tstat64( file_name, &buf );
+	if (result != 0)
+	{
+		FT_SIPE_DEBUG_INFO("Could not stat file, error<%d>", result);
+		ft->backend_private->file_size = 0;
+	}
+	else
+	{
+		ft->backend_private->file_size = buf.st_size;
+		ft->backend_private->bytes_remaining = ft->backend_private->file_size;
+		ft->backend_private->bytes_sent = 0;
+	}
+	ft->backend_private->local_filename = g_strdup(file_name);
+	ft->backend_private->filename = g_path_get_basename(ft->backend_private->local_filename);
+	FT_SIPE_DEBUG_INFO("set filename to <%s>", ft->backend_private->filename);
+	ft->init(ft, ft->backend_private->filename, ft->backend_private->file_size, who);
+	sipe_miranda_SendBroadcast(pr, hContact, ACKTYPE_FILE, ACKRESULT_CONNECTING, (HANDLE)ft->backend_private, 0);
+	UNLOCK;
+}
+
 gboolean
 sipe_backend_ft_incoming_accept(struct sipe_file_transfer *ft,
 				const gchar *ip,
@@ -421,8 +463,8 @@ do_transfer(struct sipe_backend_file_transfer *xfer)
 	FT_SIPE_DEBUG_INFO("incoming <%d>", xfer->incoming);
 	if (xfer->incoming) {
 		FT_SIPE_DEBUG_INFO_NOFORMAT("incoming branch");
-		r = sipe_core_tftp_read(xfer->ft, &buffer, xfer->bytes_remaining,
-					xfer->current_buffer_size);
+		r = ft->read(xfer->ft, &buffer, xfer->bytes_remaining,
+			     xfer->current_buffer_size);
 		if (r > 0) {
 			size_t wc;
 			wc = fwrite(buffer, 1, r, xfer->dest_fp);
@@ -486,7 +528,7 @@ do_transfer(struct sipe_backend_file_transfer *xfer)
 		}
 
 		s = MIN(xfer->bytes_remaining, result);
-		r = sipe_core_tftp_write(xfer->ft, buffer, s);
+		r = ft->write(ft, buffer, s);
 
 		if ((xfer->bytes_remaining - r) == 0)
 			set_completed(xfer, TRUE);
@@ -536,19 +578,11 @@ do_transfer(struct sipe_backend_file_transfer *xfer)
 	if (xfer->status == SIPE_MIRANDA_XFER_STATUS_DONE)
 	{
 		xfer->end_time = time(NULL);
-		if (xfer->incoming)
-		{
-			if (sipe_core_tftp_incoming_stop(xfer->ft)) {
-		                /* We're done with this transfer */
-				free_xfer_struct(xfer);
-		        } else {
-				_unlink(xfer->local_filename);
-			}
-		} else {
-			if (sipe_core_tftp_outgoing_stop(xfer->ft)) {
-				/* We're done with this transfer */
-				free_xfer_struct(xfer);
-			}
+		if (xfer->ft->end && xfer->ft->end(xfer->ft)) {
+			/* We're done with this transfer */
+			free_xfer_struct(xfer);
+		} else if (xfer->incoming) {
+			_unlink(xfer->local_filename);
 		}
 
 		if (xfer->watcher != 0) {
@@ -606,9 +640,7 @@ begin_transfer(struct sipe_file_transfer *ft)
 
 	LOCK;
 	FT_SIPE_DEBUG_INFO("incoming <%d> size <%d>", ft->backend_private->incoming, ft->backend_private->file_size);
-	if (ft->backend_private->incoming)
-		sipe_core_tftp_incoming_start(ft, ft->backend_private->file_size);
-	else {
+	if (!ft->backend_private->incoming) {
 		/* Set socket to nonblocking */
 		SOCKET sock = CallService(MS_NETLIB_GETSOCKET, (WPARAM)xfer->fd, (LPARAM)0);
 		unsigned long parm = 1;
@@ -619,7 +651,9 @@ begin_transfer(struct sipe_file_transfer *ft)
 		}
 		
 		FT_SIPE_DEBUG_INFO("outgoing ft <%08x> size <%d>", ft, ft->backend_private->file_size);
-		sipe_core_tftp_outgoing_start(ft, ft->backend_private->file_size);
+	}
+	if (ft->start) {
+		ft->start(ft, ft->backend_private->file_size);
 	}
 	UNLOCK;
 
@@ -674,40 +708,21 @@ sipe_backend_ft_is_incoming(struct sipe_file_transfer *ft)
 HANDLE
 sipe_miranda_SendFile( SIPPROTO *pr, HANDLE hContact, const PROTOCHAR* szDescription, PROTOCHAR** ppszFiles )
 {
-	struct sipe_file_transfer *ft = sipe_core_ft_allocate(pr->sip);
 	DBVARIANT dbv;
 
 	if ( !DBGetContactSettingString( hContact, pr->proto.m_szModuleName, SIP_UNIQUEID, &dbv )) {
-		int result;
-		struct __stat64 buf;
+		struct sipe_file_transfer *ft;
 
-		LOCK;
-		ft->backend_private = new_xfer(pr, ft, hContact);
-		ft->backend_private->incoming = FALSE;
-		result = _tstat64( ppszFiles[0], &buf );
-		if (result != 0)
-		{
-			FT_SIPE_DEBUG_INFO("Could not stat file, error<%d>", result);
-			ft->backend_private->file_size = 0;
-		}
-		else
-		{
-			ft->backend_private->file_size = buf.st_size;
-			ft->backend_private->bytes_remaining = ft->backend_private->file_size;
-			ft->backend_private->bytes_sent = 0;
-		}
+		ft = sipe_core_ft_create_outgoing(pr->sip, dbv.pszVal, TCHAR2CHAR(ppszFiles[0]));
+
 		FT_SIPE_DEBUG_INFO("SendFile: desc <%ls> name <%s> size <%d> to <%s>", szDescription, TCHAR2CHAR(ppszFiles[0]), ft->backend_private->file_size, dbv.pszVal);
-		ft->backend_private->local_filename = g_strdup(TCHAR2CHAR(ppszFiles[0]));
-		ft->backend_private->filename = g_path_get_basename(ft->backend_private->local_filename);
-		FT_SIPE_DEBUG_INFO("set filename to <%s>", ft->backend_private->filename);
-		sipe_core_ft_outgoing_init(ft, ft->backend_private->filename, ft->backend_private->file_size, dbv.pszVal);
-		sipe_miranda_SendBroadcast(pr, hContact, ACKTYPE_FILE, ACKRESULT_CONNECTING, (HANDLE)ft->backend_private, 0);
-		UNLOCK;
 
 		DBFreeVariant( &dbv );
+
+		return ft->backend_private;
 	}
 
-	return ft->backend_private;
+	return NULL;
 }
 
 int
@@ -724,7 +739,7 @@ sipe_miranda_FileAllow( SIPPROTO *pr, HANDLE hContact, HANDLE hTransfer, const P
 	FT_SIPE_DEBUG_INFO("Incoming ft <%08x> allowed", ft);
 	ft->backend_private->local_filename = g_strdup_printf("%s%s", TCHAR2CHAR(szPath), ft->backend_private->filename);
 	sipe_miranda_SendBroadcast(pr, hContact, ACKTYPE_FILE, ACKRESULT_CONNECTING, (HANDLE)ft->backend_private, 0);
-	sipe_core_ft_incoming_init(ft);
+	ft->init(ft, ft->backend_private->filename, ft->backend_private->file_size, NULL);
 	return ft->backend_private;
 }
 
@@ -733,8 +748,8 @@ sipe_miranda_FileDeny( SIPPROTO *pr, HANDLE hContact, HANDLE hTransfer, const PR
 {
 	struct sipe_file_transfer *ft = (struct sipe_file_transfer *)hTransfer;
 	FT_SIPE_DEBUG_INFO("FileDeny: reason <%s>", szReason);
-	if (ft->backend_private->incoming)
-		sipe_core_ft_cancel(ft);
+	if (ft->backend_private->incoming && ft->request_denied)
+		ft->request_denied(ft);
 	free_xfer_struct(ft->backend_private);
 	return 0;
 }

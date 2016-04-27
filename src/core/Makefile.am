@@ -51,6 +51,7 @@ libsipe_core_la_SOURCES = \
 	sipe-ews-autodiscover.c \
 	sipe-ft.h \
 	sipe-ft.c \
+	sipe-ft-tftp.h \
 	sipe-ft-tftp.c \
 	sipe-group.h \
 	sipe-group.c \
@@ -66,6 +67,7 @@ libsipe_core_la_SOURCES = \
 	sipe-im.c \
 	sipe-incoming.h \
 	sipe-incoming.c \
+	sipe-mime-common.c \
 	sipe-notify.h \
 	sipe-notify.c \
 	sipe-ocs2005.h \
@@ -194,6 +196,11 @@ libsipe_core_libxml2_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(LIBXML2_CFLAGS)
 if SIPE_WITH_VV
 libsipe_core_la_SOURCES += sipe-media.h sipe-media.c \
 	sdpmsg.h sdpmsg.c
+endif
+
+if SIPE_HAVE_XDATA
+libsipe_core_la_SOURCES += \
+	sipe-ft-lync.h sipe-ft-lync.c
 endif
 
 check_PROGRAMS =

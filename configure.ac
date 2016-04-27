@@ -131,7 +131,7 @@ dnl check for availability of addition linker flags
 for newflag in \
 	"-Wl,-Bsymbolic-functions" \
 ; do
-	ac_save_LDLAGS=$LDLAGS
+	ac_save_LDFLAGS=$LDFLAGS
 	AC_MSG_CHECKING([if $CC supports $newflag])
 	LDFLAGS="$ADDITIONAL_LDFLAGS $newflag"
 	AC_LINK_IFELSE(
@@ -188,7 +188,7 @@ AS_IF([test "x$with_krb5" = xno], [], dnl disabled by user
       ])
 AS_IF([test "x$with_krb5" != xno],
       [ac_save_CFLAGS="$CFLAGS"
-       ac_save_LDFLAGS="$LDLAGS"
+       ac_save_LDFLAGS="$LDFLAGS"
        CFLAGS="$CFLAGS $KRB5_CFLAGS"
        LDFLAGS="$LDFLAGS $KRB5_LDFLAGS"
        AC_CHECK_HEADERS([gssapi/gssapi.h gssapi/gssapi_krb5.h],
@@ -348,6 +348,7 @@ AC_ARG_ENABLE([purple],
 	[AC_HELP_STRING([--enable-purple], [build purple plugin @<:@default=yes@:>@])],
 	[],
 	[enable_purple=yes])
+ac_have_xdata=no
 with_purple_vv=no
 AS_IF([test "x$enable_purple" != xno],
 	[PKG_CHECK_MODULES(PURPLE, [purple-3],
@@ -409,19 +410,33 @@ AS_IF([test "x$enable_purple" != xno],
 				[AC_MSG_WARN([cross compiling: not checking])])
 			 ])
 
-		 AC_COMPILE_IFELSE(
-			[AC_LANG_PROGRAM([[
+		 dnl SRTP and XDATA require media backend
+		 AS_IF([test "x$with_purple_vv" != xno],
+			[AC_LINK_IFELSE(
+				[AC_LANG_PROGRAM([[
 #include <media.h>
-				]],
-				[[purple_media_set_encryption_parameters(NULL, "", "", "", "", 0);
-			          purple_media_set_decryption_parameters(NULL, "", "", "", "", "", 0);]]
-			 )],
-			 [AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])]
-		 )
+					]],
+					[[purple_media_set_encryption_parameters(NULL, "", "", "", "", 0);
+					  purple_media_set_decryption_parameters(NULL, "", "", "", "", "", 0);]]
+				 )],
+				 [AC_DEFINE(HAVE_SRTP, 1, [Define if we have SRTP support in media backend.])]
+			 )
+
+			 AC_COMPILE_IFELSE(
+				[AC_LANG_PROGRAM([[
+#include <media.h>
+					]],
+					[[return (PURPLE_MEDIA_APPLICATION);]]
+				 )],
+				 [dnl libpurple supports raw data RTP connections
+				  ac_have_xdata=yes]
+			 )
+			])
 
 		 CFLAGS=$ac_save_CFLAGS
 		 LIBS=$ac_save_LIBS])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
+AM_CONDITIONAL(SIPE_PURPLE3, [test "x$purple_pkgconfig" = xpurple-3])
 
 dnl build option: telepathy backend
 AC_ARG_ENABLE([telepathy],
@@ -463,6 +478,11 @@ dnl enable voice & video support if any backend supports it
 AS_IF([test "x$with_purple_vv" != xno],
 	[AC_DEFINE(HAVE_VV, 1, [Define if voice & video is enabled.])])
 AM_CONDITIONAL(SIPE_WITH_VV, [test "x$with_purple_vv" != xno])
+
+dnl raw data RTP streams enable Lync file transfer
+AM_CONDITIONAL(SIPE_HAVE_XDATA, [test "x$ac_have_xdata" == xyes])
+AS_IF([test "x$ac_have_xdata" == xyes],
+	[AC_DEFINE(HAVE_XDATA, 1, [Define if we have raw data RTP in media backend.])])
 
 dnl these code parts rely on interfaces that require GValueArray. This
 dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there

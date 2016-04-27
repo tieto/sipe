@@ -1,6 +1,10 @@
 /**
  * @file uuid.c
  *
+ * pidgin-sipe
+ *
+ * Copyright (C) 2008-2015 SIPE Project <http://sipe.sourceforge.net/>
+ *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
@@ -25,8 +29,6 @@
 #include "sipe-digest.h"
 #include "uuid.h"
 
-static const char *epid_ns_uuid = "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe";
-
 /*
  * This assumes that the structure is correctly packed on all target
  * platforms, i.e. sizeof(uuid_t) == 16
@@ -49,27 +51,6 @@ typedef struct {
 #ifdef _WIN32
 #pragma pack(pop)
 #endif
-
-#define UUID_OFFSET_TO_LAST_SEGMENT 24
-
-static void readUUID(const char *string, uuid_t *uuid)
-{
-	int i;
-	/* Some platforms don't allow scanning to char using %02hhx */
-	short tmp1, tmp2;
-
-	sscanf(string, "%08x-%04hx-%04hx-%02hx%02hx-", &uuid->time_low
-			, &uuid->time_mid, &uuid->time_hi_and_version
-			, &tmp1, &tmp2);
-	uuid->clock_seq_hi_and_reserved = tmp1;
-	uuid->clock_seq_low = tmp2;
-
-	for(i=0;i<6;i++)
-	{
-		sscanf(&string[UUID_OFFSET_TO_LAST_SEGMENT+i*2], "%02hx", &tmp1);
-		uuid->node[i] = tmp1;
-	}
-}
 
 static void printUUID(uuid_t *uuid, char *string)
 {
@@ -98,20 +79,33 @@ static void createUUIDfromHash(uuid_t *uuid, const unsigned char *hash)
 
 char *generateUUIDfromEPID(const gchar *epid)
 {
-	uuid_t result;
-	char buf[512];
+#define UUID_STRING_LENGTH 36
+	/* derived from "fcacfb03-8a73-46ef-91b1-e5ebeeaba4fe" */
+	uuid_t result = {
+		0xfcacfb03,
+		0x8a73,
+		0x46ef,
+		0x91, 0xb1,
+		{ 0xe5, 0xeb, 0xee, 0xab, 0xa4, 0xfe }
+	};
+	gchar *buf;
 	guchar digest[SIPE_DIGEST_SHA1_LENGTH];
-
-	readUUID(epid_ns_uuid, &result);
+	guint digest_length = sizeof(uuid_t) + strlen(epid);
+	guint buf_length    = digest_length;
 
 	result.time_low = GUINT32_FROM_LE(result.time_low);
 	result.time_mid = GUINT16_FROM_LE(result.time_mid);
 	result.time_hi_and_version = GUINT16_FROM_LE(result.time_hi_and_version);
 
-	memcpy(buf, &result, sizeof(uuid_t));
-	strcpy(&buf[sizeof(uuid_t)], epid);
+	/* buffer must be able to hold at least the UUID string */
+	if (buf_length < UUID_STRING_LENGTH)
+		buf_length = UUID_STRING_LENGTH;
+	buf = g_malloc(buf_length + 1);
 
-	sipe_digest_sha1((guchar *)buf, strlen(buf), digest);
+	memcpy(buf, &result, sizeof(uuid_t));
+	strcpy(buf + sizeof(uuid_t), epid);
+
+	sipe_digest_sha1((guchar *)buf, digest_length, digest);
 	createUUIDfromHash(&result, digest);
 
 	result.time_low = GUINT32_TO_LE(result.time_low);
@@ -119,7 +113,7 @@ char *generateUUIDfromEPID(const gchar *epid)
 	result.time_hi_and_version = GUINT16_TO_LE(result.time_hi_and_version);
 
 	printUUID(&result, buf);
-	return g_strdup(buf);
+	return(buf);
 }
 
 /**

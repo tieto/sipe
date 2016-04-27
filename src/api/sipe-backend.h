@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -230,6 +230,7 @@ gssize sipe_backend_ft_write(struct sipe_file_transfer *ft,
 			     const guchar *data,
 			     gsize size);
 
+void sipe_backend_ft_set_completed(struct sipe_file_transfer *ft);
 
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft);
 void sipe_backend_ft_cancel_remote(struct sipe_file_transfer *ft);
@@ -239,6 +240,18 @@ void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
 			      const gchar *who,
 			      const gchar *file_name,
 			      gsize file_size);
+/**
+ * Allocates and initializes backend file transfer structure for sending a file.
+ *
+ * @param sipe_public (in) the handle representing the protocol instance
+ * @param ft (in) sipe core file transfer structure
+ * @param who (in) SIP URI of the file recipient
+ * @param file_name (in) filesystem path of the file being sent
+ */
+void sipe_backend_ft_outgoing(struct sipe_core_public *sipe_public,
+			      struct sipe_file_transfer *ft,
+			      const gchar *who,
+			      const gchar *file_name);
 /**
  * Begins file transfer with remote peer.
  *
@@ -308,6 +321,13 @@ gchar *sipe_backend_markup_strip_html(const gchar *html);
 /** MEDIA ********************************************************************/
 
 typedef enum {
+	/* This client is the one who invites other participant to the call. */
+	SIPE_MEDIA_CALL_INITIATOR = 1,
+	/* Don't show any user interface elements for the call. */
+	SIPE_MEDIA_CALL_NO_UI = 2
+} SipeMediaCallFlags;
+
+typedef enum {
 	SIPE_ICE_NO_ICE,
 	SIPE_ICE_DRAFT_6,
 	SIPE_ICE_RFC_5245
@@ -329,7 +349,8 @@ typedef enum {
 
 typedef enum {
 	SIPE_MEDIA_AUDIO,
-	SIPE_MEDIA_VIDEO
+	SIPE_MEDIA_VIDEO,
+	SIPE_MEDIA_APPLICATION
 } SipeMediaType;
 
 typedef enum {
@@ -356,7 +377,13 @@ struct sipe_backend_media_relays;
 struct sipe_media_stream {
 	struct sipe_backend_media_stream *backend_private;
 
+	struct sipe_media_call *call;
 	gchar *id;
+
+	void (*candidate_pairs_established_cb)(struct sipe_media_stream *);
+	void (*read_cb)(struct sipe_media_stream *);
+	void (*writable_cb)(struct sipe_media_stream *);
+	void (*mute_cb)(struct sipe_media_stream *, gboolean is_muted);
 };
 
 struct sipe_media_call {
@@ -388,7 +415,7 @@ struct sipe_media_relay {
 struct sipe_backend_media *sipe_backend_media_new(struct sipe_core_public *sipe_public,
 						  struct sipe_media_call *call,
 						  const gchar *participant,
-						  gboolean initiator);
+						  SipeMediaCallFlags flags);
 void sipe_backend_media_free(struct sipe_backend_media *media);
 
 void sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname);
@@ -413,10 +440,6 @@ gboolean sipe_backend_media_is_initiator(struct sipe_media_call *media,
 gboolean sipe_backend_media_accepted(struct sipe_backend_media *media);
 gboolean sipe_backend_stream_initialized(struct sipe_media_call *media,
 					 struct sipe_media_stream *stream);
-GList *sipe_backend_media_get_active_local_candidates(struct sipe_media_call *media,
-						      struct sipe_media_stream *stream);
-GList *sipe_backend_media_get_active_remote_candidates(struct sipe_media_call *media,
-						       struct sipe_media_stream *stream);
 void sipe_backend_media_set_encryption_keys(struct sipe_media_call *media,
 					    struct sipe_media_stream *stream,
 					    const guchar *encryption_key,
@@ -430,6 +453,15 @@ void sipe_backend_stream_unhold(struct sipe_media_call *media,
 				struct sipe_media_stream *stream,
 				gboolean local);
 gboolean sipe_backend_stream_is_held(struct sipe_media_stream *stream);
+
+GList *sipe_backend_media_stream_get_active_local_candidates(struct sipe_media_stream *stream);
+GList *sipe_backend_media_stream_get_active_remote_candidates(struct sipe_media_stream *stream);
+
+gssize sipe_backend_media_stream_read(struct sipe_media_stream *stream,
+				     guint8 *buffer, gsize len);
+gssize sipe_backend_media_stream_write(struct sipe_media_stream *stream,
+				       guint8 *buffer, gsize len);
+
 void sipe_backend_media_stream_end(struct sipe_media_call *media,
 				   struct sipe_media_stream *stream);
 void sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream);
@@ -514,6 +546,7 @@ sipe_backend_network_listen_range(unsigned short port_min,
 				  gpointer data);
 void sipe_backend_network_listen_cancel(struct sipe_backend_listendata *ldata);
 
+struct sipe_backend_fd * sipe_backend_fd_from_int(int fd);
 gboolean sipe_backend_fd_is_valid(struct sipe_backend_fd *fd);
 void sipe_backend_fd_free(struct sipe_backend_fd *fd);
 

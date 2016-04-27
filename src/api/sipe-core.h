@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -77,6 +77,17 @@ struct sipe_chat_session;
  */
 struct sipe_file_transfer {
 	struct sipe_backend_file_transfer *backend_private;
+
+	void (* ft_init)(struct sipe_file_transfer *ft, const gchar *filename,
+			 gsize size, const gchar *who);
+	void (* ft_start)(struct sipe_file_transfer *ft, gsize total_size);
+	gssize (* ft_read)(struct sipe_file_transfer *ft, guchar **buffer,
+			   gsize bytes_remaining, gsize bytes_available);
+	gssize (* ft_write)(struct sipe_file_transfer *ft, const guchar *buffer,
+			    gsize size);
+	gboolean (* ft_end)(struct sipe_file_transfer *ft);
+	void (* ft_request_denied)(struct sipe_file_transfer *ft);
+	void (* ft_cancelled)(struct sipe_file_transfer *ft);
 };
 
 /**
@@ -382,7 +393,9 @@ void sipe_core_chat_modify_lock(struct sipe_core_public *sipe_public,
  * @param focus_uri (in) focus URI string
  */
 void sipe_core_conf_create(struct sipe_core_public *sipe_public,
-			   const gchar *focus_uri);
+			   const gchar *focus_uri,
+			   const gchar *organizer,
+			   const gchar *meeting_id);
 
 /* buddy menu callback: parameter == chat_session */
 void sipe_core_conf_make_leader(struct sipe_core_public *sipe_public,
@@ -391,6 +404,10 @@ void sipe_core_conf_make_leader(struct sipe_core_public *sipe_public,
 void sipe_core_conf_remove_from(struct sipe_core_public *sipe_public,
 				gpointer parameter,
 				const gchar *buddy_name);
+
+gchar *
+sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
+			  struct sipe_chat_session *chat_session);
 
 /* call control (CSTA) */
 void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,
@@ -405,6 +422,30 @@ struct sipe_media_stream *
 sipe_core_media_get_stream_by_id(struct sipe_media_call *call, const gchar *id);
 
 /**
+ * Called by media backend after a candidate pair for a media stream component
+ * has been established.
+ *
+ * @param stream (in) SIPE media stream data.
+ */
+void
+sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stream);
+
+void
+sipe_core_media_stream_readable(struct sipe_media_stream *stream);
+
+/**
+ * Called by media backend when a @c SIPE_MEDIA_APPLICATION stream changes its
+ * state between writable and unwritable.
+ *
+ * @param stream (in) SIPE media stream data.
+ * @param writable (in) @c TRUE if stream has become writable, otherwise
+ *                 @c FALSE.
+ */
+void
+sipe_core_media_stream_writable(struct sipe_media_stream *stream,
+				gboolean writable);
+
+/**
  * Connects to a conference call specified by given chat session
  *
  * @param sipe_public (in) SIPE core data.
@@ -414,13 +455,17 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					struct sipe_chat_session *chat_session);
 
 /**
- * Checks whether there is a media call in progress
+ * Retrieves the media call in progress
+ *
+ * The function checks only for voice and video calls, ignoring other types of
+ * data transfers.
  *
  * @param sipe_public (in) SIPE core data.
  *
- * @return @c TRUE if media call is in progress
+ * @return @c sipe_media_call structure or @c NULL if call is not in progress.
  */
-gboolean sipe_core_media_in_call(struct sipe_core_public *sipe_public);
+struct sipe_media_call *
+sipe_core_media_get_call(struct sipe_core_public *sipe_public);
 
 /**
  * Initiates a call with given phone number
@@ -439,24 +484,11 @@ void sipe_core_media_phone_call(struct sipe_core_public *sipe_public,
 void sipe_core_media_test_call(struct sipe_core_public *sipe_public);
 
 /* file transfer */
-struct sipe_file_transfer *sipe_core_ft_allocate(struct sipe_core_public *sipe_public);
-void sipe_core_ft_deallocate(struct sipe_file_transfer *ft);
-void sipe_core_ft_cancel(struct sipe_file_transfer *ft);
-void sipe_core_ft_incoming_init(struct sipe_file_transfer *ft);
-void sipe_core_ft_outgoing_init(struct sipe_file_transfer *ft,
-				const gchar *filename, gsize size,
-				const gchar *who);
+struct sipe_file_transfer *
+sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
+			     const gchar *who,
+			     const gchar *file);
 
-void sipe_core_tftp_incoming_start(struct sipe_file_transfer *ft,
-				   gsize total_size);
-gboolean sipe_core_tftp_incoming_stop(struct sipe_file_transfer *ft);
-void sipe_core_tftp_outgoing_start(struct sipe_file_transfer *ft,
-				   gsize total_size);
-gboolean sipe_core_tftp_outgoing_stop(struct sipe_file_transfer *ft);
-gssize sipe_core_tftp_read(struct sipe_file_transfer *ft, guchar **buffer,
-			   gsize bytes_remaining, gsize bytes_available);
-gssize sipe_core_tftp_write(struct sipe_file_transfer *ft, const guchar *buffer,
-			    gsize size);
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
 void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,

@@ -80,6 +80,9 @@ void sipe_chat_remove_session(struct sipe_chat_session *session)
 	sipe_backend_chat_session_destroy(session->backend);
 	g_free(session->title);
 	g_free(session->id);
+	g_free(session->join_url);
+	g_free(session->dial_in_conf_id);
+	g_free(session->organizer);
 	g_free(session);
 }
 

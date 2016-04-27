@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -55,7 +55,14 @@ void sip_soap_raw_request_cb(struct sipe_core_private *sipe_private,
 							  hdr,
 							  soap,
 							  callback);
-	trans->payload = payload;
+	if (trans) {
+		trans->payload = payload;
+	/* SIP transport is no longer valid - give up */
+	} else if (payload) {
+		if (payload->destroy)
+			(payload->destroy)(payload->data);
+		g_free(payload);
+	}
 
 	g_free(contact);
 	g_free(hdr);

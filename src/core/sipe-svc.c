@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -244,17 +244,22 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 				      sipe_svc_callback *callback,
 				      gpointer callback_data)
 {
-	/* Only generate SOAP header if we have a security token */
+	/* Only generate UUID & SOAP header if we have a security token */
+	gchar *uuid = wsse_security ?
+		generateUUIDfromEPID(wsse_security) :
+		NULL;
 	gchar *soap_header = wsse_security ?
 		g_strdup_printf("<soap:Header>"
 				" <wsa:To>%s</wsa:To>"
 				" <wsa:ReplyTo>"
 				"  <wsa:Address>http://www.w3.org/2005/08/addressing/anonymous</wsa:Address>"
 				" </wsa:ReplyTo>"
+				" <wsa:MessageID>uuid:%s</wsa:MessageID>"
 				" <wsa:Action>%s</wsa:Action>"
 				" <wsse:Security>%s</wsse:Security>"
 				"</soap:Header>",
 				uri,
+				uuid,
 				soap_action,
 				wsse_security) :
 		g_strdup("");
@@ -282,6 +287,7 @@ static gboolean sipe_svc_wsdl_request(struct sipe_core_private *sipe_private,
 					      internal_callback,
 					      callback,
 					      callback_data);
+	g_free(uuid);
 	g_free(soap_header);
 	g_free(body);
 

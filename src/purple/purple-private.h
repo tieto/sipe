@@ -22,10 +22,35 @@
 
 #include "version.h"
 
+#define SIPE_PURPLE_PLUGIN_ID "prpl-sipe"
+#define SIPE_PURPLE_PLUGIN_NAME "Office Communicator"
+
+#define SIPE_PURPLE_PLUGIN_SUMMARY \
+	"Microsoft Office Communicator Protocol Plugin"
+
+#define SIPE_PURPLE_PLUGIN_DESCRIPTION \
+	"A plugin for the extended SIP/SIMPLE protocol used by " \
+	"Microsoft Live/Office Communications/Lync Server (LCS2005/OCS2007+)"
+
+#define SIPE_PURPLE_PLUGIN_AUTHORS \
+	"Stefan Becker <chemobejk@gmail.com>, " \
+	"Jakub Adam <jakub.adam@ktknet.cz>, " \
+	"Anibal Avelar <avelar@gmail.com> (retired), " \
+	"pier11 <pier11@operamail.com> (retired), " \
+	"Gabriel Burt <gburt@novell.com> (retired)"
+
+#define SIPE_PURPLE_PROTOCOL_OPTIONS OPT_PROTO_CHAT_TOPIC | OPT_PROTO_PASSWORD_OPTIONAL
+
+#if !PURPLE_VERSION_CHECK(3,0,0)
+#define PurpleIMTypingState PurpleTypingState
+#define _PurpleProtocolAction _PurplePluginAction
+#endif
+
 /* Forward declarations */
 struct sipe_chat_session;
 struct sipe_core_public;
 struct _PurpleAccount;
+struct _PurpleBlistNode;
 struct _PurpleBuddy;
 struct _PurpleChat;
 struct _PurpleConnection;
@@ -88,15 +113,6 @@ void sipe_purple_ft_send_file(struct _PurpleConnection *gc,
 			      const char *who,
 			      const char *file);
 
-/**
- * Creates new PurpleXfer structure representing a file transfer.
- *
- * @param gc  a PurpleConnection
- * @param who remote participant in the file transfer session
- */
-struct _PurpleXfer *sipe_purple_ft_new_xfer(struct _PurpleConnection *gc,
-					    const char *who);
-
 /* libpurple chat callbacks */
 #define SIPE_PURPLE_COMPONENT_KEY_CONVERSATION "_conv"
 
@@ -146,7 +162,7 @@ void sipe_purple_group_buddy(struct _PurpleConnection *gc,
 GList *sipe_purple_buddy_menu(struct _PurpleBuddy *buddy);
 
 /* libpurple search callbacks */
-void sipe_purple_show_find_contact(struct _PurplePluginAction *action);
+void sipe_purple_show_find_contact(struct _PurpleProtocolAction *action);
 
 /* libpurple status callbacks */
 void sipe_purple_set_status(struct _PurpleAccount *account,
@@ -169,6 +185,51 @@ void sipe_purple_transport_close_all(struct sipe_backend_private *purple_private
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) purple_account_get_connection(account)->proto_data)
 #define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_account_get_connection(purple_buddy_get_account(buddy))->proto_data)
 #define PURPLE_GC_TO_SIPE_CORE_PUBLIC      ((struct sipe_core_public *) gc->proto_data)
+#endif
+
+/* Protocol common functions */
+
+gboolean sipe_purple_plugin_load(PurplePlugin *plugin);
+gboolean sipe_purple_plugin_unload(PurplePlugin *plugin);
+
+gpointer sipe_purple_user_split(void);
+GList *sipe_purple_account_options(void);
+
+GList *sipe_purple_actions(void);
+gchar *sipe_purple_status_text(struct _PurpleBuddy *buddy);
+void sipe_purple_tooltip_text(struct _PurpleBuddy *buddy,
+			      struct _PurpleNotifyUserInfo *user_info,
+			      gboolean full);
+GList *sipe_purple_blist_node_menu(struct _PurpleBlistNode *node);
+void sipe_purple_convo_closed(struct _PurpleConnection *gc, const char *who);
+GHashTable *sipe_purple_get_account_text_table(struct _PurpleAccount *account);
+
+void sipe_purple_login(struct _PurpleAccount *account);
+void sipe_purple_close(struct _PurpleConnection *gc);
+GList *sipe_purple_status_types(struct _PurpleAccount *account);
+const char *sipe_purple_list_icon(struct _PurpleAccount *account,
+				  struct _PurpleBuddy *buddy);
+
+void sipe_purple_get_info(struct _PurpleConnection *gc, const char *who);
+void sipe_purple_alias_buddy(struct _PurpleConnection *gc, const char *name,
+			     const char *alias);
+void sipe_purple_group_rename(struct _PurpleConnection *gc, const char *old_name,
+			      struct _PurpleGroup *group, GList *moved_buddies);
+void sipe_purple_group_remove(struct _PurpleConnection *gc,
+			      struct _PurpleGroup *group);
+
+unsigned int sipe_purple_send_typing(struct _PurpleConnection *gc,
+				     const char *who, PurpleIMTypingState state);
+
+void sipe_purple_add_permit(struct _PurpleConnection *gc, const char *name);
+void sipe_purple_add_deny(struct _PurpleConnection *gc, const char *name);
+
+#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
+gboolean sipe_purple_initiate_media(struct _PurpleAccount *account,
+				    const char *who,
+				    PurpleMediaSessionType type);
+PurpleMediaCaps sipe_purple_get_media_caps(struct _PurpleAccount *account,
+					   const char *who);
 #endif
 
 /*
