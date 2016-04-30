@@ -1,3 +1,9 @@
+pidgin-sipe (1.21.0-2) UNRELEASED; urgency=medium
+
+  * Build-Depend on libpurple-dev >= 2.10.12.
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Sat, 30 Apr 2016 20:05:08 +0200
+
 pidgin-sipe (1.21.0-1) unstable; urgency=medium
 
   * New upstream release.
