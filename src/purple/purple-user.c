@@ -116,8 +116,11 @@ void sipe_backend_user_ask_choice(struct sipe_core_public *sipe_public,
 	guint i;
 	for (i = 0; i != g_slist_length(choices); ++i) {
 		purple_request_field_choice_add(field,
-						g_slist_nth_data(choices, i),
-						GUINT_TO_POINTER(i));
+						g_slist_nth_data(choices, i)
+#if PURPLE_VERSION_CHECK(3,0,0)
+						, GUINT_TO_POINTER(i)
+#endif
+						);
 	}
 
 	purple_request_field_group_add_field(group, field);
