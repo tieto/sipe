@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-DEB_CONFIGURE_EXTRA_FLAGS := --libdir=/usr/lib --enable-purple --disable-telepathy --enable-openssl=no
+DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple --disable-telepathy --enable-openssl=no
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
@@ -14,13 +14,11 @@ override_dh_auto_configure:
 override_dh_auto_install:
 	dh_auto_install
 
-	find debian/pidgin-sipe -name *.la -delete
-
 	dh_install debian/extra/pidgin usr/bin
 	dh_install debian/extra/pidgin-sipe etc/default
 
 override_dh_strip:
-	dh_strip --dbgsym-migration='pidgin-sipe-dbg (<< 1.21.0-1~)'
+	dh_strip --dbg-package=pidgin-sipe-dbg
 
 override_dh_installdocs:
 	dh_installdocs --link-doc=pidgin-sipe
