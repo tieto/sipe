@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -885,6 +885,9 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 		"chat",
 #ifdef HAVE_VV
 		"audio-video",
+#endif
+#ifdef HAVE_APPSHARE
+		"applicationsharing",
 #endif
 		NULL
 	};
