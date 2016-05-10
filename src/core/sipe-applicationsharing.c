@@ -45,6 +45,7 @@
 #include "sipe-session.h"
 #include "sipe-user.h"
 #include "sipe-utils.h"
+#include "sdpmsg.h"
 
 struct sipe_appshare {
 	struct sipe_media_call *media;
@@ -573,7 +574,8 @@ process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_privat
 	struct sipe_media_stream *stream;
 	struct sipe_appshare *appshare;
 
-	call = process_incoming_invite_call(sipe_private, msg);
+	call = process_incoming_invite_call(sipe_private, msg,
+					    sdpmsg_parse_msg(msg->body));
 	if (!call) {
 		return;
 	}

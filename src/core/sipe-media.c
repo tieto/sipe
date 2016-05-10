@@ -1591,10 +1591,9 @@ maybe_send_second_invite_response(struct sipe_media_call_private *call_private)
 
 struct sipe_media_call *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg)
+			     struct sipmsg *msg, struct sdpmsg *smsg)
 {
 	struct sipe_media_call_private *call_private;
-	struct sdpmsg *smsg;
 	gboolean has_new_media = FALSE;
 	GSList *i;
 
@@ -1622,7 +1621,6 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		g_free(self);
 	}
 
-	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
 		transport_response_unsupported_sdp(sipe_private, msg);
 		if (call_private) {
