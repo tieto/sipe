@@ -54,6 +54,7 @@
 #include "sipe-user.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
+#include "sdpmsg.h"
 
 void process_incoming_bye(struct sipe_core_private *sipe_private,
 			  struct sipmsg *msg)
@@ -426,7 +427,8 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	/* Invitation to audio call or file transfer */
 	if (msg->body &&
 	    (strstr(msg->body, "m=audio") || strstr(msg->body, "m=data") || strstr(msg->body, "m=applicationsharing"))) {
-		process_incoming_invite_call(sipe_private, msg);
+		process_incoming_invite_call(sipe_private, msg,
+					     sdpmsg_parse_msg(msg->body));
 		return;
 	}
 #endif
