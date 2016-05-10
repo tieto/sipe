@@ -573,9 +573,30 @@ process_incoming_invite_applicationsharing(struct sipe_core_private *sipe_privat
 	struct sipe_media_call *call = NULL;
 	struct sipe_media_stream *stream;
 	struct sipe_appshare *appshare;
+	struct sdpmsg *sdpmsg;
+	GSList *i;
 
-	call = process_incoming_invite_call(sipe_private, msg,
-					    sdpmsg_parse_msg(msg->body));
+	sdpmsg = sdpmsg_parse_msg(msg->body);
+
+	/* Skype for Business compatibility - ignore desktop video. */
+	i = sdpmsg->media;
+	while (i) {
+		struct sdpmedia *media = i->data;
+		const gchar *label;
+
+		i = i->next;
+
+		label = sipe_utils_nameval_find(media->attributes, "label");
+
+		if (sipe_strequal(media->name, "video") &&
+		    sipe_strequal(label, "applicationsharing-video")) {
+			sdpmsg->media = g_slist_remove(sdpmsg->media, media);
+			sdpmedia_free(media);
+			break;
+		}
+	}
+
+	call = process_incoming_invite_call(sipe_private, msg, sdpmsg);
 	if (!call) {
 		return;
 	}
