@@ -22,6 +22,7 @@
  */
 
 /* Forward declarations */
+struct sdpmsg;
 struct sipmsg;
 struct sipe_core_private;
 struct sipe_media_call_private;
@@ -72,13 +73,16 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
  *
  * @param sipe_private (in) SIPE core data.
  * @param msg (in) a SIP INVITE message
+ * @param smsg (in) parsed media session description; the function takes
+ *             ownership of the sdpmsg structure and will free it when no longer
+ *             needed.
  *
  * @return @c sipe_media_call structure created or updated by @c msg.
  *         The function returns @c NULL on error or if the call was rejected.
  */
 struct sipe_media_call *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg);
+			     struct sipmsg *msg, struct sdpmsg *smsg);
 
 /**
  * Handles incoming SIP CANCEL message.
