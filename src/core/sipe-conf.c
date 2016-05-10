@@ -886,6 +886,9 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 		"audio-video",
 #endif
+#ifdef HAVE_FREERDP
+		"applicationsharing",
+#endif
 		NULL
 	};
 
