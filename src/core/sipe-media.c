@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1553,10 +1553,9 @@ maybe_send_second_invite_response(struct sipe_media_call_private *call_private)
 
 struct sipe_media_call *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg)
+			     struct sipmsg *msg, struct sdpmsg *smsg)
 {
 	struct sipe_media_call_private *call_private;
-	struct sdpmsg *smsg;
 	gboolean has_new_media = FALSE;
 	GSList *i;
 
@@ -1568,6 +1567,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		if (call && !is_media_session_msg(SIPE_MEDIA_CALL_PRIVATE, msg)) {
 			sip_transport_response(sipe_private, msg,
 					       486, "Busy Here", NULL);
+			sdpmsg_free(smsg);
 			return NULL;
 		}
 	}
@@ -1579,12 +1579,12 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		if (sipe_strequal(SIPE_MEDIA_CALL->with, self)) {
 			g_free(self);
 			sip_transport_response(sipe_private, msg, 488, "Not Acceptable Here", NULL);
+			sdpmsg_free(smsg);
 			return NULL;
 		}
 		g_free(self);
 	}
 
-	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
 		transport_response_unsupported_sdp(sipe_private, msg);
 		if (call_private) {
