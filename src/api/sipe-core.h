@@ -526,6 +526,12 @@ void
 sipe_core_conf_share_application(struct sipe_core_public *sipe_public,
 				 struct sipe_chat_session *chat_session);
 
+void
+sipe_core_applicationsharing_set_remote_control(struct sipe_appshare * appshare,
+						gboolean enabled);
+gboolean
+sipe_core_applicationsharing_get_remote_control(struct sipe_appshare * appshare);
+
 void sipe_core_applicationsharing_stop_presenting(struct sipe_appshare * appshare);
 gboolean sipe_core_applicationsharing_is_presenting(struct sipe_media_call *call);
 

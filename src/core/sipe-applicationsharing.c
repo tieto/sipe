@@ -676,6 +676,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 		socket_path = build_socket_path(stream->call);
 		server->ipcSocket = g_strdup(socket_path);
 		server->authentication = FALSE;
+		server->mayInteract = FALSE;
 		set_shared_display_area(server, appshare->monitor_id);
 
 		if(shadow_server_init(server) < 0) {
@@ -928,6 +929,34 @@ sipe_core_conf_share_application(struct sipe_core_public *sipe_public,
 	sipe_core_share_application(sipe_public, uri);
 
 	g_free(uri);
+}
+
+void
+sipe_core_applicationsharing_set_remote_control(struct sipe_appshare * appshare,
+						gboolean enabled)
+{
+	int i;
+
+	g_return_if_fail(appshare->server);
+
+	appshare->server->mayInteract = enabled;
+
+	ArrayList_Lock(appshare->server->clients);
+	for (i = 0; i < ArrayList_Count(appshare->server->clients); i++) {
+		rdpShadowClient *client;
+
+		client = ArrayList_GetItem(appshare->server->clients, i);
+		client->mayInteract = enabled;
+	}
+	ArrayList_Unlock(appshare->server->clients);
+}
+
+gboolean
+sipe_core_applicationsharing_get_remote_control(struct sipe_appshare * appshare)
+{
+	g_return_val_if_fail(appshare->server, FALSE);
+
+	return appshare->server->mayInteract;
 }
 
 /*
