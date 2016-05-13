@@ -198,7 +198,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 
 	g_return_if_fail(sipe_strequal(stream->id, "data"));
 
-	ft_private = sipe_media_stream_get_data(stream);
+	ft_private = sipe_core_media_stream_get_data(stream);
 
 	send_ms_filetransfer_response(ft_private, "success", NULL, NULL);
 
@@ -234,7 +234,7 @@ xdata_start_of_stream_cb(struct sipe_media_stream *stream,
 			 guint8 *buffer, gsize len)
 {
 	struct sipe_file_transfer_lync *ft_private =
-			sipe_media_stream_get_data(stream);
+			sipe_core_media_stream_get_data(stream);
 	struct sipe_backend_fd *fd;
 
 	buffer[len] = 0;
@@ -265,7 +265,7 @@ xdata_got_header_cb(struct sipe_media_stream *stream,
 		    SIPE_UNUSED_PARAMETER gsize len)
 {
 	struct sipe_file_transfer_lync *ft_private =
-			sipe_media_stream_get_data(stream);
+			sipe_core_media_stream_get_data(stream);
 
 	guint8 type = buffer[0];
 	guint16 size = (buffer[1] << 8) + buffer[2]; /* stored as big-endian */
@@ -294,7 +294,7 @@ static void
 read_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_file_transfer_lync *ft_private =
-			sipe_media_stream_get_data(stream);
+			sipe_core_media_stream_get_data(stream);
 
 	if (ft_private->buffer_read_pos < ft_private->buffer_len) {
 		/* Have data in buffer, write them to the backend. */
@@ -376,7 +376,7 @@ ft_private_from_call(struct sipe_media_call *call)
 			sipe_core_media_get_stream_by_id(call, "data");
 	g_return_val_if_fail(stream, NULL);
 
-	return sipe_media_stream_get_data(stream);
+	return sipe_core_media_stream_get_data(stream);
 }
 
 static void
