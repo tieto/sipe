@@ -561,6 +561,26 @@ void
 sipe_core_conf_share_desktop(struct sipe_core_public *sipe_public,
 			     struct sipe_chat_session *chat_session);
 
+/**
+ * Changes the state of remote desktop control on an application sharing call.
+ *
+ * @param call (in) media call structure.
+ * @param enabled (in) @c TRUE to enable remote control, @c FALSE to disable it.
+ */
+void
+sipe_core_appshare_set_remote_control(struct sipe_media_call *call,
+				      gboolean enabled);
+
+/**
+ * Gets the state of remote desktop control on an application sharing call.
+ *
+ * @param call (in) media call structure.
+ *
+ * @return @c TRUE if remote control is enabled, otherwise @c FALSE.
+ */
+gboolean
+sipe_core_appshare_get_remote_control(struct sipe_media_call *call);
+
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
 void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
