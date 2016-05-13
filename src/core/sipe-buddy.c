@@ -2377,14 +2377,25 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 		struct sipe_media_call *call = sipe_media_call_find(SIPE_CORE_PRIVATE,
 								    buddy_name);
 
-		if (!call || sipe_appshare_get_role(call) != SIPE_APPSHARE_ROLE_PRESENTER) {
-			/* Add the menu item only to the buddies to whom we
-			 * aren't already presenting. */
-			menu = sipe_backend_buddy_menu_add(sipe_public,
-				   menu,
-				   _("Share my desktop"),
-				   SIPE_BUDDY_MENU_SHARE_DESKTOP,
-				   NULL);
+		if (call && sipe_appshare_get_role(call) == SIPE_APPSHARE_ROLE_PRESENTER) {
+			/* We're already presenting to this buddy. */
+
+			if (sipe_core_appshare_get_remote_control(call)) {
+				menu = sipe_backend_buddy_menu_add(sipe_public, menu,
+						_("Take desktop control"),
+						SIPE_BUDDY_MENU_TAKE_DESKTOP_CONTROL,
+						call);
+			} else {
+				menu = sipe_backend_buddy_menu_add(sipe_public, menu,
+						_("Give desktop control"),
+						SIPE_BUDDY_MENU_GIVE_DESKTOP_CONTROL,
+						call);
+			}
+		} else {
+			menu = sipe_backend_buddy_menu_add(sipe_public, menu,
+							   _("Share my desktop"),
+							   SIPE_BUDDY_MENU_SHARE_DESKTOP,
+							   NULL);
 		}
 	}
 #endif // HAVE_APPSHARE_SERVER
