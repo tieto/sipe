@@ -2396,7 +2396,7 @@ sipe_media_stream_set_data(struct sipe_media_stream *stream, gpointer data,
 }
 
 gpointer
-sipe_media_stream_get_data(struct sipe_media_stream *stream)
+sipe_core_media_stream_get_data(struct sipe_media_stream *stream)
 {
 	g_return_val_if_fail(stream, NULL);
 

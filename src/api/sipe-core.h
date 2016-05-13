@@ -451,6 +451,16 @@ sipe_core_media_stream_writable(struct sipe_media_stream *stream,
 				gboolean writable);
 
 /**
+ * Returns user data associated with the media stream.
+ *
+ * @param stream (in) media stream data
+ *
+ * @return user data
+ */
+gpointer
+sipe_core_media_stream_get_data(struct sipe_media_stream *stream);
+
+/**
  * Called by media backend when @c stream has ended and should be destroyed.
  *
  * @param stream (in) SIPE media stream data.

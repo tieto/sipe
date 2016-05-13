@@ -124,7 +124,9 @@ static void
 confirmed_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call *call,
 	     struct sipe_media_stream *stream)
 {
-	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
+	struct sipe_appshare *appshare;
+
+	appshare = sipe_core_media_stream_get_data(stream);
 	appshare->confirmed = TRUE;
 
 	if (appshare->writable && appshare->confirmed && !appshare->socket) {
@@ -198,9 +200,12 @@ rdp_channel_writable_cb(SIPE_UNUSED_PARAMETER GIOChannel *channel,
 static void
 read_cb(struct sipe_media_stream *stream)
 {
-	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
+	struct sipe_appshare *appshare;
+
 	gint bytes_read = 0;
 	gssize bytes_written = 0;
+
+	appshare = sipe_core_media_stream_get_data(stream);
 
 	if (appshare->rdp_channel_writable_watch_id != 0) {
 		/* Data still in the buffer. Let the client read it first. */
@@ -345,7 +350,9 @@ build_socket_path(struct sipe_media_call *call)
 static void
 writable_cb(struct sipe_media_stream *stream)
 {
-	struct sipe_appshare *appshare = sipe_media_stream_get_data(stream);
+	struct sipe_appshare *appshare;
+
+	appshare = sipe_core_media_stream_get_data(stream);
 	appshare->writable = TRUE;
 
 	if (appshare->writable && appshare->confirmed && !appshare->socket) {
@@ -656,7 +663,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 
 	g_return_if_fail(sipe_strequal(stream->id, "applicationsharing"));
 
-	appshare = sipe_media_stream_get_data(stream);
+	appshare = sipe_core_media_stream_get_data(stream);
 	if (appshare->server) {
 		// Shadow server has already been initialized.
 		return;
@@ -855,7 +862,7 @@ sipe_core_applicationsharing_is_presenting(struct sipe_media_call *call)
 	if (stream) {
 		struct sipe_appshare *appshare;
 
-		appshare = sipe_media_stream_get_data(stream);
+		appshare = sipe_core_media_stream_get_data(stream);
 		return appshare && appshare->server;
 	}
 

@@ -250,16 +250,6 @@ sipe_media_stream_set_data(struct sipe_media_stream *stream, gpointer data,
 			   GDestroyNotify free_func);
 
 /**
- * Returns user data associated with the media stream.
- *
- * @param stream (in) media stream data
- *
- * @return user data
- */
-gpointer
-sipe_media_stream_get_data(struct sipe_media_stream *stream);
-
-/**
  * Deallocates the opaque list of media relay structures
  *
  * @param list (in) GSList to free
