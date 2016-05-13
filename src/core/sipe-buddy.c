@@ -2213,7 +2213,9 @@ static struct sipe_backend_buddy_menu *buddy_menu_share_desktop(struct sipe_core
 								struct sipe_backend_buddy_menu *menu,
 								const gchar *buddy_name)
 {
-	/* Make sure desktop can't be shared with the same user more than once. */
+	struct sipe_appshare *appshare = NULL;
+
+	/* Check whether we're not already sharing with this buddy. */
 	GList *calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
 	for (; calls; calls = g_list_delete_link(calls, calls)) {
 		struct sipe_media_call *call = calls->data;
@@ -2225,17 +2227,31 @@ static struct sipe_backend_buddy_menu *buddy_menu_share_desktop(struct sipe_core
 
 		stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
 		if (stream && sipe_backend_media_is_initiator(call, stream)) {
+			appshare = sipe_core_media_stream_get_data(stream);
 			g_list_free(calls);
-			return menu;
+			break;
 		}
 	}
 
 #ifdef HAVE_FREERDP
-	menu = sipe_backend_buddy_menu_add(sipe_public,
-					   menu,
-					   _("Share my desktop"),
-					   SIPE_BUDDY_MENU_SHARE_APPLICATION,
-					   NULL);
+	if (appshare) {
+		if (sipe_core_applicationsharing_get_remote_control(appshare)) {
+			menu = sipe_backend_buddy_menu_add(sipe_public, menu,
+					_("Take desktop control"),
+					SIPE_BUDDY_MENU_TAKE_DESKTOP_CONTROL,
+					appshare);
+		} else {
+			menu = sipe_backend_buddy_menu_add(sipe_public, menu,
+					_("Give desktop control"),
+					SIPE_BUDDY_MENU_GIVE_DESKTOP_CONTROL,
+					appshare);
+		}
+	} else {
+		menu = sipe_backend_buddy_menu_add(sipe_public, menu,
+				_("Share my desktop"),
+				SIPE_BUDDY_MENU_SHARE_APPLICATION,
+				NULL);
+	}
 #endif
 
 	return menu;
