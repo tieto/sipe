@@ -2253,14 +2253,26 @@ static struct sipe_backend_buddy_menu *buddy_menu_share_desktop(struct sipe_core
 	call = sipe_media_call_find(SIPE_CORE_PRIVATE, buddy_name);
 	if (call && sipe_appshare_get_role(call) == SIPE_APPSHARE_ROLE_PRESENTER) {
 		/* We're already presenting to this buddy. */
-		return menu;
+
+		if (sipe_core_appshare_get_remote_control(call)) {
+			menu = sipe_backend_buddy_menu_add(sipe_public, menu,
+					_("Take desktop control"),
+					SIPE_BUDDY_MENU_TAKE_DESKTOP_CONTROL,
+					call);
+		} else {
+			menu = sipe_backend_buddy_menu_add(sipe_public, menu,
+					_("Give desktop control"),
+					SIPE_BUDDY_MENU_GIVE_DESKTOP_CONTROL,
+					call);
+		}
+	} else {
+		menu = sipe_backend_buddy_menu_add(sipe_public, menu,
+						   _("Share my desktop"),
+						   SIPE_BUDDY_MENU_SHARE_DESKTOP,
+						   NULL);
 	}
 
-	return sipe_backend_buddy_menu_add(sipe_public,
-					   menu,
-					   _("Share my desktop"),
-					   SIPE_BUDDY_MENU_SHARE_DESKTOP,
-					   NULL);
+	return menu;
 }
 #endif // HAVE_RDP_SERVER
 
