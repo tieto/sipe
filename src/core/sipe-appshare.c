@@ -750,6 +750,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 						    g_get_user_runtime_dir(),
 						    getpid(), stream);
 		server->authentication = FALSE;
+		server->mayInteract = FALSE;
 		set_shared_display_area(server, appshare->monitor_id);
 
 		/* Experimentally determined cap on multifrag max request size
@@ -995,6 +996,54 @@ sipe_core_conf_share_application(struct sipe_core_public *sipe_public,
 	sipe_core_appshare_share_desktop(sipe_public, uri);
 
 	g_free(uri);
+}
+
+void
+sipe_core_appshare_set_remote_control(struct sipe_media_call * call, gboolean enabled)
+{
+	struct sipe_media_stream *stream;
+
+	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
+	if (stream) {
+		struct sipe_appshare *appshare;
+
+		appshare = sipe_media_stream_get_data(stream);
+
+		if(appshare && appshare->server) {
+			rdpShadowServer *server = appshare->server;
+			int i;
+
+			server->mayInteract = enabled;
+
+			ArrayList_Lock(server->clients);
+			for (i = 0; i < ArrayList_Count(server->clients); i++) {
+				rdpShadowClient *client;
+
+				client = ArrayList_GetItem(server->clients, i);
+				client->mayInteract = enabled;
+			}
+			ArrayList_Unlock(server->clients);
+		}
+	}
+}
+
+gboolean
+sipe_core_appshare_get_remote_control(struct sipe_media_call * call)
+{
+	struct sipe_media_stream *stream;
+
+	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
+	if (stream) {
+		struct sipe_appshare *appshare;
+
+		appshare = sipe_media_stream_get_data(stream);
+
+		if(appshare && appshare->server) {
+			return appshare->server->mayInteract;
+		}
+	}
+
+	return FALSE;
 }
 #endif // HAVE_RDP_SERVER
 

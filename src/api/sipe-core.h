@@ -555,6 +555,12 @@ void
 sipe_core_conf_share_application(struct sipe_core_public *sipe_public,
 				 struct sipe_chat_session *chat_session);
 
+void
+sipe_core_appshare_set_remote_control(struct sipe_media_call *call,
+				      gboolean enabled);
+gboolean
+sipe_core_appshare_get_remote_control(struct sipe_media_call *call);
+
 void sipe_core_appshare_stop_presenting(struct sipe_media_call *call);
 
 /* group chat */
