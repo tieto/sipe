@@ -126,6 +126,7 @@ rdp_channel_readable_cb(GIOChannel *channel,
 	gsize bytes_read;
 
 	if (condition & G_IO_HUP) {
+		SIPE_DEBUG_INFO_NOFORMAT("Received HUP from RDP client.");
 		sipe_backend_media_hangup(call->backend_private, TRUE);
 		return FALSE;
 	}
@@ -163,6 +164,8 @@ socket_connect_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 	struct sipe_appshare *appshare = data;
 	GError *error = NULL;
 	GSocket *data_socket;
+
+	SIPE_DEBUG_INFO_NOFORMAT("RDP client has connected.");
 
 	data_socket = g_socket_accept(appshare->socket, NULL, &error);
 
@@ -245,9 +248,12 @@ launch_rdp_client(struct sipe_appshare *appshare)
 	}
 
 	if (!client->launch_cb(client, address, appshare->stream)) {
+		SIPE_DEBUG_ERROR_NOFORMAT("Failed to launch RDP client.");
 		sipe_backend_media_hangup(call->backend_private, TRUE);
 		// Intentionally not returning here.
 	}
+
+	SIPE_DEBUG_INFO_NOFORMAT("RDP client launched.");
 
 	g_object_unref(address);
 }
