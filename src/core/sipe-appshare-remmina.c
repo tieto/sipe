@@ -136,6 +136,8 @@ remmina_launch(struct sipe_rdp_client *client, GSocketAddress *listen_address,
 
 	g_file_set_contents(client_data->config_file, config_file,
 			    strlen(config_file), &error);
+	SIPE_DEBUG_INFO("Written .remmina file %s:\n%s",
+			client_data->config_file, config_file);
 	g_free(config_file);
 	if (error) {
 		SIPE_DEBUG_ERROR("Couldn't write remmina config file: %s",
@@ -145,6 +147,8 @@ remmina_launch(struct sipe_rdp_client *client, GSocketAddress *listen_address,
 	}
 
 	cmdline = g_strdup_printf("remmina -c %s", client_data->config_file);
+
+	SIPE_DEBUG_INFO("Launching remmina: %s", cmdline);
 
 	g_spawn_command_line_async(cmdline, &error);
 	g_free(cmdline);
