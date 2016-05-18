@@ -260,6 +260,7 @@ rdp_channel_readable_cb(GIOChannel *channel,
 	gsize bytes_read;
 
 	if (condition & G_IO_HUP) {
+		SIPE_DEBUG_INFO_NOFORMAT("Received HUP from RDP client.");
 		sipe_backend_media_hangup(appshare->media->backend_private, TRUE);
 		return FALSE;
 	}
@@ -298,6 +299,8 @@ socket_connect_cb (SIPE_UNUSED_PARAMETER GIOChannel *channel,
 	struct sipe_appshare *appshare = data;
 	GError *error = NULL;
 	GSocket *data_socket;
+
+	SIPE_DEBUG_INFO_NOFORMAT("RDP client has connected.");
 
 	data_socket = g_socket_accept(appshare->socket, NULL, &error);
 
@@ -450,6 +453,9 @@ run_remmina(struct sipe_appshare *appshare)
 
 	g_file_set_contents(appshare->config_file,
 			    config_file, strlen(config_file), &error);
+
+	SIPE_DEBUG_INFO("Written .remmina file into %s: %s", appshare->config_file, config_file);
+
 	g_free(config_file);
 	if (error) {
 		SIPE_DEBUG_ERROR("Couldn't write remmina config file: %s",
@@ -459,6 +465,8 @@ run_remmina(struct sipe_appshare *appshare)
 	}
 
 	cmdline = g_strdup_printf("remmina -c %s", appshare->config_file);
+
+	SIPE_DEBUG_INFO("Launching remmina: %s", cmdline);
 
 	g_spawn_command_line_async(cmdline, &error);
 	g_free(cmdline);
@@ -502,8 +510,11 @@ launch_rdp_client(struct sipe_appshare *appshare)
 				       socket_connect_cb, appshare);
 
 	if (!run_remmina(appshare)) {
+		SIPE_DEBUG_ERROR_NOFORMAT("Failed to launch RDP client.");
 		sipe_backend_media_hangup(appshare->media->backend_private, TRUE);
 	}
+
+	SIPE_DEBUG_INFO_NOFORMAT("RDP client launched.");
 }
 
 static void
