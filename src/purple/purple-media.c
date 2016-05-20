@@ -386,6 +386,9 @@ sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname)
 
 #define FS_CODECS_CONF \
 	"# Automatically created by SIPE plugin\n" \
+	"[video/H264]\n" \
+	"farstream-send-profile=videoscale ! videoconvert ! fsvideoanyrate ! x264enc ! video/x-h264,profile=constrained-baseline ! rtph264pay\n" \
+	"\n" \
 	"[application/X-DATA]\n" \
 	"id=127\n"
 
