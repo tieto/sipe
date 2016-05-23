@@ -447,9 +447,11 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		 * type) that must not appear in SDP messages we send. Thus,
 		 * let's ignore any codec having the same id as one we already
 		 * have in the converted list. */
-		sdpmedia->codecs = sipe_utils_slist_insert_unique_sorted(
-				sdpmedia->codecs, c, sdpcodec_compare,
-				(GDestroyNotify)sdpcodec_free);
+		if (g_slist_find_custom(sdpmedia->codecs, c, sdpcodec_compare)) {
+			sdpcodec_free(c);
+		} else {
+			sdpmedia->codecs = g_slist_append(sdpmedia->codecs, c);
+		}
 	}
 
 	sipe_media_codec_list_free(codecs);
