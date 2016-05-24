@@ -634,6 +634,7 @@ find_sinkpad(GValue *value, GstPad *fssession_sinkpad)
 static void
 gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 {
+	PurpleMedia *m;
 	const GstStructure *s;
 	FsSession *fssession;
 	GstElement *tee;
@@ -645,6 +646,8 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 		return;
 	}
 
+	m = stream->call->backend_private->m;
+
 	s = gst_message_get_structure(msg);
 	if (!gst_structure_has_name(s, "farstream-codecs-changed")) {
 		return;
@@ -653,8 +656,7 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 	fssession = g_value_get_object(gst_structure_get_value(s, "session"));
 	g_return_if_fail(fssession);
 
-	tee = purple_media_get_tee(stream->call->backend_private->m, stream->id,
-				   NULL);
+	tee = purple_media_get_tee(m, stream->id, NULL);
 	g_return_if_fail(tee);
 
 	g_object_get(fssession, "sink-pad", &sinkpad, NULL);
@@ -666,19 +668,31 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 	it = gst_element_iterate_src_pads(tee);
 	if (gst_iterator_find_custom(it, (GCompareFunc)find_sinkpad, &val,
 				     sinkpad)) {
-		GObject *rtpsession;
+		FsMediaType media_type;
 
-		g_object_get(fssession, "internal-session", &rtpsession, NULL);
-		if (rtpsession) {
-			stream->backend_private->rtpsession =
+		if (stream->ssrc_range) {
+			g_object_set(fssession, "ssrc",
+				     stream->ssrc_range->begin, NULL);
+		}
+
+		g_object_get(fssession, "media-type", &media_type, NULL);
+
+		if (media_type == FS_MEDIA_TYPE_VIDEO) {
+			GObject *rtpsession;
+
+			g_object_get(fssession,
+				     "internal-session", &rtpsession, NULL);
+			if (rtpsession) {
+				stream->backend_private->rtpsession =
 					gst_object_ref(rtpsession);
-			stream->backend_private->on_sending_rtcp_cb_id =
+				stream->backend_private->on_sending_rtcp_cb_id =
 					g_signal_connect(rtpsession,
 						"on-sending-rtcp",
 						G_CALLBACK(on_sending_rtcp_cb),
 						fssession);
 
-			g_object_unref (rtpsession);
+				g_object_unref (rtpsession);
+			}
 		}
 
 		g_signal_handler_disconnect(bus,
@@ -776,7 +790,7 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 	backend_stream = g_new0(struct sipe_backend_media_stream, 1);
 
 	pipe = purple_media_manager_get_pipeline(purple_media_manager_get());
-	if (type == SIPE_MEDIA_VIDEO && pipe) {
+	if (pipe) {
 		GstBus *bus;
 
 		bus = gst_element_get_bus(pipe);
