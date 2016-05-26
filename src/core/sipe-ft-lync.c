@@ -751,7 +751,7 @@ ft_lync_outgoing_init(struct sipe_file_transfer *ft, const gchar *filename,
 	call->call_reject_cb = call_reject_cb;
 
 	stream = sipe_media_stream_add(call, "data", SIPE_MEDIA_APPLICATION,
-				       SIPE_ICE_RFC_5245, TRUE);
+				       SIPE_ICE_RFC_5245, TRUE, 0);
 	if (!stream) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occurred"),

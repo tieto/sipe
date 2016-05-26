@@ -49,10 +49,9 @@
 #include "sipe-schedule.h"
 #include "sipe-xml.h"
 
-struct ssrc_range {
-	guint32 begin;
-	guint32 end;
-};
+/* [MS-SDPEXT] 3.1.5.31.2 says a range size of 100 SHOULD be used for video and
+ * some clients really demand this. */
+#define VIDEO_SSRC_COUNT 100
 
 struct sipe_media_call_private {
 	struct sipe_media_call public;
@@ -133,6 +132,13 @@ sipe_media_stream_free(struct sipe_media_stream_private *stream_private)
 		call_private->streams = g_slist_remove(call_private->streams,
 						       stream_private);
 	}
+
+	if (SIPE_MEDIA_STREAM->ssrc_range) {
+		call_private->ssrc_ranges =
+				g_slist_remove(call_private->ssrc_ranges,
+					       SIPE_MEDIA_STREAM->ssrc_range);
+	}
+
 	if (SIPE_MEDIA_STREAM->backend_private) {
 		sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
 	}
@@ -523,6 +529,17 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		}
 
 		attributes = sipe_utils_nameval_add(attributes, "encryption", encryption);
+	}
+
+	if (SIPE_MEDIA_STREAM->ssrc_range) {
+		gchar *tmp;
+
+		tmp = g_strdup_printf("%u-%u",
+				      SIPE_MEDIA_STREAM->ssrc_range->begin,
+				      SIPE_MEDIA_STREAM->ssrc_range->end);
+		attributes = sipe_utils_nameval_add(attributes,
+						    "x-ssrc-range", tmp);
+		g_free(tmp);
 	}
 
 	// Process remote candidates
@@ -1124,10 +1141,44 @@ ssrc_range_update(GSList **ranges, GSList *media)
 	}
 }
 
+static struct ssrc_range *
+ssrc_range_allocate(GSList **ranges, guint32 len)
+{
+	struct ssrc_range *range;
+	GSList *i;
+
+	range = g_new0(struct ssrc_range, 1);
+	range->begin = 1;
+	range->end = range->begin + (len - 1);
+
+	for (i = *ranges; i; i = i->next) {
+		struct ssrc_range *r = i->data;
+
+		if (range->begin < r->begin && range->end < r->begin) {
+			break;
+		}
+
+		range->begin = r->end + 1;
+		range->end = range->begin + (len - 1);
+	}
+
+	/* As per [MS-SDPEXT] 3.1.5.31.1, a SSRC MUST be from 1 to 4294967040
+	 * inclusive. */
+	if (range->begin > range->end || range->end > 0xFFFFFF00) {
+		g_free(range);
+		return NULL;
+	}
+
+	*ranges = g_slist_insert_sorted(*ranges, range,
+					(GCompareFunc)ssrc_range_compare);
+
+	return range;
+}
+
 struct sipe_media_stream *
 sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		      SipeMediaType type, SipeIceVersion ice_version,
-		      gboolean initiator)
+		      gboolean initiator, guint32 ssrc_count)
 {
 	struct sipe_core_private *sipe_private;
 	struct sipe_media_stream_private *stream_private;
@@ -1170,6 +1221,12 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 	stream_private->write_queue = g_queue_new();
 	stream_private->async_reads = g_queue_new();
 
+	if (ssrc_count > 0) {
+		SIPE_MEDIA_STREAM->ssrc_range =
+			ssrc_range_allocate(&SIPE_MEDIA_CALL_PRIVATE->ssrc_ranges,
+					    ssrc_count);
+	}
+
 	SIPE_MEDIA_STREAM->backend_private =
 			sipe_backend_media_add_stream(SIPE_MEDIA_STREAM,
 						      type, ice_version,
@@ -1189,17 +1246,6 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		 * as per [MS-SDPEXT] 3.1.5.30.2. */
 		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
 				"rtcp-fb", "* x-message app send:src recv:src");
-
-		/* For now, hardcode some sequence of SSRCs. These values aren't
-		 * passed down to Farstream, which picks our SSRC at random.
-		 * Since outgoing video doesn't work yet anyway, this doesn't
-		 * matter. In future we'll have to announce our synchronization
-		 * source identifier through SDP and thus know it beforehand.
-		 *
-		 * [MS-SDPEXT] 3.1.5.31.2 says a range size of 100 SHOULD be used
-		 * for video and some clients really demand this. */
-		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
-				"x-ssrc-range", "1-100");
 
 		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
 				"rtcp-rsize", NULL);
@@ -1272,7 +1318,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 
 	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
 				   call_private->ice_version,
-				   TRUE)) {
+				   TRUE, 0)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occurred"),
 					  _("Error creating audio stream"));
@@ -1283,7 +1329,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 	if (with_video &&
 	    !sipe_media_stream_add(SIPE_MEDIA_CALL, "video", SIPE_MEDIA_VIDEO,
 				   call_private->ice_version,
-				   TRUE)) {
+				   TRUE, VIDEO_SSRC_COUNT)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occurred"),
 					  _("Error creating video stream"));
@@ -1360,7 +1406,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	stream = sipe_media_stream_add(SIPE_MEDIA_CALL, "audio",
 				       SIPE_MEDIA_AUDIO,
 				       call_private->ice_version,
-				       TRUE);
+				       TRUE, 0);
 	if (!stream) {
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occurred"),
@@ -1560,17 +1606,21 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 
 		if (   media->port != 0
 		    && !sipe_core_media_get_stream_by_id(SIPE_MEDIA_CALL, id)) {
+			guint32 ssrc_count = 0;
+
 			if (sipe_strequal(id, "audio"))
 				type = SIPE_MEDIA_AUDIO;
-			else if (sipe_strequal(id, "video"))
+			else if (sipe_strequal(id, "video")) {
 				type = SIPE_MEDIA_VIDEO;
-			else if (sipe_strequal(id, "data"))
+				ssrc_count = VIDEO_SSRC_COUNT;
+			} else if (sipe_strequal(id, "data"))
 				type = SIPE_MEDIA_APPLICATION;
 			else
 				continue;
 
 			sipe_media_stream_add(SIPE_MEDIA_CALL, id, type,
-					      smsg->ice_version, FALSE);
+					      smsg->ice_version, FALSE,
+					      ssrc_count);
 			has_new_media = TRUE;
 		}
 	}
