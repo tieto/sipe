@@ -49,6 +49,11 @@
 #include "sipe-schedule.h"
 #include "sipe-xml.h"
 
+struct ssrc_range {
+	guint32 begin;
+	guint32 end;
+};
+
 struct sipe_media_call_private {
 	struct sipe_media_call public;
 
@@ -65,6 +70,8 @@ struct sipe_media_call_private {
 	gboolean			 encryption_compatible;
 	gchar				*extra_invite_section;
 	gchar				*invite_content_type;
+
+	GSList				*ssrc_ranges;
 
 	struct sdpmsg			*smsg;
 	GSList				*failed_media;
@@ -169,6 +176,8 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 
 		// Frees any referenced extra invite data.
 		sipe_media_add_extra_invite_section(SIPE_MEDIA_CALL, NULL, NULL);
+
+		sipe_utils_slist_free_full(call_private->ssrc_ranges, g_free);
 
 		sdpmsg_free(call_private->smsg);
 		sipe_utils_slist_free_full(call_private->failed_media,
@@ -1069,6 +1078,52 @@ void sipe_media_hangup(struct sipe_media_call_private *call_private)
 	}
 }
 
+static gint
+ssrc_range_compare(const struct ssrc_range *a, const struct ssrc_range *b)
+{
+	if (a->begin < b->begin) {
+		return -1;
+	}
+	if (a->begin > b->begin) {
+		return 1;
+	}
+	return 0;
+}
+
+static void
+ssrc_range_update(GSList **ranges, GSList *media)
+{
+	for (; media; media = media->next) {
+		struct sdpmedia *m;
+		const char *ssrc_range;
+		gchar **parts;
+
+		m = media->data;
+		ssrc_range = sipe_utils_nameval_find(m->attributes,
+						     "x-ssrc-range");
+		if (!ssrc_range) {
+			continue;
+		}
+
+		parts = g_strsplit(ssrc_range, "-", 2);
+
+		if (parts[0] && parts[1]) {
+			struct ssrc_range *range;
+
+			range = g_new0(struct ssrc_range, 1);
+			range->begin = atoi(parts[0]);
+			range->end = atoi(parts[1]);
+
+			*ranges = sipe_utils_slist_insert_unique_sorted(
+					*ranges, range,
+					(GCompareFunc)ssrc_range_compare,
+					g_free);
+		}
+
+		g_strfreev(parts);
+	}
+}
+
 struct sipe_media_stream *
 sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		      SipeMediaType type, SipeIceVersion ice_version,
@@ -1495,6 +1550,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		sipmsg_free(call_private->invitation);
 	call_private->invitation = sipmsg_copy(msg);
 
+	ssrc_range_update(&call_private->ssrc_ranges, smsg->media);
+
 	// Create any new media streams
 	for (i = smsg->media; i; i = i->next) {
 		struct sdpmedia *media = i->data;
@@ -1798,6 +1855,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 		return FALSE;
 	}
 
+	ssrc_range_update(&call_private->ssrc_ranges, smsg->media);
 	apply_remote_message(call_private, smsg);
 	sdpmsg_free(smsg);
 
