@@ -57,13 +57,15 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
  * @param ice_version (in) a version of ICE to use when negotiating the
  *                    connection.
  * @param initiator (in) @c TRUE if our client is the initiator of the stream.
+ * @param ssrc_count (in) number of RTP Synchronization source identifiers to
+ *                   allocate for the stream.
  *
  * @return a new @c sipe_media_stream structure or @c NULL on error.
  */
 struct sipe_media_stream *
 sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		      SipeMediaType type, SipeIceVersion ice_version,
-		      gboolean initiator);
+		      gboolean initiator, guint32 ssrc_count);
 
 /**
  * Handles incoming SIP INVITE message to start a media session.

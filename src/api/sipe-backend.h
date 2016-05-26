@@ -374,11 +374,17 @@ struct sipe_backend_candidate;
 struct sipe_backend_media_stream;
 struct sipe_backend_media_relays;
 
+struct ssrc_range {
+	guint32 begin;
+	guint32 end;
+};
+
 struct sipe_media_stream {
 	struct sipe_backend_media_stream *backend_private;
 
 	struct sipe_media_call *call;
 	gchar *id;
+	struct ssrc_range *ssrc_range;
 
 	void (*candidate_pairs_established_cb)(struct sipe_media_stream *);
 	void (*read_cb)(struct sipe_media_stream *);
