@@ -1,3 +1,7 @@
+version 1.21.1 "Bug Fixes I" (2016-05-28)
+	- various bug fixes in media support (Jakub Adam)
+	- configure no longer ignores CFLAGS/LDFLAGS/LIBS (Stefan Becker)
+
 version 1.21.0 "Lync File Transfer" (2016-04-23)
 	- Feature #91: Support embedded XML as buddy photo URL (Stefan Becker)
 	- Feature #90: Add AppStream metadata file (Jiri Eischmann, Stefan Becker)
