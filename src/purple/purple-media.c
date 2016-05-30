@@ -351,28 +351,24 @@ sipe_backend_media_set_cname(struct sipe_backend_media *media, gchar *cname)
 
 #define FS_CODECS_CONF \
 	"# Automatically created by SIPE plugin\n" \
-	"[video/H263]\n" \
-	"farsight-send-profile=videoscale ! ffmpegcolorspace ! fsvideoanyrate ! ffenc_h263 rtp-payload-size=30 ! rtph263pay\n" \
-	"\n" \
-	"[audio/PCMA]\n" \
-	"farsight-send-profile=audioconvert ! audioresample ! audioconvert ! alawenc ! rtppcmapay min-ptime=20000000 max-ptime=20000000\n" \
-	"\n" \
-	"[audio/PCMU]\n" \
-	"farsight-send-profile=audioconvert ! audioresample ! audioconvert ! mulawenc ! rtppcmupay min-ptime=20000000 max-ptime=20000000\n";
+	"[application/X-DATA]\n" \
+	"id=127\n"
 
 static void
 ensure_codecs_conf()
 {
 	gchar *filename;
+	const gchar *fs_codecs_conf = FS_CODECS_CONF;
+	GError *error = NULL;
+
 	filename = g_build_filename(purple_user_dir(), "fs-codec.conf", NULL);
 
-	if (!g_file_test(filename, G_FILE_TEST_EXISTS)) {
-		int fd = g_open(filename, O_CREAT | O_WRONLY, S_IRUSR | S_IWUSR);
-		gchar *fs_codecs_conf = FS_CODECS_CONF;
-		if ((fd < 0) || write(fd, fs_codecs_conf, strlen(fs_codecs_conf)) == -1)
-			SIPE_DEBUG_ERROR_NOFORMAT("Can not create fs-codec.conf!");
-		if (fd >= 0)
-			close(fd);
+	g_file_set_contents(filename, fs_codecs_conf, strlen(fs_codecs_conf),
+			    &error);
+	if (error) {
+		SIPE_DEBUG_ERROR("Couldn't create fs-codec.conf: %s",
+				 error->message);
+		g_error_free(error);
 	}
 
 	g_free(filename);
@@ -527,13 +523,14 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 			      SipeMediaType type,
 			      SipeIceVersion ice_version,
 			      gboolean initiator,
-			      struct sipe_backend_media_relays *media_relays)
+			      struct sipe_backend_media_relays *media_relays,
+			      guint min_port, guint max_port)
 {
 	struct sipe_backend_media *media = call->backend_private;
 	struct sipe_backend_media_stream *stream = NULL;
 	PurpleMediaSessionType prpl_type = sipe_media_to_purple(type);
 	// Preallocate enough space for all potential parameters to fit.
-	GParameter *params = g_new0(GParameter, 5);
+	GParameter *params = g_new0(GParameter, 6);
 	guint params_cnt = 0;
 	gchar *transmitter;
 	GValue *relay_info = NULL;
@@ -553,6 +550,20 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 				 NICE_COMPATIBILITY_OC2007 :
 				 NICE_COMPATIBILITY_OC2007R2);
 		++params_cnt;
+
+		if (min_port != 0) {
+			params[params_cnt].name = "min-port";
+			g_value_init(&params[params_cnt].value, G_TYPE_UINT);
+			g_value_set_uint(&params[params_cnt].value, min_port);
+			++params_cnt;
+		}
+
+		if (max_port != 0) {
+			params[params_cnt].name = "max-port";
+			g_value_init(&params[params_cnt].value, G_TYPE_UINT);
+			g_value_set_uint(&params[params_cnt].value, max_port);
+			++params_cnt;
+		}
 
 		if (media_relays) {
 			params[params_cnt].name = "relay-info";

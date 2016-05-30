@@ -113,16 +113,16 @@ AS_IF([test "x$enable_quality_check" = xyes],
 			"-Wundef" \
 			"-Wunused-but-set-variable" \
 	 ; do
-		 ac_save_CFLAGS=$CFLAGS
+		 ac_save_CFLAGS="$CFLAGS"
 		 AC_MSG_CHECKING([if $CC supports $newflag])
-		 CFLAGS="$QUALITY_CFLAGS $newflag"
+		 CFLAGS="$CFLAGS $QUALITY_CFLAGS $newflag"
 		 AC_COMPILE_IFELSE(
 			[AC_LANG_SOURCE([[]])],
 			[AC_MSG_RESULT(yes)
 			 QUALITY_CFLAGS="$QUALITY_CFLAGS $newflag"],
 			[AC_MSG_RESULT(no)]
 		 )
-		 CFLAGS=$ac_save_CFLAGS
+		 CFLAGS="$ac_save_CFLAGS"
 	 done
 	])
 AC_SUBST(QUALITY_CFLAGS)
@@ -131,9 +131,9 @@ dnl check for availability of addition linker flags
 for newflag in \
 	"-Wl,-Bsymbolic-functions" \
 ; do
-	ac_save_LDFLAGS=$LDFLAGS
+	ac_save_LDFLAGS="$LDFLAGS"
 	AC_MSG_CHECKING([if $CC supports $newflag])
-	LDFLAGS="$ADDITIONAL_LDFLAGS $newflag"
+	LDFLAGS="$LDFLAGS $ADDITIONAL_LDFLAGS $newflag"
 	AC_LINK_IFELSE(
 		[AC_LANG_SOURCE([[
 int main(int argc, char *argv[])
@@ -145,7 +145,7 @@ int main(int argc, char *argv[])
 		 ADDITIONAL_LDFLAGS="$ADDITIONAL_LDFLAGS $newflag"],
 		[AC_MSG_RESULT(no)]
 	)
-	LDFLAGS=$ac_save_LDFLAGS
+	LDFLAGS="$ac_save_LDFLAGS"
 done
 AC_SUBST(ADDITIONAL_LDFLAGS)
 
@@ -288,8 +288,8 @@ PKG_CHECK_MODULES(LIBXML2, [libxml-2.0])
 
 dnl assumption check: sizof(uuid_t) must be 16 (see uuid.c)
 AC_MSG_CHECKING([that sizeof(uuid_t) is 16])
-ac_save_CFLAGS=$CFLAGS
-CFLAGS="$GLIB_CFLAGS $QUALITY_CFLAGS"
+ac_save_CFLAGS="$CFLAGS"
+CFLAGS="$CFLAGS $GLIB_CFLAGS $QUALITY_CFLAGS"
 dnl note the [[[ quoting: our code contains []!
 AC_RUN_IFELSE(
 	[AC_LANG_PROGRAM(
@@ -331,7 +331,7 @@ Compiler information:
  compiler: $CC
 ])],
 	[AC_MSG_WARN([cross compiling: not checking])])
-CFLAGS=$ac_save_CFLAGS
+CFLAGS="$ac_save_CFLAGS"
 
 dnl build option: OCS2005 client hack
 AC_ARG_ENABLE([ocs2005-message-hack],
@@ -364,10 +364,10 @@ AS_IF([test "x$enable_purple" != xno],
 		 PURPLE_MAJOR_VERSION=`$PKG_CONFIG --modversion $purple_pkgconfig | cut -d. -f 1`
 		 AC_SUBST(PURPLE_MAJOR_VERSION)
 
-		 ac_save_CFLAGS=$CFLAGS
-		 ac_save_LIBS=$LIBS
-		 CFLAGS="$PURPLE_CFLAGS $QUALITY_CFLAGS"
-		 LIBS="$PURPLE_LIBS"
+		 ac_save_CFLAGS="$CFLAGS"
+		 ac_save_LIBS="$LIBS"
+		 CFLAGS="$CFLAGS $PURPLE_CFLAGS $QUALITY_CFLAGS"
+		 LIBS="$LIBS $PURPLE_LIBS"
 
 		 dnl check whether enable voice and video support
 		 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
@@ -433,8 +433,8 @@ AS_IF([test "x$enable_purple" != xno],
 			 )
 			])
 
-		 CFLAGS=$ac_save_CFLAGS
-		 LIBS=$ac_save_LIBS])])
+		 CFLAGS="$ac_save_CFLAGS"
+		 LIBS="$ac_save_LIBS"])])
 AM_CONDITIONAL(SIPE_INCLUDE_PURPLE, [test "x$enable_purple" != xno])
 AM_CONDITIONAL(SIPE_PURPLE3, [test "x$purple_pkgconfig" = xpurple-3])
 

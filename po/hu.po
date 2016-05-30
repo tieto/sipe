@@ -12,8 +12,8 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2016-04-13 10:02+0000\n"
-"Last-Translator: Laszlo Pal <vlad@vlad.hu>\n"
+"PO-Revision-Date: 2016-05-28 15:08+0000\n"
+"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: Hungarian (http://www.transifex.com/stefanb/pidgin-sipe/language/hu/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -42,14 +42,14 @@ msgstr "Sikertelen azonosítás"
 msgid "Incompatible authentication scheme chosen"
 msgstr "Nem kompatibilis azonosítási módszer"
 
-#: ../src/core/sip-transport.c:1355 ../src/core/sipe-notify.c:1117
+#: ../src/core/sip-transport.c:1355 ../src/core/sipe-notify.c:1149
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "A(z) %s kiszolgáló elutasította"
 
 #: ../src/core/sip-transport.c:1356 ../src/core/sip-transport.c:1372
 #: ../src/core/sip-transport.c:1396 ../src/core/sip-transport.c:1420
-#: ../src/core/sipe-conf.c:265 ../src/core/sipe-notify.c:1117
+#: ../src/core/sipe-conf.c:265 ../src/core/sipe-notify.c:1149
 msgid "no reason given"
 msgstr "nincs ok megadva"
 
@@ -270,62 +270,62 @@ msgstr "A következő URI nem valós konferencia cím: \"%s\""
 msgid "Incomplete conference information provided"
 msgstr "Hiányos konferencia információ"
 
-#: ../src/core/sipe-conf.c:1039
+#: ../src/core/sipe-conf.c:1041
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
 msgstr "\n\nMivel ez a kliens hang-hívás támogatás nélkül került lefordításra, ezért amennyiben elfogadja a másik féllel csak azonnali üzeneteket fog tudni váltani."
 
-#: ../src/core/sipe-conf.c:1047
+#: ../src/core/sipe-conf.c:1049
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
 msgstr "%s meghívta egy konferencia hívásba %s"
 
-#: ../src/core/sipe-conf.c:1061
+#: ../src/core/sipe-conf.c:1063
 msgid "Accept"
 msgstr "Elfogad"
 
-#: ../src/core/sipe-conf.c:1062
+#: ../src/core/sipe-conf.c:1064
 msgid "Decline"
 msgstr "Elutasít"
 
-#: ../src/core/sipe-conf.c:1343
+#: ../src/core/sipe-conf.c:1345
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
 msgstr "A megbeszélés feloldva, további résztvevők csatlakozhatnak"
 
-#: ../src/core/sipe-conf.c:1347
+#: ../src/core/sipe-conf.c:1349
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
 msgstr "Megbeszélés lezárva, további résztvevők nem csatlakozhatnak"
 
-#: ../src/core/sipe-conf.c:1380
+#: ../src/core/sipe-conf.c:1382
 msgid "You have been disconnected from this conference."
 msgstr "Ön eltávolításra került a megbeszélésről"
 
-#: ../src/core/sipe-conf.c:1540
+#: ../src/core/sipe-conf.c:1542
 msgid "Dial-in info"
 msgstr "Behívási adatok"
 
-#: ../src/core/sipe-conf.c:1541
+#: ../src/core/sipe-conf.c:1543
 msgid "Number"
 msgstr "Szám"
 
-#: ../src/core/sipe-conf.c:1543
+#: ../src/core/sipe-conf.c:1545
 msgid "Conference ID"
 msgstr "Konferencia azonosító"
 
-#: ../src/core/sipe-conf.c:1545
+#: ../src/core/sipe-conf.c:1547
 msgid "Meeting link"
 msgstr "A megbeszéléshez tartozó link"
 
-#: ../src/core/sipe-conf.c:1547
+#: ../src/core/sipe-conf.c:1549
 msgid "Organizer"
 msgstr "Szervező"
 
-#: ../src/core/sipe-conf.c:1549
+#: ../src/core/sipe-conf.c:1551
 msgid "Alternative dial-in numbers"
 msgstr "Alternatív behívószám"
 
@@ -438,34 +438,36 @@ msgstr "Az e-mail szolgáltatásokhoz megadott URL-nek valósnak kell lennie⏎\
 msgid "Location:"
 msgstr "Helyszín"
 
-#: ../src/core/sipe-ft.c:262 ../src/core/sipe-ft-tftp.c:109
-#: ../src/core/sipe-ft-tftp.c:389 ../src/core/sipe-ft-tftp.c:418
-#: ../src/core/sipe-ft-tftp.c:477
+#: ../src/core/sipe-ft.c:264 ../src/core/sipe-ft-tftp.c:109
+#: ../src/core/sipe-ft-tftp.c:393 ../src/core/sipe-ft-tftp.c:422
+#: ../src/core/sipe-ft-tftp.c:481
 msgid "Socket read failed"
 msgstr "\"Socket\" olvasási hiba"
 
-#: ../src/core/sipe-ft.c:410
+#: ../src/core/sipe-ft.c:412
 msgid "Received encryption key has wrong size."
 msgstr "A kapott titkosítási kulcs rossz méretű"
 
-#: ../src/core/sipe-ft.c:425
+#: ../src/core/sipe-ft.c:427
 msgid "Received hash key has wrong size."
 msgstr "A kapott \"hash\" kulcs rossz méretű"
 
-#: ../src/core/sipe-ft.c:445
+#: ../src/core/sipe-ft.c:447
 msgid "Could not create listen socket"
 msgstr "Nem sikerült létrehozni a figyelő foglalatot"
 
-#: ../src/core/sipe-ft-lync.c:754 ../src/core/sipe-media.c:1240
+#: ../src/core/sipe-ft-lync.c:757 ../src/core/sipe-media.c:1195
+#: ../src/core/sipe-media.c:1206 ../src/core/sipe-media.c:1284
+#: ../src/core/sipe-media.c:1740
 msgid "Error occurred"
 msgstr "Hiba történt"
 
-#: ../src/core/sipe-ft-lync.c:755
+#: ../src/core/sipe-ft-lync.c:758
 msgid "Error creating data stream"
 msgstr "Adatfolyam létrehozása sikertelen"
 
-#: ../src/core/sipe-ft-tftp.c:115 ../src/core/sipe-ft-tftp.c:521
-#: ../src/core/sipe-ft-tftp.c:530
+#: ../src/core/sipe-ft-tftp.c:115 ../src/core/sipe-ft-tftp.c:525
+#: ../src/core/sipe-ft-tftp.c:534
 msgid "Socket write failed"
 msgstr "\"Socket\" írási hiba"
 
@@ -481,21 +483,21 @@ msgstr "A kapott \"MAC\" érvénytelen"
 msgid "Received file is corrupted"
 msgstr "A kapott fájl sérült"
 
-#: ../src/core/sipe-ft-tftp.c:285
+#: ../src/core/sipe-ft-tftp.c:287
 msgid "File transfer initialization failed."
 msgstr "Fájl átvitel indítása meghiúsult"
 
-#: ../src/core/sipe-ft-tftp.c:316
+#: ../src/core/sipe-ft-tftp.c:318
 msgid "File transfer authentication failed."
 msgstr "Fájl átviteli azonosítás sikertelen"
 
-#: ../src/core/sipe-ft-tftp.c:410 ../src/core/sipe-ft-tftp.c:428
-#: ../src/core/sipe-ft-tftp.c:491
+#: ../src/core/sipe-ft-tftp.c:414 ../src/core/sipe-ft-tftp.c:432
+#: ../src/core/sipe-ft-tftp.c:495
 msgid "Out of memory"
 msgstr "Elfogyott a memória"
 
-#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1131
-#: ../src/core/sipe-notify.c:1158 ../src/core/sipe-notify.c:1262
+#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1163
+#: ../src/core/sipe-notify.c:1190 ../src/core/sipe-notify.c:1294
 #: ../src/purple/purple-search.c:128
 msgid "Other Contacts"
 msgstr "Egyéb kapcsolatok"
@@ -519,11 +521,11 @@ msgstr "A csoport-társalgás szerver nem található"
 msgid "This message was not delivered to chat room '%s'"
 msgstr "Az üzenet továbbítása a %s szobába sikertelen"
 
-#: ../src/core/sipe-groupchat.c:609
+#: ../src/core/sipe-groupchat.c:616
 msgid "Error retrieving room list"
 msgstr "A szoba lista letöltése sikertelen"
 
-#: ../src/core/sipe-groupchat.c:713
+#: ../src/core/sipe-groupchat.c:720
 msgid "Error joining chat room"
 msgstr "Csatlakozás a szobához sikertelen"
 
@@ -538,90 +540,85 @@ msgstr "%s meghívása sikertelen"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "%s értelmezhetetlen tartalmú üzenetet küldött"
 
-#: ../src/core/sipe-media.c:836 ../src/core/sipe-media.c:1303
-#: ../src/core/sipe-media.c:1313 ../src/core/sipe-media.c:1674
-#: ../src/core/sipe-media.c:1694
+#: ../src/core/sipe-media.c:835 ../src/core/sipe-media.c:1347
+#: ../src/core/sipe-media.c:1357 ../src/core/sipe-media.c:1721
+#: ../src/core/sipe-media.c:1741
 msgid "Unable to establish a call"
 msgstr "Sikertelen hívás"
 
-#: ../src/core/sipe-media.c:837 ../src/core/sipe-media.c:1675
+#: ../src/core/sipe-media.c:836 ../src/core/sipe-media.c:1722
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr "A partner titkosítási beállításai nem egyeznek a mienkkel"
 
-#: ../src/core/sipe-media.c:1152 ../src/core/sipe-media.c:1163
-#: ../src/core/sipe-media.c:1693
-msgid "Error occured"
-msgstr "Hiba!"
-
-#: ../src/core/sipe-media.c:1153 ../src/core/sipe-media.c:1241
-msgid "Error creating audio stream"
-msgstr "A hang adatfolyam létrehozása nem sikerült"
-
-#: ../src/core/sipe-media.c:1164
-msgid "Error creating video stream"
-msgstr "A videó adatfolyam létrehozása nem sikerült"
-
-#: ../src/core/sipe-media.c:1208 ../src/purple/purple-chat.c:314
-msgid "Join conference call"
-msgstr "Csatlakozás telefon konferenciához"
-
-#: ../src/core/sipe-media.c:1209
-msgid "Conference calls are not supported on this server."
-msgstr "A konferenciahívások nem támogatottak ezen a kiszolgálón"
-
-#: ../src/core/sipe-media.c:1304
-msgid "Invalid phone number"
-msgstr "Érvénytelen telefonszám"
-
-#: ../src/core/sipe-media.c:1314
-msgid "Audio Test Service is not available."
-msgstr "Hang tesztelési szolgáltatás nem elérhető"
-
-#: ../src/core/sipe-media.c:1638
-msgid "User unavailable"
-msgstr "Felhasználó nem elérhető"
-
-#: ../src/core/sipe-media.c:1641
-#, c-format
-msgid "%s does not want to be disturbed"
-msgstr "%s állapota: \"Ne zavarj!\""
-
-#: ../src/core/sipe-media.c:1643
-#, c-format
-msgid "User %s is not available"
-msgstr "%s állapota: \"Nem elérhető\""
-
-#: ../src/core/sipe-media.c:1648
-msgid "Call rejected"
-msgstr "Hívás visszautasítva"
-
-#: ../src/core/sipe-media.c:1649
+#: ../src/core/sipe-media.c:929
 #, c-format
 msgid "User %s rejected call"
 msgstr "%s visszautasította a hívást"
 
-#: ../src/core/sipe-media.c:1657
+#: ../src/core/sipe-media.c:930
+msgid "Call rejected"
+msgstr "Hívás visszautasítva"
+
+#: ../src/core/sipe-media.c:1196 ../src/core/sipe-media.c:1285
+msgid "Error creating audio stream"
+msgstr "A hang adatfolyam létrehozása nem sikerült"
+
+#: ../src/core/sipe-media.c:1207
+msgid "Error creating video stream"
+msgstr "A videó adatfolyam létrehozása nem sikerült"
+
+#: ../src/core/sipe-media.c:1251 ../src/purple/purple-chat.c:314
+msgid "Join conference call"
+msgstr "Csatlakozás telefon konferenciához"
+
+#: ../src/core/sipe-media.c:1252
+msgid "Conference calls are not supported on this server."
+msgstr "A konferenciahívások nem támogatottak ezen a kiszolgálón"
+
+#: ../src/core/sipe-media.c:1348
+msgid "Invalid phone number"
+msgstr "Érvénytelen telefonszám"
+
+#: ../src/core/sipe-media.c:1358
+msgid "Audio Test Service is not available."
+msgstr "Hang tesztelési szolgáltatás nem elérhető"
+
+#: ../src/core/sipe-media.c:1690
+msgid "User unavailable"
+msgstr "Felhasználó nem elérhető"
+
+#: ../src/core/sipe-media.c:1693
+#, c-format
+msgid "%s does not want to be disturbed"
+msgstr "%s állapota: \"Ne zavarj!\""
+
+#: ../src/core/sipe-media.c:1695
+#, c-format
+msgid "User %s is not available"
+msgstr "%s állapota: \"Nem elérhető\""
+
+#: ../src/core/sipe-media.c:1704
 msgid "Unsupported media type"
 msgstr "Nem támogatott médiatípus "
 
-#: ../src/core/sipe-media.c:2019
+#: ../src/core/sipe-media.c:2062
 msgid "Media error"
 msgstr "Média hiba"
 
-#: ../src/core/sipe-media.c:2020
+#: ../src/core/sipe-media.c:2063
 msgid "Error while reading from stream"
 msgstr "Hiba az adatfolyam olvasásakor"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe-notify.c:1109
+#: ../src/core/sipe-notify.c:1141
 msgid "you are already signed in at another location"
 msgstr "Egy másik helyről már be va jelentkezve"
 
-#: ../src/core/sipe-notify.c:1111
+#: ../src/core/sipe-notify.c:1143
 msgid "user disabled"
 msgstr "Felhasználó letiltva"
 
-#: ../src/core/sipe-notify.c:1113
+#: ../src/core/sipe-notify.c:1145
 msgid "user moved"
 msgstr "Felhasználó áthelyezve"
 
@@ -1223,27 +1220,27 @@ msgstr "Adja meg a keresett személy adatait. Az üres mezők figyelmen kívül 
 msgid "_Search"
 msgstr "_Keresés"
 
-#: ../src/purple/purple-transport.c:131
+#: ../src/purple/purple-transport.c:132
 msgid "Read error"
 msgstr "Olvasási hiba"
 
-#: ../src/purple/purple-transport.c:135
+#: ../src/purple/purple-transport.c:136
 #: ../src/telepathy/telepathy-transport.c:96
 msgid "Server has disconnected"
 msgstr "A kiszolgáló bontotta a kapcsolatot"
 
-#: ../src/purple/purple-transport.c:197
+#: ../src/purple/purple-transport.c:198
 msgid "Could not connect"
 msgstr "Nem sikerült kapcsolódni"
 
-#: ../src/purple/purple-transport.c:267
+#: ../src/purple/purple-transport.c:268
 msgid "Could not create SSL context"
 msgstr "Az SSL-környezet nem hozható létre"
 
-#: ../src/purple/purple-transport.c:289
+#: ../src/purple/purple-transport.c:290
 msgid "Could not create socket"
 msgstr "Nem tudom létrehozni a \"Socket\"-et"
 
-#: ../src/purple/purple-transport.c:380
+#: ../src/purple/purple-transport.c:381
 msgid "Write error"
 msgstr "Írási hiba"

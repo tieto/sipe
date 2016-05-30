@@ -224,13 +224,6 @@ parse_append_candidate_rfc_5245(gchar **tokens, GSList **candidates)
 
 	*candidates = g_slist_append(*candidates, candidate);
 
-	// TCP-ACT candidates are both active and passive
-	if (candidate->protocol == SIPE_NETWORK_PROTOCOL_TCP_ACTIVE) {
-		candidate = sdpcandidate_copy(candidate);
-		candidate->protocol = SIPE_NETWORK_PROTOCOL_TCP_PASSIVE;
-		*candidates = g_slist_append(*candidates, candidate);
-	}
-
 	return TRUE;
 }
 

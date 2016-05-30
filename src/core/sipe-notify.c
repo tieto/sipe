@@ -81,6 +81,11 @@ static void sipe_process_provisioning(struct sipe_core_private *sipe_private,
 static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 					 struct sipmsg *msg)
 {
+#define READ_INT_FROM_NODE(node_name, field) { \
+	gchar *s = g_strstrip(sipe_xml_data(sipe_xml_child(node, node_name))); \
+	sipe_private->field = s ? atoi(s) : 0; \
+	g_free(s); }
+
 	sipe_xml *xn_provision_group_list;
 	const sipe_xml *node;
 
@@ -99,6 +104,7 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 			const gchar *addressbook_uri_str = SIPE_CORE_PRIVATE_FLAG_IS(REMOTE_USER) ?
 					"absExternalServerUrl" : "absInternalServerUrl";
 			gchar *ucPC2PCAVEncryption = NULL;
+			gchar *ucPortRangeEnabled = NULL;
 
 			g_free(sipe_private->focus_factory_uri);
 			sipe_private->focus_factory_uri = sipe_xml_data(sipe_xml_child(node, "focusFactoryUri"));
@@ -140,6 +146,32 @@ static void sipe_process_provisioning_v2(struct sipe_core_private *sipe_private,
 				sipe_private->server_av_encryption_policy = SIPE_ENCRYPTION_POLICY_REQUIRED;
 			}
 			g_free(ucPC2PCAVEncryption);
+
+			ucPortRangeEnabled = g_strstrip(sipe_xml_data(sipe_xml_child(node, "ucPortRangeEnabled")));
+			if (sipe_strequal(ucPortRangeEnabled, "true")) {
+				READ_INT_FROM_NODE("ucMinMediaPort", min_media_port)
+				READ_INT_FROM_NODE("ucMaxMediaPort", max_media_port)
+				READ_INT_FROM_NODE("ucMinAudioPort", min_audio_port)
+				READ_INT_FROM_NODE("ucMaxAudioPort", max_audio_port)
+				READ_INT_FROM_NODE("ucMinVideoPort", min_video_port)
+				READ_INT_FROM_NODE("ucMaxVideoPort", max_video_port)
+				READ_INT_FROM_NODE("ucMinAppSharingPort", min_appsharing_port)
+				READ_INT_FROM_NODE("ucMaxAppSharingPort", max_appsharing_port)
+				READ_INT_FROM_NODE("ucMinFileTransferPort", min_filetransfer_port)
+				READ_INT_FROM_NODE("ucMaxFileTransferPort", max_filetransfer_port)
+			} else {
+				sipe_private->min_media_port = 0;
+				sipe_private->max_media_port = 0;
+				sipe_private->min_audio_port = 0;
+				sipe_private->max_audio_port = 0;
+				sipe_private->min_video_port = 0;
+				sipe_private->max_video_port = 0;
+				sipe_private->min_appsharing_port = 0;
+				sipe_private->max_appsharing_port = 0;
+				sipe_private->min_filetransfer_port = 0;
+				sipe_private->max_filetransfer_port = 0;
+			}
+			g_free(ucPortRangeEnabled);
 
 		/* persistentChatConfiguration */
 		} else if (sipe_strequal("persistentChatConfiguration", node_name)) {

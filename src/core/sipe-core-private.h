@@ -175,6 +175,18 @@ struct sipe_core_private {
 	/* Dial-in conferencing phone numbers for different regions */
 	GHashTable *access_numbers;
 	const gchar *default_access_number;
+
+	/* Port ranges to use for media connections. Zero means any port. */
+	guint min_media_port;
+	guint max_media_port;
+	guint min_audio_port;
+	guint max_audio_port;
+	guint min_video_port;
+	guint max_video_port;
+	guint min_appsharing_port;
+	guint max_appsharing_port;
+	guint min_filetransfer_port;
+	guint max_filetransfer_port;
 };
 
 /**

@@ -15,8 +15,8 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2016-04-17 12:57+0000\n"
-"Last-Translator: Kevin C <kdc_net@laposte.net>\n"
+"PO-Revision-Date: 2016-05-28 15:08+0000\n"
+"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
 "Language-Team: French (http://www.transifex.com/stefanb/pidgin-sipe/language/fr/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -45,14 +45,14 @@ msgstr "Échec de l'authentification"
 msgid "Incompatible authentication scheme chosen"
 msgstr "Le protocole d'authentification choisi est incompatible"
 
-#: ../src/core/sip-transport.c:1355 ../src/core/sipe-notify.c:1117
+#: ../src/core/sip-transport.c:1355 ../src/core/sipe-notify.c:1149
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Vous avez été rejeté par le serveur : %s"
 
 #: ../src/core/sip-transport.c:1356 ../src/core/sip-transport.c:1372
 #: ../src/core/sip-transport.c:1396 ../src/core/sip-transport.c:1420
-#: ../src/core/sipe-conf.c:265 ../src/core/sipe-notify.c:1117
+#: ../src/core/sipe-conf.c:265 ../src/core/sipe-notify.c:1149
 msgid "no reason given"
 msgstr "pas de raison donnée"
 
@@ -273,62 +273,62 @@ msgstr "\"%s\" n'est pas un URI de conférence valide"
 msgid "Incomplete conference information provided"
 msgstr "Les informations fournies pour la conférence sont incomplètes"
 
-#: ../src/core/sipe-conf.c:1039
+#: ../src/core/sipe-conf.c:1041
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
 msgstr "\n\nPuisque ce client n'a pas été compilé avec la prise en charge des appels vocaux, si vous acceptez, vous pourrez seulement contacter les autres participants par chat."
 
-#: ../src/core/sipe-conf.c:1047
+#: ../src/core/sipe-conf.c:1049
 #, c-format
 msgid "%s wants to invite you to the conference call%s"
 msgstr "%s veut vous inviter à la conférence %s"
 
-#: ../src/core/sipe-conf.c:1061
+#: ../src/core/sipe-conf.c:1063
 msgid "Accept"
 msgstr "Accepter"
 
-#: ../src/core/sipe-conf.c:1062
+#: ../src/core/sipe-conf.c:1064
 msgid "Decline"
 msgstr "Refuser"
 
-#: ../src/core/sipe-conf.c:1343
+#: ../src/core/sipe-conf.c:1345
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
 msgstr "Cette conférence n'est plus verrouillée. D'autres participants peuvent maintenant se joindre à celle-ci."
 
-#: ../src/core/sipe-conf.c:1347
+#: ../src/core/sipe-conf.c:1349
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
 msgstr "Cette conférence est verrouillée. Personne d'autres ne peut participer à celle-ci tant qu'elle le sera."
 
-#: ../src/core/sipe-conf.c:1380
+#: ../src/core/sipe-conf.c:1382
 msgid "You have been disconnected from this conference."
 msgstr "Vous avez été déconnecté de cette conférence."
 
-#: ../src/core/sipe-conf.c:1540
+#: ../src/core/sipe-conf.c:1542
 msgid "Dial-in info"
 msgstr "Information de connexion"
 
-#: ../src/core/sipe-conf.c:1541
+#: ../src/core/sipe-conf.c:1543
 msgid "Number"
 msgstr "Numéro"
 
-#: ../src/core/sipe-conf.c:1543
+#: ../src/core/sipe-conf.c:1545
 msgid "Conference ID"
 msgstr "ID de la conférence"
 
-#: ../src/core/sipe-conf.c:1545
+#: ../src/core/sipe-conf.c:1547
 msgid "Meeting link"
 msgstr "Lien de la réunion"
 
-#: ../src/core/sipe-conf.c:1547
+#: ../src/core/sipe-conf.c:1549
 msgid "Organizer"
 msgstr "Organisateur"
 
-#: ../src/core/sipe-conf.c:1549
+#: ../src/core/sipe-conf.c:1551
 msgid "Alternative dial-in numbers"
 msgstr "Numéros alternatifs"
 
@@ -441,34 +441,36 @@ msgstr "L'URL des services email doit être valide si elle est indiquée\nExempl
 msgid "Location:"
 msgstr "Lieu :"
 
-#: ../src/core/sipe-ft.c:262 ../src/core/sipe-ft-tftp.c:109
-#: ../src/core/sipe-ft-tftp.c:389 ../src/core/sipe-ft-tftp.c:418
-#: ../src/core/sipe-ft-tftp.c:477
+#: ../src/core/sipe-ft.c:264 ../src/core/sipe-ft-tftp.c:109
+#: ../src/core/sipe-ft-tftp.c:393 ../src/core/sipe-ft-tftp.c:422
+#: ../src/core/sipe-ft-tftp.c:481
 msgid "Socket read failed"
 msgstr "La lecture du socket a échoué"
 
-#: ../src/core/sipe-ft.c:410
+#: ../src/core/sipe-ft.c:412
 msgid "Received encryption key has wrong size."
 msgstr "La clef de chiffrement reçue a une longueur incorrecte."
 
-#: ../src/core/sipe-ft.c:425
+#: ../src/core/sipe-ft.c:427
 msgid "Received hash key has wrong size."
 msgstr "La clef de hachage reçue a une longueur incorrecte."
 
-#: ../src/core/sipe-ft.c:445
+#: ../src/core/sipe-ft.c:447
 msgid "Could not create listen socket"
 msgstr "Impossible de créer le socket d'écoute"
 
-#: ../src/core/sipe-ft-lync.c:754 ../src/core/sipe-media.c:1240
+#: ../src/core/sipe-ft-lync.c:757 ../src/core/sipe-media.c:1195
+#: ../src/core/sipe-media.c:1206 ../src/core/sipe-media.c:1284
+#: ../src/core/sipe-media.c:1740
 msgid "Error occurred"
 msgstr "Une erreur est survenue"
 
-#: ../src/core/sipe-ft-lync.c:755
+#: ../src/core/sipe-ft-lync.c:758
 msgid "Error creating data stream"
 msgstr "Erreur lors de la création du flux de données"
 
-#: ../src/core/sipe-ft-tftp.c:115 ../src/core/sipe-ft-tftp.c:521
-#: ../src/core/sipe-ft-tftp.c:530
+#: ../src/core/sipe-ft-tftp.c:115 ../src/core/sipe-ft-tftp.c:525
+#: ../src/core/sipe-ft-tftp.c:534
 msgid "Socket write failed"
 msgstr "L'écriture du socket a échoué"
 
@@ -484,21 +486,21 @@ msgstr "L’adresse MAC reçue est corrompue"
 msgid "Received file is corrupted"
 msgstr "Le fichier reçu est corrompu"
 
-#: ../src/core/sipe-ft-tftp.c:285
+#: ../src/core/sipe-ft-tftp.c:287
 msgid "File transfer initialization failed."
 msgstr "L'initialisation du transfert de fichier a échoué."
 
-#: ../src/core/sipe-ft-tftp.c:316
+#: ../src/core/sipe-ft-tftp.c:318
 msgid "File transfer authentication failed."
 msgstr "L'authentification du transfert de fichier a échoué."
 
-#: ../src/core/sipe-ft-tftp.c:410 ../src/core/sipe-ft-tftp.c:428
-#: ../src/core/sipe-ft-tftp.c:491
+#: ../src/core/sipe-ft-tftp.c:414 ../src/core/sipe-ft-tftp.c:432
+#: ../src/core/sipe-ft-tftp.c:495
 msgid "Out of memory"
 msgstr "Plus de mémoire."
 
-#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1131
-#: ../src/core/sipe-notify.c:1158 ../src/core/sipe-notify.c:1262
+#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1163
+#: ../src/core/sipe-notify.c:1190 ../src/core/sipe-notify.c:1294
 #: ../src/purple/purple-search.c:128
 msgid "Other Contacts"
 msgstr "Autres contacts"
@@ -522,11 +524,11 @@ msgstr "Impossible de trouver le serveur de chat de groupe !"
 msgid "This message was not delivered to chat room '%s'"
 msgstr "Ce message n'a pu être remis au canal de chat '%s'"
 
-#: ../src/core/sipe-groupchat.c:609
+#: ../src/core/sipe-groupchat.c:616
 msgid "Error retrieving room list"
 msgstr "Impossible de récupérer la liste des canaux de chat."
 
-#: ../src/core/sipe-groupchat.c:713
+#: ../src/core/sipe-groupchat.c:720
 msgid "Error joining chat room"
 msgstr "Impossible de rejoindre le canal de chat."
 
@@ -541,90 +543,85 @@ msgstr "L'invitation de %s a échoué"
 msgid "Received a message with unrecognized contents from %s"
 msgstr "Message reçu de %s avec un contenu non reconnaissable"
 
-#: ../src/core/sipe-media.c:836 ../src/core/sipe-media.c:1303
-#: ../src/core/sipe-media.c:1313 ../src/core/sipe-media.c:1674
-#: ../src/core/sipe-media.c:1694
+#: ../src/core/sipe-media.c:835 ../src/core/sipe-media.c:1347
+#: ../src/core/sipe-media.c:1357 ../src/core/sipe-media.c:1721
+#: ../src/core/sipe-media.c:1741
 msgid "Unable to establish a call"
 msgstr "Impossible d'établir un appel"
 
-#: ../src/core/sipe-media.c:837 ../src/core/sipe-media.c:1675
+#: ../src/core/sipe-media.c:836 ../src/core/sipe-media.c:1722
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr "Les paramètres d'encodage du correspondant sont incompatibles avec les votres."
 
-#: ../src/core/sipe-media.c:1152 ../src/core/sipe-media.c:1163
-#: ../src/core/sipe-media.c:1693
-msgid "Error occured"
-msgstr "Une erreur est survenue"
-
-#: ../src/core/sipe-media.c:1153 ../src/core/sipe-media.c:1241
-msgid "Error creating audio stream"
-msgstr "Impossible de créer le flux audio"
-
-#: ../src/core/sipe-media.c:1164
-msgid "Error creating video stream"
-msgstr "Impossible de créer le flux vidéo"
-
-#: ../src/core/sipe-media.c:1208 ../src/purple/purple-chat.c:314
-msgid "Join conference call"
-msgstr "Rejoindre l'appel en conférence"
-
-#: ../src/core/sipe-media.c:1209
-msgid "Conference calls are not supported on this server."
-msgstr "Les audio-conférences ne sont pas supportées sur ce serveur."
-
-#: ../src/core/sipe-media.c:1304
-msgid "Invalid phone number"
-msgstr "Numéro de téléphone invalide"
-
-#: ../src/core/sipe-media.c:1314
-msgid "Audio Test Service is not available."
-msgstr "Le service de test audio est indisponible."
-
-#: ../src/core/sipe-media.c:1638
-msgid "User unavailable"
-msgstr "Utilisateur indisponible"
-
-#: ../src/core/sipe-media.c:1641
-#, c-format
-msgid "%s does not want to be disturbed"
-msgstr "%s ne veut pas être dérangé"
-
-#: ../src/core/sipe-media.c:1643
-#, c-format
-msgid "User %s is not available"
-msgstr "L'utilisateur %s est indisponible"
-
-#: ../src/core/sipe-media.c:1648
-msgid "Call rejected"
-msgstr "Appel rejeté"
-
-#: ../src/core/sipe-media.c:1649
+#: ../src/core/sipe-media.c:929
 #, c-format
 msgid "User %s rejected call"
 msgstr "L'utilisateur %s a rejeté l'appel"
 
-#: ../src/core/sipe-media.c:1657
+#: ../src/core/sipe-media.c:930
+msgid "Call rejected"
+msgstr "Appel rejeté"
+
+#: ../src/core/sipe-media.c:1196 ../src/core/sipe-media.c:1285
+msgid "Error creating audio stream"
+msgstr "Impossible de créer le flux audio"
+
+#: ../src/core/sipe-media.c:1207
+msgid "Error creating video stream"
+msgstr "Impossible de créer le flux vidéo"
+
+#: ../src/core/sipe-media.c:1251 ../src/purple/purple-chat.c:314
+msgid "Join conference call"
+msgstr "Rejoindre l'appel en conférence"
+
+#: ../src/core/sipe-media.c:1252
+msgid "Conference calls are not supported on this server."
+msgstr "Les audio-conférences ne sont pas supportées sur ce serveur."
+
+#: ../src/core/sipe-media.c:1348
+msgid "Invalid phone number"
+msgstr "Numéro de téléphone invalide"
+
+#: ../src/core/sipe-media.c:1358
+msgid "Audio Test Service is not available."
+msgstr "Le service de test audio est indisponible."
+
+#: ../src/core/sipe-media.c:1690
+msgid "User unavailable"
+msgstr "Utilisateur indisponible"
+
+#: ../src/core/sipe-media.c:1693
+#, c-format
+msgid "%s does not want to be disturbed"
+msgstr "%s ne veut pas être dérangé"
+
+#: ../src/core/sipe-media.c:1695
+#, c-format
+msgid "User %s is not available"
+msgstr "L'utilisateur %s est indisponible"
+
+#: ../src/core/sipe-media.c:1704
 msgid "Unsupported media type"
 msgstr "Format non supporté"
 
-#: ../src/core/sipe-media.c:2019
+#: ../src/core/sipe-media.c:2062
 msgid "Media error"
 msgstr "Erreur du média"
 
-#: ../src/core/sipe-media.c:2020
+#: ../src/core/sipe-media.c:2063
 msgid "Error while reading from stream"
 msgstr "Erreur lors de la lecture des informations du flux"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe-notify.c:1109
+#: ../src/core/sipe-notify.c:1141
 msgid "you are already signed in at another location"
 msgstr "Vous êtes déjà connecté depuis un autre lieu"
 
-#: ../src/core/sipe-notify.c:1111
+#: ../src/core/sipe-notify.c:1143
 msgid "user disabled"
 msgstr "Utilisateur désactivé"
 
-#: ../src/core/sipe-notify.c:1113
+#: ../src/core/sipe-notify.c:1145
 msgid "user moved"
 msgstr "Utilisateur déplacé"
 
@@ -1226,27 +1223,27 @@ msgstr "Entrez les critères de recherche de la personne. Les champs vides seron
 msgid "_Search"
 msgstr "_Rechercher"
 
-#: ../src/purple/purple-transport.c:131
+#: ../src/purple/purple-transport.c:132
 msgid "Read error"
 msgstr "Erreur de lecture"
 
-#: ../src/purple/purple-transport.c:135
+#: ../src/purple/purple-transport.c:136
 #: ../src/telepathy/telepathy-transport.c:96
 msgid "Server has disconnected"
 msgstr "Le serveur s'est déconnecté"
 
-#: ../src/purple/purple-transport.c:197
+#: ../src/purple/purple-transport.c:198
 msgid "Could not connect"
 msgstr "Impossible de se connecter"
 
-#: ../src/purple/purple-transport.c:267
+#: ../src/purple/purple-transport.c:268
 msgid "Could not create SSL context"
 msgstr "Impossible de créer un contexte SSL"
 
-#: ../src/purple/purple-transport.c:289
+#: ../src/purple/purple-transport.c:290
 msgid "Could not create socket"
 msgstr "Impossible de créer le socket"
 
-#: ../src/purple/purple-transport.c:380
+#: ../src/purple/purple-transport.c:381
 msgid "Write error"
 msgstr "Erreur d'écriture"
