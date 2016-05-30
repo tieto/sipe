@@ -1,3 +1,12 @@
+pidgin-sipe (1.21.1-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+        - various bug fixes in media support
+        - configure no longer ignores CFLAGS/LDFLAGS/LIBS
+  * Refresh cflags-remove-Wundef.patch.
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 30 May 2016 06:57:46 +0200
+
 pidgin-sipe (1.21.0-2) unstable; urgency=medium
 
   * Build-Depend on libpurple-dev >= 2.10.12.

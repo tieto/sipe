@@ -88,6 +88,7 @@ struct sipe_transport_purple {
 #define SIPE_TRANSPORT_CONNECTION ((struct sipe_transport_connection *) transport)
 
 #define BUFFER_SIZE_INCREMENT 4096
+#define FLUSH_MAX_RETRIES 5
 
 
 
@@ -357,8 +358,8 @@ void sipe_purple_transport_close_all(struct sipe_backend_private *purple_private
 		sipe_backend_transport_disconnect(entry->data);
 }
 
-/* returns FALSE on write error */
-static gboolean transport_write(struct sipe_transport_purple *transport)
+/* returns a negative number on write error */
+static gssize transport_write(struct sipe_transport_purple *transport)
 {
 	gsize max_write;
 
@@ -372,25 +373,26 @@ static gboolean transport_write(struct sipe_transport_purple *transport)
 			      purple_circular_buffer_get_output(transport->transmit_buffer),
 			      max_write);
 
-		if (written < 0 && errno == EAGAIN) {
-			return TRUE;
-		} else if (written <= 0) {
-			SIPE_DEBUG_ERROR("Write error: %s (%d)", strerror(errno), errno);
-			transport->error(SIPE_TRANSPORT_CONNECTION,
-					 _("Write error"));
-			return FALSE;
+		if (written <= 0) {
+			if (written == 0 || errno != EAGAIN) {
+				SIPE_DEBUG_ERROR("Write error: %s (%d)",
+						 strerror(errno), errno);
+				transport->error(SIPE_TRANSPORT_CONNECTION,
+						 _("Write error"));
+			}
+		} else {
+			purple_circular_buffer_mark_read(transport->transmit_buffer,
+							 written);
 		}
 
-		purple_circular_buffer_mark_read(transport->transmit_buffer,
-						 written);
-
+		return written;
 	} else {
 		/* buffer is empty -> stop sending */
 		purple_input_remove(transport->transmit_handler);
 		transport->transmit_handler = 0;
 	}
 
-	return TRUE;
+	return 0;
 }
 
 static void transport_canwrite_cb(gpointer data,
@@ -425,9 +427,28 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 void sipe_backend_transport_flush(struct sipe_transport_connection *conn)
 {
 	struct sipe_transport_purple *transport = PURPLE_TRANSPORT;
+	gssize written;
+	int retries = 0;
 
-	while (	purple_circular_buffer_get_max_read(transport->transmit_buffer)
-		&& transport_write(transport));
+	while ((written = transport_write(transport))) {
+		if (written < 0) {
+			if (errno == EAGAIN && retries++ < FLUSH_MAX_RETRIES) {
+				continue;
+			}
+			break;
+		}
+
+		retries = 0;
+	}
+
+	if (written != 0) {
+		/* We couldn't send the whole buffer. Transport is probably
+		 * broken. */
+		SIPE_DEBUG_INFO("sipe_backend_transport_flush: leaving "
+				"%" G_GSSIZE_FORMAT " unsent bytes in buffer.",
+				purple_circular_buffer_get_max_read(
+						transport->transmit_buffer));
+	}
 }
 
 /*

@@ -1,3 +1,11 @@
+pidgin-sipe (1.21.1-1) unstable; urgency=low
+
+  * New upstream version 1.21.1 "Bug Fixes I" (2016-05-28)
+	- various bug fixes in media support (Jakub Adam)
+	- configure no longer ignores CFLAGS/LDFLAGS/LIBS (Stefan Becker)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 28 May 2016 18:19:00 +0300
+
 pidgin-sipe (1.21.0-1) unstable; urgency=low
 
   * New upstream version 1.21.0 "Lync File Transfer" (2016-04-23)

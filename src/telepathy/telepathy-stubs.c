@@ -195,7 +195,9 @@ struct sipe_backend_media_stream *sipe_backend_media_add_stream(SIPE_UNUSED_PARA
 								SIPE_UNUSED_PARAMETER SipeMediaType type,
 								SIPE_UNUSED_PARAMETER SipeIceVersion ice_version,
 								SIPE_UNUSED_PARAMETER gboolean initiator,
-								SIPE_UNUSED_PARAMETER struct sipe_backend_media_relays *media_relays) { return(NULL); }
+								SIPE_UNUSED_PARAMETER struct sipe_backend_media_relays *media_relays,
+								SIPE_UNUSED_PARAMETER guint min_port,
+								SIPE_UNUSED_PARAMETER guint max_port) { return(NULL); }
 void sipe_backend_media_add_remote_candidates(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
 					      SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 					      SIPE_UNUSED_PARAMETER GList *candidates) {}
