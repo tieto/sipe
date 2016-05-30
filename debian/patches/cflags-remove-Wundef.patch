@@ -7,7 +7,7 @@ Subject: cflags-remove-Wundef
  1 file changed, 1 deletion(-)
 
 diff --git a/configure.ac b/configure.ac
-index 3710a3c..894adce 100644
+index 0b557f1..4416545 100644
 --- a/configure.ac
 +++ b/configure.ac
 @@ -110,7 +110,6 @@ AS_IF([test "x$enable_quality_check" = xyes],
@@ -17,4 +17,4 @@ index 3710a3c..894adce 100644
 -			"-Wundef" \
  			"-Wunused-but-set-variable" \
  	 ; do
- 		 ac_save_CFLAGS=$CFLAGS
+ 		 ac_save_CFLAGS="$CFLAGS"
