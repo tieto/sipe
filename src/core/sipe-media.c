@@ -792,6 +792,43 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 }
 
 static void
+media_stream_apply_remote_sdp(struct sipe_media_stream *stream,
+			      struct sdpmsg* msg)
+{
+	struct sipe_media_call_private *call_private;
+	struct sdpmedia *media;
+	const gchar *enc_level;
+	GSList *i;
+
+	call_private = (struct sipe_media_call_private *)stream->call;
+
+	for (i = msg->media; i; i = i->next) {
+		media = i->data;
+
+		if (sipe_strequal(stream->id, media->name)) {
+			break;
+		}
+		media = NULL;
+	}
+
+	if (!media) {
+		return;
+	}
+
+	enc_level = sipe_utils_nameval_find(media->attributes, "encryption");
+	if (sipe_strequal(enc_level, "rejected") &&
+	    get_encryption_policy(call_private->sipe_private) == SIPE_ENCRYPTION_POLICY_REQUIRED) {
+		call_private->encryption_compatible = FALSE;
+	}
+
+	if (!update_call_from_remote_sdp(call_private, media)) {
+		media->port = 0;
+		call_private->failed_media =
+			g_slist_append(call_private->failed_media, media);
+	}
+}
+
+static void
 apply_remote_message(struct sipe_media_call_private* call_private,
 		     struct sdpmsg* msg)
 {
@@ -801,20 +838,9 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 	call_private->failed_media = NULL;
 	call_private->encryption_compatible = TRUE;
 
-	for (i = msg->media; i; i = i->next) {
-		struct sdpmedia *media = i->data;
-		const gchar *enc_level =
-				sipe_utils_nameval_find(media->attributes, "encryption");
-		if (sipe_strequal(enc_level, "rejected") &&
-		    get_encryption_policy(call_private->sipe_private) == SIPE_ENCRYPTION_POLICY_REQUIRED) {
-			call_private->encryption_compatible = FALSE;
-		}
-
-		if (!update_call_from_remote_sdp(call_private, media)) {
-			media->port = 0;
-			call_private->failed_media =
-				g_slist_append(call_private->failed_media, media);
-		}
+	for (i = call_private->streams; i; i = i->next) {
+		struct sipe_media_stream *stream = i->data;
+		media_stream_apply_remote_sdp(stream, msg);
 	}
 
 	/* We need to keep failed medias until response is sent, remove them
@@ -859,12 +885,13 @@ call_initialized_cb(struct sipe_media_call *call)
 	if (sipe_backend_media_is_initiator(call, NULL)) {
 		sipe_invite_call(call_private, process_invite_call_response);
 	} else if (call_private->smsg) {
-		struct sdpmsg *smsg = call_private->smsg;
+		/* SDP data for new streams have been applied in
+		 * candidates_prepared_cb of the respective streams, so we can
+		 * remove the stored sdpmsg now. */
+		sdpmsg_free(call_private->smsg);
 		call_private->smsg = NULL;
 
-		apply_remote_message(call_private, smsg);
 		send_first_invite_response(call_private);
-		sdpmsg_free(smsg);
 	}
 }
 
@@ -1149,6 +1176,17 @@ ssrc_range_allocate(GSList **ranges, guint32 len)
 	return range;
 }
 
+static void
+candidates_prepared_cb(struct sipe_media_stream *stream)
+{
+	struct sipe_media_call *call = stream->call;
+
+	if (SIPE_MEDIA_CALL_PRIVATE->smsg) {
+		media_stream_apply_remote_sdp(stream,
+					      SIPE_MEDIA_CALL_PRIVATE->smsg);
+	}
+}
+
 struct sipe_media_stream *
 sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		      SipeMediaType type, SipeIceVersion ice_version,
@@ -1200,6 +1238,8 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 			ssrc_range_allocate(&SIPE_MEDIA_CALL_PRIVATE->ssrc_ranges,
 					    ssrc_count);
 	}
+
+	SIPE_MEDIA_STREAM->candidates_prepared_cb = candidates_prepared_cb;
 
 	SIPE_MEDIA_STREAM->backend_private =
 			sipe_backend_media_add_stream(SIPE_MEDIA_STREAM,
@@ -1599,6 +1639,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		}
 	}
 
+	apply_remote_message(call_private, smsg);
+
 	if (has_new_media) {
 		sdpmsg_free(call_private->smsg);
 		call_private->smsg = smsg;
@@ -1606,7 +1648,6 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 				       180, "Ringing", NULL);
 		// Processing continues in call_initialized_cb
 	} else {
-		apply_remote_message(call_private, smsg);
 		sdpmsg_free(smsg);
 		maybe_send_second_invite_response(call_private);
 	}
