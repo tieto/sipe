@@ -166,10 +166,17 @@ maybe_signal_call_initialized(struct sipe_media_call *call)
 
 static void
 on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
-			  SIPE_UNUSED_PARAMETER gchar *sessionid,
+			  gchar *sessionid,
 			  SIPE_UNUSED_PARAMETER gchar *participant,
 			  struct sipe_media_call *call)
 {
+	struct sipe_media_stream *stream;
+
+	stream = sipe_core_media_get_stream_by_id(call, sessionid);
+	if (stream && stream->candidates_prepared_cb) {
+		stream->candidates_prepared_cb(stream);
+	}
+
 	maybe_signal_call_initialized(call);
 }
 

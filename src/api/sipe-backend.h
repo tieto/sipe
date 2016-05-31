@@ -386,6 +386,7 @@ struct sipe_media_stream {
 	gchar *id;
 	struct ssrc_range *ssrc_range;
 
+	void (*candidates_prepared_cb)(struct sipe_media_stream *);
 	void (*candidate_pairs_established_cb)(struct sipe_media_stream *);
 	void (*read_cb)(struct sipe_media_stream *);
 	void (*writable_cb)(struct sipe_media_stream *);
