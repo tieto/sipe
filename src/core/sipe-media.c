@@ -824,35 +824,15 @@ apply_remote_message(struct sipe_media_call_private* call_private,
 	}
 }
 
-static gboolean
-call_initialized(struct sipe_media_call *call)
-{
-	GSList *streams = SIPE_MEDIA_CALL_PRIVATE->streams;
-	for (; streams; streams = streams->next) {
-		if (!sipe_backend_stream_initialized(call, streams->data)) {
-			return FALSE;
-		}
-	}
-
-	return TRUE;
-}
-
-// Sends an invite response when the call is accepted and local candidates were
-// prepared, otherwise does nothing. If error response is sent, call_private is
-// disposed before function returns.
+// If error response is sent, call_private is disposed before function returns.
 static void
-maybe_send_first_invite_response(struct sipe_media_call_private *call_private)
+send_first_invite_response(struct sipe_media_call_private *call_private)
 {
-	struct sipe_backend_media *backend_media;
-
-	backend_media = call_private->public.backend_private;
-
-	if (!sipe_backend_media_accepted(backend_media) ||
-	    !call_initialized(&call_private->public))
-		return;
-
 	if (!call_private->encryption_compatible) {
 		struct sipe_core_private *sipe_private = call_private->sipe_private;
+		struct sipe_backend_media *backend_media;
+
+		backend_media = call_private->public.backend_private;
 
 		sipmsg_add_header(call_private->invitation, "Warning",
 			"308 lcs.microsoft.com \"Encryption Levels not compatible\"");
@@ -872,23 +852,19 @@ maybe_send_first_invite_response(struct sipe_media_call_private *call_private)
 }
 
 static void
-stream_initialized_cb(struct sipe_media_call *call,
-		      struct sipe_media_stream *stream)
+call_initialized_cb(struct sipe_media_call *call)
 {
-	if (call_initialized(call)) {
-		struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
 
-		if (sipe_backend_media_is_initiator(call, stream)) {
-			sipe_invite_call(call_private,
-					 process_invite_call_response);
-		} else if (call_private->smsg) {
-			struct sdpmsg *smsg = call_private->smsg;
-			call_private->smsg = NULL;
+	if (sipe_backend_media_is_initiator(call, NULL)) {
+		sipe_invite_call(call_private, process_invite_call_response);
+	} else if (call_private->smsg) {
+		struct sdpmsg *smsg = call_private->smsg;
+		call_private->smsg = NULL;
 
-			apply_remote_message(call_private, smsg);
-			maybe_send_first_invite_response(call_private);
-			sdpmsg_free(smsg);
-		}
+		apply_remote_message(call_private, smsg);
+		send_first_invite_response(call_private);
+		sdpmsg_free(smsg);
 	}
 }
 
@@ -921,11 +897,9 @@ media_end_cb(struct sipe_media_call *call)
 }
 
 static void
-call_accept_cb(struct sipe_media_call *call, gboolean local)
+call_accept_cb(struct sipe_media_call *call,
+	       SIPE_UNUSED_PARAMETER gboolean local)
 {
-	if (local) {
-		maybe_send_first_invite_response(SIPE_MEDIA_CALL_PRIVATE);
-	}
 	phone_state_publish(SIPE_MEDIA_CALL_PRIVATE->sipe_private);
 }
 
@@ -1074,8 +1048,8 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 	call_private->ice_version = ice_version;
 	call_private->encryption_compatible = TRUE;
 
-	call_private->public.stream_initialized_cb  = stream_initialized_cb;
 	call_private->public.media_end_cb           = media_end_cb;
+	call_private->public.call_initialized_cb    = call_initialized_cb;
 	call_private->public.call_accept_cb         = call_accept_cb;
 	call_private->public.call_reject_cb         = call_reject_cb;
 	call_private->public.call_hold_cb           = call_hold_cb;
@@ -1339,7 +1313,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 
 	append_2007_fallback_if_needed(call_private);
 
-	// Processing continues in stream_initialized_cb
+	// Processing continues in call_initialized_cb
 }
 
 void
@@ -1419,7 +1393,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 
 	g_free(av_uri);
 
-	// Processing continues in stream_initialized_cb
+	// Processing continues in call_initialized_cb
 }
 
 struct sipe_media_call *
@@ -1630,7 +1604,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		call_private->smsg = smsg;
 		sip_transport_response(sipe_private, call_private->invitation,
 				       180, "Ringing", NULL);
-		// Processing continues in stream_initialized_cb
+		// Processing continues in call_initialized_cb
 	} else {
 		apply_remote_message(call_private, smsg);
 		sdpmsg_free(smsg);

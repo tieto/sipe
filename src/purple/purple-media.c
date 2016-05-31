@@ -70,6 +70,9 @@ struct sipe_backend_media {
 	 * Number of media streams that were not yet locally accepted or rejected.
 	 */
 	guint unconfirmed_streams;
+
+	gboolean call_initialized_cb_fired;
+
 	guint ssrc_to_assign;
 };
 
@@ -77,7 +80,6 @@ struct sipe_backend_media_stream {
 	gboolean local_on_hold;
 	gboolean remote_on_hold;
 	gboolean accepted;
-	gboolean initialized_cb_was_fired;
 	gboolean peer_started_sending;
 
 	gulong gst_bus_cb_id;
@@ -124,35 +126,59 @@ static PurpleMediaNetworkProtocol sipe_network_protocol_to_purple(SipeNetworkPro
 static SipeNetworkProtocol purple_network_protocol_to_sipe(PurpleMediaNetworkProtocol proto);
 
 static void
-maybe_signal_stream_initialized(struct sipe_media_call *call, gchar *sessionid)
+maybe_signal_call_initialized(struct sipe_media_call *call)
 {
-	if (call->stream_initialized_cb) {
-		struct sipe_media_stream *stream;
-		stream = sipe_core_media_get_stream_by_id(call, sessionid);
+	PurpleMedia *m;
+	GList *ids;
+	GList *i;
+	gboolean initialized = TRUE;
 
-		if (sipe_backend_stream_initialized(call, stream) &&
-		    !stream->backend_private->initialized_cb_was_fired) {
-			call->stream_initialized_cb(call, stream);
-			stream->backend_private->initialized_cb_was_fired = TRUE;
+	if (!call->call_initialized_cb ||
+	    call->backend_private->call_initialized_cb_fired) {
+		return;
+	}
+
+	m = call->backend_private->m;
+	ids = purple_media_get_session_ids(m);
+
+	for (i = ids; i; i = i->next) {
+		gchar *id;
+		struct sipe_media_stream *stream;
+
+		id = i->data;
+		stream = sipe_core_media_get_stream_by_id(call, id);
+
+		if (!sipe_backend_stream_initialized(call, stream)) {
+			initialized = FALSE;
+			break;
 		}
+	}
+
+	g_list_free(ids);
+
+	if (initialized &&
+	      (purple_media_is_initiator(m, NULL, NULL) ||
+	       purple_media_accepted(m, NULL, NULL))) {
+		call->call_initialized_cb(call);
+		call->backend_private->call_initialized_cb_fired = TRUE;
 	}
 }
 
 static void
 on_candidates_prepared_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
-			  gchar *sessionid,
+			  SIPE_UNUSED_PARAMETER gchar *sessionid,
 			  SIPE_UNUSED_PARAMETER gchar *participant,
 			  struct sipe_media_call *call)
 {
-	maybe_signal_stream_initialized(call, sessionid);
+	maybe_signal_call_initialized(call);
 }
 
 static void
 on_codecs_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
-		    gchar *sessionid,
-		    struct sipe_media_call *call)
+		     SIPE_UNUSED_PARAMETER gchar *sessionid,
+		     struct sipe_media_call *call)
 {
-	maybe_signal_stream_initialized(call, sessionid);
+	maybe_signal_call_initialized(call);
 }
 
 static void
@@ -216,8 +242,10 @@ on_stream_info_cb(PurpleMedia *media,
 			struct sipe_media_stream *stream;
 			stream = sipe_core_media_get_stream_by_id(call, sessionid);
 			if (stream) {
-				if (!stream->backend_private->accepted && local)
+				if (!stream->backend_private->accepted && local) {
 					 --call->backend_private->unconfirmed_streams;
+					 maybe_signal_call_initialized(call);
+				}
 				stream->backend_private->accepted = TRUE;
 			}
 		}
@@ -913,7 +941,6 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 #endif
 
 	backend_stream = g_new0(struct sipe_backend_media_stream, 1);
-	backend_stream->initialized_cb_was_fired = FALSE;
 
 	pipe = purple_media_manager_get_pipeline(purple_media_manager_get());
 	if (pipe) {

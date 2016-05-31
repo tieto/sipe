@@ -397,9 +397,8 @@ struct sipe_media_call {
 
 	gchar *with;
 
-	void (*stream_initialized_cb)(struct sipe_media_call *,
-				      struct sipe_media_stream *);
 	void (*media_end_cb)(struct sipe_media_call *);
+	void (*call_initialized_cb)(struct sipe_media_call *);
 	void (*call_accept_cb)(struct sipe_media_call *, gboolean local);
 	void (*call_reject_cb)(struct sipe_media_call *, gboolean local);
 	void (*call_hold_cb)  (struct sipe_media_call *, gboolean local,
