@@ -570,6 +570,25 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			  guint activity,
 			  const gchar *note);
 
+#define SIPE_MSRTP_VSR_HEADER_LEN  20
+#define SIPE_MSRTP_VSR_ENTRY_LEN   0x44
+#define SIPE_MSRTP_VSR_FCI_WORDLEN \
+	(SIPE_MSRTP_VSR_HEADER_LEN + SIPE_MSRTP_VSR_ENTRY_LEN) / 4
+
+#define SIPE_MSRTP_VSR_SOURCE_ANY  0xFFFFFFFE
+#define SIPE_MSRTP_VSR_SOURCE_NONE 0xFFFFFFFF
+
+/**
+ * Fills @buffer with Video Source Request described in [MS-RTP] 2.2.12.2.
+ *
+ * @param buffer (out) destination the VSR will be written to. The byte length
+ *               of @c buffer MUST be at least @c SIPE_MSRTP_VSR_HEADER_LEN +
+ *               @c SIPE_MSRTP_VSR_ENTRY_LEN.
+ * @param payload_type (in) payload ID of the codec negotiated with the peer.
+ */
+void sipe_core_msrtp_write_video_source_request(guint8 *buffer,
+						guint8 payload_type);
+
 #ifdef __cplusplus
 }
 #endif

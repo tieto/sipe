@@ -195,7 +195,8 @@ libsipe_core_libxml2_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(LIBXML2_CFLAGS)
 
 if SIPE_WITH_VV
 libsipe_core_la_SOURCES += sipe-media.h sipe-media.c \
-	sdpmsg.h sdpmsg.c
+	sdpmsg.h sdpmsg.c \
+	sipe-msrtp.c
 endif
 
 if SIPE_HAVE_XDATA
