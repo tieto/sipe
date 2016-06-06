@@ -388,11 +388,11 @@ AS_IF([test "x$enable_purple" != xno],
 						AS_IF([test "x$gstreamer_pkgconfig" != x],
 							[gstreamer_pkgconfig=gstreamer-$gstreamer_pkgconfig],
 							[AS_IF([test "x$purple_pkgconfig" == xpurple-3],
-								     [gstreamer_pkgconfig=gstreamer-1.0],
-								     [gstreamer_pkgconfig=gstreamer-0.10])])
+								     [gstreamer_pkgconfig="gstreamer-1.0 gstreamer-rtp-1.0"],
+								     [gstreamer_pkgconfig="gstreamer-0.10 gstreamer-rtp-0.10"])])
 
-						AC_MSG_NOTICE([using package "$gstreamer_pkgconfig".])
-						PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
+						AC_MSG_NOTICE([using packages "$gstreamer_pkgconfig".])
+						PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig farstream-0.2],
 							[with_purple_vv=yes
 
 							 AC_COMPILE_IFELSE(

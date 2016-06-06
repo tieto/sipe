@@ -61,6 +61,8 @@
 #endif
 
 #include "media-gst.h"
+#include <gst/rtp/gstrtcpbuffer.h>
+#include <farstream/fs-session.h>
 
 struct sipe_backend_media {
 	PurpleMedia *m;
@@ -75,6 +77,8 @@ struct sipe_backend_media_stream {
 	gboolean remote_on_hold;
 	gboolean accepted;
 	gboolean initialized_cb_was_fired;
+
+	gulong gst_bus_cb_id;
 };
 
 #if PURPLE_VERSION_CHECK(3,0,0)
@@ -86,6 +90,21 @@ struct sipe_backend_media_stream {
 void
 sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream)
 {
+	if (stream->gst_bus_cb_id != 0) {
+		GstElement *pipe;
+
+		pipe = purple_media_manager_get_pipeline(
+				purple_media_manager_get());
+		if (pipe) {
+			GstBus *bus;
+
+			bus = gst_element_get_bus(pipe);
+			g_signal_handler_disconnect(bus, stream->gst_bus_cb_id);
+			stream->gst_bus_cb_id = 0;
+			gst_object_unref(bus);
+		}
+	}
+
 	g_free(stream);
 }
 
@@ -516,6 +535,128 @@ stream_writable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
 }
 #endif
 
+static gboolean
+write_ms_h264_video_source_request(GstRTCPBuffer *buffer, guint32 ssrc,
+                                   guint8 payload_type)
+{
+	GstRTCPPacket packet;
+	guint8 *fci_data;
+
+	if (!gst_rtcp_buffer_add_packet(buffer, GST_RTCP_TYPE_PSFB, &packet)) {
+		return FALSE;
+	}
+
+	gst_rtcp_packet_fb_set_type(&packet, GST_RTCP_PSFB_TYPE_AFB);
+	gst_rtcp_packet_fb_set_sender_ssrc(&packet, ssrc);
+	gst_rtcp_packet_fb_set_media_ssrc(&packet, SIPE_MSRTP_VSR_SOURCE_ANY);
+
+	if (!gst_rtcp_packet_fb_set_fci_length(&packet,
+					       SIPE_MSRTP_VSR_FCI_WORDLEN)) {
+		gst_rtcp_packet_remove(&packet);
+		return FALSE;
+	}
+
+	fci_data = gst_rtcp_packet_fb_get_fci(&packet);
+
+	sipe_core_msrtp_write_video_source_request(fci_data, payload_type);
+
+	return TRUE;
+}
+
+static gboolean
+on_sending_rtcp_cb(SIPE_UNUSED_PARAMETER GObject *rtpsession,
+		   GstBuffer *buffer,
+		   SIPE_UNUSED_PARAMETER gboolean is_early,
+		   FsSession *fssession)
+{
+	gboolean was_changed = FALSE;
+	FsCodec *send_codec;
+
+	g_object_get(fssession, "current-send-codec", &send_codec, NULL);
+	if (!send_codec) {
+		return FALSE;
+	}
+
+	if (sipe_strequal(send_codec->encoding_name, "H264")) {
+		GstRTCPBuffer rtcp_buffer = GST_RTCP_BUFFER_INIT;
+		guint32 ssrc;
+
+		g_object_get(fssession, "ssrc", &ssrc, NULL);
+
+		gst_rtcp_buffer_map(buffer, GST_MAP_READWRITE, &rtcp_buffer);
+		was_changed = write_ms_h264_video_source_request(&rtcp_buffer,
+				ssrc, send_codec->id);
+		gst_rtcp_buffer_unmap(&rtcp_buffer);
+	}
+
+	fs_codec_destroy(send_codec);
+
+	return was_changed;
+}
+
+static gint
+find_sinkpad(GValue *value, GstPad *fssession_sinkpad)
+{
+	GstElement *tee_srcpad = g_value_get_object(value);
+
+	return !(GST_PAD_PEER(tee_srcpad) == fssession_sinkpad);
+}
+
+static void
+gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
+{
+	const GstStructure *s;
+	FsSession *fssession;
+	GstElement *tee;
+	GstPad *sinkpad;
+	GstIterator *it;
+	GValue val = G_VALUE_INIT;
+
+	if (GST_MESSAGE_TYPE(msg) != GST_MESSAGE_ELEMENT) {
+		return;
+	}
+
+	s = gst_message_get_structure(msg);
+	if (!gst_structure_has_name(s, "farstream-codecs-changed")) {
+		return;
+	}
+
+	fssession = g_value_get_object(gst_structure_get_value(s, "session"));
+	g_return_if_fail(fssession);
+
+	tee = purple_media_get_tee(stream->call->backend_private->m, stream->id,
+				   NULL);
+	g_return_if_fail(tee);
+
+	g_object_get(fssession, "sink-pad", &sinkpad, NULL);
+	g_return_if_fail(sinkpad);
+
+	/* Check whether this message is from the FsSession we're waiting for.
+	 * For this to be true, the tee we got from libpurple has to be linked
+	 * to "sink-pad" of the message's FsSession. */
+	it = gst_element_iterate_src_pads(tee);
+	if (gst_iterator_find_custom(it, (GCompareFunc)find_sinkpad, &val,
+				     sinkpad)) {
+		GObject *rtpsession;
+
+		g_object_get(fssession, "internal-session", &rtpsession, NULL);
+		if (rtpsession) {
+			g_signal_connect(rtpsession, "on-sending-rtcp",
+					 G_CALLBACK(on_sending_rtcp_cb),
+					 fssession);
+
+			g_object_unref (rtpsession);
+		}
+
+		g_signal_handler_disconnect(bus,
+				stream->backend_private->gst_bus_cb_id);
+		stream->backend_private->gst_bus_cb_id = 0;
+	}
+
+	gst_iterator_free(it);
+	gst_object_unref(sinkpad);
+}
+
 struct sipe_backend_media_stream *
 sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 			      SipeMediaType type,
@@ -526,6 +667,7 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 {
 	struct sipe_backend_media *media = stream->call->backend_private;
 	struct sipe_backend_media_stream *backend_stream = NULL;
+	GstElement *pipe;
 	// Preallocate enough space for all potential parameters to fit.
 	GParameter *params = g_new0(GParameter, 6);
 	guint params_cnt = 0;
@@ -598,15 +740,27 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 	}
 #endif
 
+	backend_stream = g_new0(struct sipe_backend_media_stream, 1);
+	backend_stream->initialized_cb_was_fired = FALSE;
+
+	pipe = purple_media_manager_get_pipeline(purple_media_manager_get());
+	if (type == SIPE_MEDIA_VIDEO && pipe) {
+		GstBus *bus;
+
+		bus = gst_element_get_bus(pipe);
+		backend_stream->gst_bus_cb_id = g_signal_connect(bus, "message",
+				G_CALLBACK(gst_bus_cb), stream);
+		gst_object_unref(bus);
+	}
+
 	if (purple_media_add_stream(media->m, stream->id, stream->call->with,
 				    sipe_media_to_purple(type),
 				    initiator, transmitter, params_cnt,
 				    params)) {
-		backend_stream = g_new0(struct sipe_backend_media_stream, 1);
-		backend_stream->initialized_cb_was_fired = FALSE;
-
 		if (!initiator)
 			++media->unconfirmed_streams;
+	} else {
+		sipe_backend_media_stream_free(backend_stream);
 	}
 
 	if (relay_info) {
