@@ -528,7 +528,6 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 {
 	struct sipe_backend_media *media = call->backend_private;
 	struct sipe_backend_media_stream *stream = NULL;
-	PurpleMediaSessionType prpl_type = sipe_media_to_purple(type);
 	// Preallocate enough space for all potential parameters to fit.
 	GParameter *params = g_new0(GParameter, 6);
 	guint params_cnt = 0;
@@ -601,7 +600,8 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 	}
 #endif
 
-	if (purple_media_add_stream(media->m, id, participant, prpl_type,
+	if (purple_media_add_stream(media->m, id, participant,
+				    sipe_media_to_purple(type),
 				    initiator, transmitter, params_cnt,
 				    params)) {
 		stream = g_new0(struct sipe_backend_media_stream, 1);
