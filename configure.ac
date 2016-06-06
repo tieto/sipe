@@ -385,14 +385,13 @@ AS_IF([test "x$enable_purple" != xno],
 					[PKG_CHECK_MODULES(_SIPE_MEDIA_RECHECK_PLEASE_IGNORE, [$purple_pkgconfig >= 2.8.0],
 						dnl check purple pkgconfig for gstreamer version
 						[gstreamer_pkgconfig=`$PKG_CONFIG --variable=gstreamer $purple_pkgconfig`
-						AS_IF([test "x$gstreamer_pkgconfig" != x],
-							[gstreamer_pkgconfig=gstreamer-$gstreamer_pkgconfig],
+						AS_IF([test "x$gstreamer_pkgconfig" == x],
 							[AS_IF([test "x$purple_pkgconfig" == xpurple-3],
-								     [gstreamer_pkgconfig=gstreamer-1.0],
-								     [gstreamer_pkgconfig=gstreamer-0.10])])
+								[gstreamer_pkgconfig=1.0], [gstreamer_pkgconfig=0.10])])
+						gstreamer_pkgconfig="gstreamer-$gstreamer_pkgconfig gstreamer-rtp-$gstreamer_pkgconfig"
 
-						AC_MSG_NOTICE([using package "$gstreamer_pkgconfig".])
-						PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
+						AC_MSG_NOTICE([using packages "$gstreamer_pkgconfig".])
+						PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig farstream-0.2],
 							[with_purple_vv=yes
 
 							 AC_COMPILE_IFELSE(
