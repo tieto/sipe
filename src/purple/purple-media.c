@@ -79,6 +79,9 @@ struct sipe_backend_media_stream {
 	gboolean initialized_cb_was_fired;
 
 	gulong gst_bus_cb_id;
+
+	GObject *rtpsession;
+	gulong on_sending_rtcp_cb_id;
 };
 
 #if PURPLE_VERSION_CHECK(3,0,0)
@@ -103,6 +106,10 @@ sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream)
 			stream->gst_bus_cb_id = 0;
 			gst_object_unref(bus);
 		}
+	}
+
+	if (stream->rtpsession) {
+		g_clear_object(&stream->rtpsession);
 	}
 
 	g_free(stream);
@@ -154,7 +161,26 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		    struct sipe_media_call *call)
 {
 	SIPE_DEBUG_INFO("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
-	if (state == PURPLE_MEDIA_STATE_END) {
+
+	if (state == PURPLE_MEDIA_STATE_CONNECTED && sessionid && participant) {
+		struct sipe_media_stream *stream;
+
+		stream = sipe_core_media_get_stream_by_id(call, sessionid);
+		if (stream && stream->backend_private->rtpsession &&
+		    stream->backend_private->on_sending_rtcp_cb_id != 0) {
+			struct sipe_backend_media_stream *backend_stream;
+
+			SIPE_DEBUG_INFO_NOFORMAT("Peer started sending. Ceasing"
+					" video source requests.");
+
+			backend_stream = stream->backend_private;
+
+			g_signal_handler_disconnect(backend_stream->rtpsession,
+					backend_stream->on_sending_rtcp_cb_id);
+			g_clear_object(&backend_stream->rtpsession);
+			backend_stream->on_sending_rtcp_cb_id = 0;
+		}
+	} else if (state == PURPLE_MEDIA_STATE_END) {
 		if (sessionid && participant) {
 			struct sipe_media_stream *stream =
 					sipe_core_media_get_stream_by_id(call, sessionid);
@@ -641,9 +667,13 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 
 		g_object_get(fssession, "internal-session", &rtpsession, NULL);
 		if (rtpsession) {
-			g_signal_connect(rtpsession, "on-sending-rtcp",
-					 G_CALLBACK(on_sending_rtcp_cb),
-					 fssession);
+			stream->backend_private->rtpsession =
+					gst_object_ref(rtpsession);
+			stream->backend_private->on_sending_rtcp_cb_id =
+					g_signal_connect(rtpsession,
+						"on-sending-rtcp",
+						G_CALLBACK(on_sending_rtcp_cb),
+						fssession);
 
 			g_object_unref (rtpsession);
 		}
