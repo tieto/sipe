@@ -589,6 +589,19 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 void sipe_core_msrtp_write_video_source_request(guint8 *buffer,
 						guint8 payload_type);
 
+/**
+ * Fills @buffer with customized Payload Content Scalability Information packet
+ * described in [MS-H264PF] consisting of a Stream Layout SEI Message (section
+ * 2.2.5) and a Bitstream Info SEI Message (section 2.2.7).
+ *
+ * @param buffer (out) destination the PACSI will be written to.
+ * @param nal_count (in) number of NAL units this packet describes.
+ *
+ * @return Byte length of the PACSI packet.
+ */
+gsize sipe_core_msrtp_write_video_scalability_info(guint8 *buffer,
+						   guint8 nal_count);
+
 #ifdef __cplusplus
 }
 #endif
