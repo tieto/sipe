@@ -624,11 +624,39 @@ on_sending_rtcp_cb(SIPE_UNUSED_PARAMETER GObject *rtpsession,
 }
 
 static GstPadProbeReturn
-h264_buffer_cb(SIPE_UNUSED_PARAMETER GstPad *pad,
-	       SIPE_UNUSED_PARAMETER GstPadProbeInfo *info,
+h264_buffer_cb(SIPE_UNUSED_PARAMETER GstPad *pad, GstPadProbeInfo *info,
 	       SIPE_UNUSED_PARAMETER gpointer user_data)
 {
-	SIPE_DEBUG_INFO_NOFORMAT("GOT H264 BUFFER");
+	GstBuffer *buffer;
+	GstMemory *memory;
+	GstMapInfo map;
+	guint8 *data;
+	guint8 nal_count = 0;
+	gsize pacsi_len;
+
+	buffer = gst_pad_probe_info_get_buffer(info);
+
+	// Count NALs in the buffer
+	gst_buffer_map(buffer, &map, GST_MAP_READ);
+
+	data = map.data;
+	while (data < map.data + map.size) {
+		guint32 size = GST_READ_UINT32_BE(data);
+		data += GST_READ_UINT32_BE(data) + sizeof (size);
+		++nal_count;
+	}
+
+	gst_buffer_unmap(buffer, &map);
+
+	// Write PACSI (RFC6190 section 4.9)
+	memory = gst_allocator_alloc(NULL, 100, NULL);
+	gst_memory_map(memory, &map, GST_MAP_WRITE);
+	pacsi_len = sipe_core_msrtp_write_video_scalability_info(map.data,
+								 nal_count);
+	gst_memory_unmap(memory, &map);
+	gst_memory_resize(memory, 0, pacsi_len);
+	gst_buffer_insert_memory(buffer, 0, memory);
+
 	return GST_PAD_PROBE_OK;
 }
 
