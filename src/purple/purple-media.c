@@ -77,8 +77,12 @@ struct sipe_backend_media_stream {
 	gboolean remote_on_hold;
 	gboolean accepted;
 	gboolean initialized_cb_was_fired;
+	gboolean peer_started_sending;
 
 	gulong gst_bus_cb_id;
+	gulong on_sending_rtcp_cb_id;
+
+	FsSession *fssession;
 };
 
 #if PURPLE_VERSION_CHECK(3,0,0)
@@ -103,6 +107,10 @@ sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream)
 			stream->gst_bus_cb_id = 0;
 			gst_object_unref(bus);
 		}
+	}
+
+	if (stream->fssession) {
+		gst_object_unref(stream->fssession);
 	}
 
 	g_free(stream);
@@ -154,7 +162,15 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 		    struct sipe_media_call *call)
 {
 	SIPE_DEBUG_INFO("sipe_media_state_changed_cb: %d %s %s\n", state, sessionid, participant);
-	if (state == PURPLE_MEDIA_STATE_END) {
+
+	if (state == PURPLE_MEDIA_STATE_CONNECTED && sessionid && participant) {
+		struct sipe_media_stream *stream;
+
+		stream = sipe_core_media_get_stream_by_id(call, sessionid);
+		if (stream) {
+			stream->backend_private->peer_started_sending = TRUE;
+		}
+	} else if (state == PURPLE_MEDIA_STATE_END) {
 		if (sessionid && participant) {
 			struct sipe_media_stream *stream =
 					sipe_core_media_get_stream_by_id(call, sessionid);
@@ -564,15 +580,29 @@ write_ms_h264_video_source_request(GstRTCPBuffer *buffer, guint32 ssrc,
 }
 
 static gboolean
-on_sending_rtcp_cb(SIPE_UNUSED_PARAMETER GObject *rtpsession,
+on_sending_rtcp_cb(GObject *rtpsession,
 		   GstBuffer *buffer,
 		   SIPE_UNUSED_PARAMETER gboolean is_early,
-		   FsSession *fssession)
+		   struct sipe_backend_media_stream *backend_stream)
 {
 	gboolean was_changed = FALSE;
 	FsCodec *send_codec;
+	
+	if (!backend_stream || !backend_stream->fssession) {
+		return FALSE;
+	}
 
-	g_object_get(fssession, "current-send-codec", &send_codec, NULL);
+	if (backend_stream->peer_started_sending &&
+	    backend_stream->on_sending_rtcp_cb_id != 0) {
+		g_signal_handler_disconnect(rtpsession,
+				backend_stream->on_sending_rtcp_cb_id);
+		backend_stream->on_sending_rtcp_cb_id = 0;
+		SIPE_DEBUG_INFO_NOFORMAT("Peer started sending. Ceasing video "
+					 "source requests.");
+	}
+
+	g_object_get(backend_stream->fssession,
+		     "current-send-codec", &send_codec, NULL);
 	if (!send_codec) {
 		return FALSE;
 	}
@@ -581,7 +611,7 @@ on_sending_rtcp_cb(SIPE_UNUSED_PARAMETER GObject *rtpsession,
 		GstRTCPBuffer rtcp_buffer = GST_RTCP_BUFFER_INIT;
 		guint32 ssrc;
 
-		g_object_get(fssession, "ssrc", &ssrc, NULL);
+		g_object_get(backend_stream->fssession, "ssrc", &ssrc, NULL);
 
 		gst_rtcp_buffer_map(buffer, GST_MAP_READWRITE, &rtcp_buffer);
 		was_changed = write_ms_h264_video_source_request(&rtcp_buffer,
@@ -641,9 +671,13 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 
 		g_object_get(fssession, "internal-session", &rtpsession, NULL);
 		if (rtpsession) {
-			g_signal_connect(rtpsession, "on-sending-rtcp",
-					 G_CALLBACK(on_sending_rtcp_cb),
-					 fssession);
+			stream->backend_private->fssession =
+					gst_object_ref(fssession);
+			stream->backend_private->on_sending_rtcp_cb_id =
+					g_signal_connect(rtpsession,
+						"on-sending-rtcp",
+						G_CALLBACK(on_sending_rtcp_cb),
+						stream->backend_private);
 
 			g_object_unref (rtpsession);
 		}
