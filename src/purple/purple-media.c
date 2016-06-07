@@ -628,6 +628,95 @@ on_sending_rtcp_cb(GObject *rtpsession,
 	return was_changed;
 }
 
+static GstPadProbeReturn
+h264_buffer_cb(SIPE_UNUSED_PARAMETER GstPad *pad,
+	       SIPE_UNUSED_PARAMETER GstPadProbeInfo *info,
+	       SIPE_UNUSED_PARAMETER gpointer user_data)
+{
+	SIPE_DEBUG_INFO_NOFORMAT("GOT H264 NAL");
+	return GST_PAD_PROBE_OK;
+}
+
+static gint
+find_payloader(GValue *value, GstCaps *rtpcaps)
+{
+	gint result = 1;
+	GstElement *element;
+	GstPad *sinkpad;
+	GstCaps *caps;
+
+	element = g_value_get_object(value);
+	sinkpad = gst_element_get_static_pad(element, "sink");
+	caps = gst_pad_query_caps(sinkpad, NULL);
+
+	/* Elements are iterated from the most downstream. We're looking for the
+	 * first that does NOT consume RTP frames. */
+	result = gst_caps_can_intersect(caps, rtpcaps);
+
+	gst_object_unref(caps);
+	gst_object_unref(sinkpad);
+
+	return result;
+}
+
+static void
+current_send_codec_changed_cb(FsSession *fssession,
+			      SIPE_UNUSED_PARAMETER GParamSpec *pspec,
+			      GstBin *fsconference)
+{
+	FsCodec *send_codec;
+
+	g_object_get(fssession, "current-send-codec", &send_codec, NULL);
+
+	if (sipe_strequal(send_codec->encoding_name, "H264")) {
+		guint session_id;
+		gchar *sendbin_name;
+		GstBin *sendbin;
+		GstCaps *caps;
+		GstIterator *it;
+		GValue val = G_VALUE_INIT;
+
+		g_object_get(fssession, "id", &session_id, NULL);
+
+		sendbin_name = g_strdup_printf("send_%u_%u", session_id,
+					       send_codec->id);
+
+		sendbin = GST_BIN(gst_bin_get_by_name(fsconference,
+						      sendbin_name));
+		g_free(sendbin_name);
+
+		if (!sendbin) {
+			SIPE_DEBUG_ERROR("Couldn't find Farstream send bin for "
+					 "session %d", session_id);
+			return;
+		}
+
+		caps = gst_caps_new_empty_simple("application/x-rtp");
+		it = gst_bin_iterate_sorted(sendbin);
+		if (gst_iterator_find_custom(it, (GCompareFunc)find_payloader,
+					     &val, caps)) {
+			GstElement *payloader;
+			GstPad *sinkpad;
+
+			payloader = g_value_get_object(&val);
+			sinkpad = gst_element_get_static_pad(payloader, "sink");
+			if (sinkpad) {
+				gst_pad_add_probe(sinkpad,
+						  GST_PAD_PROBE_TYPE_BUFFER,
+						  h264_buffer_cb, NULL, NULL);
+				gst_object_unref(sinkpad);
+			}
+		}
+		gst_caps_unref(caps);
+
+		gst_iterator_free(it);
+		gst_object_unref(sendbin);
+
+	}
+
+	fs_codec_destroy(send_codec);
+}
+
 static gint
 find_sinkpad(GValue *value, GstPad *fssession_sinkpad)
 {
@@ -680,6 +769,7 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 
 		if (purple_media_get_session_type(m, stream->id) == PURPLE_MEDIA_VIDEO) {
 			GObject *rtpsession;
+			GstBin *fsconference;
 
 			g_object_get(fssession,
 				     "internal-session", &rtpsession, NULL);
@@ -694,6 +784,15 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 
 				g_object_unref (rtpsession);
 			}
+
+			g_object_get(fssession,
+				     "conference", &fsconference, NULL);
+
+			g_signal_connect_object(fssession,
+				"notify::current-send-codec",
+				G_CALLBACK(current_send_codec_changed_cb),
+				fsconference, 0);
+			gst_object_unref(fsconference);
 		}
 
 		g_signal_handler_disconnect(bus,
