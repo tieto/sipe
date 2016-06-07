@@ -588,6 +588,8 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
  */
 void sipe_core_msrtp_write_video_source_request(guint8 *buffer,
 						guint8 payload_type);
+void sipe_core_msrtp_write_video_scalability_info(guint8 *buffer,
+						  guint8 nal_count);
 
 #ifdef __cplusplus
 }

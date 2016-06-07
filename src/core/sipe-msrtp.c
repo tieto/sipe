@@ -44,6 +44,17 @@
 	_SIPE_WRITE(where, 3, 32,  0, value); \
 	where += 4;
 
+#define SIPE_WRITE_UINT64_BE(where, value) \
+	_SIPE_WRITE(where, 0, 64, 56, value); \
+	_SIPE_WRITE(where, 1, 64, 48, value); \
+	_SIPE_WRITE(where, 2, 64, 40, value); \
+	_SIPE_WRITE(where, 3, 64, 32, value); \
+	_SIPE_WRITE(where, 4, 64, 24, value); \
+	_SIPE_WRITE(where, 5, 64, 16, value); \
+	_SIPE_WRITE(where, 6, 64,  8, value); \
+	_SIPE_WRITE(where, 7, 64,  0, value); \
+	where += 8;
+
 enum
 {
 	VSR_FLAG_NONE = 0,
@@ -72,6 +83,23 @@ enum
 	VSR_FPS_30 = 16,
 	VSR_FPS_50 = 32,
 	VSR_FPS_60 = 64
+};
+
+enum
+{
+	NAL_UNIT_TYPE_SEI = 6,
+	NAL_UNIT_TYPE_PACSI = 30
+};
+
+enum
+{
+	MS_LD_FPS_IDX_7_5 = 0,
+	MS_LD_FPS_IDX_12_5 = 1,
+	MS_LD_FPS_IDX_15 = 2,
+	MS_LD_FPS_IDX_25 = 3,
+	MS_LD_FPS_IDX_30 = 4,
+	MS_LD_FPS_IDX_50 = 5,
+	MS_LD_FPS_IDX_60 = 6
 };
 
 void
@@ -126,6 +154,123 @@ sipe_core_msrtp_write_video_source_request(guint8 *buffer,
 	       sizeof (quality_report_histogram));
 	buffer += sizeof (quality_report_histogram);
 	SIPE_WRITE_UINT32_BE(buffer, 103680); // Maximum number of pixels
+}
+
+static void
+write_nal_unit_header(guint8 *dest, gboolean f_bit, guint8 nal_ref_idc,
+		      guint8 type)
+{
+	*dest = f_bit ? 0x80 : 0x00;
+	*dest |= nal_ref_idc << 5;
+	*dest |= type;
+}
+
+static void
+write_ms_layer_description(guint8 *buffer, guint16 width, guint16 height,
+			   guint32 bitrate, guint8 framerate_idx,
+			   gboolean base_layer, guint16 prid,
+			   gboolean constrained_baseline)
+{
+	// Coded width and height
+	SIPE_WRITE_UINT16_BE(buffer, width);
+	SIPE_WRITE_UINT16_BE(buffer, height);
+
+	// Display width and height
+	SIPE_WRITE_UINT16_BE(buffer, width);
+	SIPE_WRITE_UINT16_BE(buffer, height);
+
+	SIPE_WRITE_UINT32_BE(buffer, bitrate);
+
+	*buffer = framerate_idx << 3;
+	*buffer |= base_layer ? 0 : 1;
+	++buffer;
+
+	*buffer = prid << 2;
+	*buffer |= (constrained_baseline ? 1 : 0) << 1;
+}
+
+void
+sipe_core_msrtp_write_video_scalability_info(guint8 *buffer, guint8 nal_count)
+{
+	static const guint8 MS_STREAM_LAYOUT_SEI_UUID[] = {
+		0x13, 0x9f, 0xb1, 0xa9, 0x44, 0x6a, 0x4d, 0xec, 0x8c, 0xbf,
+		0x65, 0xb1, 0xe1, 0x2d, 0x2c, 0xfd
+	};
+
+	static const guint8 MS_BITSTREAM_INFO_SEI_UUID[] = {
+		0x05, 0xfb, 0xc6, 0xb9, 0x5a, 0x80, 0x40, 0xe5, 0xa2, 0x2a,
+		0xab, 0x40, 0x20, 0x26, 0x7e, 0x26
+	};
+
+	// Write PACSI (RFC6190 section 4.9)
+	SIPE_WRITE_UINT32_BE(buffer, 93 /* size of PACSI */); // Length of the NAL
+
+	write_nal_unit_header(buffer++, FALSE, 3, NAL_UNIT_TYPE_PACSI);
+
+	*buffer = 1 << 7; // Reserved bit = 1
+	*buffer |= 1 << 6; // I-bit = 1 if any aggregated unit has it set to 1
+	*buffer |= 0; // Priority = 0
+	++buffer;
+
+	*buffer = 1 << 7; // No Inter Layer Prediction = True
+	*buffer |= 0 << 4; // Dependency ID = 0
+	*buffer |= 0; // Quality ID
+	++buffer;
+
+	*buffer = 0; // Temporal ID
+	*buffer |= 0 << 4; // Use Ref Base Picture = False
+	*buffer |= 0 << 3; // Discardable = False
+	*buffer |= 1 << 2; // Output = True
+	*buffer |= 3; // Reserved
+	++buffer;
+
+	// X|Y|T|A|P|C|S|E flags: DONC & First NAL = True
+	SIPE_WRITE_UINT8(buffer, 0x22);
+
+	SIPE_WRITE_UINT16_BE(buffer, 1); // Cross Session Decoder Order Number
+
+	// MS Stream Layout SEI Message (MS-H264PF section 2.2.5)
+	SIPE_WRITE_UINT16_BE(buffer, 61); // Size of the NAL
+
+	write_nal_unit_header(buffer++, FALSE, 0, NAL_UNIT_TYPE_SEI);
+
+	SIPE_WRITE_UINT8(buffer, 5); // Payload type (user data unregistered)
+	SIPE_WRITE_UINT8(buffer, 58); // Payload size
+
+	memcpy(buffer, MS_STREAM_LAYOUT_SEI_UUID,
+	       sizeof (MS_STREAM_LAYOUT_SEI_UUID));
+	buffer += sizeof (MS_STREAM_LAYOUT_SEI_UUID);
+
+	// Layer Presence - layers with PRID 0 and 1 present
+	SIPE_WRITE_UINT64_BE(buffer, 0x0300000000000000);
+
+	SIPE_WRITE_UINT8(buffer, 1); // Layer Description Present = True
+	/* TODO: this indicates there's only one LD, but actually we have two.
+	 * Perhaps some Sky-invented hackery? */
+	SIPE_WRITE_UINT8(buffer, 16); // Layer Description Size
+
+	write_ms_layer_description(buffer, 212, 160, 50250, MS_LD_FPS_IDX_7_5,
+				   TRUE, 0, TRUE);
+	buffer += 16;
+
+	write_ms_layer_description(buffer, 212, 160, 12562, MS_LD_FPS_IDX_15,
+				   FALSE, 1, TRUE);
+	buffer += 16;
+
+	// MS Bitstream Info SEI Message ([MS-H264PF] section 2.2.7)
+	SIPE_WRITE_UINT16_BE(buffer, 21); // Size of the NAL
+
+	write_nal_unit_header(buffer++, FALSE, 0, NAL_UNIT_TYPE_SEI);
+
+	SIPE_WRITE_UINT8(buffer, 5); // Payload type (user data unregistered)
+	SIPE_WRITE_UINT8(buffer, 18); // Payload size
+
+	memcpy(buffer, MS_BITSTREAM_INFO_SEI_UUID,
+	       sizeof (MS_BITSTREAM_INFO_SEI_UUID));
+	buffer += sizeof (MS_BITSTREAM_INFO_SEI_UUID);
+
+	SIPE_WRITE_UINT8(buffer, 1);
+	SIPE_WRITE_UINT8(buffer, nal_count);
 }
 
 /*
