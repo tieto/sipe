@@ -140,7 +140,7 @@ on_state_changed_cb(SIPE_UNUSED_PARAMETER PurpleMedia *media,
 			struct sipe_media_stream *stream =
 					sipe_core_media_get_stream_by_id(call, sessionid);
 			if (stream) {
-				call->stream_end_cb(call, stream);
+				sipe_core_media_stream_end(stream);
 			}
 		} else if (!sessionid && !participant && call->media_end_cb) {
 			call->media_end_cb(call);

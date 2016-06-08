@@ -875,9 +875,8 @@ static void phone_state_publish(struct sipe_core_private *sipe_private)
 	}
 }
 
-static void
-stream_end_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call* call,
-	      struct sipe_media_stream* stream)
+void
+sipe_core_media_stream_end(struct sipe_media_stream *stream)
 {
 	sipe_media_stream_free(SIPE_MEDIA_STREAM_PRIVATE);
 }
@@ -1050,7 +1049,6 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 	call_private->encryption_compatible = TRUE;
 
 	call_private->public.stream_initialized_cb  = stream_initialized_cb;
-	call_private->public.stream_end_cb          = stream_end_cb;
 	call_private->public.media_end_cb           = media_end_cb;
 	call_private->public.call_accept_cb         = call_accept_cb;
 	call_private->public.call_reject_cb         = call_reject_cb;

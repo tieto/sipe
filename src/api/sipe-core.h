@@ -446,6 +446,14 @@ sipe_core_media_stream_writable(struct sipe_media_stream *stream,
 				gboolean writable);
 
 /**
+ * Called by media backend when @c stream has ended and should be destroyed.
+ *
+ * @param stream (in) SIPE media stream data.
+ */
+void
+sipe_core_media_stream_end(struct sipe_media_stream *stream);
+
+/**
  * Connects to a conference call specified by given chat session
  *
  * @param sipe_public (in) SIPE core data.
