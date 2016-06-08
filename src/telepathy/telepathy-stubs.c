@@ -189,9 +189,7 @@ struct sipe_backend_media_relays * sipe_backend_media_relays_convert(SIPE_UNUSED
 								     SIPE_UNUSED_PARAMETER gchar *username,
 								     SIPE_UNUSED_PARAMETER gchar *password) { return(NULL); }
 void sipe_backend_media_relays_free(SIPE_UNUSED_PARAMETER struct sipe_backend_media_relays *media_relays) {}
-struct sipe_backend_media_stream *sipe_backend_media_add_stream(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
-								SIPE_UNUSED_PARAMETER const gchar *id,
-								SIPE_UNUSED_PARAMETER const gchar *participant,
+struct sipe_backend_media_stream *sipe_backend_media_add_stream(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 								SIPE_UNUSED_PARAMETER SipeMediaType type,
 								SIPE_UNUSED_PARAMETER SipeIceVersion ice_version,
 								SIPE_UNUSED_PARAMETER gboolean initiator,
