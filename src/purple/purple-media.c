@@ -517,17 +517,15 @@ stream_writable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
 #endif
 
 struct sipe_backend_media_stream *
-sipe_backend_media_add_stream(struct sipe_media_call *call,
-			      const gchar *id,
-			      const gchar *participant,
+sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 			      SipeMediaType type,
 			      SipeIceVersion ice_version,
 			      gboolean initiator,
 			      struct sipe_backend_media_relays *media_relays,
 			      guint min_port, guint max_port)
 {
-	struct sipe_backend_media *media = call->backend_private;
-	struct sipe_backend_media_stream *stream = NULL;
+	struct sipe_backend_media *media = stream->call->backend_private;
+	struct sipe_backend_media_stream *backend_stream = NULL;
 	// Preallocate enough space for all potential parameters to fit.
 	GParameter *params = g_new0(GParameter, 6);
 	guint params_cnt = 0;
@@ -595,17 +593,17 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 	if (type == SIPE_MEDIA_APPLICATION) {
 		purple_media_manager_set_application_data_callbacks(
 				purple_media_manager_get(),
-				media->m, id, participant, &callbacks,
-				call, NULL);
+				media->m, stream->id, stream->call->with,
+				&callbacks, stream->call, NULL);
 	}
 #endif
 
-	if (purple_media_add_stream(media->m, id, participant,
+	if (purple_media_add_stream(media->m, stream->id, stream->call->with,
 				    sipe_media_to_purple(type),
 				    initiator, transmitter, params_cnt,
 				    params)) {
-		stream = g_new0(struct sipe_backend_media_stream, 1);
-		stream->initialized_cb_was_fired = FALSE;
+		backend_stream = g_new0(struct sipe_backend_media_stream, 1);
+		backend_stream->initialized_cb_was_fired = FALSE;
 
 		if (!initiator)
 			++media->unconfirmed_streams;
@@ -617,7 +615,7 @@ sipe_backend_media_add_stream(struct sipe_media_call *call,
 
 	g_free(params);
 
-	return stream;
+	return backend_stream;
 }
 
 void

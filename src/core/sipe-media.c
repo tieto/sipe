@@ -1076,7 +1076,6 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 {
 	struct sipe_core_private *sipe_private;
 	struct sipe_media_stream_private *stream_private;
-	struct sipe_backend_media_stream *backend_stream;
 	struct sipe_backend_media_relays *backend_media_relays;
 	guint min_port;
 	guint max_port;
@@ -1110,22 +1109,25 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 			break;
 	}
 
-	backend_stream = sipe_backend_media_add_stream(call, id, call->with,
-						       type, ice_version,
-						       initiator,
-						       backend_media_relays,
-						       min_port, max_port);
-
-	sipe_backend_media_relays_free(backend_media_relays);
-
-	if (!backend_stream) {
-		return NULL;
-	}
-
 	stream_private = g_new0(struct sipe_media_stream_private, 1);
 	SIPE_MEDIA_STREAM->call = call;
 	SIPE_MEDIA_STREAM->id = g_strdup(id);
-	SIPE_MEDIA_STREAM->backend_private = backend_stream;
+	stream_private->write_queue = g_queue_new();
+	stream_private->async_reads = g_queue_new();
+
+	SIPE_MEDIA_STREAM->backend_private =
+			sipe_backend_media_add_stream(SIPE_MEDIA_STREAM,
+						      type, ice_version,
+						      initiator,
+						      backend_media_relays,
+						      min_port, max_port);
+
+	sipe_backend_media_relays_free(backend_media_relays);
+
+	if (!SIPE_MEDIA_STREAM->backend_private) {
+		sipe_media_stream_free(stream_private);
+		return NULL;
+	}
 
 #ifdef HAVE_SRTP
 	{
@@ -1137,9 +1139,6 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		stream_private->encryption_key_id = 1;
 	}
 #endif
-
-	stream_private->write_queue = g_queue_new();
-	stream_private->async_reads = g_queue_new();
 
 	SIPE_MEDIA_CALL_PRIVATE->streams =
 			g_slist_append(SIPE_MEDIA_CALL_PRIVATE->streams,

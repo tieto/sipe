@@ -75,9 +75,7 @@ sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
 }
 
 struct sipe_backend_media_stream *
-sipe_backend_media_add_stream(struct sipe_media_call *media,
-			      const gchar *id,
-			      const gchar *participant,
+sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 			      SipeMediaType type,
 			      SipeIceVersion ice_version,
 			      gboolean initiator,
