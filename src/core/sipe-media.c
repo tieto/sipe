@@ -114,16 +114,21 @@ static void sipe_media_candidate_list_free(GList *candidates)
 }
 
 static void
-remove_stream(struct sipe_media_call* call,
-	      struct sipe_media_stream_private *stream_private)
+sipe_media_stream_free(struct sipe_media_stream_private *stream_private)
 {
-	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+	struct sipe_media_call_private *call_private;
+
+	call_private = (struct sipe_media_call_private *)SIPE_MEDIA_STREAM->call;
 
 	sipe_media_stream_set_data(SIPE_MEDIA_STREAM, NULL, NULL);
 
-	call_private->streams =
-			g_slist_remove(call_private->streams, stream_private);
-	sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
+	if (call_private) {
+		call_private->streams = g_slist_remove(call_private->streams,
+						       stream_private);
+	}
+	if (SIPE_MEDIA_STREAM->backend_private) {
+		sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
+	}
 	g_free(SIPE_MEDIA_STREAM->id);
 	g_free(stream_private->encryption_key);
 	g_queue_free_full(stream_private->write_queue,
@@ -149,8 +154,7 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 					    (GHRFunc) call_private_equals, call_private);
 
 		while (call_private->streams) {
-			remove_stream(SIPE_MEDIA_CALL,
-				      call_private->streams->data);
+			sipe_media_stream_free(call_private->streams->data);
 		}
 
 		sipe_backend_media_free(call_private->public.backend_private);
@@ -872,9 +876,10 @@ static void phone_state_publish(struct sipe_core_private *sipe_private)
 }
 
 static void
-stream_end_cb(struct sipe_media_call* call, struct sipe_media_stream* stream)
+stream_end_cb(SIPE_UNUSED_PARAMETER struct sipe_media_call* call,
+	      struct sipe_media_stream* stream)
 {
-	remove_stream(call, SIPE_MEDIA_STREAM_PRIVATE);
+	sipe_media_stream_free(SIPE_MEDIA_STREAM_PRIVATE);
 }
 
 static void
