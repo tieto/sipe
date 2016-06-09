@@ -1,1 +1,2 @@
 cflags-remove-Wundef.patch
+Fix-sipe-collab-14.04-build.patch
