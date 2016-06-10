@@ -388,7 +388,7 @@ AS_IF([test "x$enable_purple" != xno],
 						dnl check purple pkgconfig for gstreamer version
 						[gstreamer_pkgconfig=`$PKG_CONFIG --variable=gstreamer $purple_pkgconfig`
 						AS_IF([test "x$gstreamer_pkgconfig" != x],
-							[gstreamer_pkgconfig=gstreamer-$gstreamer_pkgconfig],
+							[gstreamer_pkgconfig="gstreamer-$gstreamer_pkgconfig gstreamer-rtp-$gstreamer_pkgconfig"],
 							[AS_IF([test "x$purple_pkgconfig" == xpurple-3],
 								     [gstreamer_pkgconfig="gstreamer-1.0 gstreamer-rtp-1.0"],
 								     [gstreamer_pkgconfig="gstreamer-0.10 gstreamer-rtp-0.10"])])
