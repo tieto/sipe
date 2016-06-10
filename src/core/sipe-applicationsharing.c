@@ -427,7 +427,6 @@ run_remmina(struct sipe_appshare *appshare)
 	address_string = g_inet_address_to_string(address);
 
 	port = g_inet_socket_address_get_port(G_INET_SOCKET_ADDRESS(socket_address));
-	g_object_unref(socket_address);
 
 	alias = sipe_buddy_get_alias(sipe_private, appshare->media->with);
 
@@ -445,7 +444,7 @@ run_remmina(struct sipe_appshare *appshare)
 
 	g_free(alias);
 	g_free(address_string);
-	g_object_unref(address);
+	g_object_unref(socket_address);
 
 	config_file_base = build_socket_path(appshare->media);
 	appshare->config_file = g_strdup_printf("%s.remmina", config_file_base);
