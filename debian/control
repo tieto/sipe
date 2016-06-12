@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Jakub Adam <jakub.adam@ktknet.cz>
 Homepage: http://sipe.sourceforge.net/
 Build-Depends: dpkg-dev (>= 1.16.1~), debhelper (>= 9), pkg-config,
- libglib2.0-dev (>= 2.12.0), libxml2-dev, libpurple-dev (>= 1:3.0.0~), libtool,
+ libglib2.0-dev (>= 2.12.0), libxml2-dev, libpurple-dev (>= 3.0.0~), libtool,
  intltool, libkrb5-dev, libnss3-dev, libnice-dev (>= 0.1.4),
  freerdp2-dev, libfarstream-0.2-dev, libgstreamer-plugins-base1.0-dev
 Standards-Version: 3.9.8
