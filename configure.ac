@@ -500,7 +500,18 @@ PKG_CHECK_MODULES(FREERDP, [freerdp-shadow2],
 
 AM_CONDITIONAL(SIPE_FREERDP, [test "x$ac_enable_freerdp" = xyes])
 AS_IF([test "x$ac_enable_freerdp" = xyes],
-	[AC_DEFINE(HAVE_FREERDP, 1, [Define to 1 if you have FreeRDP headers.])])
+	[AC_DEFINE(HAVE_FREERDP, 1, [Define to 1 if you have FreeRDP headers.])
+	 ac_save_CFLAGS="$CFLAGS"
+	 ac_save_LDFLAGS="$LDFLAGS"
+	 CFLAGS="$CFLAGS $FREERDP_CFLAGS"
+	 LDFLAGS="$LDFLAGS $FREERDP_LIBS"
+	 AC_CHECK_FUNC([shadow_subsystem_set_entry_builtin],
+		     [AC_DEFINE(HAVE_FREERDP_SHADOW_SUBSYSTEM_SET_ENTRY_BUILTIN, 1, [Define to 1 if libfreerdp-shadow has shadow_subsystem_set_entry_builtin])],
+		     [])
+	 CFLAGS="$ac_save_CFLAGS"
+	 LDFLAGS="$ac_save_LDFLAGS"]
+)
+
 
 dnl these code parts rely on interfaces that require GValueArray. This
 dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there
