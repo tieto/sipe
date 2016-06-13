@@ -432,7 +432,11 @@ AS_IF([test "x$enable_purple" != xno],
 				 [dnl libpurple supports raw data RTP connections
 				  ac_have_xdata=yes]
 			 )
-			])
+			],
+			[AS_IF([test "x$with_vv" = xyes], dnl explicitly requested by user
+				[AC_ERROR([Voice and video support explicitly requested, but not available])]
+			 )]
+		 )
 
 		 CFLAGS="$ac_save_CFLAGS"
 		 LIBS="$ac_save_LIBS"])])
