@@ -306,8 +306,9 @@ sipe_purple_chat_menu(PurpleChat *chat)
 
 	if (conv) {
 		PurpleMenuAction *act = NULL;
+#ifdef HAVE_VV
 		struct sipe_media_call *call = NULL;
-
+#endif
 		SIPE_DEBUG_INFO("sipe_purple_chat_menu: %p", conv);
 
 		switch (sipe_core_chat_lock_status(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,

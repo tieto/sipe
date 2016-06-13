@@ -1123,6 +1123,7 @@ ask_accept_voice_conference(struct sipe_core_private *sipe_private,
 	g_free(question);
 }
 
+#ifdef HAVE_VV
 static void
 presentation_accepted_cb(struct sipe_core_private *sipe_private,
 			 struct conf_accept_ctx *ctx)
@@ -1142,6 +1143,7 @@ ask_accept_conf_presentation(struct sipe_core_private *sipe_private,
 			      presentation_accepted_cb, NULL,
 			      chat_session);
 }
+#endif
 
 void
 process_incoming_invite_conf(struct sipe_core_private *sipe_private,
@@ -1235,8 +1237,10 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	const gchar *focus_uri;
 	struct sip_session *session;
 	gboolean just_joined = FALSE;
+#ifdef HAVE_VV
 	gboolean audio_was_added = FALSE;
 	gboolean presentation_was_added = FALSE;
+#endif
 
 	if (msg->response != 0 && msg->response != 200) return;
 
@@ -1357,15 +1361,14 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 						sipe_backend_chat_operator(session->chat_session->backend,
 									   user_uri);
 					}
-				} else if (sipe_strequal("audio-video", session_type)) {
 #ifdef HAVE_VV
+				} else if (sipe_strequal("audio-video", session_type)) {
 					if (!session->is_call)
 						audio_was_added = TRUE;
 					process_conference_av_endpoint(endpoint,
 								       user_uri,
 								       self,
 								       session);
-#endif
 				} else if (sipe_strequal("applicationsharing", session_type)) {
 					if (!sipe_core_conf_get_presentation_media_call(SIPE_CORE_PUBLIC, session->chat_session) &&
 					    !sipe_strequal(user_uri, self)) {
@@ -1379,6 +1382,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 						g_free(media_state);
 						g_free(status);
 					}
+#endif
 				}
 			}
 			if (!is_in_im_mcu) {
