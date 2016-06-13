@@ -16,7 +16,6 @@ Section: net
 Architecture: any
 Depends: gstreamer1.0-plugins-ugly, gstreamer1.0-libav,
  remmina-plugin-rdp (>= 1.1.2-sipe),
- libfarstream-0.2-5 (>= 0.2.8+sipe+collab-1+201605241616~),
  ${shlibs:Depends}, ${misc:Depends}
 Recommends: gstreamer1.0-x
 Description: Pidgin plugin for MS Office Communicator and MS Lync
