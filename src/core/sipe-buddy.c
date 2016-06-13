@@ -2210,6 +2210,7 @@ static struct sipe_backend_buddy_menu *buddy_menu_phone(struct sipe_core_public 
 	return(menu);
 }
 
+#ifdef HAVE_FREERDP
 static struct sipe_backend_buddy_menu *buddy_menu_share_desktop(struct sipe_core_public *sipe_public,
 								struct sipe_backend_buddy_menu *menu,
 								const gchar *buddy_name)
@@ -2234,7 +2235,6 @@ static struct sipe_backend_buddy_menu *buddy_menu_share_desktop(struct sipe_core
 		}
 	}
 
-#ifdef HAVE_FREERDP
 	if (appshare) {
 		if (sipe_core_applicationsharing_get_remote_control(appshare)) {
 			menu = sipe_backend_buddy_menu_add(sipe_public, menu,
@@ -2253,10 +2253,10 @@ static struct sipe_backend_buddy_menu *buddy_menu_share_desktop(struct sipe_core
 				SIPE_BUDDY_MENU_SHARE_APPLICATION,
 				NULL);
 	}
-#endif
 
 	return menu;
 }
+#endif
 
 struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_public *sipe_public,
 							    const gchar *buddy_name,
@@ -2387,7 +2387,9 @@ struct sipe_backend_buddy_menu *sipe_core_buddy_create_menu(struct sipe_core_pub
 		}
 	}
 
+#ifdef HAVE_FREERDP
 	menu = buddy_menu_share_desktop(sipe_public, menu, buddy_name);
+#endif
 
 	/* access level control */
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
