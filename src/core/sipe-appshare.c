@@ -929,13 +929,21 @@ monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
 	g_free(with);
 }
 
+#ifndef HAVE_FREERDP_SHADOW_SUBSYSTEM_SET_ENTRY_BUILTIN
+extern int X11_ShadowSubsystemEntry(RDP_SHADOW_ENTRY_POINTS* pEntryPoints);
+#endif
+
 static void
 present_monitor_choice(struct sipe_core_public *sipe_public, const gchar *who)
 {
 	MONITOR_DEF monitors[16];
 	int monitor_count;
 
+#ifdef HAVE_FREERDP_SHADOW_SUBSYSTEM_SET_ENTRY_BUILTIN
 	shadow_subsystem_set_entry_builtin("X11");
+#else
+	shadow_subsystem_set_entry(X11_ShadowSubsystemEntry);
+#endif
 	monitor_count = shadow_enum_monitors(monitors, 16);
 
 	if (monitor_count == 1) {

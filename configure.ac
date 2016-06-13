@@ -544,7 +544,17 @@ AS_IF([test "x$ac_have_appshare" == xyes],
 dnl RDP server for sharing local desktop
 AM_CONDITIONAL(SIPE_HAVE_RDP_SERVER, [test "x$ac_have_rdp_server" = xyes])
 AS_IF([test "x$ac_have_rdp_server" == xyes],
-	[AC_DEFINE(HAVE_RDP_SERVER, 1, [Define if RDP server is enabled.])])
+	[AC_DEFINE(HAVE_RDP_SERVER, 1, [Define if RDP server is enabled.])
+	 ac_save_CFLAGS="$CFLAGS"
+	 ac_save_LDFLAGS="$LDFLAGS"
+	 CFLAGS="$CFLAGS $FREERDP_SHADOW_CFLAGS"
+	 LDFLAGS="$LDFLAGS $FREERDP_SHADOW_LIBS"
+	 AC_CHECK_FUNC([shadow_subsystem_set_entry_builtin],
+		     [AC_DEFINE(HAVE_FREERDP_SHADOW_SUBSYSTEM_SET_ENTRY_BUILTIN, 1, [Define to 1 if libfreerdp-shadow has shadow_subsystem_set_entry_builtin])],
+		     [])
+	 CFLAGS="$ac_save_CFLAGS"
+	 LDFLAGS="$ac_save_LDFLAGS"]
+)
 
 dnl telepathy code parts rely on interfaces that require GValueArray. This
 dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there
