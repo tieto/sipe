@@ -1183,6 +1183,13 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 	gchar **item_groups;
 	int i = 0;
 
+	/* "name" attribute is a contact alias which user can manually assign by
+	 * renaming the item in the contact list. Empty string means no alias
+	 * and the display name from the contact card should be used instead. */
+	if (name && strlen(name) == 0) {
+		name = NULL;
+	}
+
 	/* assign to group Other Contacts if nothing else received */
 	tmp = g_strdup(sipe_xml_attribute(node, "groups"));
 	if (is_empty(tmp)) {
@@ -1217,7 +1224,7 @@ static void add_new_buddy(struct sipe_core_private *sipe_private,
 						name);
 		} else {
 			SIPE_DEBUG_INFO("No group found for contact %s!  Unable to add to buddy list",
-					name);
+					uri);
 		}
 
 		i++;
