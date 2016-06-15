@@ -843,7 +843,7 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 	struct sipe_backend_media_stream *backend_stream = NULL;
 	GstElement *pipe;
 	// Preallocate enough space for all potential parameters to fit.
-	GParameter *params = g_new0(GParameter, 6);
+	GParameter *params = g_new0(GParameter, 7);
 	guint params_cnt = 0;
 	gchar *transmitter;
 	GValue *relay_info = NULL;
@@ -897,6 +897,11 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 			g_value_set_boolean(&params[params_cnt].value, TRUE);
 			++params_cnt;
 		}
+
+		params[params_cnt].name = "discovery-timeout";
+		g_value_init(&params[params_cnt].value, G_TYPE_UINT);
+		g_value_set_uint(&params[params_cnt].value, 5000);
+		++params_cnt;
 	} else {
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
