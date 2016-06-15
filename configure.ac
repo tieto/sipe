@@ -161,7 +161,7 @@ dnl build option: with voice & video support (for all backends)
 AC_ARG_WITH(vv,
 	[AC_HELP_STRING([--with-vv],
 		[compile with voice and video support @<:@default=check@:>@])],
-	[AS_IF([test "x$withval" = xyes], [with_vv=check])],
+	[AS_IF([test "x$withval" = xyes], [with_vv=yes])],
 	[with_vv=check])
 
 dnl check for Kerberos 5 support
@@ -371,9 +371,8 @@ AS_IF([test "x$enable_purple" != xno],
 
 		 dnl check whether enable voice and video support
 		 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
-		       [test "x$with_vv" = xcheck],  dnl autodetect
-			 [AC_MSG_CHECKING(for purple voice and video support)
-			  AC_RUN_IFELSE(
+		       [AC_MSG_CHECKING(for purple voice and video support)
+		        AC_RUN_IFELSE(
 				[AC_LANG_PROGRAM([[
 #include <media.h>
 					]],
@@ -407,7 +406,7 @@ AS_IF([test "x$enable_purple" != xno],
 					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
 				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)],
 				[AC_MSG_WARN([cross compiling: not checking])])
-			 ])
+		       ])
 
 		 dnl SRTP and XDATA require media backend
 		 AS_IF([test "x$with_purple_vv" != xno],
