@@ -1257,7 +1257,7 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 	}
 
 #ifdef HAVE_SRTP
-	{
+	if (get_encryption_policy(sipe_private) != SIPE_ENCRYPTION_POLICY_REJECTED) {
 		int i;
 		stream_private->encryption_key = g_new0(guchar, SIPE_SRTP_KEY_LEN);
 		for (i = 0; i != SIPE_SRTP_KEY_LEN; ++i) {
