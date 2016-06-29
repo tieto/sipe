@@ -273,6 +273,8 @@ sipe_purple_chat_menu_show_presentation_cb(SIPE_UNUSED_PARAMETER PurpleChat *cha
 {
 	sipe_appshare_role role;
 
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_chat_menu_show_presentation_cb");
+
 	role = sipe_core_conf_get_appshare_role(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
 						sipe_purple_chat_get_session(conv));
 
