@@ -1138,6 +1138,8 @@ ask_accept_conf_presentation(struct sipe_core_private *sipe_private,
 			     const gchar *focus_uri,
 			     struct sipe_chat_session *chat_session)
 {
+	SIPE_DEBUG_INFO_NOFORMAT("ask_accept_conf_presentation");
+
 	ask_accept_invitation(sipe_private, focus_uri,
 			      _("wants to start presenting"), NULL,
 			      presentation_accepted_cb, NULL,
