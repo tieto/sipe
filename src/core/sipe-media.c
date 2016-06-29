@@ -737,7 +737,8 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 		codec = sipe_backend_codec_new(c->id,
 					       c->name,
 					       c->type,
-					       c->clock_rate);
+					       c->clock_rate,
+					       c->channels);
 
 		for (j = c->parameters; j; j = j->next) {
 			struct sipnameval *attr = j->data;

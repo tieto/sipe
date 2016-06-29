@@ -174,7 +174,8 @@ sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream)
 }
 
 struct sipe_backend_codec *
-sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock_rate)
+sipe_backend_codec_new(int id, const char *name, SipeMediaType type,
+		       guint clock_rate, guint channels)
 {
 	_NIF();
 	return NULL;

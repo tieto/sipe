@@ -223,7 +223,8 @@ void sipe_backend_media_stream_free(SIPE_UNUSED_PARAMETER struct sipe_backend_me
 struct sipe_backend_codec *sipe_backend_codec_new(SIPE_UNUSED_PARAMETER int id,
 						  SIPE_UNUSED_PARAMETER const char *name,
 						  SIPE_UNUSED_PARAMETER SipeMediaType type,
-						  SIPE_UNUSED_PARAMETER guint clock_rate) { return(NULL); }
+						  SIPE_UNUSED_PARAMETER guint clock_rate,
+						  SIPE_UNUSED_PARAMETER guint channels) { return(NULL); }
 void sipe_backend_codec_free(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) {}
 int sipe_backend_codec_get_id(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) { return(0); }
 gchar *sipe_backend_codec_get_name(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) { return(g_strdup("")); }

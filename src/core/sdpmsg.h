@@ -60,6 +60,7 @@ struct sdpcodec {
 	gint		 id;
 	gchar		*name;
 	gint		 clock_rate;
+	gint		 channels;
 	SipeMediaType	 type;
 	GSList		*parameters;
 };

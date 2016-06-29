@@ -1122,15 +1122,20 @@ gboolean sipe_backend_stream_is_held(struct sipe_media_stream *stream)
 }
 
 struct sipe_backend_codec *
-sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock_rate)
+sipe_backend_codec_new(int id, const char *name, SipeMediaType type,
+		       guint clock_rate, guint channels)
 {
+	PurpleMediaCodec *codec;
+
 	if (sipe_strequal(name, "X-H264UC")) {
 		name = "H264";
 	}
 
-	return (struct sipe_backend_codec *)purple_media_codec_new(id, name,
-						    sipe_media_to_purple(type),
-						    clock_rate);
+	codec = purple_media_codec_new(id, name, sipe_media_to_purple(type),
+				       clock_rate);
+	g_object_set(codec, "channels", channels, NULL);
+
+	return (struct sipe_backend_codec *)codec;
 }
 
 void

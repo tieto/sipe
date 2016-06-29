@@ -472,7 +472,9 @@ void sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream);
 /* Codec handling */
 struct sipe_backend_codec *sipe_backend_codec_new(int id,
 						  const char *name,
-						  SipeMediaType type, guint clock_rate);
+						  SipeMediaType type,
+						  guint clock_rate,
+						  guint channels);
 void sipe_backend_codec_free(struct sipe_backend_codec *codec);
 int sipe_backend_codec_get_id(struct sipe_backend_codec *codec);
 /**

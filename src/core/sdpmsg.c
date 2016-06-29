@@ -366,8 +366,8 @@ parse_codecs(GSList *attrs, SipeMediaType type, GSList **codecs)
 		struct sdpcodec *codec;
 		gchar **tokens;
 
-		tokens = g_strsplit_set(attr, " /", 3);
-		if (g_strv_length(tokens) != 3) {
+		tokens = g_strsplit_set(attr, " /", 4);
+		if (g_strv_length(tokens) < 3) {
 			g_strfreev(tokens);
 			return FALSE;
 		}
@@ -377,6 +377,10 @@ parse_codecs(GSList *attrs, SipeMediaType type, GSList **codecs)
 		codec->name = g_strdup(tokens[1]);
 		codec->clock_rate = atoi(tokens[2]);
 		codec->type = type;
+
+		if (type == SIPE_MEDIA_AUDIO) {
+			codec->channels = tokens[3] ? atoi(tokens[3]) : 1;
+		}
 
 		g_strfreev(tokens);
 
