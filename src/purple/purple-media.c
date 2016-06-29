@@ -1182,8 +1182,51 @@ sipe_backend_set_remote_codecs(struct sipe_media_call *media,
 			       struct sipe_media_stream *stream,
 			       GList *codecs)
 {
-	return purple_media_set_remote_codecs(media->backend_private->m,
-					      stream->id, media->with, codecs);
+	gboolean result;
+
+#if !GST_CHECK_VERSION(1, 6, 0)
+	/* Lync offers multichannel audio as a codec with the same encoding name
+	 * as the mono variant, but a different payload type and an extra
+	 * encoding parameter:
+	 *
+	 *  a=rtpmap:117 G722/8000/2
+	 *  a=rtpmap:9 G722/8000
+	 *
+	 * This causes trouble with GStreamer RTP payloaders prior 1.6 that
+	 * supported only default payload types (9 in the case of G722). Let's
+	 * ignore the multichannel codecs when used GStreamer version isn't
+	 * recent enough so as to avoid not-negotiated caps errors when they are
+	 * chosen for transmission.
+	 *
+	 * https://cgit.freedesktop.org/gstreamer/gst-plugins-good/commit/?id=5a17572119e4164c93f2ea90fa64e1c179b6e3c5
+	 */
+	GList *tmp = NULL;
+	PurpleMediaSessionType type;
+
+	for (; codecs; codecs = codecs->next) {
+		PurpleMediaCodec *codec = codecs->data;
+
+		g_object_get(codec, "media-type", &type, NULL);
+
+		if (type == PURPLE_MEDIA_AUDIO &&
+		    purple_media_codec_get_channels(codec) > 1) {
+			continue;
+		}
+
+		tmp = g_list_append(tmp, codec);
+	}
+
+	codecs = tmp;
+#endif
+
+	result = purple_media_set_remote_codecs(media->backend_private->m,
+						stream->id, media->with,
+						codecs);
+#if !GST_CHECK_VERSION(1, 6, 0)
+	g_list_free(tmp);
+#endif
+
+	return result;
 }
 
 GList*
