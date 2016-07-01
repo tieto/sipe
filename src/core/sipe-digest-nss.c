@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -25,6 +25,9 @@
  * Digest routines implementation based on NSS.
  * Includes: SHA1, MD5, HMAC_SHA_1, HMAC_MD5
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include "glib.h"
 
@@ -39,6 +42,9 @@
 #include "pk11pub.h"
 
 #include "sipe-digest.h"
+#if !(defined(HAVE_GSSAPI_ONLY) || defined(HAVE_SSPI))
+#include "md4.h"
+#endif
 
 
 /* PRIVATE methods */
@@ -127,6 +133,15 @@ static void sipe_digest_hmac(CK_MECHANISM_TYPE hmacMech,
 
 
 /* PUBLIC methods */
+
+#if !(defined(HAVE_GSSAPI_ONLY) || defined(HAVE_SSPI))
+/* One-shot MD4 digest - only used by internal NTLMv2 implementation */
+void sipe_digest_md4(const guchar *data, gsize length, guchar *digest)
+{
+	/* NSS does not provide MD4 - use Mozilla Firefox implementation */
+	md4sum(data, length, digest);
+}
+#endif
 
 void sipe_digest_md5(const guchar *data, gsize length, guchar *digest)
 {

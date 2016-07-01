@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,14 +23,29 @@
 /**
  * Digest routines implementation based on OpenSSL
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#if !(defined(HAVE_GSSAPI_ONLY) || defined(HAVE_SSPI))
+#include <openssl/md4.h>
+#endif
 #include <openssl/md5.h>
 #include <openssl/sha.h>
 
 #include "glib.h"
 
 #include "sipe-digest.h"
+
+#if !(defined(HAVE_GSSAPI_ONLY) || defined(HAVE_SSPI))
+/* One-shot MD4 digest - only used by internal NTLMv2 implementation */
+void sipe_digest_md4(const guchar *data, gsize length, guchar *digest)
+{
+	MD4(data, length, digest);
+}
+#endif
 
 /* One-shot MD5/SHA-1 digests */
 void sipe_digest_md5(const guchar *data, gsize length, guchar *digest)

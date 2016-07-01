@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -78,6 +78,14 @@ char *sipe_get_epid(SIPE_UNUSED_PARAMETER const char *self_sip_uri,
 		    SIPE_UNUSED_PARAMETER const char *ip_address)
 {
 	return(NULL);
+}
+
+/* needed when linking against NSS */
+void md4sum(const guchar *data, gsize length, guchar *digest);
+void md4sum(SIPE_UNUSED_PARAMETER const guchar *data,
+	    SIPE_UNUSED_PARAMETER gsize length,
+	    SIPE_UNUSED_PARAMETER guchar *digest)
+{
 }
 
 /*

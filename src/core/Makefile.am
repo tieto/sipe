@@ -112,8 +112,6 @@ else
 
 if !SIP_SEC_GSSAPI_ONLY
 libsipe_core_la_SOURCES += \
-	md4.h \
-	md4.c \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c
 
@@ -136,6 +134,11 @@ libsipe_core_crypto_la_SOURCES = \
 	sipe-cert-crypto-nss.c \
 	sipe-crypt-nss.c \
 	sipe-digest-nss.c
+if !SIP_SEC_GSSAPI_ONLY
+libsipe_core_crypto_la_SOURCES += \
+	md4.h \
+	md4.c
+endif
 endif
 
 libsipe_core_libxml2_la_SOURCES = \
