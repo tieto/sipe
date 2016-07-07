@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,7 @@
 #include "sipe-notify.h"
 #include "sipe-schedule.h"
 #include "sipe-subscriptions.h"
+#include "sipe-ucs.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -151,16 +152,16 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 					   struct sipmsg *msg,
 					   struct transaction *trans)
 {
-	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 	const gchar *event = sipmsg_find_header(msg, "Event");
 
-	/* The case with 2005 Public IM Connectivity (PIC) - no Event header */
+	/* No Event header - error or 2005 Public IM Connectivity (PIC) */
 	if (!event) {
 		struct sipmsg *request_msg = trans->msg;
 		event = sipmsg_find_header(request_msg, "Event");
 	}
 
 	if (event) {
+		gchar *with = parse_from(sipmsg_find_header(msg, "To"));
 		const gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
 		gboolean terminated = subscription_state && strstr(subscription_state, "terminated");
 		gchar *key = sipe_subscription_key(event, with);
@@ -177,6 +178,21 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 		/* 481 Call Leg Does Not Exist */
 		if ((msg->response == 481) || terminated) {
 			sipe_subscription_remove(sipe_private, key);
+
+		/* 488 Not acceptable here */
+		} else if (msg->response == 488) {
+
+			SIPE_DEBUG_INFO("process_subscribe_response: subscription '%s' to '%s' was rejected",
+					event, with);
+
+			sipe_subscription_remove(sipe_private, key);
+
+			if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) &&
+			    sipe_strcase_equal(event, "vnd-microsoft-roaming-contacts")) {
+				SIPE_DEBUG_INFO_NOFORMAT("no contact list available - assuming Lync 2013+ and Unified Contact Store (UCS)");
+				SIPE_CORE_PRIVATE_FLAG_SET(LYNC2013);
+				sipe_ucs_init(sipe_private, TRUE);
+			}
 
 		/* create/store subscription dialog if not yet */
 		} else if (msg->response == 200) {
@@ -206,8 +222,8 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 			sipe_subscription_expiration(sipe_private, msg, event);
 		}
 		g_free(key);
+		g_free(with);
 	}
-	g_free(with);
 
 	if (sipmsg_find_header(msg, "ms-piggyback-cseq"))
 		process_incoming_notify(sipe_private, msg);
@@ -304,10 +320,15 @@ static void sipe_subscribe_roaming_acl(struct sipe_core_private *sipe_private,
 static void sipe_subscribe_roaming_contacts(struct sipe_core_private *sipe_private,
 					    SIPE_UNUSED_PARAMETER void *unused)
 {
+	const gchar *addheaders = NULL;
+
+	/* indicate that we support Unified Contact Store (UCS) */
+	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
+		addheaders = "Supported: ms-ucs\r\n";
 	sipe_subscribe_self(sipe_private,
 			    "vnd-microsoft-roaming-contacts",
 			    "application/vnd-microsoft-roaming-contacts+xml",
-			    NULL,
+			    addheaders,
 			    NULL);
 }
 
