@@ -34,6 +34,7 @@
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-mime.h"
+#include "sipe-nls.h"
 #include "sipe-notify.h"
 #include "sipe-schedule.h"
 #include "sipe-subscriptions.h"
@@ -175,8 +176,22 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 			SIPE_DEBUG_INFO("process_subscribe_response: subscription '%s' to '%s' was terminated",
 					event, with);
 
+		/* 400 Bad request */
+		if (msg->response == 400) {
+
+			SIPE_DEBUG_INFO("process_subscribe_response: subscription '%s' to '%s' failed",
+					event, with);
+
+			sipe_subscription_remove(sipe_private, key);
+
+			if (sipe_strcase_equal(event, "presence")) {
+				sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+							  _("Presence subscription failed!"),
+							  _("One or more buddies will therefore permanently show as offline.\n\nPlease check that there are no corrupted SIP URIs in your contacts list."));
+			}
+
 		/* 481 Call Leg Does Not Exist */
-		if ((msg->response == 481) || terminated) {
+		} else if ((msg->response == 481) || terminated) {
 			sipe_subscription_remove(sipe_private, key);
 
 		/* 488 Not acceptable here */
