@@ -167,15 +167,20 @@ static guchar *read_tls_record(int fd,
 		       length);
 
 		p = merged = g_malloc(length);
-		while (elem) {
-			struct record *record = elem->data;
+		if (merged) {
+			while (elem) {
+				struct record *record = elem->data;
 
-			memcpy(p, record->msg, record->length);
-			p += record->length;
-			g_free(record->msg);
-			g_free(record);
+				memcpy(p, record->msg, record->length);
+				p += record->length;
+				g_free(record->msg);
+				g_free(record);
 
-			elem = elem->next;
+				elem = elem->next;
+			}
+		} else {
+			printf("can't allocate %" G_GSIZE_FORMAT " bytes.\n",
+			       length);
 		}
 
 		g_slist_free(fragments);

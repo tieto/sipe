@@ -46,7 +46,6 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-nls.h"
-#include "sipe-schedule.h"
 #include "sipe-xml.h"
 
 /* [MS-SDPEXT] 3.1.5.31.2 says a range size of 100 SHOULD be used for video and
@@ -131,12 +130,12 @@ sipe_media_stream_free(struct sipe_media_stream_private *stream_private)
 	if (call_private) {
 		call_private->streams = g_slist_remove(call_private->streams,
 						       stream_private);
-	}
 
-	if (SIPE_MEDIA_STREAM->ssrc_range) {
-		call_private->ssrc_ranges =
+		if (SIPE_MEDIA_STREAM->ssrc_range) {
+			call_private->ssrc_ranges =
 				g_slist_remove(call_private->ssrc_ranges,
 					       SIPE_MEDIA_STREAM->ssrc_range);
+		}
 	}
 
 	if (SIPE_MEDIA_STREAM->backend_private) {

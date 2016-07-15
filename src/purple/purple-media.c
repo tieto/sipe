@@ -934,6 +934,7 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 			++media->unconfirmed_streams;
 	} else {
 		sipe_backend_media_stream_free(backend_stream);
+		backend_stream = NULL;
 	}
 
 	if (relay_info) {

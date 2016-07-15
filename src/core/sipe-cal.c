@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -615,12 +615,11 @@ sipe_cal_get_since_time(const gchar *free_busy,
 		if (current_state != temp_status) {
 			return calStart + (i + 1)*granularity*60;
 		}
-
-		if (i == 0) return calStart;
 	}
 
-	return 0;
+	return calStart;
 }
+
 static char*
 sipe_cal_get_free_busy(struct sipe_buddy *buddy);
 

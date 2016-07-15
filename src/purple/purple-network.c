@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -175,8 +175,12 @@ client_connected_cb(struct sipe_backend_listendata *ldata, gint listenfd,
 	close(listenfd);
 	ldata->listenfd = -1;
 
-	if (ldata->connect_cb) {
-		ldata->connect_cb(sipe_backend_fd_from_int(fd), ldata->data);
+	if (fd >= 0) {
+		if (ldata->connect_cb) {
+			ldata->connect_cb(sipe_backend_fd_from_int(fd), ldata->data);
+		} else {
+			close(fd);
+		}
 	}
 
 	g_free(ldata);

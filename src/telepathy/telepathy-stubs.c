@@ -37,7 +37,6 @@
 
 #include "sipe-backend.h"
 #include "sipe-common.h"
-#include "sipe-core.h"
 
 /** BUDDIES ******************************************************************/
 
