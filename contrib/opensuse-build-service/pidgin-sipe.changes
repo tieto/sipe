@@ -1,12 +1,12 @@
 -------------------------------------------------------------------
-Sat May 28 15:19:00 UTC 2016 - chemobejk@gmail.com
+Fri Jul  8 11:27:28 UTC 2016 - tchvatal@suse.com
 
-- Update to version 1.21.1:
-
--------------------------------------------------------------------
-Sat Apr 23 12:56:00 UTC 2016 - chemobejk@gmail.com
-
-- Update to version 1.21.0:
+- Version update to 1.21.1:
+  * various bug fixes in media support
+  * configure no longer ignores CFLAGS/LDFLAGS/LIBS
+- Drop telepathy conditionals as we don't build on sle11 anyway
+- Move the docs from library to main package to allow multiple versions
+  at once as SLP wants
 
 -------------------------------------------------------------------
 Fri Feb 12 09:26:02 UTC 2016 - dimstar@opensuse.org
