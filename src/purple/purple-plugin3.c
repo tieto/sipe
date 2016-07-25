@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2015-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -152,12 +152,14 @@ sipe_protocol_roomlist_iface_init(PurpleProtocolRoomlistIface *roomlist_iface)
 	roomlist_iface->cancel = sipe_purple_roomlist_cancel;
 }
 
+#ifdef HAVE_VV
 static void
 sipe_protocol_media_iface_init(PurpleProtocolMediaIface *media_iface)
 {
 	media_iface->initiate_session = sipe_purple_initiate_media;
 	media_iface->get_caps = sipe_purple_get_media_caps;
 }
+#endif /* HAVE_VV */
 
 PURPLE_DEFINE_TYPE_EXTENDED(
 	SipeProtocol, sipe_protocol, PURPLE_TYPE_PROTOCOL, 0,
@@ -176,8 +178,10 @@ PURPLE_DEFINE_TYPE_EXTENDED(
 					  sipe_protocol_xfer_iface_init)
 	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_ROOMLIST_IFACE,
 					  sipe_protocol_roomlist_iface_init)
+#ifdef HAVE_VV
 	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_MEDIA_IFACE,
 					  sipe_protocol_media_iface_init)
+#endif /* HAVE_VV */
 )
 
 static PurplePluginInfo *
