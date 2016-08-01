@@ -651,6 +651,17 @@ void sipe_utils_slist_free_full(GSList *list,
 #endif
 }
 
+gchar *
+sipe_utils_get_user_runtime_dir(void)
+{
+	gchar *result;
+
+	result = g_strdup_printf("%s/sipe", g_get_user_runtime_dir());
+	g_mkdir_with_parents(result, 0700);
+
+	return result;
+}
+
 /*
   Local Variables:
   mode: c
