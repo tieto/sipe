@@ -487,3 +487,5 @@ GSList *sipe_utils_slist_insert_unique_sorted(GSList *list,
  */
 void sipe_utils_slist_free_full(GSList *list,
 				GDestroyNotify free);
+
+gchar *sipe_utils_get_user_runtime_dir(void);
