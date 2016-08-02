@@ -27,10 +27,12 @@
 #include "sipmsg.h"
 #include "sipe-appshare.h"
 #include "sipe-appshare-xfreerdp.h"
+#include "sipe-appshare-remmina.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-common.h"
 #include "sipe-core.h"
+#include "sipe-core-private.h"
 #include "sipe-media.h"
 #include "sipe-nls.h"
 #include "sipe-user.h"
@@ -314,7 +316,14 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 
 	appshare = g_new0(struct sipe_appshare, 1);
 	appshare->stream = stream;
-	sipe_appshare_xfreerdp_init(&appshare->client);
+
+	switch (sipe_backend_appshare_get_rdp_client(SIPE_CORE_PUBLIC)) {
+		case SIPE_RDP_CLIENT_REMMINA:
+			sipe_appshare_remmina_init(&appshare->client);
+			break;
+		default:
+			sipe_appshare_xfreerdp_init(&appshare->client);
+	}
 
 	sipe_media_stream_set_data(stream, appshare,
 				   (GDestroyNotify)sipe_appshare_free);

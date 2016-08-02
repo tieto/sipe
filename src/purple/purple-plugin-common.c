@@ -929,6 +929,13 @@ GList * sipe_purple_account_options()
 	option = purple_account_option_string_new(_("Group Chat Proxy\n   company.com  or  user@company.com\n(leave empty to determine from Username)"), "groupchat_user", "");
 	options = g_list_append(options, option);
 
+#ifdef HAVE_XDATA
+	option = purple_account_option_list_new(_("Remote desktop client"), "rdp-client", NULL);
+	purple_account_option_add_list_item(option, _("Remmina"), "remmina");
+	purple_account_option_add_list_item(option, _("xfreerdp"), "xfreerdp");
+	options = g_list_append(options, option);
+#endif
+
 #ifdef HAVE_SRTP
 	option = purple_account_option_list_new(_("Media encryption"), "encryption-policy", NULL);
 	purple_account_option_add_list_item(option, _("Obey server policy"), "obey-server");
