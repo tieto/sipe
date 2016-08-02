@@ -130,6 +130,10 @@ libsipe_la_LIBADD             += \
 	$(FARSTREAM_LIBS)
 endif
 
+if SIPE_HAVE_XDATA
+libsipe_backend_la_SOURCES += purple-appshare.c
+endif
+
 TESTS = $(check_PROGRAMS)
 
 # Remove any libsipe.so from the old incorrect installation location
