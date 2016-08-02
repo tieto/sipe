@@ -50,6 +50,14 @@ struct sipe_appshare {
 	struct sipe_rdp_client client;
 };
 
+typedef gboolean (*rdp_init_func)(struct sipe_rdp_client *);
+
+rdp_init_func rdp_init_functions[] = {
+		sipe_appshare_remmina_init,
+		sipe_appshare_xfreerdp_init,
+		NULL
+};
+
 static void
 sipe_appshare_free(struct sipe_appshare *appshare)
 {
@@ -302,6 +310,7 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 	struct sipe_media_call *call = NULL;
 	struct sipe_media_stream *stream;
 	struct sipe_appshare *appshare;
+	SipeRDPClient client;
 
 	call = process_incoming_invite_call(sipe_private, msg);
 	if (!call) {
@@ -317,12 +326,24 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 	appshare = g_new0(struct sipe_appshare, 1);
 	appshare->stream = stream;
 
-	switch (sipe_backend_appshare_get_rdp_client(SIPE_CORE_PUBLIC)) {
-		case SIPE_RDP_CLIENT_REMMINA:
-			sipe_appshare_remmina_init(&appshare->client);
-			break;
-		default:
-			sipe_appshare_xfreerdp_init(&appshare->client);
+	client = sipe_backend_appshare_get_rdp_client(SIPE_CORE_PUBLIC);
+	if (!rdp_init_functions[client](&appshare->client)) {
+		/* Preferred client isn't available. Fall back to whatever
+		 * application we can find. */
+		int i;
+		for (i = 0; rdp_init_functions[i]; ++i) {
+			if (rdp_init_functions[i](&appshare->client)) {
+				break;
+			}
+		}
+
+		if (!appshare->client.get_listen_address_cb) {
+			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+				_("Remote desktop error"),
+				_("Remote desktop client isn't installed."));
+			sipe_backend_media_hangup(call->backend_private, TRUE);
+			return;
+		}
 	}
 
 	sipe_media_stream_set_data(stream, appshare,
