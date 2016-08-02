@@ -127,6 +127,12 @@ libsipe_la_LIBADD             += \
 	$(NICE_LIBS) \
 	$(GSTREAMER_LIBS) \
 	$(FARSTREAM_LIBS)
+
+if SIPE_HAVE_XDATA
+if SIPE_HAVE_GIO
+libsipe_backend_la_SOURCES += purple-appshare.c
+endif
+endif
 endif
 
 TESTS = $(check_PROGRAMS)
