@@ -23,4 +23,4 @@
 /* Forward declarations */
 struct sipe_rdp_client;
 
-void sipe_appshare_remmina_init(struct sipe_rdp_client *client);
+gboolean sipe_appshare_remmina_init(struct sipe_rdp_client *client);

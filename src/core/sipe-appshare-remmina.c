@@ -131,14 +131,25 @@ remmina_free(struct sipe_rdp_client *client)
 	g_free(client_data);
 }
 
-void
+gboolean
 sipe_appshare_remmina_init(struct sipe_rdp_client *client)
 {
+	gchar *program_path;
+
+	program_path = g_find_program_in_path("remmina");
+	if (!program_path) {
+		SIPE_DEBUG_WARNING_NOFORMAT("Couldn't locate remmina binary");
+		return FALSE;
+	}
+	g_free(program_path);
+
 	client->client_data = g_new0(struct remmina_data, 1);
 
 	client->get_listen_address_cb = remmina_get_listen_address;
 	client->launch_cb = remmina_launch;
 	client->free_cb = remmina_free;
+
+	return TRUE;
 }
 
 /*
