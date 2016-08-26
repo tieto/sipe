@@ -217,7 +217,7 @@ libsipe_core_la_SOURCES += \
 libsipe_core_la_CFLAGS += \
 	$(FREERDP_CFLAGS)
 
-libsipe_core_la_LIBADD = \
+libsipe_core_la_LIBADD = -lwinpr \
 	$(FREERDP_LIBS)
 endif
 >>>>>>> 04b3590 appshare: build optionally only when we have FreeRDP headers
