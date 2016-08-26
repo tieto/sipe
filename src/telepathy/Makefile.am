@@ -35,6 +35,8 @@ telepathy_sipe_CFLAGS = \
 
 telepathy_sipe_LDADD = \
 	../core/libsipe_core.la \
+	../purple/libsipe_backend_vv.la \
+	../purple/libsipe_backend.la \
 	../core/libsipe_core_crypto.la \
 	../core/libsipe_core_libxml2.la \
 	../core/libsipe_core_mime.la \
@@ -46,4 +48,4 @@ telepathy_sipe_LDADD = \
 	$(DBUS_GLIB_LIBS) \
 	$(GIO_LIBS) \
 	$(GOBJECT_LIBS) \
-	$(GLIB_LIBS)
+	$(GLIB_LIBS) -lpurple

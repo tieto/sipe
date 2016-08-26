@@ -303,19 +303,6 @@ void sipe_backend_notify_error(SIPE_UNUSED_PARAMETER struct sipe_core_public *si
 			       SIPE_UNUSED_PARAMETER const gchar *title,
 			       SIPE_UNUSED_PARAMETER const gchar *msg) {}
 
-/** USER *********************************************************************/
-
-void sipe_backend_user_feedback_typing(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-				       SIPE_UNUSED_PARAMETER const gchar *from) {}
-void sipe_backend_user_feedback_typing_stop(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-					    SIPE_UNUSED_PARAMETER const gchar *from) {}
-void sipe_backend_user_ask(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
-			   SIPE_UNUSED_PARAMETER const gchar *message,
-			   SIPE_UNUSED_PARAMETER const gchar *accept_label,
-			   SIPE_UNUSED_PARAMETER const gchar *decline_label,
-			   SIPE_UNUSED_PARAMETER gpointer key) {}
-void sipe_backend_user_close_ask(SIPE_UNUSED_PARAMETER gpointer key) {}
-
 /*
   Local Variables:
   mode: c
