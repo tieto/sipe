@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -392,6 +392,30 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 		/* queue transport to be deleted */
 		g_idle_add(free_transport, transport);
 	}
+}
+
+gchar *sipe_backend_transport_ip_address(struct sipe_transport_connection *conn)
+{
+	struct sipe_transport_telepathy *transport = TELEPATHY_TRANSPORT;
+	gchar *ipstr = NULL;
+
+	if (transport && transport->socket) {
+		GSocketAddress *saddr = g_socket_connection_get_local_address(transport->socket,
+									      NULL);
+
+		if (saddr) {
+			GInetAddress *iaddr = g_inet_socket_address_get_address(G_INET_SOCKET_ADDRESS(saddr));
+
+			if (iaddr) {
+				/* cache address string */
+				ipstr = g_inet_address_to_string(iaddr);
+				SIPE_DEBUG_INFO("sipe_backend_transport_ip_address: %s", ipstr);
+			}
+			g_object_unref(saddr);
+		}
+	}
+
+	return(ipstr ? ipstr : g_strdup("0.0.0.0"));
 }
 
 static void do_write(struct sipe_transport_telepathy *transport,
