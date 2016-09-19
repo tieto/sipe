@@ -658,6 +658,7 @@ typedef struct {
 struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 								 const sipe_connect_setup *setup);
 void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn);
+gchar *sipe_backend_transport_ip_address(struct sipe_transport_connection *conn);
 void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 				    const gchar *buffer);
 void sipe_backend_transport_flush(struct sipe_transport_connection *conn);
