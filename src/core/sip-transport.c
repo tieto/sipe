@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -102,6 +102,8 @@ struct sip_transport {
 	gchar *server_name;
 	guint  server_port;
 	gchar *server_version;
+
+	gchar *ip_address;           /* local IP address of transport socket */
 
 	gchar *user_agent;
 
@@ -770,7 +772,7 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 			method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
-			sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
+			transport->ip_address,
 			transport->connection->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
@@ -1008,7 +1010,7 @@ static void sip_transport_default_contact(struct sipe_core_private *sipe_private
 	sipe_private->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
 						sipe_private->username,
 						transport->connection->client_port,
-						sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
+						transport->ip_address,
 						TRANSPORT_DESCRIPTOR);
 }
 
@@ -1456,7 +1458,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 				    "Allow-Events: presence\r\n"
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
 				    "%s",
-			      sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
+			      transport->ip_address,
 			      transport->connection->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,
@@ -1505,6 +1507,7 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 
 		g_free(transport->server_name);
 		g_free(transport->server_version);
+		g_free(transport->ip_address);
 		g_free(transport->user_agent);
 
 		while (transport->transactions)
@@ -1837,6 +1840,8 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 	transport->keepalive_timeout = 60;
 	start_keepalive_timer(sipe_private, transport->keepalive_timeout);
 
+	transport->ip_address = sipe_backend_transport_ip_address(conn);
+
 	do_register(sipe_private, FALSE);
 }
 
@@ -2125,6 +2130,11 @@ int sip_transaction_cseq(struct transaction *trans)
 
 	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &cseq);
 	return cseq;
+}
+
+const gchar *sip_transport_ip_address(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->transport->ip_address);
 }
 
 /*

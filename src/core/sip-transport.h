@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -116,6 +116,8 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private);
 void sip_transport_authentication_completed(struct sipe_core_private *sipe_private);
 
 int sip_transaction_cseq(struct transaction *trans);
+
+const gchar *sip_transport_ip_address(struct sipe_core_private *sipe_private);
 
 /*
   Local Variables:
