@@ -536,8 +536,6 @@ void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local)
 
 /** NETWORK ******************************************************************/
 
-const gchar *sipe_backend_network_ip_address(struct sipe_core_public *sipe_public);
-
 struct sipe_backend_listendata;
 
 typedef void (*sipe_listen_start_cb)(unsigned short port, gpointer data);
