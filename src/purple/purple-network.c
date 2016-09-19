@@ -38,14 +38,8 @@
 #include <nspapi.h>
 #else
 #include <sys/types.h>
-#include <sys/ioctl.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <net/if.h>
 #include <arpa/inet.h>
-#ifdef HAVE_SYS_SOCKIO_H
-#include <sys/sockio.h> /* SIOCGIFCONF for Solaris */
-#endif
 #endif
 
 #ifdef HAVE_UNISTD_H
@@ -55,100 +49,6 @@
 #include "sipe-common.h"
 #include "sipe-backend.h"
 #include "purple-private.h"
-
-#if 0
-/**
- * @TODO: get_suitable_local_ip()
- *
- * The code is most likely broken for Mac OS X as it seems that that platform
- * returns variable-sized "struct ifreq". The new, alignment compliant code
- * assumes a fix-sized "struct ifreq", i.e. it uses array access.
- *
- * If somebody is bothered by this, please provide a *VERIFIED* alternative
- * implementation for platforms that define _SIZEOF_ADDR_IFREQ().
- *
- **/
-
-/*
- * Calling sizeof(struct ifreq) isn't always correct on
- * Mac OS X (and maybe others).
- */
-#ifdef _SIZEOF_ADDR_IFREQ
-#  define HX_SIZE_OF_IFREQ(a) _SIZEOF_ADDR_IFREQ(a)
-#else
-#  define HX_SIZE_OF_IFREQ(a) sizeof(a)
-#endif
-#endif
-
-#define IFREQ_MAX 32
-
-/**
- * Returns local IP address suitable for connection.
- *
- * purple_network_get_my_ip() will not do this, because it might return an
- * address within 169.254.x.x range that was assigned to interface disconnected
- * from the network (when multiple network adapters are available). This is a
- * copy-paste from libpurple's network.c, only change is that link local addresses
- * are ignored.
- *
- * Maybe this should be fixed in libpurple or some better solution found.
- */
-static const gchar *get_suitable_local_ip(void)
-{
-	int source = socket(PF_INET,SOCK_STREAM, 0);
-
-	if (source >= 0) {
-		struct ifreq *buffer = g_new0(struct ifreq, IFREQ_MAX);
-		struct ifconf ifc;
-		guint32 lhost = htonl(127 * 256 * 256 * 256 + 1);
-		guint32 llocal = htonl((169 << 24) + (254 << 16));
-		guint i;
-		static char ip[16];
-
-		/* @TODO: assumes constant sizeof(struct ifreq) [see above] */
-		ifc.ifc_len = sizeof(struct ifreq) * IFREQ_MAX;
-		ifc.ifc_req = buffer;
-		ioctl(source, SIOCGIFCONF, &ifc);
-
-		close(source);
-
-		for (i = 0; i < IFREQ_MAX; i++)
-		{
-			/* @TODO: assumes constant sizeof(struct ifreq) [see above] */
-			struct ifreq *ifr = &buffer[i];
-
-			if (ifr->ifr_addr.sa_family == AF_INET)
-			{
-				struct sockaddr_in sin;
-				memcpy(&sin, &ifr->ifr_addr, sizeof(struct sockaddr_in));
-				if (sin.sin_addr.s_addr != lhost
-				    && (sin.sin_addr.s_addr & htonl(0xFFFF0000)) != llocal)
-				{
-					long unsigned int add = ntohl(sin.sin_addr.s_addr);
-					g_snprintf(ip, 16, "%lu.%lu.%lu.%lu",
-						   ((add >> 24) & 255),
-						   ((add >> 16) & 255),
-						   ((add >> 8) & 255),
-						   add & 255);
-
-					g_free(buffer);
-					return ip;
-				}
-			}
-		}
-		g_free(buffer);
-	}
-
-	return "0.0.0.0";
-}
-
-const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
-{
-	const gchar *ip = purple_network_get_my_ip(-1);
-	if (g_str_has_prefix(ip, "169.254."))
-		ip = get_suitable_local_ip();
-	return ip;
-}
 
 struct sipe_backend_listendata {
 	sipe_listen_start_cb listen_cb;
