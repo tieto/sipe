@@ -27,6 +27,7 @@
 
 #include <glib.h>
 
+#include "sip-transport.h"
 #include "sipe-common.h"
 #include "sipe-crypt.h"
 #include "uuid.h"
@@ -63,7 +64,7 @@ void sipe_backend_debug(sipe_debug_level level,
 	g_free(newformat);
 }
 
-const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+const gchar *sip_transport_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private)
 {
 	return(NULL);
 }

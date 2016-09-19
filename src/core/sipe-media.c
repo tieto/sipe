@@ -1278,7 +1278,7 @@ static void
 append_2007_fallback_if_needed(struct sipe_media_call_private *call_private)
 {
 	struct sipe_core_private *sipe_private = call_private->sipe_private;
-	const gchar *ip = sipe_backend_network_ip_address(SIPE_CORE_PUBLIC);
+	const gchar *ip = sip_transport_ip_address(sipe_private);
 	gchar *body;
 
 	if (sipe_media_get_sip_dialog(SIPE_MEDIA_CALL)->cseq != 0 ||

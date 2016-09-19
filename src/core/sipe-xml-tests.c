@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,6 +30,7 @@
 
 #include <glib.h>
 
+#include "sip-transport.h"
 #include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-digest.h"
@@ -63,7 +64,7 @@ gboolean sipe_backend_debug_enabled(void)
 void sipe_digest_sha1(SIPE_UNUSED_PARAMETER const guchar *data,
 		      SIPE_UNUSED_PARAMETER gsize length,
 		      SIPE_UNUSED_PARAMETER guchar *digest) {}
-const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public) { return(NULL); }
+const gchar *sip_transport_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private) { return(NULL); }
 
 /* test helpers */
 static guint succeeded = 0;

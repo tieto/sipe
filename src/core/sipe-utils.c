@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 
 #include <glib.h>
 
+#include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"    /* to ensure same API for backends */
 #include "sipe-core-private.h"
@@ -199,7 +200,7 @@ get_epid(struct sipe_core_private *sipe_private)
 		gchar *self_sip_uri = sip_uri_self(sipe_private);
 		sipe_private->epid = sipe_get_epid(self_sip_uri,
 						   g_get_host_name(),
-						   sipe_backend_network_ip_address(SIPE_CORE_PUBLIC));
+						   sip_transport_ip_address(sipe_private));
 		g_free(self_sip_uri);
 	}
 	return g_strdup(sipe_private->epid);
