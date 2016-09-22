@@ -63,7 +63,7 @@ AC_MSG_RESULT([$os_win32])
 AM_CONDITIONAL(SIPE_OS_WIN32, [test "x${os_win32}" = xyes])
 
 dnl checks for header files
-AC_CHECK_HEADERS([sys/sockio.h])
+AC_CHECK_HEADERS([])
 
 dnl checks for library functions
 AC_CHECK_FUNCS([])
