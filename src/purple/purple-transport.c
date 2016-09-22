@@ -57,6 +57,9 @@
 #ifdef _WIN32
 /* wrappers for write() & friends for socket handling */
 #include "win32/win32dep.h"
+#else
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #endif
 
 #include "purple-private.h"
@@ -352,7 +355,35 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 
 gchar *sipe_backend_transport_ip_address(struct sipe_transport_connection *conn)
 {
-	return(g_strdup(purple_network_get_my_ip(PURPLE_TRANSPORT->socket)));
+	/*
+	 * libpurple code only returns IPv4 addresses
+	 *
+	 *  return(g_strdup(purple_network_get_my_ip(PURPLE_TRANSPORT->socket)));
+	 *
+	 * Use our own implementation instead. The user will no longer be able
+	 * to override the local IP address via the libpurple settings.
+	 */
+	struct sockaddr_storage addr;
+	socklen_t               addrlen = sizeof(addr);
+	gchar                   buf[INET6_ADDRSTRLEN]; /* OK for IPv4 too  */
+	const gchar            *ipstr = "0.0.0.0";     /* default on error */
+
+	if ((getsockname(PURPLE_TRANSPORT->socket,
+			 (struct sockaddr *) &addr,
+			 &addrlen) == 0)            &&
+	    ((addr.ss_family == AF_INET) ||
+	     (addr.ss_family == AF_INET6))          &&
+	    (inet_ntop(addr.ss_family,
+		       (addr.ss_family == AF_INET) ?
+		       (void *) &(((struct sockaddr_in *)  &addr)->sin_addr) :
+		       (void *) &(((struct sockaddr_in6 *) &addr)->sin6_addr),
+		       buf,
+		       sizeof(buf)) != NULL)) {
+		ipstr = buf;
+		SIPE_DEBUG_INFO("sipe_backend_transport_ip_address: %s", ipstr);
+	}
+
+	return(g_strdup(ipstr));
 }
 
 void sipe_purple_transport_close_all(struct sipe_backend_private *purple_private)
