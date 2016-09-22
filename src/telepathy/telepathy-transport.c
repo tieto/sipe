@@ -407,7 +407,6 @@ gchar *sipe_backend_transport_ip_address(struct sipe_transport_connection *conn)
 			GInetAddress *iaddr = g_inet_socket_address_get_address(G_INET_SOCKET_ADDRESS(saddr));
 
 			if (iaddr) {
-				/* cache address string */
 				ipstr = g_inet_address_to_string(iaddr);
 				SIPE_DEBUG_INFO("sipe_backend_transport_ip_address: %s", ipstr);
 			}
