@@ -38,12 +38,15 @@
 #include "sipe-http.h"
 #include "sipe-lync-autodiscover.h"
 #include "sipe-utils.h"
+#include "sipe-svc.h"
+#include "sipe-webticket.h"
 #include "sipe-xml.h"
 
 struct lync_autodiscover_request {
 	sipe_lync_autodiscover_callback *cb;
 	gpointer cb_data;
 	struct sipe_http_request *request;
+	struct sipe_svc_session *session;
 	const gchar **method;
 	gchar *uri;
 };
@@ -64,6 +67,7 @@ static void sipe_lync_autodiscover_request_free(struct sipe_core_private *sipe_p
 	if (request->cb)
 		/* Callback: aborted */
 		(*request->cb)(sipe_private, NULL, request->cb_data);
+	sipe_svc_session_close(request->session);
 	g_free(request->uri);
 	g_free(request);
 }
@@ -114,7 +118,7 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 				SIPE_DEBUG_INFO("sipe_lync_autodiscover_parse: user %s",
 						uri);
 
-				/* remember URI for */
+				/* rememebr URI for authentication failure */
 				request->uri = g_strdup(uri);
 
 				lync_request(sipe_private, request, uri);
@@ -129,6 +133,24 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 	sipe_xml_free(xml);
 
 	if (next)
+		sipe_lync_autodiscover_request(sipe_private, request);
+}
+
+static void sipe_lync_autodiscover_webticket(struct sipe_core_private *sipe_private,
+					     SIPE_UNUSED_PARAMETER const gchar *base_uri,
+					     const gchar *auth_uri,
+					     const gchar *wsse_security,
+					     SIPE_UNUSED_PARAMETER const gchar *failure_msg,
+					     gpointer callback_data)
+{
+	struct lync_autodiscover_request *request = callback_data;
+
+	if (wsse_security) {
+		SIPE_DEBUG_INFO("sipe_lync_autodiscover_webticket: got ticket for Auth URI %s",
+				auth_uri);
+		/* @TODO: generate request with X-MS-WebTicket: header - go to next method for now */
+		sipe_lync_autodiscover_request(sipe_private, request);
+	} else
 		sipe_lync_autodiscover_request(sipe_private, request);
 }
 
@@ -156,15 +178,21 @@ static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
 
 	case SIPE_HTTP_STATUS_FAILED:
 		{
-			/* check for authentication failure */
-			const gchar *webticket_uri = sipe_utils_nameval_find(headers,
-									     "X-MS-WebTicketURL");
+			if (uri) {
+				/* check for authentication failure */
+				const gchar *webticket_uri = sipe_utils_nameval_find(headers,
+										     "X-MS-WebTicketURL");
 
-			/* @TODO: request webticket - go to next method for now*/
-			if (webticket_uri)
-				SIPE_DEBUG_INFO("sipe_lync_autodiscover_cb: webticket URI %s",
-						webticket_uri);
-			sipe_lync_autodiscover_request(sipe_private, request);
+				if (!(webticket_uri &&
+				      sipe_webticket_request_with_auth(sipe_private,
+								       request->session,
+								       webticket_uri,
+								       uri, /* Auth URI */
+								       sipe_lync_autodiscover_webticket,
+								       request)))
+					sipe_lync_autodiscover_request(sipe_private, request);
+			} else
+				sipe_lync_autodiscover_request(sipe_private, request);
 	        }
 		break;
 
@@ -178,8 +206,7 @@ static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
 		break;
 	}
 
-	if (uri)
-		g_free(uri);
+	g_free(uri);
 }
 
 static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_private,
@@ -231,6 +258,7 @@ void sipe_lync_autodiscover_start(struct sipe_core_private *sipe_private,
 
 	request->cb      = callback;
 	request->cb_data = callback_data;
+	request->session = sipe_svc_session_start();
 
 	sla->pending_requests = g_slist_prepend(sla->pending_requests,
 						request);
