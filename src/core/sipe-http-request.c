@@ -3,7 +3,7 @@
 *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -508,7 +508,7 @@ void sipe_http_request_response(struct sipe_http_connection_public *conn_public,
 		/* Callback: request failed */
 		(*req->cb)(sipe_private,
 			   SIPE_HTTP_STATUS_FAILED,
-			   NULL,
+			   msg->headers,
 			   NULL,
 			   req->cb_data);
 
