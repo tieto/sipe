@@ -40,7 +40,7 @@ struct lync_autodiscover_request {
 	sipe_lync_autodiscover_callback *cb;
 	gpointer cb_data;
 	struct sipe_http_request *request;
-	guint method;
+	const gchar **method;
 };
 
 struct sipe_lync_autodiscover {
@@ -106,13 +106,26 @@ static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
 static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_private,
 					   struct lync_autodiscover_request *request)
 {
-	/* @TODO: implement other methods */
-	if (request->method == 0) {
-		gchar *uri = g_strdup_printf("http://LyncDiscover.%s/?sipuri=%s",
+	static const gchar *methods[] = {
+		"http://LyncDiscoverInternal.%s/?sipuri=%s",
+		"https://LyncDiscoverInternal.%s/?sipuri=%s",
+		"http://LyncDiscover.%s/?sipuri=%s",
+		"https://LyncDiscover.%s/?sipuri=%s",
+		NULL
+	};
+
+	if (request->method)
+		request->method++;
+	else
+		request->method = methods;
+
+	if (*request->method) {
+		gchar *uri = g_strdup_printf(*request->method,
 					     SIPE_CORE_PUBLIC->sip_domain,
 					     sipe_private->username);
 
-		request->method++;
+		SIPE_DEBUG_INFO("sipe_lync_autodiscover_request: trying '%s'", uri);
+
 		request->request = sipe_http_request_get(sipe_private,
 							 uri,
 							 "Accept: application/vnd.microsoft.rtc.autodiscover+xml;v=1\r\n",
