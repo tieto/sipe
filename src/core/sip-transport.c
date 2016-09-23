@@ -2165,7 +2165,9 @@ int sip_transaction_cseq(struct transaction *trans)
 
 const gchar *sip_transport_ip_address(struct sipe_core_private *sipe_private)
 {
-	return(sipe_private->transport->ip_address);
+	return(sipe_private->transport ?
+	       sipe_private->transport->ip_address :
+	       "0.0.0.0");
 }
 
 /*
