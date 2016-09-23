@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ struct sipe_groupchat;
 struct sipe_groups;
 struct sipe_http;
 struct sipe_http_request;
+struct sipe_lync_autodiscover;
 struct sipe_media_call_private;
 struct sipe_svc;
 struct sipe_ucs;
@@ -102,6 +103,9 @@ struct sipe_core_private {
 
 	/* EWS autodiscover */
 	struct sipe_ews_autodiscover *ews_autodiscover;
+
+	/* Lync autodiscover */
+	struct sipe_lync_autodiscover *lync_autodiscover;
 
 	/*
 	 * 2005 Custom XML piece

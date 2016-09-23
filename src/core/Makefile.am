@@ -67,6 +67,8 @@ libsipe_core_la_SOURCES = \
 	sipe-im.c \
 	sipe-incoming.h \
 	sipe-incoming.c \
+	sipe-lync-autodiscover.h \
+	sipe-lync-autodiscover.c \
 	sipe-mime-common.c \
 	sipe-notify.h \
 	sipe-notify.c \

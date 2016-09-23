@@ -85,6 +85,7 @@
 		B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC1119D585A001CE037 /* sipe-ews.c */; };
 		B13FABFE119D585A001CE037 /* sipe-ews-autodiscover.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */; };
 		B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC3119D585A001CE037 /* sipe-ft.c */; };
+		B13FAC00119D585A001CE037 /* sipe-lync-autodiscover.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC4119D585A001CE037 /* sipe-lync-autodiscover.c */; };
 		B13FAC04119D585A001CE037 /* sipe-schedule.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC8119D585A001CE037 /* sipe-schedule.c */; };
 		B13FAC06119D585A001CE037 /* sipe-session.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABCA119D585A001CE037 /* sipe-session.c */; };
 		B13FAC08119D585A001CE037 /* sipe-sign.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABCC119D585A001CE037 /* sipe-sign.c */; };
@@ -264,6 +265,7 @@
 		B13FABC1119D585A001CE037 /* sipe-ews.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ews.c"; sourceTree = "<group>"; };
 		B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ews-autodiscover.c"; sourceTree = "<group>"; };
 		B13FABC3119D585A001CE037 /* sipe-ft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ft.c"; sourceTree = "<group>"; };
+		B13FABC4119D585A001CE037 /* sipe-lync-autodiscover.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-lync-autodiscover.c"; sourceTree = "<group>"; };
 		B13FABC8119D585A001CE037 /* sipe-schedule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-schedule.c"; sourceTree = "<group>"; };
 		B13FABCA119D585A001CE037 /* sipe-session.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-session.c"; sourceTree = "<group>"; };
 		B13FABCC119D585A001CE037 /* sipe-sign.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-sign.c"; sourceTree = "<group>"; };
@@ -505,6 +507,7 @@
 				7B379593176A2DDF001A02FD /* sipe-http.c */,
 				1C822BEB12F8E87500CC4AEA /* sipe-im.c */,
 				1CF2610D12C2E1AA0045B6CC /* sipe-incoming.c */,
+				B13FABC4119D585A001CE037 /* sipe-lync-autodiscover.c */,
 				B89F388C1BDEB0F00017B509 /* sipe-mime-common.c */,
 				1CE49FF114A17F4D00663393 /* sipe-notify.c */,
 				1CE49FB314A17CF000663393 /* sipe-ocs2005.c */,
@@ -754,6 +757,7 @@
 				B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */,
 				B13FABFE119D585A001CE037 /* sipe-ews-autodiscover.c in Sources */,
 				B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */,
+				B13FAC00119D585A001CE037 /* sipe-lync-autodiscover.c in Sources */,
 				B13FAC04119D585A001CE037 /* sipe-schedule.c in Sources */,
 				B13FAC06119D585A001CE037 /* sipe-session.c in Sources */,
 				B13FAC08119D585A001CE037 /* sipe-sign.c in Sources */,
