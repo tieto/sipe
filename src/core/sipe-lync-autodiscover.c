@@ -30,24 +30,143 @@
 #include <glib.h>
 
 #include "sipe-common.h"
+#include "sipe-backend.h"
+#include "sipe-core.h"
+#include "sipe-core-private.h"
+#include "sipe-http.h"
 #include "sipe-lync-autodiscover.h"
+
+struct lync_autodiscover_request {
+	sipe_lync_autodiscover_callback *cb;
+	gpointer cb_data;
+	struct sipe_http_request *request;
+	guint method;
+};
+
+struct sipe_lync_autodiscover {
+	GSList *pending_requests;
+};
+
+static void sipe_lync_autodiscover_request_free(struct sipe_core_private *sipe_private,
+						struct lync_autodiscover_request *request)
+{
+	struct sipe_lync_autodiscover *sla = sipe_private->lync_autodiscover;
+
+	sla->pending_requests = g_slist_remove(sla->pending_requests, request);
+
+	if (request->request)
+		sipe_http_request_cancel(request->request);
+	if (request->cb)
+		/* Callback: aborted */
+		(*request->cb)(sipe_private, NULL, request->cb_data);
+	g_free(request);
+}
+
+static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_private,
+					   struct lync_autodiscover_request *request);
+static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
+					 struct lync_autodiscover_request *request,
+					 SIPE_UNUSED_PARAMETER const gchar *body)
+{
+	/* @TODO: parse XML - for now just try next method */
+	sipe_lync_autodiscover_request(sipe_private, request);
+}
+
+static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
+				      guint status,
+				      GSList *headers,
+				      const gchar *body,
+				      gpointer callback_data)
+{
+	struct lync_autodiscover_request *request = callback_data;
+	const gchar *type = sipe_utils_nameval_find(headers, "Content-Type");
+
+	request->request = NULL;
+
+	switch (status) {
+	case SIPE_HTTP_STATUS_OK:
+		/* only accept Autodiscover XML responses */
+		if (body && g_str_has_prefix(type, "application/vnd.microsoft.rtc.autodiscover+xml"))
+			sipe_lync_autodiscover_parse(sipe_private, request, body);
+		else
+			sipe_lync_autodiscover_request(sipe_private, request);
+		break;
+
+	case SIPE_HTTP_STATUS_ABORTED:
+		/* we are not allowed to generate new requests */
+		sipe_lync_autodiscover_request_free(sipe_private, request);
+		break;
+
+	default:
+		sipe_lync_autodiscover_request(sipe_private, request);
+		break;
+	}
+}
+
+static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_private,
+					   struct lync_autodiscover_request *request)
+{
+	/* @TODO: implement other methods */
+	if (request->method == 0) {
+		gchar *uri = g_strdup_printf("http://LyncDiscover.%s/?sipuri=%s",
+					     SIPE_CORE_PUBLIC->sip_domain,
+					     sipe_private->username);
+
+		request->method++;
+		request->request = sipe_http_request_get(sipe_private,
+							 uri,
+							 "Accept: application/vnd.microsoft.rtc.autodiscover+xml;v=1\r\n",
+							 sipe_lync_autodiscover_cb,
+							 request);
+		g_free(uri);
+
+	} else {
+		struct sipe_lync_autodiscover_data lync_data = { NULL, 0 };
+
+		/* All methods tried, indicate failure to caller */
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_lync_autodiscover_request: no more methods to try!");
+		(*request->cb)(sipe_private, &lync_data, request->cb_data);
+
+		/* Request completed */
+		request->cb = NULL;
+		sipe_lync_autodiscover_request_free(sipe_private, request);
+		/* request is invalid */
+	}
+}
 
 void sipe_lync_autodiscover_start(struct sipe_core_private *sipe_private,
 				  sipe_lync_autodiscover_callback *callback,
 				  gpointer callback_data)
 {
-	struct sipe_lync_autodiscover_data lync_data = { NULL, 0 };
+	struct sipe_lync_autodiscover *sla = sipe_private->lync_autodiscover;
+	struct lync_autodiscover_request *request = g_new0(struct lync_autodiscover_request, 1);
 
-	/* @TODO: no-op, indicate failure to  */
-	callback(sipe_private, &lync_data, callback_data);
+	request->cb      = callback;
+	request->cb_data = callback_data;
+
+	sla->pending_requests = g_slist_prepend(sla->pending_requests,
+						request);
+
+	sipe_lync_autodiscover_request(sipe_private, request);
 }
 
-void sipe_lync_autodiscover_init(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private)
+void sipe_lync_autodiscover_init(struct sipe_core_private *sipe_private)
 {
+	struct sipe_lync_autodiscover *sla = g_new0(struct sipe_lync_autodiscover, 1);
+
+	sipe_private->lync_autodiscover = sla;
 }
 
-void sipe_lync_autodiscover_free(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private)
+void sipe_lync_autodiscover_free(struct sipe_core_private *sipe_private)
 {
+	struct sipe_lync_autodiscover *sla = sipe_private->lync_autodiscover;
+
+	while (sla->pending_requests)
+		sipe_lync_autodiscover_request_free(sipe_private,
+						    sla->pending_requests->data);
+
+	g_free(sla);
+	sipe_private->lync_autodiscover = NULL;
 }
 
 /*
