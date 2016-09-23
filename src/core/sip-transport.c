@@ -72,6 +72,7 @@
 #include "sipe-certificate.h"
 #include "sipe-dialog.h"
 #include "sipe-incoming.h"
+#include "sipe-lync-autodiscover.h"
 #include "sipe-nls.h"
 #include "sipe-notify.h"
 #include "sipe-schedule.h"
@@ -2064,6 +2065,32 @@ static void resolve_next_address(struct sipe_core_private *sipe_private,
 	g_free(hostname);
 }
 
+static void lync_autodiscover_cb(struct sipe_core_private *sipe_private,
+				 const struct sipe_lync_autodiscover_data *lync_data,
+				 SIPE_UNUSED_PARAMETER gpointer callback_data)
+{
+	if (lync_data) {
+		guint type = sipe_private->transport_type;
+
+		if (lync_data->server) {
+			/* Lync Autodiscover succeeded */
+			SIPE_DEBUG_INFO("lync_autodiscover_cb: hostname '%s' port %d",
+					lync_data->server, lync_data->port);
+
+			if (type == SIPE_TRANSPORT_AUTO)
+				type = SIPE_TRANSPORT_TLS;
+
+			sipe_server_register(sipe_private,
+					     type,
+					     g_strdup(lync_data->server),
+					     lync_data->port);
+		} else {
+			/* Lync Autodiscover failed -> try DNS SRV next */
+			resolve_next_service(sipe_private, services[type]);
+		}
+	}
+}
+
 /*
  * NOTE: this function can be called before sipe_core_allocate()!
  */
@@ -2112,7 +2139,11 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 
 		/* Remember user specified transport type */
 		sipe_private->transport_type = transport;
-		resolve_next_service(sipe_private, services[transport]);
+
+		/* Start with Lync Autodiscover first */
+		sipe_lync_autodiscover_start(sipe_private,
+					     lync_autodiscover_cb,
+					     NULL);
 	}
 }
 

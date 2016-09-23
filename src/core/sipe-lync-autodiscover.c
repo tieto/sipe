@@ -32,10 +32,14 @@
 #include "sipe-common.h"
 #include "sipe-lync-autodiscover.h"
 
-void sipe_lync_autodiscover_start(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
-				  SIPE_UNUSED_PARAMETER sipe_lync_autodiscover_callback *callback,
-				  SIPE_UNUSED_PARAMETER gpointer callback_data)
+void sipe_lync_autodiscover_start(struct sipe_core_private *sipe_private,
+				  sipe_lync_autodiscover_callback *callback,
+				  gpointer callback_data)
 {
+	struct sipe_lync_autodiscover_data lync_data = { NULL, 0 };
+
+	/* @TODO: no-op, indicate failure to  */
+	callback(sipe_private, &lync_data, callback_data);
 }
 
 void sipe_lync_autodiscover_init(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private)
