@@ -1051,12 +1051,12 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 static void ms_dlx_webticket_request(struct sipe_core_private *sipe_private,
 				     struct ms_dlx_data *mdd)
 {
-	if (!sipe_webticket_request(sipe_private,
-				    mdd->session,
-				    sipe_private->dlx_uri,
-				    "AddressBookWebTicketBearer",
-				    ms_dlx_webticket,
-				    mdd)) {
+	if (!sipe_webticket_request_with_port(sipe_private,
+					      mdd->session,
+					      sipe_private->dlx_uri,
+					      "AddressBookWebTicketBearer",
+					      ms_dlx_webticket,
+					      mdd)) {
 		SIPE_DEBUG_ERROR("ms_dlx_webticket_request: couldn't request webticket for %s",
 				 sipe_private->dlx_uri);
 		mdd->failed_callback(sipe_private, mdd);
