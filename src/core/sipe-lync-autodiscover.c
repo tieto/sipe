@@ -42,6 +42,9 @@
 #include "sipe-webticket.h"
 #include "sipe-xml.h"
 
+#define LYNC_AUTODISCOVER_ACCEPT_HEADER \
+	"Accept: application/vnd.microsoft.rtc.autodiscover+xml;v=1\r\n"
+
 struct lync_autodiscover_request {
 	sipe_lync_autodiscover_callback *cb;
 	gpointer cb_data;
@@ -79,11 +82,12 @@ static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
 				      gpointer callback_data);
 static void lync_request(struct sipe_core_private *sipe_private,
 			 struct lync_autodiscover_request *request,
-			 const gchar *uri)
+			 const gchar *uri,
+			 const gchar *headers)
 {
 	request->request = sipe_http_request_get(sipe_private,
 						 uri,
-						 "Accept: application/vnd.microsoft.rtc.autodiscover+xml;v=1\r\n",
+						 headers ? headers : LYNC_AUTODISCOVER_ACCEPT_HEADER,
 						 sipe_lync_autodiscover_cb,
 						 request);
 }
@@ -109,7 +113,7 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 			if (sipe_strcase_equal(token, "Redirect")) {
 				SIPE_DEBUG_INFO("sipe_lync_autodiscover_parse: redirect to %s",
 						uri);
-				lync_request(sipe_private, request, uri);
+				lync_request(sipe_private, request, uri, NULL);
 				next = FALSE;
 				break;
 
@@ -121,7 +125,7 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 				/* rememebr URI for authentication failure */
 				request->uri = g_strdup(uri);
 
-				lync_request(sipe_private, request, uri);
+				lync_request(sipe_private, request, uri, NULL);
 				next = FALSE;
 				break;
 
@@ -144,12 +148,27 @@ static void sipe_lync_autodiscover_webticket(struct sipe_core_private *sipe_priv
 					     gpointer callback_data)
 {
 	struct lync_autodiscover_request *request = callback_data;
+	gchar *saml;
 
-	if (wsse_security) {
+	/* Extract SAML Assertion from WSSE Security XML text */
+	if (wsse_security &&
+	    ((saml = sipe_xml_extract_raw(wsse_security,
+					  "Assertion",
+					  TRUE)) != NULL)) {
+		gchar *base64 = g_base64_encode((const guchar *) saml,
+						strlen(saml));
+		gchar *headers = g_strdup_printf(LYNC_AUTODISCOVER_ACCEPT_HEADER
+						 "X-MS-WebTicket: opaque=%s\r\n",
+						 base64);
+		g_free(base64);
+
 		SIPE_DEBUG_INFO("sipe_lync_autodiscover_webticket: got ticket for Auth URI %s",
 				auth_uri);
-		/* @TODO: generate request with X-MS-WebTicket: header - go to next method for now */
-		sipe_lync_autodiscover_request(sipe_private, request);
+		g_free(saml);
+
+		lync_request(sipe_private, request, auth_uri, headers);
+		g_free(headers);
+
 	} else
 		sipe_lync_autodiscover_request(sipe_private, request);
 }
@@ -232,7 +251,7 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 
 		SIPE_DEBUG_INFO("sipe_lync_autodiscover_request: trying '%s'", uri);
 
-		lync_request(sipe_private, request, uri);
+		lync_request(sipe_private, request, uri, NULL);
 		g_free(uri);
 
 	} else {
