@@ -376,9 +376,6 @@ void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
 
 void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 {
-	g_free(sipe_private->epid);
-	sipe_private->epid = NULL;
-
 	sipe_http_free(sipe_private);
 	sip_transport_disconnect(sipe_private);
 

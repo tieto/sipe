@@ -215,8 +215,8 @@ check_PROGRAMS += sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_xml_tests_LDADD = \
-	libsipe_core.la \
 	libsipe_core_libxml2.la \
+	libsipe_core_la-sipe-utils.lo \
 	$(LIBXML2_LIBS) \
 	$(GLIB_LIBS)
 

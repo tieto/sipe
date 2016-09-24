@@ -193,25 +193,9 @@ const gchar *sipe_get_no_sip_uri(const gchar *sip_uri)
 	}
 }
 
-gchar *
-get_epid(struct sipe_core_private *sipe_private)
-{
-	if (!sipe_private->epid) {
-		gchar *self_sip_uri = sip_uri_self(sipe_private);
-		sipe_private->epid = sipe_get_epid(self_sip_uri,
-						   g_get_host_name(),
-						   sip_transport_ip_address(sipe_private));
-		g_free(self_sip_uri);
-	}
-	return g_strdup(sipe_private->epid);
-}
-
 gchar *get_uuid(struct sipe_core_private *sipe_private)
 {
-	gchar *epid = get_epid(sipe_private);
-	gchar *uuid = generateUUIDfromEPID(epid);
-	g_free(epid);
-	return(uuid);
+	return(generateUUIDfromEPID(sip_transport_epid(sipe_private)));
 }
 
 
@@ -220,10 +204,8 @@ sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		      int publication_key)
 {
 	unsigned res = 0;
-	gchar *epid = get_epid(sipe_private);
 
-	sscanf(epid, "%08x", &res);
-	g_free(epid);
+	sscanf(sip_transport_epid(sipe_private), "%08x", &res);
 
 	if (publication_key == SIPE_PUB_DEVICE) {
 		/* as is */

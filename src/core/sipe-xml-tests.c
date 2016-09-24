@@ -36,6 +36,7 @@
 #include "sipe-digest.h"
 #include "sipe-xml.h"
 #include "sipe-utils.h"
+#include "uuid.h"
 
 /* stub functions for backend API */
 void sipe_backend_debug_literal(sipe_debug_level level,
@@ -64,7 +65,12 @@ gboolean sipe_backend_debug_enabled(void)
 void sipe_digest_sha1(SIPE_UNUSED_PARAMETER const guchar *data,
 		      SIPE_UNUSED_PARAMETER gsize length,
 		      SIPE_UNUSED_PARAMETER guchar *digest) {}
+const gchar *sip_transport_epid(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private) { return(NULL); }
 const gchar *sip_transport_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private) { return(NULL); }
+char *generateUUIDfromEPID(SIPE_UNUSED_PARAMETER const gchar *epid) { return(NULL); }
+char *sipe_get_epid(SIPE_UNUSED_PARAMETER const char *self_sip_uri,
+		    SIPE_UNUSED_PARAMETER const char *hostname,
+		    SIPE_UNUSED_PARAMETER const char *ip_address) { return(NULL); }
 
 /* test helpers */
 static guint succeeded = 0;

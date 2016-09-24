@@ -64,6 +64,11 @@ void sipe_backend_debug(sipe_debug_level level,
 	g_free(newformat);
 }
 
+const gchar *sip_transport_epid(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private)
+{
+	return(NULL);
+}
+
 const gchar *sip_transport_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private)
 {
 	return(NULL);
