@@ -92,6 +92,40 @@ static void lync_request(struct sipe_core_private *sipe_private,
 						 request);
 }
 
+static GSList *sipe_lync_autodiscover_add(GSList *servers,
+					  const sipe_xml *node,
+					  const gchar *name)
+{
+	const sipe_xml *child = sipe_xml_child(node, name);
+	const gchar *fqdn = sipe_xml_attribute(child, "fqdn");
+	guint port = sipe_xml_int_attribute(child, "port", 0);
+
+	/* Add new entry to head of list */
+	if (fqdn && (port != 0)) {
+		struct sipe_lync_autodiscover_data *lync_data = g_new0(struct sipe_lync_autodiscover_data, 1);
+		lync_data->server = g_strdup(fqdn);
+		lync_data->port   = port;
+		servers = g_slist_prepend(servers, lync_data);
+	}
+
+	return(servers);
+}
+
+GSList *sipe_lync_autodiscover_pop(GSList *servers)
+{
+	if (servers) {
+		struct sipe_lync_autodiscover_data *lync_data = servers->data;
+		servers = g_slist_remove(servers, lync_data);
+
+		if (lync_data) {
+			g_free((gchar *) lync_data->server);
+			g_free(lync_data);
+		}
+	}
+
+	return(servers);
+}
+
 static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_private,
 					   struct lync_autodiscover_request *request);
 static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
@@ -99,14 +133,15 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 					 const gchar *body)
 {
 	sipe_xml *xml = sipe_xml_parse(body, strlen(body));
-	const sipe_xml *link;
+	const sipe_xml *node;
 	gboolean next = TRUE;
 
-	for (link = sipe_xml_child(xml, "Root/Link");
-	     link;
-	     link = sipe_xml_twin(link)) {
-		const gchar *token = sipe_xml_attribute(link, "token");
-		const gchar *uri = sipe_xml_attribute(link, "href");
+	/* Root: resources exposed by this server */
+	for (node = sipe_xml_child(xml, "Root/Link");
+	     node;
+	     node = sipe_xml_twin(node)) {
+		const gchar *token = sipe_xml_attribute(node, "token");
+		const gchar *uri = sipe_xml_attribute(node, "href");
 
 		if (token && uri) {
 			/* Redirect? */
@@ -134,6 +169,30 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 						token);
 		}
 	}
+
+	/* User: topology information of the user’s home server */
+	if ((node = sipe_xml_child(xml, "User")) != NULL) {
+		GSList *servers;
+
+		/* List is reversed, i.e. internal will be tried first */
+		servers = g_slist_prepend(NULL, NULL);
+		servers = sipe_lync_autodiscover_add(servers,
+						     node,
+						     "SipClientExternalAccess");
+		servers = sipe_lync_autodiscover_add(servers,
+						     node,
+						     "SipClientInternalAccess");
+
+		/* Callback takes ownership of servers list */
+		(*request->cb)(sipe_private, servers, request->cb_data);
+
+		/* Request completed */
+		next        = FALSE;
+		request->cb = NULL;
+		sipe_lync_autodiscover_request_free(sipe_private, request);
+		/* request is invalid */
+	}
+
 	sipe_xml_free(xml);
 
 	if (next)
@@ -255,11 +314,13 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 		g_free(uri);
 
 	} else {
-		struct sipe_lync_autodiscover_data lync_data = { NULL, 0 };
+		/* create list with NULL entry */
+		GSList *servers = g_slist_prepend(NULL, NULL);
 
 		/* All methods tried, indicate failure to caller */
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_lync_autodiscover_request: no more methods to try!");
-		(*request->cb)(sipe_private, &lync_data, request->cb_data);
+		(*request->cb)(sipe_private, servers, request->cb_data);
+		g_slist_free(servers);
 
 		/* Request completed */
 		request->cb = NULL;

@@ -53,6 +53,7 @@ struct sipe_core_private {
 
 	/* sip-transport.c private data */
 	struct sip_transport *transport;
+	GSList *lync_autodiscover_servers;           /* Lync autodiscover */
 	const struct sip_service_data *service_data; /* autodiscovery SRV records */
 	const struct sip_address_data *address_data; /* autodiscovery A records */
 	guint transport_type;

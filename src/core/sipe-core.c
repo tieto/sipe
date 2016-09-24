@@ -400,6 +400,10 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 	sipe_private->focus_factory_uri = NULL;
 
 	sipe_groupchat_free(sipe_private);
+
+	while (sipe_private->lync_autodiscover_servers)
+		sipe_private->lync_autodiscover_servers =
+			sipe_lync_autodiscover_pop(sipe_private->lync_autodiscover_servers);
 }
 
 void sipe_core_deallocate(struct sipe_core_public *sipe_public)

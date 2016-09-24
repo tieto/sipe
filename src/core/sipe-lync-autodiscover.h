@@ -26,7 +26,7 @@ struct sipe_core_private;
 
 /* Lync data determined by autodiscover */
 struct sipe_lync_autodiscover_data {
-    const gchar *server; /* NULL when failed */
+    const gchar *server;
     guint        port;
 };
 
@@ -34,12 +34,24 @@ struct sipe_lync_autodiscover_data {
  * Lync autodiscover callback
  *
  * @param sipe_private  SIPE core private data
- * @param lync_data     Lync autodiscover data (NULL when aborted)
+ * @param servers       list with Lync autodiscover data
  * @param callback_data callback data
+ *
+ * servers will be @c NULL when request got aborted.
+ * last entry in the list will be a @c NULL entry.
  */
 typedef void (sipe_lync_autodiscover_callback)(struct sipe_core_private *sipe_private,
-					       const struct sipe_lync_autodiscover_data *lync_data,
+					       GSList *servers,
 					       gpointer callback_data);
+
+/**
+ * Free first callback data entry on the server list
+ *
+ * @param servers list given to callback (may be @c NULL)
+ *
+ * @return new list header
+ */
+GSList *sipe_lync_autodiscover_pop(GSList *servers);
 
 /**
  * Trigger Lync autodiscover

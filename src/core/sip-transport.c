@@ -1833,6 +1833,10 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 	struct sip_transport *transport = sipe_private->transport;
 	gchar *self_sip_uri = sip_uri_self(sipe_private);
 
+	while (sipe_private->lync_autodiscover_servers)
+		sipe_private->lync_autodiscover_servers =
+			sipe_lync_autodiscover_pop(sipe_private->lync_autodiscover_servers);
+
 	sipe_private->service_data = NULL;
 	sipe_private->address_data = NULL;
 
@@ -1853,6 +1857,7 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 	do_register(sipe_private, FALSE);
 }
 
+static void resolve_next_lync(struct sipe_core_private *sipe_private);
 static void resolve_next_service(struct sipe_core_private *sipe_private,
 				 const struct sip_service_data *start);
 static void resolve_next_address(struct sipe_core_private *sipe_private,
@@ -1862,8 +1867,11 @@ static void sip_transport_error(struct sipe_transport_connection *conn,
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 
+	/* This failed attempt was based on a Lync Autodiscover result */
+	if (sipe_private->lync_autodiscover_servers) {
+		resolve_next_lync(sipe_private);
 	/* This failed attempt was based on a DNS SRV record */
-	if (sipe_private->service_data) {
+	} else if (sipe_private->service_data) {
 		resolve_next_service(sipe_private, NULL);
 	/* This failed attempt was based on a DNS A record */
 	} else if (sipe_private->address_data) {
@@ -2003,6 +2011,31 @@ static void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
 	}
 }
 
+static void resolve_next_lync(struct sipe_core_private *sipe_private)
+{
+	struct sipe_lync_autodiscover_data *lync_data = sipe_private->lync_autodiscover_servers->data;
+	guint type = sipe_private->transport_type;
+
+	if (lync_data) {
+		/* Try to connect to next server on the list */
+		if (type == SIPE_TRANSPORT_AUTO)
+			type = SIPE_TRANSPORT_TLS;
+
+		sipe_server_register(sipe_private,
+				     type,
+				     g_strdup(lync_data->server),
+				     lync_data->port);
+
+	} else {
+		/* We tried all servers -> try DNS SRV next */
+		SIPE_DEBUG_INFO_NOFORMAT("no Lync Autodiscover servers found; trying SRV records next");
+		resolve_next_service(sipe_private, services[type]);
+	}
+
+	sipe_private->lync_autodiscover_servers =
+		sipe_lync_autodiscover_pop(sipe_private->lync_autodiscover_servers);
+}
+
 static void resolve_next_service(struct sipe_core_private *sipe_private,
 				 const struct sip_service_data *start)
 {
@@ -2073,28 +2106,15 @@ static void resolve_next_address(struct sipe_core_private *sipe_private,
 }
 
 static void lync_autodiscover_cb(struct sipe_core_private *sipe_private,
-				 const struct sipe_lync_autodiscover_data *lync_data,
+				 GSList *servers,
 				 SIPE_UNUSED_PARAMETER gpointer callback_data)
 {
-	if (lync_data) {
-		guint type = sipe_private->transport_type;
+	if (servers) {
+		/* Lync Autodiscover succeeded */
+		SIPE_DEBUG_INFO_NOFORMAT("lync_autodiscover_cb: got server list");
 
-		if (lync_data->server) {
-			/* Lync Autodiscover succeeded */
-			SIPE_DEBUG_INFO("lync_autodiscover_cb: hostname '%s' port %d",
-					lync_data->server, lync_data->port);
-
-			if (type == SIPE_TRANSPORT_AUTO)
-				type = SIPE_TRANSPORT_TLS;
-
-			sipe_server_register(sipe_private,
-					     type,
-					     g_strdup(lync_data->server),
-					     lync_data->port);
-		} else {
-			/* Lync Autodiscover failed -> try DNS SRV next */
-			resolve_next_service(sipe_private, services[type]);
-		}
+		sipe_private->lync_autodiscover_servers = servers;
+		resolve_next_lync(sipe_private);
 	}
 }
 
