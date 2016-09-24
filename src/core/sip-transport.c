@@ -79,6 +79,7 @@
 #include "sipe-sign.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
+#include "uuid.h"
 
 struct sip_auth {
 	guint type;
@@ -104,6 +105,7 @@ struct sip_transport {
 	guint  server_port;
 	gchar *server_version;
 
+	gchar *epid;
 	gchar *ip_address;           /* local IP address of transport socket */
 
 	gchar *user_agent;
@@ -723,14 +725,14 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 	struct sip_transport *transport = sipe_private->transport;
 	char *buf;
 	struct sipmsg *msg;
-	gchar *ourtag    = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : NULL;
-	gchar *theirtag  = dialog && dialog->theirtag  ? g_strdup(dialog->theirtag)  : NULL;
-	gchar *theirepid = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
-	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
-	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
-	gchar *route     = g_strdup("");
-	gchar *epid      = get_epid(sipe_private);
-	int cseq         = dialog ? ++dialog->cseq : 1 /* as Call-Id is new in this case */;
+	gchar *ourtag     = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : NULL;
+	gchar *theirtag   = dialog && dialog->theirtag  ? g_strdup(dialog->theirtag)  : NULL;
+	gchar *theirepid  = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
+	gchar *callid     = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
+	gchar *branch     = dialog && dialog->callid    ? NULL : genbranch();
+	gchar *route      = g_strdup("");
+	const gchar *epid = transport->epid;
+	int cseq          = dialog ? ++dialog->cseq : 1 /* as Call-Id is new in this case */;
 	struct transaction *trans = NULL;
 
 	if (dialog && dialog->routes)
@@ -805,7 +807,6 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 	g_free(theirepid);
 	g_free(branch);
 	g_free(route);
-	g_free(epid);
 
 	sign_outgoing_message(sipe_private, msg);
 
@@ -1509,6 +1510,7 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 		g_free(transport->server_name);
 		g_free(transport->server_version);
 		g_free(transport->ip_address);
+		g_free(transport->epid);
 		g_free(transport->user_agent);
 
 		while (transport->transactions)
@@ -1829,6 +1831,7 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 	struct sip_transport *transport = sipe_private->transport;
+	gchar *self_sip_uri = sip_uri_self(sipe_private);
 
 	sipe_private->service_data = NULL;
 	sipe_private->address_data = NULL;
@@ -1842,6 +1845,10 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 	start_keepalive_timer(sipe_private, transport->keepalive_timeout);
 
 	transport->ip_address = sipe_backend_transport_ip_address(conn);
+	transport->epid       = sipe_get_epid(self_sip_uri,
+					      g_get_host_name(),
+					      transport->ip_address);
+	g_free(self_sip_uri);
 
 	do_register(sipe_private, FALSE);
 }
@@ -2161,6 +2168,13 @@ int sip_transaction_cseq(struct transaction *trans)
 
 	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &cseq);
 	return cseq;
+}
+
+const gchar *sip_transport_epid(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->transport ?
+	       sipe_private->transport->epid :
+	       "0123456789ab");
 }
 
 const gchar *sip_transport_ip_address(struct sipe_core_private *sipe_private)

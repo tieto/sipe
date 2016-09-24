@@ -117,6 +117,7 @@ void sip_transport_authentication_completed(struct sipe_core_private *sipe_priva
 
 int sip_transaction_cseq(struct transaction *trans);
 
+const gchar *sip_transport_epid(struct sipe_core_private *sipe_private);
 const gchar *sip_transport_ip_address(struct sipe_core_private *sipe_private);
 
 /*
