@@ -1,4 +1,5 @@
-version ?.??.? "???" (????-??-??)
+version ?.??.? "Lync Autodiscover" (????-??-??)
+	- Feature #93: Support for Lync Autodiscover (Stefan Becker)
 	- Fixed #314: sipe login problems with long pw (Stefan Becker)
 
 version 1.21.1 "Bug Fixes I" (2016-05-28)
