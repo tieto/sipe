@@ -28,6 +28,8 @@ Wed Jan 13 16:44:50 UTC 2016 - dimstar@opensuse.org
   + SRTP Support.
   + Office365 rejects RC4 in TLS-DSK: added support for
     AES-128/256-CBC.
+- Drop patch: 0001-Fix-285-backport-for-1.18.x-1.19.x.patch
+  Fixed upstream (bnc#965323).
 
 -------------------------------------------------------------------
 Tue Jun 30 15:14:25 UTC 2015 - dimstar@opensuse.org
@@ -39,6 +41,15 @@ Tue Jun 30 15:14:25 UTC 2015 - dimstar@opensuse.org
   + Add autoreconf call, as the patch touches the buildsystem.
   + Pass --with-vv to configure, to ensure we do not lose Voice &
     Video support.
+
+-------------------------------------------------------------------
+Wed Apr  8 07:32:59 UTC 2015 - tyang@suse.com
+
+- Add patch: 0001-Fix-285-backport-for-1.18.x-1.19.x.patch
+  Fixed both upstream and sled:
+  sf#285: Office365 rejects RC4 in TLS-DSK.
+  bnc#965323:Pidgin-sipe no longer works with Office 365 of
+  skype for Business.
 
 -------------------------------------------------------------------
 Tue Apr  7 16:35:34 UTC 2015 - dimstar@opensuse.org
@@ -398,7 +409,7 @@ Fri Sep  2 10:00:33 UTC 2011 - vuntz@opensuse.org
 Mon May 23 08:50:03 UTC 2011 - idonmez@novell.com
 
 - Add pidgin-sipe-1.11.2-gcc46.patch: remove write-only variables
-  to fix compilation with gcc 4.6 
+  to fix compilation with gcc 4.6
 
 -------------------------------------------------------------------
 Thu Nov 18 10:39:02 CET 2010 - dimstar@opensuse.org
@@ -538,7 +549,7 @@ Wed Mar 10 14:37:21 CET 2010 - dimstar@opensuse.org
   + another shot at presence update problems
   + fix crash caused by uninitialized security contexts
   + Code analysis with Coverity Prevent.
-  + Fix for "SIP/2.0 481 Call leg unavailable" error 
+  + Fix for "SIP/2.0 481 Call leg unavailable" error
   + Increased libpurple build requisite to >= 2.4.0
   + Updated translations.
 
@@ -622,7 +633,7 @@ Thu Nov 26 09:54:24 UTC 2009 - john@redux.org.uk
 -------------------------------------------------------------------
 Thu Sep 17 00:13:39 CEST 2009 - crrodriguez@suse.de
 
-- use find_lang macro 
+- use find_lang macro
 
 -------------------------------------------------------------------
 Mon Feb  2 17:04:37 CST 2009 - gburt@suse.de
@@ -662,7 +673,7 @@ Sun Dec  7 15:38:42 CST 2008 - gburt@suse.de
 -------------------------------------------------------------------
 Fri Dec  5 12:13:58 CST 2008 - gburt@suse.de
 
-- Fix automatic support (redirecting) for LCS/OCS proxy servers, 
+- Fix automatic support (redirecting) for LCS/OCS proxy servers,
   and show the user the error when 403 forbidden is received.
 
 -------------------------------------------------------------------
@@ -689,7 +700,7 @@ Thu Nov 20 19:16:41 CST 2008 - gburt@suse.de
 -------------------------------------------------------------------
 Fri Nov  7 12:33:37 CST 2008 - gburt@suse.de
 
-- Replace gz with bz2 
+- Replace gz with bz2
 
 -------------------------------------------------------------------
 Fri Nov  7 12:22:30 CST 2008 - gburt@suse.de
