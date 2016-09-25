@@ -319,8 +319,9 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 
 		/* All methods tried, indicate failure to caller */
 		SIPE_DEBUG_INFO_NOFORMAT("sipe_lync_autodiscover_request: no more methods to try!");
+
+		/* Callback takes ownership of servers list */
 		(*request->cb)(sipe_private, servers, request->cb_data);
-		g_slist_free(servers);
 
 		/* Request completed */
 		request->cb = NULL;
