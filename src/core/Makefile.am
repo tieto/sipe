@@ -122,6 +122,11 @@ noinst_LTLIBRARIES += \
 
 libsipe_core_tests_la_SOURCES = \
 	sip-sec-ntlm-tests.c
+libsipe_core_tests_la_LIBADD = \
+	libsipe_core_la-sipmsg.lo \
+	libsipe_core_la-sipe-sign.lo \
+	libsipe_core_la-sipe-utils.lo \
+	libsipe_core_la-uuid.lo
 endif
 
 endif

@@ -91,7 +91,6 @@ tests_SOURCES   = tests.c
 tests_CFLAGS    = $(libsipe_la_CFLAGS)
 tests_LDADD     = \
 	../core/libsipe_core_tests.la \
-	../core/libsipe_core.la \
 	../core/libsipe_core_crypto.la \
 	libsipe_backend.la \
 	$(NSS_LIBS) \
