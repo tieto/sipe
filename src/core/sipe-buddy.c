@@ -344,6 +344,7 @@ void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
 struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private,
 					  const gchar *uri)
 {
+	if (!uri) return(NULL);
 	return(g_hash_table_lookup(sipe_private->buddies->uri, uri));
 }
 
