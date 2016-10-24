@@ -50,6 +50,7 @@ struct lync_autodiscover_request {
 	gpointer cb_data;
 	struct sipe_http_request *request;
 	struct sipe_svc_session *session;
+	const gchar *protocol;
 	const gchar **method;
 	gchar *uri;
 };
@@ -173,6 +174,7 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 	/* User: topology information of the user’s home server */
 	if ((node = sipe_xml_child(xml, "User")) != NULL) {
 		GSList *servers;
+		struct sipe_lync_autodiscover *sla;
 
 		/* List is reversed, i.e. internal will be tried first */
 		servers = g_slist_prepend(NULL, NULL);
@@ -188,8 +190,15 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 
 		/* Request completed */
 		next        = FALSE;
-		request->cb = NULL;
-		sipe_lync_autodiscover_request_free(sipe_private, request);
+		/* We're done. Free this request and all parallel ones. */
+		sla = sipe_private->lync_autodiscover;
+		while (sla->pending_requests) {
+			request = sla->pending_requests->data;
+
+			request->cb = NULL;
+			sipe_lync_autodiscover_request_free(sipe_private,
+							    request);
+		}
 		/* request is invalid */
 	}
 
@@ -291,10 +300,8 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 					   struct lync_autodiscover_request *request)
 {
 	static const gchar *methods[] = {
-		"http://LyncDiscoverInternal.%s/?sipuri=%s",
-		"https://LyncDiscoverInternal.%s/?sipuri=%s",
-		"http://LyncDiscover.%s/?sipuri=%s",
-		"https://LyncDiscover.%s/?sipuri=%s",
+		"%s://LyncDiscoverInternal.%s/?sipuri=%s",
+		"%s://LyncDiscover.%s/?sipuri=%s",
 		NULL
 	};
 
@@ -305,6 +312,7 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 
 	if (*request->method) {
 		gchar *uri = g_strdup_printf(*request->method,
+					     request->protocol,
 					     SIPE_CORE_PUBLIC->sip_domain,
 					     sipe_private->username);
 
@@ -314,14 +322,19 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 		g_free(uri);
 
 	} else {
-		/* create list with NULL entry */
-		GSList *servers = g_slist_prepend(NULL, NULL);
+		if (g_slist_length(sipe_private->lync_autodiscover->pending_requests) == 1) {
+			/* This is the last pending request; return empty
+			 * servers list. */
 
-		/* All methods tried, indicate failure to caller */
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_lync_autodiscover_request: no more methods to try!");
+			/* create list with NULL entry */
+			GSList *servers = g_slist_prepend(NULL, NULL);
 
-		/* Callback takes ownership of servers list */
-		(*request->cb)(sipe_private, servers, request->cb_data);
+			/* All methods tried, indicate failure to caller */
+			SIPE_DEBUG_INFO_NOFORMAT("sipe_lync_autodiscover_request: no more methods to try!");
+
+			/* Callback takes ownership of servers list */
+			(*request->cb)(sipe_private, servers, request->cb_data);
+		}
 
 		/* Request completed */
 		request->cb = NULL;
@@ -330,21 +343,31 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 	}
 }
 
-void sipe_lync_autodiscover_start(struct sipe_core_private *sipe_private,
-				  sipe_lync_autodiscover_callback *callback,
-				  gpointer callback_data)
+static void sipe_lync_autodiscover_create(struct sipe_core_private *sipe_private,
+					  const gchar *protocol,
+					  sipe_lync_autodiscover_callback *callback,
+					  gpointer callback_data)
 {
 	struct sipe_lync_autodiscover *sla = sipe_private->lync_autodiscover;
 	struct lync_autodiscover_request *request = g_new0(struct lync_autodiscover_request, 1);
 
-	request->cb      = callback;
-	request->cb_data = callback_data;
-	request->session = sipe_svc_session_start();
+	request->protocol = protocol;
+	request->cb       = callback;
+	request->cb_data  = callback_data;
+	request->session  = sipe_svc_session_start();
 
 	sla->pending_requests = g_slist_prepend(sla->pending_requests,
 						request);
 
 	sipe_lync_autodiscover_request(sipe_private, request);
+}
+
+void sipe_lync_autodiscover_start(struct sipe_core_private *sipe_private,
+				  sipe_lync_autodiscover_callback *callback,
+				  gpointer callback_data)
+{
+	sipe_lync_autodiscover_create(sipe_private, "http", callback, callback_data);
+	sipe_lync_autodiscover_create(sipe_private, "https", callback, callback_data);
 }
 
 void sipe_lync_autodiscover_init(struct sipe_core_private *sipe_private)
