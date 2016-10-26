@@ -553,7 +553,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 			if (wcd->token_state == TOKEN_STATE_FEDERATION) {
 				struct sipe_webticket *webticket = sipe_private->webticket;
 
-				SIPE_DEBUG_INFO_NOFORMAT("webticket_token: ADFS authentication failed - assuming Multi-Factor Authentication (MFA)");
+				SIPE_LOG_WARNING_NOFORMAT("webticket_token: ADFS authentication failed - assuming Multi-Factor Authentication (MFA)");
 
 				/* forget ADFS URI */
 				g_free(webticket->webticket_adfs_uri);
@@ -676,10 +676,11 @@ static void realminfo(struct sipe_core_private *sipe_private,
 										     "STSAuthURL"));
 		}
 
-		if (webticket->webticket_adfs_uri)
-			SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
+		if (webticket->webticket_adfs_uri) {
+			SIPE_LOG_INFO_NOFORMAT("realminfo: ADFS setup detected");
+			SIPE_DEBUG_INFO("realminfo: ADFS URI: %s",
 					webticket->webticket_adfs_uri);
-		else
+		} else
 			SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
 
 		if (fedbearer_authentication(sipe_private, wcd)) {

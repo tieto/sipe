@@ -995,7 +995,7 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 	/* register again when security token expires */
 	/* we have to start a new authentication as the security token
 	 * is almost expired by sending a not signed REGISTER message */
-	SIPE_DEBUG_INFO_NOFORMAT("do a full reauthentication");
+	SIPE_LOG_INFO_NOFORMAT("do_reauthenticate_cb: do a full reauthentication");
 	sipe_auth_free(&transport->registrar);
 	sipe_auth_free(&transport->proxy);
 	sipe_schedule_cancel(sipe_private, "<registration>");
@@ -1108,7 +1108,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					 */
 					guint reauth_timeout = transport->registrar.expires;
 
-					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
+					SIPE_LOG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
 
 					if ((reauth_timeout == 0) ||
 					    (reauth_timeout >  8 * 60 * 60))
@@ -1215,7 +1215,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			{
 				gchar *redirect = parse_from(sipmsg_find_header(msg, "Contact"));
 
-				SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully (with redirect)");
+				SIPE_LOG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully (with redirect)");
 
 				if (redirect && (g_ascii_strncasecmp("sip:", redirect, 4) == 0)) {
 					gchar **parts = g_strsplit(redirect + 4, ";", 0);
@@ -1279,7 +1279,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						sipe_auth_free(auth);
 						auth->type = failed;
 					} else {
-						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
+						SIPE_LOG_ERROR_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
 						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 									      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 									      _("Authentication failed"));
@@ -1486,7 +1486,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 	if (deregister) {
 		/* Make sure that all messages are pushed to the server
 		   before the connection gets shut down */
-		SIPE_DEBUG_INFO_NOFORMAT("De-register from server. Flushing outstanding messages.");
+		SIPE_LOG_INFO_NOFORMAT("De-register from server. Flushing outstanding messages.");
 		sipe_backend_transport_flush(transport->connection);
 	}
 }
@@ -1502,6 +1502,9 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 
 	/* transport can be NULL during connection setup */
 	if (transport) {
+		SIPE_LOG_INFO("sip_transport_disconnect: dropping connection '%s:%u'",
+			      transport->server_name, transport->server_port);
+
 		sipe_backend_transport_disconnect(transport->connection);
 
 		sipe_auth_free(&transport->registrar);
@@ -1833,6 +1836,9 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 	struct sip_transport *transport = sipe_private->transport;
 	gchar *self_sip_uri = sip_uri_self(sipe_private);
 
+	SIPE_LOG_INFO("sip_transport_connected: %s:%u",
+		      transport->server_name, transport->server_port);
+
 	while (sipe_private->lync_autodiscover_servers)
 		sipe_private->lync_autodiscover_servers =
 			sipe_lync_autodiscover_pop(sipe_private->lync_autodiscover_servers);
@@ -2028,7 +2034,7 @@ static void resolve_next_lync(struct sipe_core_private *sipe_private)
 
 	} else {
 		/* We tried all servers -> try DNS SRV next */
-		SIPE_DEBUG_INFO_NOFORMAT("no Lync Autodiscover servers found; trying SRV records next");
+		SIPE_LOG_INFO_NOFORMAT("no Lync Autodiscover servers found; trying SRV records next");
 		resolve_next_service(sipe_private, services[type]);
 	}
 
@@ -2049,7 +2055,7 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 			sipe_private->service_data = NULL;
 
 			/* Try A records list next */
-			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; trying A records next");
+			SIPE_LOG_INFO_NOFORMAT("no SRV records found; trying A records next");
 			resolve_next_address(sipe_private, TRUE);
 			return;
 		}
@@ -2081,7 +2087,7 @@ static void resolve_next_address(struct sipe_core_private *sipe_private,
 			sipe_private->address_data = NULL;
 
 			/* Try connecting to the SIP hostname directly */
-			SIPE_DEBUG_INFO_NOFORMAT("no SRV or A records found; using SIP domain as fallback");
+			SIPE_LOG_INFO_NOFORMAT("no SRV or A records found; using SIP domain as fallback");
 			if (type == SIPE_TRANSPORT_AUTO)
 				type = SIPE_TRANSPORT_TLS;
 
@@ -2156,8 +2162,8 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 		if (port)
 			port_number = atoi(port);
 
-		SIPE_DEBUG_INFO("sipe_core_connect: user specified SIP server %s:%d",
-				server, port_number);
+		SIPE_LOG_INFO("sipe_core_connect: user specified SIP server %s:%d",
+			      server, port_number);
 
 		sipe_server_register(sipe_private, transport,
 				     g_strdup(server), port_number);

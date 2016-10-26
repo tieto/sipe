@@ -1064,7 +1064,7 @@ void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 {
 	time_t now, offset;
 
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
+	SIPE_LOG_INFO_NOFORMAT("sipe_core_update_calendar: started.");
 
 	/* Do in parallel.
 	 * If failed, the branch will be disabled for subsequent calls.

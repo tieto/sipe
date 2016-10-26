@@ -262,8 +262,11 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 {
 	struct sipe_core_private *sipe_private;
 	gchar **user_domain;
+	gchar *options = g_strjoinv(" / ", (gchar **) sipe_core_build_options);
 
-	SIPE_DEBUG_INFO("sipe_core_allocate: SIPE version " SIPE_CORE_VERSION " signin_name '%s'", signin_name);
+	SIPE_LOG_INFO("sipe_core_allocate: SIPE version " SIPE_CORE_VERSION "%s)", options);
+	g_free(options);
+	SIPE_DEBUG_INFO("sipe_core_allocate: signin_name '%s'", signin_name);
 
 	/* ensure that sign-in name doesn't contain invalid characters */
 	if (strpbrk(signin_name, "\t\v\r\n") != NULL) {
