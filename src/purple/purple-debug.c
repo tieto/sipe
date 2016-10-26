@@ -54,16 +54,19 @@ gboolean AIDebugLoggingIsEnabled(void);
 void sipe_backend_debug_literal(sipe_debug_level level,
 				const gchar *msg)
 {
-	if (SIPE_PURPLE_DEBUG_IS_ENABLED) {
+	if ((level < SIPE_DEBUG_LEVEL_LOWEST) || SIPE_PURPLE_DEBUG_IS_ENABLED) {
 
 		/* purple_debug doesn't have a vprintf-like API call :-( */
 		switch (level) {
+		case SIPE_LOG_LEVEL_INFO:
 		case SIPE_DEBUG_LEVEL_INFO:
 			purple_debug_info("sipe", "%s\n", msg);
 			break;
+		case SIPE_LOG_LEVEL_WARNING:
 		case SIPE_DEBUG_LEVEL_WARNING:
 			purple_debug_warning("sipe", "%s\n", msg);
 			break;
+		case SIPE_LOG_LEVEL_ERROR:
 		case SIPE_DEBUG_LEVEL_ERROR:
 			purple_debug_error("sipe", "%s\n", msg);
 			break;
@@ -79,7 +82,7 @@ void sipe_backend_debug(sipe_debug_level level,
 
 	va_start(ap, format);
 
-	if (SIPE_PURPLE_DEBUG_IS_ENABLED) {
+	if ((level < SIPE_DEBUG_LEVEL_LOWEST) || SIPE_PURPLE_DEBUG_IS_ENABLED) {
 
 		/* purple_debug doesn't have a vprintf-like API call :-( */
 		gchar *msg = g_strdup_vprintf(format, ap);
