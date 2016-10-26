@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -103,6 +103,9 @@ void sipe_telepathy_debug_finalize(void)
 }
 
 static const GLogLevelFlags debug_level_mapping[] = {
+	G_LOG_LEVEL_DEBUG,    /* SIPE_LOG_LEVEL_INFO      */
+	G_LOG_LEVEL_WARNING,  /* SIPE_LOG_LEVEL_WARNING   */
+	G_LOG_LEVEL_CRITICAL, /* SIPE_LOG_LEVEL_ERROR     */
 	G_LOG_LEVEL_DEBUG,    /* SIPE_DEBUG_LEVEL_INFO    */
 	G_LOG_LEVEL_WARNING,  /* SIPE_DEBUG_LEVEL_WARNING */
 	G_LOG_LEVEL_CRITICAL, /* SIPE_DEBUG_LEVEL_ERROR   */
@@ -111,7 +114,7 @@ static const GLogLevelFlags debug_level_mapping[] = {
 void sipe_backend_debug_literal(sipe_debug_level level,
 				const gchar *msg)
 {
-	if (flags & SIPE_TELEPATHY_DEBUG) {
+	if ((level < SIPE_DEBUG_LEVEL_LOWEST) || (flags & SIPE_TELEPATHY_DEBUG)) {
 		GLogLevelFlags g_level = debug_level_mapping[level];
 		g_log(SIPE_TELEPATHY_DOMAIN, g_level, "%s", msg);
 		tp_debug_sender_add_message(debug, NULL,
@@ -128,7 +131,7 @@ void sipe_backend_debug(sipe_debug_level level,
 	va_list ap;
 
 	va_start(ap, format);
-	if (flags & SIPE_TELEPATHY_DEBUG) {
+	if ((level < SIPE_DEBUG_LEVEL_LOWEST) || (flags & SIPE_TELEPATHY_DEBUG)) {
 		gchar *msg = g_strdup_vprintf(format, ap);
 		sipe_backend_debug_literal(level, msg);
 		g_free(msg);
