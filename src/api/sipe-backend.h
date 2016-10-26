@@ -61,10 +61,14 @@ gchar *sipe_backend_version(void);
 /** DEBUGGING ****************************************************************/
 
 typedef enum {
+	SIPE_LOG_LEVEL_INFO,
+	SIPE_LOG_LEVEL_WARNING,
+	SIPE_LOG_LEVEL_ERROR,
 	SIPE_DEBUG_LEVEL_INFO,
 	SIPE_DEBUG_LEVEL_WARNING,
 	SIPE_DEBUG_LEVEL_ERROR,
 }  sipe_debug_level;
+#define SIPE_DEBUG_LEVEL_LOWEST SIPE_DEBUG_LEVEL_INFO
 
 /**
  * Output debug information without formatting
@@ -90,6 +94,12 @@ void sipe_backend_debug(sipe_debug_level level,
 			...) G_GNUC_PRINTF(2, 3);
 
 /* Convenience macros */
+#define SIPE_LOG_INFO(fmt, ...)          sipe_backend_debug(SIPE_LOG_LEVEL_INFO,    fmt, __VA_ARGS__)
+#define SIPE_LOG_INFO_NOFORMAT(msg)      sipe_backend_debug_literal(SIPE_LOG_LEVEL_INFO,    msg)
+#define SIPE_LOG_WARNING(fmt, ...)       sipe_backend_debug(SIPE_LOG_LEVEL_WARNING, fmt, __VA_ARGS__)
+#define SIPE_LOG_WARNING_NOFORMAT(msg)   sipe_backend_debug_literal(SIPE_LOG_LEVEL_WARNING, msg)
+#define SIPE_LOG_ERROR(fmt, ...)         sipe_backend_debug(SIPE_LOG_LEVEL_ERROR,   fmt, __VA_ARGS__)
+#define SIPE_LOG_ERROR_NOFORMAT(msg)     sipe_backend_debug_literal(SIPE_LOG_LEVEL_ERROR,   msg)
 #define SIPE_DEBUG_INFO(fmt, ...)        sipe_backend_debug(SIPE_DEBUG_LEVEL_INFO,    fmt, __VA_ARGS__)
 #define SIPE_DEBUG_INFO_NOFORMAT(msg)    sipe_backend_debug_literal(SIPE_DEBUG_LEVEL_INFO,    msg)
 #define SIPE_DEBUG_WARNING(fmt, ...)     sipe_backend_debug(SIPE_DEBUG_LEVEL_WARNING, fmt, __VA_ARGS__)
