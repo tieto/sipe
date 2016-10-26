@@ -37,8 +37,10 @@
  */
 gboolean AIDebugLoggingIsEnabled(void);
 #define SIPE_PURPLE_DEBUG_IS_ENABLED AIDebugLoggingIsEnabled()
+#define SIPE_PURPLE_DEBUG_IS_UNSAFE  AIDebugLoggingIsEnabled()
 #elif !PURPLE_VERSION_CHECK(2,6,0) && !PURPLE_VERSION_CHECK(3,0,0)
 #define SIPE_PURPLE_DEBUG_IS_ENABLED purple_debug_is_enabled()
+#define SIPE_PURPLE_DEBUG_IS_UNSAFE  purple_debug_is_enabled()
 #else
 /*
  * The same problem happens when a client uses PurpleDebugUiOps->debug()
@@ -49,6 +51,7 @@ gboolean AIDebugLoggingIsEnabled(void);
 #define SIPE_PURPLE_DEBUG_IS_ENABLED (purple_debug_is_enabled() || \
 				      purple_debug_is_verbose() || \
 				      purple_debug_is_unsafe())
+#define SIPE_PURPLE_DEBUG_IS_UNSAFE  purple_debug_is_unsafe()
 #endif
 
 void sipe_backend_debug_literal(sipe_debug_level level,
@@ -95,7 +98,7 @@ void sipe_backend_debug(sipe_debug_level level,
 
 gboolean sipe_backend_debug_enabled(void)
 {
-	return SIPE_PURPLE_DEBUG_IS_ENABLED;
+	return SIPE_PURPLE_DEBUG_IS_UNSAFE;
 }
 
 /*
