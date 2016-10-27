@@ -1161,11 +1161,11 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						if (sipe_strcase_equal(elem->value, "msrtc-event-categories")) {
 							/* We interpret this as OCS2007+ indicator */
 							SIPE_CORE_PRIVATE_FLAG_SET(OCS2007);
-							SIPE_DEBUG_INFO("Supported: %s (indicates OCS2007+)", elem->value);
+							SIPE_LOG_INFO("process_register_response: Supported: %s (indicates OCS2007+)", elem->value);
 						}
 						if (sipe_strcase_equal(elem->value, "adhoclist")) {
 							SIPE_CORE_PRIVATE_FLAG_SET(BATCHED_SUPPORT);
-							SIPE_DEBUG_INFO("Supported: %s", elem->value);
+							SIPE_DEBUG_INFO("process_register_response: Supported: %s", elem->value);
 						}
 					}
                                         if (sipe_strcase_equal(elem->name, "Allow-Events")){
@@ -1173,7 +1173,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						i = 0;
 						while (caps[i]) {
 							sipe_private->allowed_events =  g_slist_append(sipe_private->allowed_events, g_strdup(caps[i]));
-							SIPE_DEBUG_INFO("Allow-Events: %s", caps[i]);
+							SIPE_DEBUG_INFO("process_register_response: Allow-Events: %s", caps[i]);
 							i++;
 						}
 						g_strfreev(caps);
@@ -1181,7 +1181,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					if (sipe_strcase_equal(elem->name, "ms-user-logon-data")) {
 						if (sipe_strcase_equal(elem->value, "RemoteUser")) {
 							SIPE_CORE_PRIVATE_FLAG_SET(REMOTE_USER);
-							SIPE_DEBUG_INFO_NOFORMAT("ms-user-logon-data: RemoteUser (connected "
+							SIPE_DEBUG_INFO_NOFORMAT("process_register_response: ms-user-logon-data: RemoteUser (connected "
 										 "via Edge Server)");
 						}
 					}

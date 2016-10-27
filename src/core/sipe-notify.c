@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1279,10 +1279,10 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 			gboolean migrated = sipe_strcase_equal(ucsmode,
 							       "migrated");
 			SIPE_CORE_PRIVATE_FLAG_SET(LYNC2013);
-			SIPE_DEBUG_INFO_NOFORMAT("contact list contains 'ucsmode' attribute (indicates Lync 2013+)");
+			SIPE_LOG_INFO_NOFORMAT("sipe_process_roaming_contacts: contact list contains 'ucsmode' attribute (indicates Lync 2013+)");
 
 			if (migrated)
-				SIPE_DEBUG_INFO_NOFORMAT("contact list has been migrated to Unified Contact Store (UCS)");
+				SIPE_LOG_INFO_NOFORMAT("sipe_process_roaming_contacts: contact list has been migrated to Unified Contact Store (UCS)");
 			sipe_ucs_init(sipe_private, migrated);
 		}
 
