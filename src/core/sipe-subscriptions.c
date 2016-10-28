@@ -804,25 +804,28 @@ void sipe_subscribe_presence_initial(struct sipe_core_private *sipe_private)
 	 */
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(SUBSCRIBED_BUDDIES)) {
 
-		if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
-			gchar *to = sip_uri_self(sipe_private);
-			gchar *resources_uri = g_strdup("");
-			if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-				sipe_buddy_foreach(sipe_private,
-						   (GHFunc) sipe_subscribe_resource_uri_with_context,
-						   &resources_uri);
+		/* Only try to subscribe if we have any buddies */
+		if (sipe_buddy_count(sipe_private) > 0) {
+			if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
+				gchar *to = sip_uri_self(sipe_private);
+				gchar *resources_uri = g_strdup("");
+				if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
+					sipe_buddy_foreach(sipe_private,
+							   (GHFunc) sipe_subscribe_resource_uri_with_context,
+							   &resources_uri);
+				} else {
+					sipe_buddy_foreach(sipe_private,
+							   (GHFunc) sipe_subscribe_resource_uri,
+							   &resources_uri);
+				}
+				sipe_subscribe_presence_batched_to(sipe_private, resources_uri, to);
+				g_free(to);
+
 			} else {
 				sipe_buddy_foreach(sipe_private,
-						   (GHFunc) sipe_subscribe_resource_uri,
-						   &resources_uri);
+						   (GHFunc) schedule_buddy_resubscription_cb,
+						   sipe_private);
 			}
-			sipe_subscribe_presence_batched_to(sipe_private, resources_uri, to);
-			g_free(to);
-
-		} else {
-			sipe_buddy_foreach(sipe_private,
-					   (GHFunc) schedule_buddy_resubscription_cb,
-					   sipe_private);
 		}
 
 		SIPE_CORE_PRIVATE_FLAG_SET(SUBSCRIBED_BUDDIES);
