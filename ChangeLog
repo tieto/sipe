@@ -1,7 +1,10 @@
-version ?.??.? "Lync Autodiscover" (????-??-??)
+version ?.??.? "Lync Autodiscover & Logging" (????-??-??)
 	- Feature #93: Support for Lync Autodiscover (Stefan Becker)
 	- Fixed #315: Crash when contact list is empty (Stefan Becker)
 	- Fixed #314: sipe login problems with long pw (Stefan Becker)
+	- separate logging and debugging output (Stefan Becker)
+	  * logging is always shown, e.g. in the Pidgin debug window
+	  * full message debugging now requires PURPLE_UNSAFE_DEBUG=1
 
 version 1.21.1 "Bug Fixes I" (2016-05-28)
 	- various bug fixes in media support (Jakub Adam)
