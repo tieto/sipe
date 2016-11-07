@@ -417,17 +417,22 @@ gchar *sipe_backend_transport_ip_address(struct sipe_transport_connection *conn)
 	return(ipstr ? ipstr : g_strdup("0.0.0.0"));
 }
 
-static void do_write(struct sipe_transport_telepathy *transport,
-		     const gchar *buffer);
+static void do_write(struct sipe_transport_telepathy *transport);
 static void write_completed(GObject *stream,
 			    GAsyncResult *result,
 			    gpointer data)
 {
 	struct sipe_transport_telepathy *transport = data;
+	gchar                           *buffer;
 	GError                          *error     = NULL;
 	gssize written = g_output_stream_write_finish(G_OUTPUT_STREAM(stream),
 						      result,
 						      &error);
+
+	/* free the buffer that has just been written. */
+	buffer = transport->buffers->data;
+	transport->buffers = g_slist_remove(transport->buffers, buffer);
+	g_free(buffer);
 
 	if ((written < 0) || error) {
 		const gchar *msg = error ? error->message : "UNKNOWN";
@@ -448,11 +453,7 @@ static void write_completed(GObject *stream,
 		/* more to write? */
 		if (transport->buffers) {
 			/* yes */
-			gchar *buffer = transport->buffers->data;
-			transport->buffers = g_slist_remove(transport->buffers,
-							    buffer);
-			do_write(transport, buffer);
-			g_free(buffer);
+			do_write(transport);
 		} else {
 			/* no, we're done for now... */
 			transport->is_writing = FALSE;
@@ -464,13 +465,12 @@ static void write_completed(GObject *stream,
 	}
 }
 
-static void do_write(struct sipe_transport_telepathy *transport,
-		     const gchar *buffer)
+static void do_write(struct sipe_transport_telepathy *transport)
 {
 	transport->is_writing = TRUE;
 	g_output_stream_write_async(transport->ostream,
-				    buffer,
-				    strlen(buffer),
+				    transport->buffers->data,
+				    strlen(transport->buffers->data),
 				    G_PRIORITY_DEFAULT,
 				    transport->cancel,
 				    write_completed,
@@ -482,14 +482,11 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 {
 	struct sipe_transport_telepathy *transport = TELEPATHY_TRANSPORT;
 
-	/* currently writing? */
-	if (transport->is_writing) {
-		/* yes, append copy of buffer to list */
-		transport->buffers = g_slist_append(transport->buffers,
-						    g_strdup(buffer));
-	} else
-		/* no, write directly to stream */
-		do_write(transport, buffer);
+	transport->buffers = g_slist_append(transport->buffers, g_strdup(buffer));
+
+	if (!transport->is_writing) {
+		do_write(transport);
+	}
 }
 
 void sipe_backend_transport_flush(struct sipe_transport_connection *conn)
