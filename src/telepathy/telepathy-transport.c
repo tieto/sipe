@@ -51,9 +51,8 @@ struct sipe_transport_telepathy {
 	GSocketConnection *socket;
 	GInputStream *istream;
 	GOutputStream *ostream;
-	GSList *buffers;
+	GSList *buffers; /* != NULL -> write operation in progress */
 	guint port;
-	gboolean is_writing;
 	gboolean do_flush;
 };
 
@@ -294,7 +293,6 @@ struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_cor
 	transport->cancel           = g_cancellable_new();
 	transport->buffers          = NULL;
 	transport->port             = setup->server_port;
-	transport->is_writing       = FALSE;
 	transport->do_flush         = FALSE;
 
 	if ((setup->type == SIPE_TRANSPORT_TLS) ||
@@ -378,7 +376,7 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 	if (transport->socket) {
 
 		/* flush required? */
-		if (transport->do_flush && transport->is_writing)
+		if (transport->do_flush && transport->buffers)
 			SIPE_DEBUG_INFO("sipe_backend_transport_disconnect: %p needs flushing",
 					transport);
 		else
@@ -448,26 +446,19 @@ static void write_completed(GObject *stream,
 	} else if (g_cancellable_is_cancelled(transport->cancel)) {
 		/* write completed when transport was disconnected */
 		SIPE_DEBUG_INFO_NOFORMAT("write_completed: cancelled");
-		transport->is_writing = FALSE;
 	} else {
 		/* more to write? */
 		if (transport->buffers) {
-			/* yes */
 			do_write(transport);
-		} else {
-			/* no, we're done for now... */
-			transport->is_writing = FALSE;
-
-			/* flush completed */
-			if (transport->do_flush)
-				do_close(transport);
+		/* flush completed? */
+		} else if (transport->do_flush) {
+			do_close(transport);
 		}
 	}
 }
 
 static void do_write(struct sipe_transport_telepathy *transport)
 {
-	transport->is_writing = TRUE;
 	g_output_stream_write_async(transport->ostream,
 				    transport->buffers->data,
 				    strlen(transport->buffers->data),
@@ -481,12 +472,12 @@ void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 				    const gchar *buffer)
 {
 	struct sipe_transport_telepathy *transport = TELEPATHY_TRANSPORT;
+	gboolean can_write = (transport->buffers == NULL);
 
 	transport->buffers = g_slist_append(transport->buffers, g_strdup(buffer));
 
-	if (!transport->is_writing) {
+	if (can_write)
 		do_write(transport);
-	}
 }
 
 void sipe_backend_transport_flush(struct sipe_transport_connection *conn)
