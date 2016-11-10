@@ -158,7 +158,7 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 				SIPE_DEBUG_INFO("sipe_lync_autodiscover_parse: user %s",
 						uri);
 
-				/* rememebr URI for authentication failure */
+				/* remember URI for authentication failure */
 				request->uri = g_strdup(uri);
 
 				lync_request(sipe_private, request, uri, NULL);
@@ -174,7 +174,8 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 	/* User: topology information of the user’s home server */
 	if ((node = sipe_xml_child(xml, "User")) != NULL) {
 		GSList *servers;
-		struct sipe_lync_autodiscover *sla;
+		sipe_lync_autodiscover_callback *cb = request->cb;
+		gpointer cb_data = request->cb_data;
 
 		/* List is reversed, i.e. internal will be tried first */
 		servers = g_slist_prepend(NULL, NULL);
@@ -186,18 +187,23 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 						     "SipClientInternalAccess");
 
 		/* Callback takes ownership of servers list */
-		(*request->cb)(sipe_private, servers, request->cb_data);
+		(*cb)(sipe_private, servers, cb_data);
 
 		/* Request completed */
-		next        = FALSE;
-		/* We're done. Free this request and all parallel ones. */
-		sla = sipe_private->lync_autodiscover;
-		while (sla->pending_requests) {
-			request = sla->pending_requests->data;
+		next = FALSE;
 
-			request->cb = NULL;
-			sipe_lync_autodiscover_request_free(sipe_private,
-							    request);
+		/* We're done with requests for this callback */
+		servers = sipe_private->lync_autodiscover->pending_requests;
+		while (servers) {
+			request = servers->data;
+			servers = servers->next;
+
+			/* Request for same callback? */
+			if ((request->cb == cb) && (request->cb_data == cb_data)) {
+				request->cb = NULL;
+				sipe_lync_autodiscover_request_free(sipe_private,
+								    request);
+			}
 		}
 		/* request is invalid */
 	}
@@ -366,7 +372,7 @@ void sipe_lync_autodiscover_start(struct sipe_core_private *sipe_private,
 				  sipe_lync_autodiscover_callback *callback,
 				  gpointer callback_data)
 {
-	sipe_lync_autodiscover_create(sipe_private, "http", callback, callback_data);
+	sipe_lync_autodiscover_create(sipe_private, "http",  callback, callback_data);
 	sipe_lync_autodiscover_create(sipe_private, "https", callback, callback_data);
 }
 
