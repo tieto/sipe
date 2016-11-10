@@ -173,38 +173,41 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 
 	/* User: topology information of the user’s home server */
 	if ((node = sipe_xml_child(xml, "User")) != NULL) {
-		GSList *servers;
 		sipe_lync_autodiscover_callback *cb = request->cb;
-		gpointer cb_data = request->cb_data;
 
-		/* List is reversed, i.e. internal will be tried first */
-		servers = g_slist_prepend(NULL, NULL);
-		servers = sipe_lync_autodiscover_add(servers,
-						     node,
-						     "SipClientExternalAccess");
-		servers = sipe_lync_autodiscover_add(servers,
-						     node,
-						     "SipClientInternalAccess");
+		/* Active request? */
+		if (cb) {
+			GSList *servers;
+			gpointer cb_data = request->cb_data;
 
-		/* Callback takes ownership of servers list */
-		(*cb)(sipe_private, servers, cb_data);
+			/* List is reversed, i.e. internal will be tried first */
+			servers = g_slist_prepend(NULL, NULL);
+			servers = sipe_lync_autodiscover_add(servers,
+							     node,
+							     "SipClientExternalAccess");
+			servers = sipe_lync_autodiscover_add(servers,
+							     node,
+							     "SipClientInternalAccess");
+
+			/* Callback takes ownership of servers list */
+			(*cb)(sipe_private, servers, cb_data);
+
+			/* We're done with requests for this callback */
+			servers = sipe_private->lync_autodiscover->pending_requests;
+			while (servers) {
+				struct lync_autodiscover_request *entry = servers->data;
+
+				/* Mark request for same callback as inactive */
+				if ((entry->cb == cb) && (entry->cb_data == cb_data))
+					entry->cb = NULL;
+
+				servers = servers->next;
+			}
+		}
 
 		/* Request completed */
 		next = FALSE;
-
-		/* We're done with requests for this callback */
-		servers = sipe_private->lync_autodiscover->pending_requests;
-		while (servers) {
-			request = servers->data;
-			servers = servers->next;
-
-			/* Request for same callback? */
-			if ((request->cb == cb) && (request->cb_data == cb_data)) {
-				request->cb = NULL;
-				sipe_lync_autodiscover_request_free(sipe_private,
-								    request);
-			}
-		}
+		sipe_lync_autodiscover_request_free(sipe_private, request);
 		/* request is invalid */
 	}
 
@@ -328,7 +331,9 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 		g_free(uri);
 
 	} else {
-		if (g_slist_length(sipe_private->lync_autodiscover->pending_requests) == 1) {
+		/* Active request? */
+		if (request->cb &&
+		    (g_slist_length(sipe_private->lync_autodiscover->pending_requests) == 1)) {
 			/* This is the last pending request; return empty
 			 * servers list. */
 
