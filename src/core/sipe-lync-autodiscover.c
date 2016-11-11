@@ -334,19 +334,32 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 
 	} else {
 		/* Active request? */
-		if (request->id &&
-		    (g_slist_length(sipe_private->lync_autodiscover->pending_requests) == 1)) {
-			/* This is the last pending request; return empty
-			 * servers list. */
+		if (request->id) {
+			guint count   = 0;
+			GSList *entry = sipe_private->lync_autodiscover->pending_requests;
 
-			/* create list with NULL entry */
-			GSList *servers = g_slist_prepend(NULL, NULL);
+			/* Count entries with the same request ID */
+			while (entry) {
+				struct lync_autodiscover_request *lar = entry->data;
+				if (lar->id == request->id)
+					count++;
+				entry = entry->next;
+			}
 
-			/* All methods tried, indicate failure to caller */
-			SIPE_DEBUG_INFO_NOFORMAT("sipe_lync_autodiscover_request: no more methods to try!");
+			if (count == 1) {
+				/*
+				 * This is the last pending request for this
+				 * ID, i.e. autodiscover has failed. Create
+				 * empty server list and return it.
+				 */
+				GSList *servers = g_slist_prepend(NULL, NULL);
 
-			/* Callback takes ownership of servers list */
-			(*request->cb)(sipe_private, servers, request->cb_data);
+				/* All methods tried, indicate failure to caller */
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_lync_autodiscover_request: no more methods to try!");
+
+				/* Callback takes ownership of servers list */
+				(*request->cb)(sipe_private, servers, request->cb_data);
+			}
 		}
 
 		/* Request completed */
