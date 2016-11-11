@@ -48,6 +48,7 @@
 struct lync_autodiscover_request {
 	sipe_lync_autodiscover_callback *cb;
 	gpointer cb_data;
+	gpointer id;                       /* != NULL for active request */
 	struct sipe_http_request *request;
 	struct sipe_svc_session *session;
 	const gchar *protocol;
@@ -173,12 +174,11 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 
 	/* User: topology information of the user’s home server */
 	if ((node = sipe_xml_child(xml, "User")) != NULL) {
-		sipe_lync_autodiscover_callback *cb = request->cb;
+		gpointer id = request->id;
 
 		/* Active request? */
-		if (cb) {
+		if (id) {
 			GSList *servers;
-			gpointer cb_data = request->cb_data;
 
 			/* List is reversed, i.e. internal will be tried first */
 			servers = g_slist_prepend(NULL, NULL);
@@ -190,7 +190,7 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 							     "SipClientInternalAccess");
 
 			/* Callback takes ownership of servers list */
-			(*cb)(sipe_private, servers, cb_data);
+			(*request->cb)(sipe_private, servers, request->cb_data);
 
 			/* We're done with requests for this callback */
 			servers = sipe_private->lync_autodiscover->pending_requests;
@@ -198,8 +198,10 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 				struct lync_autodiscover_request *entry = servers->data;
 
 				/* Mark request for same callback as inactive */
-				if ((entry->cb == cb) && (entry->cb_data == cb_data))
+				if (entry->id == id) {
 					entry->cb = NULL;
+					entry->id = NULL;
+				}
 
 				servers = servers->next;
 			}
@@ -332,7 +334,7 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 
 	} else {
 		/* Active request? */
-		if (request->cb &&
+		if (request->id &&
 		    (g_slist_length(sipe_private->lync_autodiscover->pending_requests) == 1)) {
 			/* This is the last pending request; return empty
 			 * servers list. */
@@ -354,31 +356,47 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 	}
 }
 
-static void sipe_lync_autodiscover_create(struct sipe_core_private *sipe_private,
-					  const gchar *protocol,
-					  sipe_lync_autodiscover_callback *callback,
-					  gpointer callback_data)
+static gpointer sipe_lync_autodiscover_create(struct sipe_core_private *sipe_private,
+					      gpointer id,
+					      const gchar *protocol,
+					      sipe_lync_autodiscover_callback *callback,
+					      gpointer callback_data)
 {
 	struct sipe_lync_autodiscover *sla = sipe_private->lync_autodiscover;
 	struct lync_autodiscover_request *request = g_new0(struct lync_autodiscover_request, 1);
 
+	/* use address of first request structure as unique ID */
+	if (id == NULL)
+		id = request;
+
 	request->protocol = protocol;
 	request->cb       = callback;
 	request->cb_data  = callback_data;
+	request->id       = id;
 	request->session  = sipe_svc_session_start();
 
 	sla->pending_requests = g_slist_prepend(sla->pending_requests,
 						request);
 
 	sipe_lync_autodiscover_request(sipe_private, request);
+
+	return(id);
 }
 
 void sipe_lync_autodiscover_start(struct sipe_core_private *sipe_private,
 				  sipe_lync_autodiscover_callback *callback,
 				  gpointer callback_data)
 {
-	sipe_lync_autodiscover_create(sipe_private, "http",  callback, callback_data);
-	sipe_lync_autodiscover_create(sipe_private, "https", callback, callback_data);
+	gpointer id = NULL;
+
+#define CREATE(protocol) \
+	id = sipe_lync_autodiscover_create(sipe_private,  \
+					   id,            \
+					   #protocol,     \
+					   callback,      \
+					   callback_data)
+	CREATE(http);
+	CREATE(https);
 }
 
 void sipe_lync_autodiscover_init(struct sipe_core_private *sipe_private)
