@@ -54,6 +54,7 @@ struct lync_autodiscover_request {
 	const gchar *protocol;
 	const gchar **method;
 	gchar *uri;
+	gboolean is_pending;
 };
 
 struct sipe_lync_autodiscover {
@@ -141,8 +142,8 @@ GSList *sipe_lync_autodiscover_pop(GSList *servers)
 	return(servers);
 }
 
-static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_private,
-					   struct lync_autodiscover_request *request);
+static void sipe_lync_autodiscover_queue_request(struct sipe_core_private *sipe_private,
+						 struct lync_autodiscover_request *request);
 static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 					 struct lync_autodiscover_request *request,
 					 const gchar *body)
@@ -222,7 +223,7 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 	sipe_xml_free(xml);
 
 	if (next)
-		sipe_lync_autodiscover_request(sipe_private, request);
+		sipe_lync_autodiscover_queue_request(sipe_private, request);
 }
 
 static void sipe_lync_autodiscover_webticket(struct sipe_core_private *sipe_private,
@@ -255,7 +256,7 @@ static void sipe_lync_autodiscover_webticket(struct sipe_core_private *sipe_priv
 		g_free(headers);
 
 	} else
-		sipe_lync_autodiscover_request(sipe_private, request);
+		sipe_lync_autodiscover_queue_request(sipe_private, request);
 }
 
 static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
@@ -277,7 +278,7 @@ static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
 		if (body && g_str_has_prefix(type, "application/vnd.microsoft.rtc.autodiscover+xml"))
 			sipe_lync_autodiscover_parse(sipe_private, request, body);
 		else
-			sipe_lync_autodiscover_request(sipe_private, request);
+			sipe_lync_autodiscover_queue_request(sipe_private, request);
 		break;
 
 	case SIPE_HTTP_STATUS_FAILED:
@@ -294,9 +295,9 @@ static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
 								       uri, /* Auth URI */
 								       sipe_lync_autodiscover_webticket,
 								       request)))
-					sipe_lync_autodiscover_request(sipe_private, request);
+					sipe_lync_autodiscover_queue_request(sipe_private, request);
 			} else
-				sipe_lync_autodiscover_request(sipe_private, request);
+				sipe_lync_autodiscover_queue_request(sipe_private, request);
 	        }
 		break;
 
@@ -306,13 +307,14 @@ static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
 		break;
 
 	default:
-		sipe_lync_autodiscover_request(sipe_private, request);
+		sipe_lync_autodiscover_queue_request(sipe_private, request);
 		break;
 	}
 
 	g_free(uri);
 }
 
+/* Proceed to next method for request */
 static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_private,
 					   struct lync_autodiscover_request *request)
 {
@@ -325,6 +327,8 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 			"%s://LyncDiscover.%s/?sipuri=%s",
 			NULL
 		};
+
+		request->is_pending = TRUE;
 
 		if (request->method)
 			request->method++;
@@ -375,6 +379,30 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 		sipe_lync_autodiscover_request_free(sipe_private, request);
 		/* request is invalid */
 	}
+}
+
+/* Proceed to next method for all requests */
+static void sipe_lync_autodiscover_queue_request(struct sipe_core_private *sipe_private,
+						 struct lync_autodiscover_request *request)
+{
+	gpointer id = request->id;
+
+	/* This request is ready to proceed to next method */
+	request->is_pending = FALSE;
+
+	/* Is any request for the same ID still pending? */
+	FOR_ALL_REQUESTS_WITH_SAME_ID( \
+		if (lar->is_pending)   \
+			return	       \
+	);
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_lync_autodiscover_queue_request: proceed in lockstep");
+
+	/* No, proceed to next method for all requests */
+	FOR_ALL_REQUESTS_WITH_SAME_ID(			     \
+		sipe_lync_autodiscover_request(sipe_private, \
+					       lar)	     \
+	);
 }
 
 static gpointer sipe_lync_autodiscover_create(struct sipe_core_private *sipe_private,
