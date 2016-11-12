@@ -310,38 +310,40 @@ static void sipe_lync_autodiscover_cb(struct sipe_core_private *sipe_private,
 static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_private,
 					   struct lync_autodiscover_request *request)
 {
-	static const gchar *methods[] = {
-		"%s://LyncDiscoverInternal.%s/?sipuri=%s",
-		"%s://LyncDiscover.%s/?sipuri=%s",
-		NULL
-	};
+	gpointer id = request->id;
 
-	if (request->method)
-		request->method++;
-	else
-		request->method = methods;
+	/* Active request? */
+	if (id) {
+		static const gchar *methods[] = {
+			"%s://LyncDiscoverInternal.%s/?sipuri=%s",
+			"%s://LyncDiscover.%s/?sipuri=%s",
+			NULL
+		};
 
-	if (*request->method) {
-		gchar *uri = g_strdup_printf(*request->method,
-					     request->protocol,
-					     SIPE_CORE_PUBLIC->sip_domain,
-					     sipe_private->username);
+		if (request->method)
+			request->method++;
+		else
+			request->method = methods;
 
-		SIPE_DEBUG_INFO("sipe_lync_autodiscover_request: trying '%s'", uri);
+		if (*request->method) {
+			gchar *uri = g_strdup_printf(*request->method,
+						     request->protocol,
+						     SIPE_CORE_PUBLIC->sip_domain,
+						     sipe_private->username);
 
-		lync_request(sipe_private, request, uri, NULL);
-		g_free(uri);
+			SIPE_DEBUG_INFO("sipe_lync_autodiscover_request: trying '%s'", uri);
 
-	} else {
-		/* Active request? */
-		if (request->id) {
+			lync_request(sipe_private, request, uri, NULL);
+			g_free(uri);
+
+		} else {
 			guint count   = 0;
 			GSList *entry = sipe_private->lync_autodiscover->pending_requests;
 
 			/* Count entries with the same request ID */
 			while (entry) {
 				struct lync_autodiscover_request *lar = entry->data;
-				if (lar->id == request->id)
+				if (lar->id == id)
 					count++;
 				entry = entry->next;
 			}
@@ -360,10 +362,14 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 				/* Callback takes ownership of servers list */
 				(*request->cb)(sipe_private, servers, request->cb_data);
 			}
-		}
 
-		/* Request completed */
-		request->cb = NULL;
+			/* Request completed */
+			request->cb = NULL;
+			sipe_lync_autodiscover_request_free(sipe_private, request);
+			/* request is invalid */
+		}
+	} else {
+		/* Inactive request, callback already NULL */
 		sipe_lync_autodiscover_request_free(sipe_private, request);
 		/* request is invalid */
 	}
