@@ -60,6 +60,19 @@ struct sipe_lync_autodiscover {
 	GSList *pending_requests;
 };
 
+/* Use "lar" inside the code fragment */
+#define FOR_ALL_REQUESTS_WITH_SAME_ID(code) \
+	{                                                                   \
+		GSList *entry = sipe_private->lync_autodiscover->pending_requests; \
+		while (entry) {                                                    \
+			struct lync_autodiscover_request *lar = entry->data;       \
+			entry = entry->next;                                       \
+			if (lar->id == id) {                                       \
+				code;                                              \
+			}                                                          \
+		}                                                                  \
+        }
+
 static void sipe_lync_autodiscover_request_free(struct sipe_core_private *sipe_private,
 						struct lync_autodiscover_request *request)
 {
@@ -193,18 +206,11 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 			(*request->cb)(sipe_private, servers, request->cb_data);
 
 			/* We're done with requests for this callback */
-			servers = sipe_private->lync_autodiscover->pending_requests;
-			while (servers) {
-				struct lync_autodiscover_request *entry = servers->data;
+			FOR_ALL_REQUESTS_WITH_SAME_ID( \
+				lar->cb = NULL;        \
+				lar->id = NULL         \
+			);
 
-				/* Mark request for same callback as inactive */
-				if (entry->id == id) {
-					entry->cb = NULL;
-					entry->id = NULL;
-				}
-
-				servers = servers->next;
-			}
 		}
 
 		/* Request completed */
@@ -337,16 +343,12 @@ static void sipe_lync_autodiscover_request(struct sipe_core_private *sipe_privat
 			g_free(uri);
 
 		} else {
-			guint count   = 0;
-			GSList *entry = sipe_private->lync_autodiscover->pending_requests;
+			guint count = 0;
 
 			/* Count entries with the same request ID */
-			while (entry) {
-				struct lync_autodiscover_request *lar = entry->data;
-				if (lar->id == id)
-					count++;
-				entry = entry->next;
-			}
+			FOR_ALL_REQUESTS_WITH_SAME_ID( \
+				count++;	       \
+			);
 
 			if (count == 1) {
 				/*
