@@ -57,25 +57,31 @@ struct sipe_appshare {
 static void
 sipe_appshare_free(struct sipe_appshare *appshare)
 {
-	GError *error = NULL;
-
-	g_source_destroy(g_main_context_find_source_by_id(NULL,
-			appshare->rdp_channel_readable_watch_id));
+	if (appshare->rdp_channel_readable_watch_id != 0) {
+		g_source_destroy(g_main_context_find_source_by_id(NULL,
+				appshare->rdp_channel_readable_watch_id));
+	}
 
 	if (appshare->rdp_channel_writable_watch_id != 0) {
 		g_source_destroy(g_main_context_find_source_by_id(NULL,
 				appshare->rdp_channel_writable_watch_id));
 	}
 
-	g_io_channel_shutdown(appshare->channel, TRUE, &error);
-	if (error) {
-		SIPE_DEBUG_ERROR("Error shutting down RDP channel: %s",
-				 error->message);
-		g_error_free(error);
-	}
-	g_io_channel_unref(appshare->channel);
+	if (appshare->channel) {
+		GError *error = NULL;
 
-	g_object_unref(appshare->socket);
+		g_io_channel_shutdown(appshare->channel, TRUE, &error);
+		if (error) {
+			SIPE_DEBUG_ERROR("Error shutting down RDP channel: %s",
+					 error->message);
+			g_error_free(error);
+		}
+		g_io_channel_unref(appshare->channel);
+	}
+
+	if (appshare->socket) {
+		g_object_unref(appshare->socket);
+	}
 
 	if (appshare->ask_ctx) {
 		sipe_user_close_ask(appshare->ask_ctx);
