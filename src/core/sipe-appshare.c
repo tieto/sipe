@@ -454,25 +454,16 @@ ask_accept_applicationsharing(struct sipe_core_private *sipe_private,
 	g_free(from);
 }
 
-void
-process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
-				 struct sipmsg *msg)
+static struct sipe_appshare *
+initialize_appshare(struct sipe_media_stream *stream)
 {
-	struct sipe_media_call *call;
-	struct sipe_media_stream *stream;
 	struct sipe_appshare *appshare;
+	struct sipe_media_call *call;
+	struct sipe_core_private *sipe_private;
 	SipeRDPClient client;
 
-	call = process_incoming_invite_call(sipe_private, msg);
-	if (!call) {
-		return;
-	}
-
-	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
-	if (!stream) {
-		sipe_backend_media_hangup(call->backend_private, TRUE);
-		return;
-	}
+	call = stream->call;
+	sipe_private = sipe_media_get_sipe_core_private(call);
 
 	appshare = g_new0(struct sipe_appshare, 1);
 	appshare->stream = stream;
@@ -497,7 +488,7 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 				_("Application sharing error"),
 				_("Remote desktop client isn't installed."));
 			sipe_backend_media_hangup(call->backend_private, TRUE);
-			return;
+			return NULL;
 		}
 	}
 
@@ -511,7 +502,33 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 	stream->read_cb = read_cb;
 	stream->writable_cb = writable_cb;
 
-	ask_accept_applicationsharing(sipe_private, msg, appshare);
+	return appshare;
+}
+
+void
+process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
+				 struct sipmsg *msg)
+{
+	struct sipe_media_call *call;
+	struct sipe_media_stream *stream;
+	struct sipe_appshare *appshare;
+
+	call = process_incoming_invite_call(sipe_private, msg);
+	if (!call) {
+		return;
+	}
+
+	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
+	if (!stream) {
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+		return;
+	}
+
+	appshare = initialize_appshare(stream);
+
+	if (appshare) {
+		ask_accept_applicationsharing(sipe_private, msg, appshare);
+	}
 }
 
 /*
