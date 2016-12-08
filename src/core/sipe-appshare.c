@@ -30,7 +30,9 @@
 #include "sipe-appshare-remmina.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
+#include "sipe-chat.h"
 #include "sipe-common.h"
+#include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-media.h"
@@ -539,6 +541,58 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 								  appshare);
 		g_free(from);
 	}
+}
+
+static void
+connect_conference(struct sipe_core_private *sipe_private,
+		   struct sipe_chat_session *chat_session)
+{
+	struct sipe_media_call *call;
+	struct sipe_media_stream *stream;
+	gchar * uri;
+
+	uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+
+	call = sipe_media_call_new(sipe_private, uri, NULL,
+				   SIPE_ICE_RFC_5245,
+				   SIPE_MEDIA_CALL_NO_UI);
+
+	g_free(uri);
+
+	stream = sipe_media_stream_add(call, "applicationsharing",
+				       SIPE_MEDIA_APPLICATION,
+				       SIPE_ICE_RFC_5245, TRUE, 0);
+	if (!stream) {
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Application sharing error"),
+					  _("Couldn't connect application sharing"));
+		sipe_backend_media_hangup(call->backend_private, FALSE);
+	}
+
+	sipe_media_stream_add_extra_attribute(stream, "connection", "new");
+	sipe_media_stream_add_extra_attribute(stream, "setup", "active");
+
+	initialize_appshare(stream);
+}
+
+void
+sipe_appshare_connect_conference(struct sipe_core_private *sipe_private,
+				 struct sipe_chat_session *chat_session)
+{
+	const gchar *from;
+
+	if (chat_session->title) {
+		from = chat_session->title;
+	} else if (chat_session->organizer) {
+		from = chat_session->organizer;
+	} else {
+		from = chat_session->id;
+	}
+
+	ask_accept_applicationsharing(sipe_private, from,
+				      (SipeUserAskCb)connect_conference,
+				      NULL,
+				      chat_session);
 }
 
 /*
