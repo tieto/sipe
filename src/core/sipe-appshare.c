@@ -434,24 +434,27 @@ decline_cb(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private,
 	sipe_backend_media_hangup(appshare->stream->call->backend_private, TRUE);
 }
 
-static void
+static struct sipe_user_ask_ctx *
 ask_accept_applicationsharing(struct sipe_core_private *sipe_private,
-			      struct sipmsg *msg,
-			      struct sipe_appshare *appshare)
+			      const gchar *from,
+			      SipeUserAskCb accept_cb,
+			      SipeUserAskCb decline_cb,
+			      gpointer user_data)
 {
-	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+	struct sipe_user_ask_ctx *ctx;
 	gchar *alias = sipe_buddy_get_alias(sipe_private, from);
 	gchar *ask_msg = g_strdup_printf(_("%s wants to start presenting"),
 					 alias ? alias : from);
 
-	appshare->ask_ctx = sipe_user_ask(sipe_private, ask_msg,
+	ctx = sipe_user_ask(sipe_private, ask_msg,
 			     _("Accept"), accept_cb,
 			     _("Decline"), decline_cb,
-			     appshare);
+			     user_data);
 
 	g_free(ask_msg);
 	g_free(alias);
-	g_free(from);
+
+	return ctx;
 }
 
 static struct sipe_appshare *
@@ -527,7 +530,14 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 	appshare = initialize_appshare(stream);
 
 	if (appshare) {
-		ask_accept_applicationsharing(sipe_private, msg, appshare);
+		gchar *from;
+
+		from = parse_from(sipmsg_find_header(msg, "From"));
+		appshare->ask_ctx = ask_accept_applicationsharing(sipe_private, from,
+								  accept_cb,
+								  decline_cb,
+								  appshare);
+		g_free(from);
 	}
 }
 
