@@ -23,7 +23,6 @@
 /* Forward declarations */
 struct sipe_core_private;
 struct sipe_media_stream;
-struct sipe_rdp_client;
 struct sipmsg;
 
 struct sipe_rdp_client {
