@@ -105,7 +105,9 @@ remmina_launch(struct sipe_rdp_client *client, GSocketAddress *listen_address,
 		return FALSE;
 	}
 
-	cmdline = g_strdup_printf("remmina -c %s", client_data->config_file);
+	cmdline = g_strdup_printf("%s -c %s",
+				  client->cmdline,
+				  client_data->config_file);
 
 	g_spawn_command_line_async(cmdline, &error);
 	g_free(cmdline);
@@ -131,25 +133,14 @@ remmina_free(struct sipe_rdp_client *client)
 	g_free(client_data);
 }
 
-gboolean
+void
 sipe_appshare_remmina_init(struct sipe_rdp_client *client)
 {
-	gchar *program_path;
-
-	program_path = g_find_program_in_path("remmina");
-	if (!program_path) {
-		SIPE_DEBUG_WARNING_NOFORMAT("Couldn't locate remmina binary");
-		return FALSE;
-	}
-	g_free(program_path);
-
 	client->client_data = g_new0(struct remmina_data, 1);
 
 	client->get_listen_address_cb = remmina_get_listen_address;
 	client->launch_cb = remmina_launch;
 	client->free_cb = remmina_free;
-
-	return TRUE;
 }
 
 /*

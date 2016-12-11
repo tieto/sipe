@@ -43,6 +43,7 @@ static const gchar * const setting_name[SIPE_SETTING_LAST] = {
 	"email_login",    /* SIPE_SETTING_EMAIL_LOGIN    */
 	"email_password", /* SIPE_SETTING_EMAIL_PASSWORD */
 	"groupchat_user", /* SIPE_SETTING_GROUPCHAT_USER */
+	"rdp_client",     /* SIPE_SETTING_RDP_CLIENT     */
 	"useragent"       /* SIPE_SETTING_USER_AGENT     */
 };
 

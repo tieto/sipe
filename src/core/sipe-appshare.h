@@ -27,6 +27,7 @@ struct sipe_media_stream;
 struct sipmsg;
 
 struct sipe_rdp_client {
+	gchar *cmdline;
 	void *client_data;
 
 	GSocketAddress *(*get_listen_address_cb)(struct sipe_rdp_client *client);

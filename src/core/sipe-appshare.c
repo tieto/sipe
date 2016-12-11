@@ -21,6 +21,7 @@
  */
 
 #include <glib.h>
+#include <string.h>
 
 #include <gio/gio.h>
 
@@ -56,14 +57,6 @@ struct sipe_appshare {
 	struct sipe_rdp_client client;
 };
 
-typedef gboolean (*rdp_init_func)(struct sipe_rdp_client *);
-
-rdp_init_func rdp_init_functions[] = {
-		sipe_appshare_remmina_init,
-		sipe_appshare_xfreerdp_init,
-		NULL
-};
-
 static void
 sipe_appshare_free(struct sipe_appshare *appshare)
 {
@@ -97,6 +90,7 @@ sipe_appshare_free(struct sipe_appshare *appshare)
 		sipe_user_close_ask(appshare->ask_ctx);
 	}
 
+	g_free(appshare->client.cmdline);
 	if (appshare->client.free_cb) {
 		appshare->client.free_cb(&appshare->client);
 	}
@@ -465,7 +459,7 @@ initialize_appshare(struct sipe_media_stream *stream)
 	struct sipe_appshare *appshare;
 	struct sipe_media_call *call;
 	struct sipe_core_private *sipe_private;
-	SipeRDPClient client;
+	const gchar *cmdline;
 
 	call = stream->call;
 	sipe_private = sipe_media_get_sipe_core_private(call);
@@ -476,25 +470,27 @@ initialize_appshare(struct sipe_media_stream *stream)
 	sipe_media_stream_set_data(stream, appshare,
 				   (GDestroyNotify)sipe_appshare_free);
 
-	client = sipe_backend_appshare_get_rdp_client(SIPE_CORE_PUBLIC);
-	if (!rdp_init_functions[client](&appshare->client)) {
-		/* Preferred client isn't available. Fall back to whatever
-		 * application we can find. */
-		rdp_init_func *init;
+	cmdline = sipe_backend_setting(SIPE_CORE_PUBLIC,
+				       SIPE_SETTING_RDP_CLIENT);
+	if (is_empty(cmdline)) {
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Application sharing error"),
+					  _("No remote desktop client configured."));
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+		return NULL;
+	}
+	appshare->client.cmdline = g_strdup(cmdline);
 
-		for (init = rdp_init_functions; *init; ++init) {
-			if ((*init)(&appshare->client)) {
-				break;
-			}
-		}
-
-		if (*init == NULL) {
-			sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-				_("Application sharing error"),
-				_("Remote desktop client isn't installed."));
-			sipe_backend_media_hangup(call->backend_private, TRUE);
-			return NULL;
-		}
+	if (strstr(cmdline, "xfreerdp")) {
+		sipe_appshare_xfreerdp_init(&appshare->client);
+	} else if (strstr(cmdline, "remmina")) {
+		sipe_appshare_remmina_init(&appshare->client);
+	} else {
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
+					  _("Application sharing error"),
+					  _("Unknown remote desktop client configured."));
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+		return NULL;
 	}
 
 	sipe_media_stream_add_extra_attribute(stream,

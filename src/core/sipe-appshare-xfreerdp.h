@@ -23,4 +23,4 @@
 /* Forward declarations */
 struct sipe_rdp_client;
 
-gboolean sipe_appshare_xfreerdp_init(struct sipe_rdp_client *client);
+void sipe_appshare_xfreerdp_init(struct sipe_rdp_client *client);

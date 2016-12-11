@@ -377,11 +377,6 @@ typedef enum {
 	SIPE_ENCRYPTION_POLICY_OBEY_SERVER
 } SipeEncryptionPolicy;
 
-typedef enum {
-	SIPE_RDP_CLIENT_REMMINA,
-	SIPE_RDP_CLIENT_XFREERDP
-} SipeRDPClient;
-
 struct sipe_media_call;
 struct sipe_backend_media;
 struct sipe_backend_codec;
@@ -626,6 +621,7 @@ typedef enum {
   SIPE_SETTING_EMAIL_LOGIN,
   SIPE_SETTING_EMAIL_PASSWORD,
   SIPE_SETTING_GROUPCHAT_USER,
+  SIPE_SETTING_RDP_CLIENT,
   SIPE_SETTING_USER_AGENT,
   SIPE_SETTING_LAST
 } sipe_setting;
@@ -1092,8 +1088,6 @@ struct sipe_backend_buddy_menu *sipe_backend_buddy_sub_menu_add(struct sipe_core
 								struct sipe_backend_buddy_menu *sub);
 
 SipeEncryptionPolicy sipe_backend_media_get_encryption_policy(struct sipe_core_public *sipe_public);
-
-SipeRDPClient sipe_backend_appshare_get_rdp_client(struct sipe_core_public *sipe_public);
 
 #ifdef __cplusplus
 }

@@ -65,7 +65,9 @@ xfreerdp_launch(struct sipe_rdp_client *client,
 	gchar *cmdline;
 	GError *error = NULL;
 
-	cmdline = g_strdup_printf("xfreerdp /v:%s /sec:rdp",
+	/* This assumes FreeRDP 2.x.x */
+	cmdline = g_strdup_printf("%s /v:%s /sec:rdp",
+				  client->cmdline,
 				  client_data->socket_path);
 
 	g_spawn_command_line_async(cmdline, &error);
@@ -92,25 +94,14 @@ xfreerdp_free(struct sipe_rdp_client *client)
 	g_free(client_data);
 }
 
-gboolean
+void
 sipe_appshare_xfreerdp_init(struct sipe_rdp_client *client)
 {
-	gchar *program_path;
-
-	program_path = g_find_program_in_path("xfreerdp");
-	if (!program_path) {
-		SIPE_DEBUG_WARNING_NOFORMAT("Couldn't locate xfreerdp binary");
-		return FALSE;
-	}
-	g_free(program_path);
-
 	client->client_data = g_new0(struct xfreerdp_data, 1);
 
 	client->get_listen_address_cb = xfreerdp_get_listen_address;
 	client->launch_cb = xfreerdp_launch;
 	client->free_cb = xfreerdp_free;
-
-	return TRUE;
 }
 
 /*

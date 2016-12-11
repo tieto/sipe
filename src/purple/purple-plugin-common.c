@@ -930,9 +930,7 @@ GList * sipe_purple_account_options()
 	options = g_list_append(options, option);
 
 #if defined(HAVE_XDATA) && defined(HAVE_GIO)
-	option = purple_account_option_list_new(_("Remote desktop client"), "rdp-client", NULL);
-	purple_account_option_add_list_item(option, "Remmina", "remmina");
-	purple_account_option_add_list_item(option, "xfreerdp", "xfreerdp");
+	option = purple_account_option_string_new(_("Remote desktop client"), "rdp_client", "xfreerdp");
 	options = g_list_append(options, option);
 #endif
 
