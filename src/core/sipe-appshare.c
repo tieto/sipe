@@ -577,22 +577,27 @@ connect_conference(struct sipe_core_private *sipe_private,
 
 void
 sipe_appshare_connect_conference(struct sipe_core_private *sipe_private,
-				 struct sipe_chat_session *chat_session)
+				 struct sipe_chat_session *chat_session,
+				 gboolean user_must_accept)
 {
-	const gchar *from;
+	if (user_must_accept) {
+		const gchar *from;
 
-	if (chat_session->title) {
-		from = chat_session->title;
-	} else if (chat_session->organizer) {
-		from = chat_session->organizer;
+		if (chat_session->title) {
+			from = chat_session->title;
+		} else if (chat_session->organizer) {
+			from = chat_session->organizer;
+		} else {
+			from = chat_session->id;
+		}
+
+		ask_accept_applicationsharing(sipe_private, from,
+					      (SipeUserAskCb)connect_conference,
+					      NULL,
+					      chat_session);
 	} else {
-		from = chat_session->id;
+		connect_conference(sipe_private, chat_session);
 	}
-
-	ask_accept_applicationsharing(sipe_private, from,
-				      (SipeUserAskCb)connect_conference,
-				      NULL,
-				      chat_session);
 }
 
 /*
