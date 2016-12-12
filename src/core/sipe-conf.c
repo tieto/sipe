@@ -41,11 +41,6 @@
 
 #include <glib.h>
 
-#ifdef HAVE_GIO
-#include <gio/gio.h>
-#include "sipe-appshare.h"
-#endif
-
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-transport.h"
@@ -1414,8 +1409,9 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	}
 #if defined(HAVE_XDATA) && defined(HAVE_GIO)
 	if (presentation_was_added) {
-		sipe_appshare_connect_conference(sipe_private, session->chat_session,
-						 TRUE);
+		sipe_core_appshare_connect_conference(SIPE_CORE_PUBLIC,
+						      session->chat_session,
+						      TRUE);
 	}
 #endif // defined(HAVE_XDATA) && defined(HAVE_GIO)
 #endif // HAVE_VV

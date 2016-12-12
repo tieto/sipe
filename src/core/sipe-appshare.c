@@ -576,9 +576,9 @@ connect_conference(struct sipe_core_private *sipe_private,
 }
 
 void
-sipe_appshare_connect_conference(struct sipe_core_private *sipe_private,
-				 struct sipe_chat_session *chat_session,
-				 gboolean user_must_accept)
+sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
+				      struct sipe_chat_session *chat_session,
+				      gboolean user_must_accept)
 {
 	if (user_must_accept) {
 		const gchar *from;
@@ -591,12 +591,12 @@ sipe_appshare_connect_conference(struct sipe_core_private *sipe_private,
 			from = chat_session->id;
 		}
 
-		ask_accept_applicationsharing(sipe_private, from,
+		ask_accept_applicationsharing(SIPE_CORE_PRIVATE, from,
 					      (SipeUserAskCb)connect_conference,
 					      NULL,
 					      chat_session);
 	} else {
-		connect_conference(sipe_private, chat_session);
+		connect_conference(SIPE_CORE_PRIVATE, chat_session);
 	}
 }
 

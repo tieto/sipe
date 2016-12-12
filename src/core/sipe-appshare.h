@@ -22,7 +22,6 @@
 
 /* Forward declarations */
 struct sipe_core_private;
-struct sipe_chat_session;
 struct sipe_media_stream;
 struct sipmsg;
 
@@ -38,7 +37,3 @@ struct sipe_rdp_client {
 
 void process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 				      struct sipmsg *msg);
-
-void sipe_appshare_connect_conference(struct sipe_core_private *sipe_private,
-				      struct sipe_chat_session *chat_session,
-				      gboolean user_must_accept);
