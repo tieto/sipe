@@ -1200,9 +1200,9 @@ call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *c
 }
 
 #if defined(HAVE_XDATA) && defined(HAVE_GIO)
-static gboolean
-conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
-			      struct sipe_chat_session *chat_session)
+gboolean
+sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
+				   struct sipe_chat_session *chat_session)
 {
 	gchar *mcu_uri;
 	GList *calls;
@@ -1376,8 +1376,8 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 #endif
 				} else if (sipe_strequal("applicationsharing", session_type)) {
 #if defined(HAVE_XDATA) && defined(HAVE_GIO)
-					if (!conf_is_viewing_appshare(SIPE_CORE_PUBLIC,
-								      session->chat_session)) {
+					if (!sipe_core_conf_is_viewing_appshare(SIPE_CORE_PUBLIC,
+										session->chat_session)) {
 						gchar *media_state;
 						gchar *status;
 

@@ -409,6 +409,18 @@ gchar *
 sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
 			  struct sipe_chat_session *chat_session);
 
+/**
+ * Checks if given chat session has an open RDP client window.
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @param chat_session (in) chat session structure
+ *
+ * @return @c TRUE if RDP session is in progress.
+ */
+gboolean
+sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
+				   struct sipe_chat_session *chat_session);
+
 /* call control (CSTA) */
 void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,
 			       const gchar *phone);
