@@ -1199,24 +1199,26 @@ gboolean
 sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
 				   struct sipe_chat_session *chat_session)
 {
-	gchar *mcu_uri;
-	GList *calls;
+	if (chat_session) {
+		gchar *mcu_uri;
+		GList *calls;
 
-	mcu_uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
-	calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
+		mcu_uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+		calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
 
-	for (; calls; calls = g_list_delete_link(calls, calls)) {
-		struct sipe_media_call *call = calls->data;
-		if (sipe_strequal(call->with, mcu_uri)) {
-			break;
+		for (; calls; calls = g_list_delete_link(calls, calls)) {
+			struct sipe_media_call *call = calls->data;
+			if (sipe_strequal(call->with, mcu_uri)) {
+				break;
+			}
 		}
-	}
 
-	g_free(mcu_uri);
+		g_free(mcu_uri);
 
-	if (calls != NULL) {
-		g_list_free(calls);
-		return TRUE;
+		if (calls != NULL) {
+			g_list_free(calls);
+			return TRUE;
+		}
 	}
 
 	return FALSE;
