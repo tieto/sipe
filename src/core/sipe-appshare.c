@@ -551,6 +551,8 @@ connect_conference(struct sipe_core_private *sipe_private,
 	struct sipe_media_stream *stream;
 	gchar * uri;
 
+	chat_session->appshare_ask_ctx = NULL;
+
 	uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
 
 	call = sipe_media_call_new(sipe_private, uri, NULL,
@@ -583,6 +585,11 @@ sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
 	if (user_must_accept) {
 		const gchar *from;
 
+		if (chat_session->appshare_ask_ctx) {
+			// Accept dialog already opened.
+			return;
+		}
+
 		if (chat_session->title) {
 			from = chat_session->title;
 		} else if (chat_session->organizer) {
@@ -591,10 +598,12 @@ sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
 			from = chat_session->id;
 		}
 
-		ask_accept_applicationsharing(SIPE_CORE_PRIVATE, from,
-					      (SipeUserAskCb)connect_conference,
-					      NULL,
-					      chat_session);
+		chat_session->appshare_ask_ctx =
+				ask_accept_applicationsharing(SIPE_CORE_PRIVATE,
+							      from,
+							      (SipeUserAskCb)connect_conference,
+							      NULL,
+							      chat_session);
 	} else {
 		connect_conference(SIPE_CORE_PRIVATE, chat_session);
 	}

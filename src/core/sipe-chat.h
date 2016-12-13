@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-10 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,6 +52,8 @@ struct sipe_chat_session {
 	gchar *join_url;
 	gchar *dial_in_conf_id;
 	gchar *organizer;
+
+	struct sipe_user_ask_ctx *appshare_ask_ctx;
 };
 
 /**

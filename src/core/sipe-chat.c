@@ -44,6 +44,7 @@
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
+#include "sipe-user.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -83,6 +84,11 @@ void sipe_chat_remove_session(struct sipe_chat_session *session)
 	g_free(session->join_url);
 	g_free(session->dial_in_conf_id);
 	g_free(session->organizer);
+
+	if (session->appshare_ask_ctx) {
+		sipe_user_close_ask(session->appshare_ask_ctx);
+	}
+
 	g_free(session);
 }
 
