@@ -1,5 +1,9 @@
-version ?.??.? "Lync Autodiscover & Logging" (????-??-??)
+version ?.??.? "Lync Autodiscover, Logging & Application Sharing" (????-??-??)
 	- Feature #93: Support for Lync Autodiscover (Stefan Becker)
+	- Feature #6: Application Sharing Viewer (Jakub Adam)
+	  * requires libpurple >= 2.12.0
+	  * needs an external RDP client; Remmina and xfreerdp are supported and at least
+	    one of them must be available on $PATH
 	- Fixed #315: Crash when contact list is empty (Stefan Becker)
 	- Fixed #314: sipe login problems with long pw (Stefan Becker)
 	- separate logging and debugging output (Stefan Becker)
