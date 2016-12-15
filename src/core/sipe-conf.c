@@ -1233,24 +1233,34 @@ process_conference_appshare_endpoint(struct sipe_core_private *sipe_private,
 				     struct sip_session *session,
 				     gboolean *presentation_added)
 {
-	gchar *media_state;
-	gchar *status;
+	const sipe_xml *media;
 
 	if (sipe_core_conf_get_appshare_media_call(SIPE_CORE_PUBLIC,
 						   session->chat_session)) {
 		return;
 	}
 
-	media_state = sipe_xml_data(sipe_xml_child(endpoint, "media/media-state"));
-	status = sipe_xml_data(sipe_xml_child(endpoint, "media/status"));
+	for (media = sipe_xml_child(endpoint, "media");
+	     media && !(*presentation_added);
+	     media = sipe_xml_twin(media)) {
+		gchar *type;
+		gchar *media_state;
+		gchar *status;
 
-	if (sipe_strequal(media_state, "connected") &&
-	    sipe_strequal(status, "sendonly")) {
-		*presentation_added = TRUE;
+		type = sipe_xml_data(sipe_xml_child(media, "type"));
+		media_state = sipe_xml_data(sipe_xml_child(media, "media-state"));
+		status = sipe_xml_data(sipe_xml_child(media, "status"));
+
+		if (sipe_strequal(type, "applicationsharing") &&
+		    sipe_strequal(media_state, "connected") &&
+		    sipe_strequal(status, "sendonly")) {
+			*presentation_added = TRUE;
+		}
+
+		g_free(media_state);
+		g_free(status);
+		g_free(type);
 	}
-
-	g_free(media_state);
-	g_free(status);
 }
 
 #endif // HAVE_VV
