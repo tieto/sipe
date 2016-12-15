@@ -1227,6 +1227,32 @@ call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *c
 	}
 }
 
+static void
+process_conference_appshare_endpoint(struct sipe_core_private *sipe_private,
+				     const sipe_xml *endpoint,
+				     struct sip_session *session,
+				     gboolean *presentation_added)
+{
+	gchar *media_state;
+	gchar *status;
+
+	if (sipe_core_conf_get_appshare_media_call(SIPE_CORE_PUBLIC,
+						   session->chat_session)) {
+		return;
+	}
+
+	media_state = sipe_xml_data(sipe_xml_child(endpoint, "media/media-state"));
+	status = sipe_xml_data(sipe_xml_child(endpoint, "media/status"));
+
+	if (sipe_strequal(media_state, "connected") &&
+	    sipe_strequal(status, "sendonly")) {
+		*presentation_added = TRUE;
+	}
+
+	g_free(media_state);
+	g_free(status);
+}
+
 #endif // HAVE_VV
 
 void
@@ -1372,19 +1398,10 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 								       self,
 								       session);
 				} else if (sipe_strequal("applicationsharing", session_type)) {
-					if (!sipe_core_conf_get_appshare_media_call(SIPE_CORE_PUBLIC,
-										    session->chat_session) &&
-					    !sipe_strequal(user_uri, self)) {
-						gchar *media_state =
-								sipe_xml_data(sipe_xml_child(endpoint, "media/media-state"));
-						gchar *status = sipe_xml_data(sipe_xml_child(endpoint, "media/status"));
-						if (sipe_strequal(media_state, "connected") &&
-						    sipe_strequal(status, "sendonly")) {
-							presentation_was_added = TRUE;
-						}
-						g_free(media_state);
-						g_free(status);
-					}
+					process_conference_appshare_endpoint(sipe_private,
+									     endpoint,
+									     session,
+									     &presentation_was_added);
 				}
 #endif
 			}
