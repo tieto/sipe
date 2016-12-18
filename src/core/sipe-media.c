@@ -84,11 +84,12 @@ struct sipe_media_stream_private {
 	int encryption_key_id;
 	gboolean remote_candidates_and_codecs_set;
 	gboolean established;
+#ifdef HAVE_XDATA
 	gboolean sdp_negotiation_concluded;
+	gboolean writable;
+#endif
 
 	GSList *extra_sdp;
-
-	gboolean writable;
 
 	GQueue *write_queue;
 	GQueue *async_reads;
@@ -1534,6 +1535,7 @@ maybe_send_second_invite_response(struct sipe_media_call_private *call_private)
 
 	send_response_with_session_description(call_private, 200, "OK");
 
+#ifdef HAVE_XDATA
 	for (it = call_private->streams; it; it = it->next) {
 		struct sipe_media_stream_private *stream_private = it->data;
 
@@ -1543,6 +1545,7 @@ maybe_send_second_invite_response(struct sipe_media_call_private *call_private)
 			sipe_core_media_stream_writable(SIPE_MEDIA_STREAM, TRUE);
 		}
 	}
+#endif
 }
 
 struct sipe_media_call *
@@ -1708,7 +1711,9 @@ sipe_media_send_final_ack(struct sipe_core_private *sipe_private,
 			  struct transaction *trans)
 {
 	struct sipe_media_call_private *call_private;
+#ifdef HAVE_XDATA
 	GSList *it;
+#endif
 
 	if (!sipe_media_send_ack(sipe_private, msg, trans))
 		return FALSE;
@@ -1717,6 +1722,7 @@ sipe_media_send_final_ack(struct sipe_core_private *sipe_private,
 
 	sipe_backend_media_accept(SIPE_MEDIA_CALL->backend_private, FALSE);
 
+#ifdef HAVE_XDATA
 	for (it = call_private->streams; it; it = it->next) {
 		struct sipe_media_stream_private *stream_private = it->data;
 
@@ -1726,6 +1732,7 @@ sipe_media_send_final_ack(struct sipe_core_private *sipe_private,
 			sipe_core_media_stream_writable(SIPE_MEDIA_STREAM, TRUE);
 		}
 	}
+#endif
 
 	return TRUE;
 }
