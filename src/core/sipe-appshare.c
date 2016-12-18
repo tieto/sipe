@@ -27,8 +27,7 @@
 
 #include "sipmsg.h"
 #include "sipe-appshare.h"
-#include "sipe-appshare-xfreerdp.h"
-#include "sipe-appshare-remmina.h"
+#include "sipe-appshare-client.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-chat.h"

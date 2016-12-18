@@ -1,9 +1,9 @@
 /**
- * @file sipe-appshare-xfreerdp.h
+ * @file sipe-appshare-client.h
  *
  * pidgin-sipe
  *
- * Copyright (C) 2014-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,21 @@
  */
 
 /* Forward declarations */
-struct sipe_rdp_client;
+struct sipe_core_private;
+struct sipe_media_stream;
+struct sipmsg;
 
+struct sipe_rdp_client {
+	gchar *cmdline;
+	void *client_data;
+
+	GSocketAddress *(*get_listen_address_cb)(struct sipe_rdp_client *client);
+	gboolean (*launch_cb)(struct sipe_rdp_client *client,
+			      GSocketAddress *listen_address,
+			      struct sipe_media_stream *stream);
+	void (*free_cb)(struct sipe_rdp_client *client);
+};
+
+/* Client implementations */
+void sipe_appshare_remmina_init(struct sipe_rdp_client *client);
 void sipe_appshare_xfreerdp_init(struct sipe_rdp_client *client);

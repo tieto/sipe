@@ -22,19 +22,7 @@
 
 /* Forward declarations */
 struct sipe_core_private;
-struct sipe_media_stream;
 struct sipmsg;
-
-struct sipe_rdp_client {
-	gchar *cmdline;
-	void *client_data;
-
-	GSocketAddress *(*get_listen_address_cb)(struct sipe_rdp_client *client);
-	gboolean (*launch_cb)(struct sipe_rdp_client *client,
-			      GSocketAddress *listen_address,
-			      struct sipe_media_stream *stream);
-	void (*free_cb)(struct sipe_rdp_client *client);
-};
 
 void process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 				      struct sipmsg *msg);

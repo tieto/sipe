@@ -28,8 +28,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
-#include "sipe-appshare.h"
-#include "sipe-appshare-xfreerdp.h"
+#include "sipe-appshare-client.h"
 #include "sipe-backend.h"
 #include "sipe-common.h"
 #include "sipe-utils.h"

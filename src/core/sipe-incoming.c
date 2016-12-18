@@ -29,14 +29,10 @@
 
 #include <glib.h>
 
-#ifdef HAVE_APPSHARE
-#include <gio/gio.h>
-#endif
-
-#include "sipe-appshare.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-transport.h"
+#include "sipe-appshare.h"
 #include "sipe-backend.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"

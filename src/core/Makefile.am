@@ -215,9 +215,11 @@ libsipe_core_la_SOURCES += \
 
 if SIPE_HAVE_APPSHARE
 libsipe_core_la_SOURCES += \
-	sipe-appshare.h sipe-appshare.c \
-	sipe-appshare-remmina.h sipe-appshare-remmina.c \
-	sipe-appshare-xfreerdp.h sipe-appshare-xfreerdp.c
+	sipe-appshare.c \
+	sipe-appshare.h \
+	sipe-appshare-client.h \
+	sipe-appshare-remmina.c \
+	sipe-appshare-xfreerdp.c
 
 libsipe_core_la_CFLAGS += $(GIO_CFLAGS)
 endif
