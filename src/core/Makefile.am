@@ -213,7 +213,7 @@ if SIPE_HAVE_XDATA
 libsipe_core_la_SOURCES += \
 	sipe-ft-lync.h sipe-ft-lync.c
 
-if SIPE_HAVE_GIO
+if SIPE_HAVE_APPSHARE
 libsipe_core_la_SOURCES += \
 	sipe-appshare.h sipe-appshare.c \
 	sipe-appshare-remmina.h sipe-appshare-remmina.c \

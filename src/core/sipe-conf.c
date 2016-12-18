@@ -1194,7 +1194,7 @@ call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *c
 	}
 }
 
-#if defined(HAVE_XDATA) && defined(HAVE_GIO)
+#ifdef HAVE_APPSHARE
 gboolean
 sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
 				   struct sipe_chat_session *chat_session)
@@ -1223,7 +1223,7 @@ sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
 
 	return FALSE;
 }
-#endif // defined(HAVE_XDATA) && defined(HAVE_GIO)
+#endif
 #endif // HAVE_VV
 
 void
@@ -1238,9 +1238,9 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	gboolean just_joined = FALSE;
 #ifdef HAVE_VV
 	gboolean audio_was_added = FALSE;
-#if defined(HAVE_XDATA) && defined(HAVE_GIO)
+#ifdef HAVE_APPSHARE
 	gboolean presentation_was_added = FALSE;
-#endif // defined(HAVE_XDATA) && defined(HAVE_GIO)
+#endif
 #endif // HAVE_VV
 
 	if (msg->response != 0 && msg->response != 200) return;
@@ -1372,7 +1372,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 								       session);
 #endif
 				} else if (sipe_strequal("applicationsharing", session_type)) {
-#if defined(HAVE_XDATA) && defined(HAVE_GIO)
+#ifdef HAVE_APPSHARE
 					if (!sipe_core_conf_is_viewing_appshare(SIPE_CORE_PUBLIC,
 										session->chat_session)) {
 						gchar *media_state;
@@ -1388,7 +1388,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 						g_free(media_state);
 						g_free(status);
 					}
-#endif // defined(HAVE_XDATA) && defined(HAVE_GIO)
+#endif
 				}
 			}
 			if (!is_in_im_mcu) {
@@ -1409,13 +1409,13 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 					    (SipeUserAskCb) call_accept_cb,
 					    NULL);
 	}
-#if defined(HAVE_XDATA) && defined(HAVE_GIO)
+#ifdef HAVE_APPSHARE
 	if (presentation_was_added) {
 		sipe_core_appshare_connect_conference(SIPE_CORE_PUBLIC,
 						      session->chat_session,
 						      TRUE);
 	}
-#endif // defined(HAVE_XDATA) && defined(HAVE_GIO)
+#endif
 #endif // HAVE_VV
 
 	/* entity-view, locked */

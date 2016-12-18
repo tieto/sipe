@@ -232,14 +232,6 @@ dnl check for glib
 PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
 PKG_CHECK_MODULES(GMODULE, [gmodule-2.0 >= 2.12.0])
 
-dnl check for gio-2.0 optional for application sharing support
-PKG_CHECK_MODULES(GIO, [gio-2.0],
-	[ac_have_gio=yes],
-	[ac_have_gio=no])
-AM_CONDITIONAL(SIPE_HAVE_GIO, [test "x$ac_have_gio" == xyes])
-AS_IF([test "x$ac_have_gio" == xyes],
-	[AC_DEFINE(HAVE_GIO, 1, [Define if we have GIO library.])])
-
 dnl check for gmime
 dnl See also: https://bugzilla.gnome.org/show_bug.cgi?id=613653#c8
 PKG_CHECK_MODULES(GMIME, [gmime-2.6 >= 2.5.2],
@@ -356,6 +348,7 @@ AC_ARG_ENABLE([purple],
 	[AC_HELP_STRING([--enable-purple], [build purple plugin @<:@default=yes@:>@])],
 	[],
 	[enable_purple=yes])
+ac_have_appshare=no
 ac_have_xdata=no
 with_purple_vv=no
 AS_IF([test "x$enable_purple" != xno],
@@ -437,7 +430,11 @@ AS_IF([test "x$enable_purple" != xno],
 					[[return (PURPLE_MEDIA_APPLICATION);]]
 				 )],
 				 [dnl libpurple supports raw data RTP connections
-				  ac_have_xdata=yes]
+				  ac_have_xdata=yes
+
+				  dnl gio-2.0 is mandatory for application sharing support
+				  PKG_CHECK_MODULES(GIO, [gio-2.0], [ac_have_appshare=yes])
+				 ]
 			 )
 			],
 			[AS_IF([test "x$with_vv" = xyes], dnl explicitly requested by user
@@ -495,6 +492,11 @@ dnl raw data RTP streams enable Lync file transfer
 AM_CONDITIONAL(SIPE_HAVE_XDATA, [test "x$ac_have_xdata" == xyes])
 AS_IF([test "x$ac_have_xdata" == xyes],
 	[AC_DEFINE(HAVE_XDATA, 1, [Define if we have raw data RTP in media backend.])])
+
+dnl enable appshare support
+AM_CONDITIONAL(SIPE_HAVE_APPSHARE, [test "x$ac_have_appshare" == xyes])
+AS_IF([test "x$ac_have_appshare" == xyes],
+	[AC_DEFINE(HAVE_APPSHARE, 1, [Define to 1 if we have appshare support.])])
 
 dnl these code parts rely on interfaces that require GValueArray. This
 dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there
