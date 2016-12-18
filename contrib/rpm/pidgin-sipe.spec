@@ -55,6 +55,7 @@ BuildRequires:  libtool
 %if !0%{?_without_vv:1}
 BuildRequires:  pkgconfig(purple) >= 2.8.0
 BuildRequires:  pkgconfig(farstream-0.2)
+BuildRequires:  pkgconfig(gio-2.0)
 BuildRequires:  pkgconfig(nice) >= 0.1.0
 %if 0%{?fedora} >= 22
 BuildRequires:  pkgconfig(gstreamer-1.0)
@@ -302,6 +303,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Dec 18 2016 J. D. User <jduser@noreply.com> 1.21.1-*git*
+- add BR gio-2.0
+
 * Wed Jun 15 2016 J. D. User <jduser@noreply.com> 1.21.1-*git*
 - add BR farstream-0.2
 

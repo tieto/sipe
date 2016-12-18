@@ -205,6 +205,7 @@ BuildRequires:  pkgconfig(gstreamer-1.0)
 %endif
 %if 0%{?has_farstream:1}
 BuildRequires:  pkgconfig(farstream-0.2)
+BuildRequires:  pkgconfig(gio-2.0)
 %endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
@@ -575,6 +576,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Dec 18 2016 J. D. User <jduser@noreply.com> 1.21.1-*git*
+- add BR gio-2.0
+
 * Wed Jun 15 2016 J. D. User <jduser@noreply.com> 1.21.1-*git*
 - add BR farstream-0.2
 
