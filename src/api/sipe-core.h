@@ -409,6 +409,18 @@ gchar *
 sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
 			  struct sipe_chat_session *chat_session);
 
+/**
+ * Checks if given chat session has an open RDP client window.
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @param chat_session (in) chat session structure
+ *
+ * @return @c TRUE if RDP session is in progress.
+ */
+gboolean
+sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
+				   struct sipe_chat_session *chat_session);
+
 /* call control (CSTA) */
 void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,
 			       const gchar *phone);
@@ -496,6 +508,20 @@ struct sipe_file_transfer *
 sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
 			     const gchar *who,
 			     const gchar *file);
+
+/* application sharing */
+
+/**
+ * Connects to a meeting's presentation
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @param chat_session (in) chat session structure
+ * @param user_must_accept (in) @c TRUE if user should be shown accept/decline
+ * 			   dialog before the action can proceed.
+ */
+void sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
+					   struct sipe_chat_session *chat_session,
+					   gboolean user_must_accept);
 
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);

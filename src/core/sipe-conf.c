@@ -41,11 +41,6 @@
 
 #include <glib.h>
 
-#ifdef HAVE_GIO
-#include <gio/gio.h>
-#include "sipe-appshare.h"
-#endif
-
 #include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-transport.h"
@@ -1200,28 +1195,30 @@ call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *c
 }
 
 #if defined(HAVE_XDATA) && defined(HAVE_GIO)
-static gboolean
-conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
-			      struct sipe_chat_session *chat_session)
+gboolean
+sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
+				   struct sipe_chat_session *chat_session)
 {
-	gchar *mcu_uri;
-	GList *calls;
+	if (chat_session) {
+		gchar *mcu_uri;
+		GList *calls;
 
-	mcu_uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
-	calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
+		mcu_uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+		calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
 
-	for (; calls; calls = g_list_delete_link(calls, calls)) {
-		struct sipe_media_call *call = calls->data;
-		if (sipe_strequal(call->with, mcu_uri)) {
-			break;
+		for (; calls; calls = g_list_delete_link(calls, calls)) {
+			struct sipe_media_call *call = calls->data;
+			if (sipe_strequal(call->with, mcu_uri)) {
+				break;
+			}
 		}
-	}
 
-	g_free(mcu_uri);
+		g_free(mcu_uri);
 
-	if (calls != NULL) {
-		g_list_free(calls);
-		return TRUE;
+		if (calls != NULL) {
+			g_list_free(calls);
+			return TRUE;
+		}
 	}
 
 	return FALSE;
@@ -1376,8 +1373,8 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 #endif
 				} else if (sipe_strequal("applicationsharing", session_type)) {
 #if defined(HAVE_XDATA) && defined(HAVE_GIO)
-					if (!conf_is_viewing_appshare(SIPE_CORE_PUBLIC,
-								      session->chat_session)) {
+					if (!sipe_core_conf_is_viewing_appshare(SIPE_CORE_PUBLIC,
+										session->chat_session)) {
 						gchar *media_state;
 						gchar *status;
 
@@ -1414,7 +1411,9 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	}
 #if defined(HAVE_XDATA) && defined(HAVE_GIO)
 	if (presentation_was_added) {
-		sipe_appshare_connect_conference(sipe_private, session->chat_session);
+		sipe_core_appshare_connect_conference(SIPE_CORE_PUBLIC,
+						      session->chat_session,
+						      TRUE);
 	}
 #endif // defined(HAVE_XDATA) && defined(HAVE_GIO)
 #endif // HAVE_VV
