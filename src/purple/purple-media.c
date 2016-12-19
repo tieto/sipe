@@ -128,7 +128,8 @@ maybe_signal_stream_initialized(struct sipe_media_call *call, gchar *sessionid)
 		struct sipe_media_stream *stream;
 		stream = sipe_core_media_get_stream_by_id(call, sessionid);
 
-		if (sipe_backend_stream_initialized(call, stream) &&
+		if (stream &&
+		    sipe_backend_stream_initialized(call, stream) &&
 		    !stream->backend_private->initialized_cb_was_fired) {
 			call->stream_initialized_cb(call, stream);
 			stream->backend_private->initialized_cb_was_fired = TRUE;
@@ -239,10 +240,12 @@ on_stream_info_cb(PurpleMedia *media,
 			struct sipe_media_stream *stream;
 			stream = sipe_core_media_get_stream_by_id(call, sessionid);
 
-			if (local)
-				stream->backend_private->local_on_hold = state;
-			else
-				stream->backend_private->remote_on_hold = state;
+			if (stream) {
+				if (local)
+					stream->backend_private->local_on_hold = state;
+				else
+					stream->backend_private->remote_on_hold = state;
+			}
 		} else {
 			// Hold all streams
 			GList *session_ids = purple_media_get_session_ids(media);
@@ -251,10 +254,12 @@ on_stream_info_cb(PurpleMedia *media,
 				struct sipe_media_stream *stream =
 						sipe_core_media_get_stream_by_id(call, session_ids->data);
 
-				if (local)
-					stream->backend_private->local_on_hold = state;
-				else
-					stream->backend_private->remote_on_hold = state;
+				if (stream) {
+					if (local)
+						stream->backend_private->local_on_hold = state;
+					else
+						stream->backend_private->remote_on_hold = state;
+				}
 			}
 
 			g_list_free(session_ids);

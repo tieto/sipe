@@ -498,15 +498,21 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	call->call_reject_cb = call_reject_cb;
 
 	stream = sipe_core_media_get_stream_by_id(call, "data");
-	stream->candidate_pairs_established_cb = candidate_pairs_established_cb;
-	stream->read_cb = read_cb;
-	sipe_media_stream_add_extra_attribute(stream, "recvonly", NULL);
-	sipe_media_stream_set_data(stream, ft_private,
-				   (GDestroyNotify)sipe_file_transfer_lync_free);
+	if (stream) {
+		stream->candidate_pairs_established_cb = candidate_pairs_established_cb;
+		stream->read_cb = read_cb;
+		sipe_media_stream_add_extra_attribute(stream, "recvonly", NULL);
+		sipe_media_stream_set_data(stream, ft_private,
+					   (GDestroyNotify)sipe_file_transfer_lync_free);
 
-	sipe_backend_ft_incoming(SIPE_CORE_PUBLIC, SIPE_FILE_TRANSFER,
-				 call->with, ft_private->file_name,
-				 ft_private->file_size);
+		sipe_backend_ft_incoming(SIPE_CORE_PUBLIC, SIPE_FILE_TRANSFER,
+					 call->with, ft_private->file_name,
+					 ft_private->file_size);
+	} else {
+		sip_transport_response(sipe_private, msg, 500, "Server Internal Error", NULL);
+		sipe_file_transfer_lync_free(ft_private);
+		return;
+	}
 }
 
 static void
