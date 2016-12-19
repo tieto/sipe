@@ -31,7 +31,6 @@
 #include "sipe-appshare-client.h"
 #include "sipe-backend.h"
 #include "sipe-common.h"
-#include "sipe-utils.h"
 
 struct xfreerdp_data {
 	gchar *socket_path;
@@ -50,7 +49,8 @@ xfreerdp_get_listen_address(struct sipe_rdp_client *client)
 	g_unlink(data->socket_path);
 
 	address.sun_family = AF_LOCAL;
-	strncpy(address.sun_path, data->socket_path, sizeof (address.sun_path));
+	strncpy(address.sun_path, data->socket_path, sizeof (address.sun_path) - 1);
+	address.sun_path[sizeof (address.sun_path) - 1] = '\0';
 
 	return g_socket_address_new_from_native(&address, sizeof (address));
 }
