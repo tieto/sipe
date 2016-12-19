@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,22 +36,26 @@
  * This needs to be kept in sync with
  *
  *     api/sipe-backend.h
- *     purple-plugin.c:init_plugin()
+ *     purple-plugin-common.c:sipe_purple_account_options()
  */
-static const gchar * const setting_name[SIPE_SETTING_LAST] = {
-	"email_url",      /* SIPE_SETTING_EMAIL_URL      */
-	"email_login",    /* SIPE_SETTING_EMAIL_LOGIN    */
-	"email_password", /* SIPE_SETTING_EMAIL_PASSWORD */
-	"groupchat_user", /* SIPE_SETTING_GROUPCHAT_USER */
-	"rdp_client",     /* SIPE_SETTING_RDP_CLIENT     */
-	"useragent"       /* SIPE_SETTING_USER_AGENT     */
+static struct {
+	const gchar *name;
+	const gchar *default_value;
+} settings[SIPE_SETTING_LAST] = {
+	{ "email_url",      NULL      }, /* SIPE_SETTING_EMAIL_URL      */
+	{ "email_login",    NULL      }, /* SIPE_SETTING_EMAIL_LOGIN    */
+	{ "email_password", NULL      }, /* SIPE_SETTING_EMAIL_PASSWORD */
+	{ "groupchat_user", NULL      }, /* SIPE_SETTING_GROUPCHAT_USER */
+	{ "rdp_client",     "remmina" }, /* SIPE_SETTING_RDP_CLIENT     */
+	{ "useragent",      NULL      }  /* SIPE_SETTING_USER_AGENT     */
 };
 
 const gchar *sipe_backend_setting(struct sipe_core_public *sipe_public,
 				  sipe_setting type)
 {
 	return(purple_account_get_string(purple_connection_get_account(sipe_public->backend_private->gc),
-					 setting_name[type], NULL));
+					 settings[type].name,
+					 settings[type].default_value));
 }
 
 /*
