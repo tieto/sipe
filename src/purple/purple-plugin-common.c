@@ -930,7 +930,7 @@ GList * sipe_purple_account_options()
 	options = g_list_append(options, option);
 
 #ifdef HAVE_APPSHARE
-	option = purple_account_option_string_new(_("Remote desktop client"), "rdp_client", "xfreerdp");
+	option = purple_account_option_string_new(_("Remote desktop client"), "rdp_client", "remmina");
 	options = g_list_append(options, option);
 #endif
 
