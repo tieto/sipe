@@ -1432,13 +1432,16 @@ sipe_core_media_get_call(struct sipe_core_public *sipe_public)
 {
 	struct sipe_media_call * result = NULL;
 	GList *calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
+	GList *entry = calls;
 
-	for (; calls; calls = g_list_delete_link(calls, calls)) {
-		if (sipe_core_media_get_stream_by_id(calls->data, "audio")) {
-			result = calls->data;
+	while (entry) {
+		if (sipe_core_media_get_stream_by_id(entry->data, "audio")) {
+			result = entry->data;
 			break;
 		}
+		entry = entry->next;
 	}
+	g_list_free(calls);
 
 	return result;
 }
