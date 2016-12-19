@@ -161,6 +161,7 @@ socket_connect_cb(SIPE_UNUSED_PARAMETER GIOChannel *channel,
 	struct sipe_appshare *appshare = data;
 	GError *error = NULL;
 	GSocket *data_socket;
+	int fd;
 
 	data_socket = g_socket_accept(appshare->socket, NULL, &error);
 	if (error) {
@@ -189,8 +190,15 @@ socket_connect_cb(SIPE_UNUSED_PARAMETER GIOChannel *channel,
 	g_object_unref(appshare->socket);
 	appshare->socket = data_socket;
 
-	appshare->channel = g_io_channel_unix_new(
-			g_socket_get_fd(appshare->socket));
+	fd = g_socket_get_fd(appshare->socket);
+	if (fd < 0) {
+		struct sipe_media_call *call = appshare->stream->call;
+
+		SIPE_DEBUG_ERROR_NOFORMAT("Invalid file descriptor for RDP client connection socket");
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+		return FALSE;
+	}
+	appshare->channel = g_io_channel_unix_new(fd);
 
 	// No encoding for binary data
 	g_io_channel_set_encoding(appshare->channel, NULL, &error);
@@ -218,6 +226,7 @@ launch_rdp_client(struct sipe_appshare *appshare)
 	struct sipe_media_call *call = appshare->stream->call;
 	GSocketAddress *address;
 	GError *error = NULL;
+	int fd;
 
 	address = client->get_listen_address_cb(client);
 	if (!address) {
@@ -233,6 +242,7 @@ launch_rdp_client(struct sipe_appshare *appshare)
 		SIPE_DEBUG_ERROR("Can't create RDP client listen socket: %s",
 				 error->message);
 		g_error_free(error);
+		g_object_unref(address);
 		sipe_backend_media_hangup(call->backend_private, TRUE);
 		return;
 	}
@@ -258,8 +268,14 @@ launch_rdp_client(struct sipe_appshare *appshare)
 		return;
 	}
 
-	appshare->channel = g_io_channel_unix_new(
-			g_socket_get_fd(appshare->socket));
+	fd = g_socket_get_fd(appshare->socket);
+	if (fd < 0) {
+		SIPE_DEBUG_ERROR_NOFORMAT("Invalid file descriptor for RDP client listen socket");
+		sipe_backend_media_hangup(call->backend_private, TRUE);
+		return;
+	}
+	appshare->channel = g_io_channel_unix_new(fd);
+
 	appshare->rdp_channel_readable_watch_id =
 			g_io_add_watch(appshare->channel, G_IO_IN,
 				       socket_connect_cb, appshare);
