@@ -487,13 +487,8 @@ initialize_appshare(struct sipe_media_stream *stream)
 
 	cmdline = sipe_backend_setting(SIPE_CORE_PUBLIC,
 				       SIPE_SETTING_RDP_CLIENT);
-	if (is_empty(cmdline)) {
-		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
-					  _("Application sharing error"),
-					  _("No remote desktop client configured."));
-		sipe_backend_media_hangup(call->backend_private, TRUE);
-		return NULL;
-	}
+	if (is_empty(cmdline))
+		cmdline = "remmina";
 	appshare->client.cmdline = g_strdup(cmdline);
 
 	if (strstr(cmdline, "xfreerdp")) {
