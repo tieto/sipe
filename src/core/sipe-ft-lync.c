@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2014-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2014-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -460,7 +460,6 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 				struct sipmsg *msg)
 {
 	struct sipe_file_transfer_lync *ft_private;
-	struct sipe_media_call *call;
 	struct sipe_media_stream *stream;
 
 	ft_private = g_new0(struct sipe_file_transfer_lync, 1);
@@ -487,17 +486,15 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	call = ft_private->call;
-
 	ft_private->public.ft_init = ft_lync_incoming_init;
 	ft_private->public.ft_request_denied = ft_lync_request_denied;
 	ft_private->public.ft_cancelled = ft_lync_incoming_cancelled;
 	ft_private->public.ft_end = ft_lync_end;
 
-	ft_private->call_reject_parent_cb = call->call_reject_cb;
-	call->call_reject_cb = call_reject_cb;
+	ft_private->call_reject_parent_cb = ft_private->call->call_reject_cb;
+	ft_private->call->call_reject_cb = call_reject_cb;
 
-	stream = sipe_core_media_get_stream_by_id(call, "data");
+	stream = sipe_core_media_get_stream_by_id(ft_private->call, "data");
 	if (stream) {
 		stream->candidate_pairs_established_cb = candidate_pairs_established_cb;
 		stream->read_cb = read_cb;
@@ -506,7 +503,8 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 					   (GDestroyNotify)sipe_file_transfer_lync_free);
 
 		sipe_backend_ft_incoming(SIPE_CORE_PUBLIC, SIPE_FILE_TRANSFER,
-					 call->with, ft_private->file_name,
+					 ft_private->call->with,
+					 ft_private->file_name,
 					 ft_private->file_size);
 	} else {
 		sip_transport_response(sipe_private, msg, 500, "Server Internal Error", NULL);
