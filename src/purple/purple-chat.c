@@ -271,8 +271,12 @@ static void
 sipe_purple_chat_menu_show_presentation_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
 					   PurpleConversation *conv)
 {
-	if (sipe_core_conf_is_viewing_appshare(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
-					       sipe_purple_chat_get_session(conv))) {
+	sipe_appshare_role role;
+
+	role = sipe_core_conf_get_appshare_role(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+						sipe_purple_chat_get_session(conv));
+
+	if (role == SIPE_APPSHARE_ROLE_VIEWER) {
 		return;
 	}
 
@@ -340,8 +344,8 @@ sipe_purple_chat_menu(PurpleChat *chat)
 					menu = g_list_prepend(menu, act);
 			}
 #ifdef HAVE_APPSHARE
-			if (!sipe_core_conf_is_viewing_appshare(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
-								chat_session)) {
+			if (sipe_core_conf_get_appshare_role(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+							     chat_session) == SIPE_APPSHARE_ROLE_NONE) {
 				act = purple_menu_action_new(_("Show presentation"),
 							     PURPLE_CALLBACK(sipe_purple_chat_menu_show_presentation_cb),
 							     conv, NULL);

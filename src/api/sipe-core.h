@@ -421,17 +421,23 @@ gchar *
 sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
 			  struct sipe_chat_session *chat_session);
 
+typedef enum {
+	SIPE_APPSHARE_ROLE_NONE,
+	SIPE_APPSHARE_ROLE_VIEWER,
+	SIPE_APPSHARE_ROLE_PRESENTER
+} sipe_appshare_role;
+
 /**
- * Checks if given chat session has an open RDP client window.
+ * Gets user's application sharing role in given chat session.
  *
  * @param sipe_public (in) SIPE core data.
  * @param chat_session (in) chat session structure
  *
- * @return @c TRUE if RDP session is in progress.
+ * @return User's application sharing role.
  */
-gboolean
-sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
-				   struct sipe_chat_session *chat_session);
+sipe_appshare_role
+sipe_core_conf_get_appshare_role(struct sipe_core_public *sipe_public,
+				 struct sipe_chat_session *chat_session);
 
 /* call control (CSTA) */
 void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,

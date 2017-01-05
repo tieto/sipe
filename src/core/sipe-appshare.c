@@ -39,7 +39,6 @@
 #endif // HAVE_RDP_SERVER
 
 #include "sipmsg.h"
-#include "sipe-appshare.h"
 #include "sipe-appshare-client.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
@@ -48,6 +47,7 @@
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-appshare.h"
 #include "sipe-media.h"
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
@@ -667,6 +667,32 @@ sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
 	} else {
 		connect_conference(SIPE_CORE_PRIVATE, chat_session);
 	}
+}
+
+sipe_appshare_role
+sipe_appshare_get_role(struct sipe_media_call *call)
+{
+	struct sipe_media_stream *stream;
+
+	g_return_val_if_fail(call, SIPE_APPSHARE_ROLE_NONE);
+
+	stream = sipe_core_media_get_stream_by_id(call, "applicationsharing");
+
+	if (stream) {
+		struct sipe_appshare *appshare;
+
+		appshare = sipe_media_stream_get_data(stream);
+		if (appshare) {
+#ifdef HAVE_RDP_SERVER
+			return appshare->server ? SIPE_APPSHARE_ROLE_PRESENTER :
+						  SIPE_APPSHARE_ROLE_VIEWER;
+#else
+			return SIPE_APPSHARE_ROLE_VIEWER;
+#endif // HAVE_RDP_SERVER
+		}
+	}
+
+	return SIPE_APPSHARE_ROLE_NONE;
 }
 
 #ifdef HAVE_RDP_SERVER
