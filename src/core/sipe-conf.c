@@ -50,6 +50,7 @@
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
+#include "sipe-appshare.h"
 #include "sipe-dialog.h"
 #include "sipe-http.h"
 #include "sipe-im.h"
@@ -1204,10 +1205,12 @@ call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *c
 }
 
 #ifdef HAVE_APPSHARE
-gboolean
-sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
-				   struct sipe_chat_session *chat_session)
+sipe_appshare_role
+sipe_core_conf_get_appshare_role(struct sipe_core_public *sipe_public,
+				 struct sipe_chat_session *chat_session)
 {
+	sipe_appshare_role role = SIPE_APPSHARE_ROLE_NONE;
+
 	if (chat_session) {
 		gchar *mcu_uri;
 		GList *calls;
@@ -1218,6 +1221,7 @@ sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
 		for (; calls; calls = g_list_delete_link(calls, calls)) {
 			struct sipe_media_call *call = calls->data;
 			if (sipe_strequal(call->with, mcu_uri)) {
+				role = sipe_appshare_get_role(call);
 				break;
 			}
 		}
@@ -1226,11 +1230,10 @@ sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
 
 		if (calls != NULL) {
 			g_list_free(calls);
-			return TRUE;
 		}
 	}
 
-	return FALSE;
+	return role;
 }
 
 static gboolean
@@ -1413,8 +1416,8 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 #endif
 				} else if (sipe_strequal("applicationsharing", session_type)) {
 #ifdef HAVE_APPSHARE
-					if (!sipe_core_conf_is_viewing_appshare(SIPE_CORE_PUBLIC,
-										session->chat_session)) {
+					if (sipe_core_conf_get_appshare_role(SIPE_CORE_PUBLIC,
+									     session->chat_session) == SIPE_APPSHARE_ROLE_NONE) {
 						presentation_was_added = process_conference_appshare_endpoint(endpoint);
 					}
 #endif

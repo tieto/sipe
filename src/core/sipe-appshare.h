@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2014-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2014-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,10 @@
 
 /* Forward declarations */
 struct sipe_core_private;
+struct sipe_media_call;
 struct sipmsg;
 
 void process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 				      struct sipmsg *msg);
+
+sipe_appshare_role sipe_appshare_get_role(struct sipe_media_call *call);
