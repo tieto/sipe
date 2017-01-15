@@ -546,7 +546,9 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 		}
 	}
 
-	call = process_incoming_invite_call(sipe_private, msg, sdpmsg);
+	call = process_incoming_invite_call_parsed_sdp(sipe_private,
+						       msg,
+						       sdpmsg);
 	if (!call) {
 		return;
 	}

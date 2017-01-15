@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,7 @@ append_attribute(struct sdpmedia *media, gchar *attr)
 }
 
 static gboolean
-parse_attributes(struct sdpmsg *smsg, gchar *msg) {
+parse_attributes(struct sdpmsg *smsg, const gchar *msg) {
 	gchar		**lines = g_strsplit(msg, "\r\n", 0);
 	gchar		**ptr = lines;
 
@@ -426,7 +426,7 @@ parse_encryption_key(GSList *attrs, guchar **key, int *key_id)
 }
 
 struct sdpmsg *
-sdpmsg_parse_msg(gchar *msg)
+sdpmsg_parse_msg(const gchar *msg)
 {
 	struct sdpmsg *smsg = g_new0(struct sdpmsg, 1);
 	GSList *i;

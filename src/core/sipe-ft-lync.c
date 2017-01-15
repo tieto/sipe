@@ -46,7 +46,6 @@
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 #include "sipmsg.h"
-#include "sdpmsg.h"
 
 struct sipe_file_transfer_lync {
 	struct sipe_file_transfer public;
@@ -475,8 +474,9 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 
 	/* Use the selected SDP part of multipart SIP message to initialize
 	 * media session. */
-	ft_private->call = process_incoming_invite_call(sipe_private, msg,
-							sdpmsg_parse_msg(ft_private->sdp));
+	ft_private->call = process_incoming_invite_call(sipe_private,
+							msg,
+							ft_private->sdp);
 	g_free(ft_private->sdp);
 	ft_private->sdp = NULL;
 

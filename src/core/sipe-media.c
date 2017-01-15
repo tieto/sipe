@@ -1553,7 +1553,18 @@ maybe_send_second_invite_response(struct sipe_media_call_private *call_private)
 
 struct sipe_media_call *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg, struct sdpmsg *smsg)
+			     struct sipmsg *msg,
+			     const gchar *sdp)
+{
+	return(process_incoming_invite_call_parsed_sdp(sipe_private,
+						       msg,
+						       sdpmsg_parse_msg(sdp)));
+}
+
+struct sipe_media_call *
+process_incoming_invite_call_parsed_sdp(struct sipe_core_private *sipe_private,
+					struct sipmsg *msg,
+					struct sdpmsg *smsg)
 {
 	struct sipe_media_call_private *call_private;
 	gboolean has_new_media = FALSE;
