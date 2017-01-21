@@ -61,6 +61,7 @@ struct sipe_appshare {
 	GIOChannel *channel;
 	guint rdp_channel_readable_watch_id;
 	guint rdp_channel_writable_watch_id;
+	guint monitor_id;
 	struct sipe_user_ask_ctx *ask_ctx;
 
 	gchar rdp_channel_buffer[0x800];
@@ -670,6 +671,38 @@ sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
 
 #ifdef HAVE_RDP_SERVER
 static void
+set_shared_display_area(rdpShadowServer *server, guint monitor_id)
+{
+	if (monitor_id == 0) {
+		MONITOR_DEF monitors[16];
+		int monitor_count;
+		int i;
+		UINT16 maxWidth = 0;
+		UINT16 maxHeight = 0;
+
+		monitor_count = shadow_enum_monitors(monitors, 16);
+		for (i = 0; i != monitor_count; ++i) {
+			MONITOR_DEF *m = &monitors[i];
+			if (m->right > maxWidth) {
+				maxWidth = m->right;
+			}
+			if (m->bottom >  maxHeight) {
+				maxHeight = m->bottom;
+			}
+		}
+
+		server->subRect.top = 0;
+		server->subRect.left = 0;
+		server->subRect.right = maxWidth;
+		server->subRect.bottom = maxHeight;
+		server->shareSubRect = TRUE;
+	} else {
+		// Index 0 is reserved for "whole desktop" choice.
+		server->selectedMonitor = monitor_id - 1;
+	}
+}
+
+static void
 candidate_pairs_established_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_appshare *appshare;
@@ -683,8 +716,6 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 
 	appshare = sipe_media_stream_get_data(stream);
 
-	shadow_subsystem_set_entry_builtin("X11");
-
 	server = shadow_server_new();
 	if(!server) {
 		server_error = _("Could not create RDP server.");
@@ -693,6 +724,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 						    g_get_user_runtime_dir(),
 						    getpid(), stream);
 		server->authentication = FALSE;
+		set_shared_display_area(server, appshare->monitor_id);
 
 		/* Experimentally determined cap on multifrag max request size
 		 * Lync client would accept. Higher values result in a black
@@ -770,24 +802,29 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 	stream->candidate_pairs_established_cb = NULL;
 }
 
-void
-sipe_core_appshare_share_desktop(struct sipe_core_public *sipe_public,
-				 const gchar *with)
+static void
+monitor_selected_cb(struct sipe_core_private *sipe_private, gchar *with,
+		    guint monitor_id)
 {
 	struct sipe_media_call *call;
 	struct sipe_media_stream *stream;
 	struct sipe_appshare *appshare;
 
-	call = sipe_media_call_new(SIPE_CORE_PRIVATE, with, NULL,
-				   SIPE_ICE_RFC_5245,
+	if (monitor_id == SIPE_CHOICE_CANCELLED) {
+		g_free(with);
+		return;
+	}
+
+	call = sipe_media_call_new(sipe_private, with, NULL, SIPE_ICE_RFC_5245,
 				   SIPE_MEDIA_CALL_INITIATOR |
 				   SIPE_MEDIA_CALL_NO_UI);
+	g_free(with);
 
 	stream = sipe_media_stream_add(call, "applicationsharing",
 				       SIPE_MEDIA_APPLICATION,
 				       SIPE_ICE_RFC_5245, TRUE, 0);
 	if (!stream) {
-		sipe_backend_notify_error(sipe_public,
+		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 				_("Application sharing error"),
 				_("Couldn't initialize application sharing"));
 		sipe_backend_media_hangup(call->backend_private, TRUE);
@@ -812,9 +849,55 @@ sipe_core_appshare_share_desktop(struct sipe_core_public *sipe_public,
 
 	appshare = g_new0(struct sipe_appshare, 1);
 	appshare->stream = stream;
+	appshare->monitor_id = monitor_id;
 
 	sipe_media_stream_set_data(stream, appshare,
 				   (GDestroyNotify)sipe_appshare_free);
+}
+
+static void
+present_monitor_choice(struct sipe_core_public *sipe_public, const gchar *who)
+{
+	MONITOR_DEF monitors[16];
+	int monitor_count;
+
+	shadow_subsystem_set_entry_builtin("X11");
+	monitor_count = shadow_enum_monitors(monitors, 16);
+
+	if (monitor_count == 1) {
+		// Don't show choice dialog, share whole desktop right away.
+		monitor_selected_cb(SIPE_CORE_PRIVATE, g_strdup(who), 0);
+	} else {
+		GSList *choices = NULL;
+		int i;
+
+		choices = g_slist_append(choices, g_strdup(_("Whole desktop")));
+
+		for (i = 0; i != monitor_count; ++i) {
+			MONITOR_DEF *mon = &monitors[i];
+			gchar *str = g_strdup_printf("%dx%d @ [%d, %d]",
+						     mon->right - mon->left,
+						     mon->bottom - mon->top,
+						     mon->left,
+						     mon->top);
+
+			choices = g_slist_append(choices, str);
+		}
+
+		sipe_user_ask_choice(SIPE_CORE_PRIVATE, _("Monitor to share"),
+				     choices,
+				     (SipeUserAskChoiceCb)monitor_selected_cb,
+				     g_strdup(who));
+
+		g_slist_free_full(choices, g_free);
+	}
+}
+
+void
+sipe_core_appshare_share_desktop(struct sipe_core_public *sipe_public,
+				 const gchar *with)
+{
+	present_monitor_choice(sipe_public, with);
 }
 #endif // HAVE_RDP_SERVER
 
