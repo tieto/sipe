@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2018 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1227,6 +1227,22 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 	g_free(cname);
 
 	return SIPE_MEDIA_CALL;
+}
+
+static gboolean
+find_call_cb(SIPE_UNUSED_PARAMETER const gchar *callid,
+	     struct sipe_media_call *call,
+	     const gchar *with)
+{
+	return sipe_strequal(call->with, with);
+}
+
+struct sipe_media_call *
+sipe_media_call_find(struct sipe_core_private *sipe_private, const gchar *with)
+{
+	return g_hash_table_find(sipe_private->media_calls,
+				 (GHRFunc)find_call_cb,
+				 (gpointer)with);
 }
 
 void sipe_media_hangup(struct sipe_media_call_private *call_private)

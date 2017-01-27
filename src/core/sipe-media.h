@@ -4,7 +4,7 @@
  * pidgin-sipe
  *
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
- * Copyright (C) 2016-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2016-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,19 @@ struct sipe_media_call *
 sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 		    struct sipmsg *msg, SipeIceVersion ice_version,
 		    SipeMediaCallFlags flags);
+
+/**
+ * Retrieves the @c sipe_media_call structure representing the ongoing call with
+ * the given participant.
+ *
+ * @param sipe_private (in) SIPE core data.
+ * @param with (in) SIP URI of the call participant.
+ *
+ * @return a @c sipe_media_call structure or @c NULL if there isn't a call going
+ * on with @c with.
+ */
+struct sipe_media_call *
+sipe_media_call_find(struct sipe_core_private *sipe_private, const gchar *with);
 
 /**
  * Adds a new media stream to a call.
