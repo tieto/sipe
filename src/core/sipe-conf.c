@@ -54,6 +54,7 @@
 #include "sipe-dialog.h"
 #include "sipe-http.h"
 #include "sipe-im.h"
+#include "sipe-media.h"
 #include "sipe-nls.h"
 #include "sipe-session.h"
 #include "sipe-subscriptions.h"
@@ -1209,31 +1210,22 @@ sipe_appshare_role
 sipe_core_conf_get_appshare_role(struct sipe_core_public *sipe_public,
 				 struct sipe_chat_session *chat_session)
 {
-	sipe_appshare_role role = SIPE_APPSHARE_ROLE_NONE;
-
 	if (chat_session) {
 		gchar *mcu_uri;
-		GList *calls;
+		struct sipe_media_call *call;
 
 		mcu_uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
-		calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
 
-		for (; calls; calls = g_list_delete_link(calls, calls)) {
-			struct sipe_media_call *call = calls->data;
-			if (sipe_strequal(call->with, mcu_uri)) {
-				role = sipe_appshare_get_role(call);
-				break;
-			}
-		}
+		call = sipe_media_call_find(SIPE_CORE_PRIVATE, mcu_uri);
 
 		g_free(mcu_uri);
 
-		if (calls != NULL) {
-			g_list_free(calls);
+		if (call) {
+			return sipe_appshare_get_role(call);
 		}
 	}
 
-	return role;
+	return SIPE_APPSHARE_ROLE_NONE;
 }
 
 static gboolean
