@@ -49,6 +49,9 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 		    struct sipmsg *msg, SipeIceVersion ice_version,
 		    SipeMediaCallFlags flags);
 
+struct sipe_media_call *
+sipe_media_call_find(struct sipe_core_private *sipe_private, const gchar *with);
+
 /**
  * Adds a new media stream to a call.
  *
