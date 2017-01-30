@@ -636,7 +636,10 @@ h264_buffer_cb(SIPE_UNUSED_PARAMETER GstPad *pad, GstPadProbeInfo *info,
 								 nal_count);
 	gst_memory_unmap(memory, &map);
 	gst_memory_resize(memory, 0, pacsi_len);
+
+	buffer = gst_buffer_make_writable(buffer);
 	gst_buffer_insert_memory(buffer, 0, memory);
+	GST_PAD_PROBE_INFO_DATA(info) = buffer;
 
 	return GST_PAD_PROBE_OK;
 }
