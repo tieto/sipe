@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -657,7 +657,7 @@ find_payloader(GValue *value, GstCaps *rtpcaps)
 	 * first that does NOT consume RTP frames. */
 	result = gst_caps_can_intersect(caps, rtpcaps);
 
-	gst_object_unref(caps);
+	gst_caps_unref(caps);
 	gst_object_unref(sinkpad);
 
 	return result;
