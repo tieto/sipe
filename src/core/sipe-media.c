@@ -1917,7 +1917,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				if (maybe_retry_call_with_ice_version(call_private, retry_ice_version, trans)) {
 					return TRUE;
 				}
-				// Break intentionally omitted
+				SIPE_FALLTHROUGH
 			}
 			default:
 				title = _("Error occurred");
