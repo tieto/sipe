@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -133,6 +133,9 @@ static const gchar * const sipe_core_build_options[] = {
 #endif
 #ifdef HAVE_XDATA
 	"Lync FT",
+#endif
+#ifdef HAVE_APPSHARE
+	"Application Sharing",
 #endif
 #endif
 
