@@ -1,6 +1,6 @@
 pidgin-sipe (1.22.0-1) unstable; urgency=low
 
-  * New upstream version 1.22.0 "Application Sharing, Lync Autodiscover & Logging" (2017-02-??)
+  * New upstream version 1.22.0 "Application Sharing, Lync Autodiscover & Logging" (2017-02-01)
 	- Feature #93: Support for Lync Autodiscover (Stefan Becker)
 	- Feature #6: Application Sharing Viewer (Jakub Adam)
 	  * requires libpurple >= 2.12.0
@@ -12,7 +12,7 @@ pidgin-sipe (1.22.0-1) unstable; urgency=low
 	  * full message debugging now requires PURPLE_UNSAFE_DEBUG=1
 	- new translations: Greek (el), Lithuanian (lt)
 
- -- Stefan Becker <chemobejk@gmail.com>  Sat, 28 Jan 2017 18:13:00 +0200
+ -- Stefan Becker <chemobejk@gmail.com>  Wed, 01 Feb 2017 18:57:00 +0200
 
 pidgin-sipe (1.21.1-1) unstable; urgency=low
 
