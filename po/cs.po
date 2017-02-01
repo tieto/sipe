@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Jakub Adam <jakub.adam@ktknet.cz>, 2011-2013,2015-2016
+# Jakub Adam <jakub.adam@ktknet.cz>, 2011-2013,2015-2017
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2017-01-23 17:47+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2017-01-23 20:32+0000\n"
+"Last-Translator: Jakub Adam <jakub.adam@ktknet.cz>\n"
 "Language-Team: Czech (http://www.transifex.com/stefanb/pidgin-sipe/language/cs/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -78,7 +78,7 @@ msgstr "Přijatý podpis zprávy je neplatný"
 #: ../src/core/sipe-appshare.c:458
 #, c-format
 msgid "%s wants to start presenting"
-msgstr ""
+msgstr "%s chce spustit prezentaci"
 
 #: ../src/core/sipe-appshare.c:462 ../src/core/sipe-conf.c:1086
 msgid "Accept"
@@ -90,15 +90,15 @@ msgstr "Odmítnout"
 
 #: ../src/core/sipe-appshare.c:501 ../src/core/sipe-appshare.c:599
 msgid "Application sharing error"
-msgstr ""
+msgstr "Problém při sdílení plochy"
 
 #: ../src/core/sipe-appshare.c:502
 msgid "Unknown remote desktop client configured."
-msgstr ""
+msgstr "Nastavený klient vzdálené plochy není podporován."
 
 #: ../src/core/sipe-appshare.c:600
 msgid "Couldn't connect application sharing"
-msgstr ""
+msgstr "Nepodařilo se připojit ke vzdálené ploše"
 
 #: ../src/core/sipe-buddy.c:541 ../src/core/sipe-buddy.c:2301
 msgid "Mobile"
@@ -306,7 +306,7 @@ msgstr "\n\nProtože tento klient nebyl přeložen se zapnutou podporou audiohov
 #: ../src/core/sipe-conf.c:1111
 #, c-format
 msgid "wants to invite you to a conference call%s"
-msgstr ""
+msgstr "vás chce přizvat ke konferenčnímu hovoru%s"
 
 #: ../src/core/sipe-conf.c:1459
 msgid ""
@@ -760,14 +760,14 @@ msgstr "Pouze urgentní záležitosti"
 
 #: ../src/core/sipe-subscriptions.c:189
 msgid "Presence subscription failed!"
-msgstr ""
+msgstr "Nelze odebírat informace o přítomnosti uživatelů!"
 
 #: ../src/core/sipe-subscriptions.c:190
 msgid ""
 "One or more buddies will therefore permanently show as offline.\n"
 "\n"
 "Please check that there are no corrupted SIP URIs in your contacts list."
-msgstr ""
+msgstr "Některé kontakty se proto budou trvale jevit jako nedostupné.\n\nProsím zkontroluje jestli váš seznam kontaktů neobsahuje neplatná SIP URI."
 
 #: ../src/core/sipe-ucs.c:674
 msgid "UCS initialization failed!"
@@ -931,7 +931,7 @@ msgstr "Odemknout"
 
 #: ../src/purple/purple-chat.c:338
 msgid "Show presentation"
-msgstr ""
+msgstr "Zobrazit prezentaci"
 
 #: ../src/purple/purple-chat.c:345
 msgid "Meeting entry info"
@@ -1186,7 +1186,7 @@ msgstr "Proxy server pro skupinový chat\n spolecnost.com nebo uzivatel@spolecno
 
 #: ../src/purple/purple-plugin-common.c:933
 msgid "Remote desktop client"
-msgstr ""
+msgstr "Klient vzdálené plochy"
 
 #: ../src/purple/purple-plugin-common.c:938
 msgid "Media encryption"

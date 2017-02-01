@@ -7,14 +7,15 @@
 # Translators:
 # fieona <sofiemuys@hotmail.com>, 2012
 # Stefan Becker <chemobejk@gmail.com>, 2011
-# Tonnes <tonnes.mb@gmail.com>, 2016
+# Tonnes <tonnes.mb@gmail.com>, 2016-2017
+# Yves Jacmans <yves@jacmans.net>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2017-01-23 17:47+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2017-01-31 12:02+0000\n"
+"Last-Translator: Tonnes <tonnes.mb@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/stefanb/pidgin-sipe/language/nl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -79,7 +80,7 @@ msgstr "Ongeldige berichthandtekening ontvangen"
 #: ../src/core/sipe-appshare.c:458
 #, c-format
 msgid "%s wants to start presenting"
-msgstr ""
+msgstr "%s wil een presentatie starten"
 
 #: ../src/core/sipe-appshare.c:462 ../src/core/sipe-conf.c:1086
 msgid "Accept"
@@ -91,15 +92,15 @@ msgstr "Weigeren"
 
 #: ../src/core/sipe-appshare.c:501 ../src/core/sipe-appshare.c:599
 msgid "Application sharing error"
-msgstr ""
+msgstr "Fout bij delen van toepassingen"
 
 #: ../src/core/sipe-appshare.c:502
 msgid "Unknown remote desktop client configured."
-msgstr ""
+msgstr "Onbekende extern-bureaubladclient geconfigureerd."
 
 #: ../src/core/sipe-appshare.c:600
 msgid "Couldn't connect application sharing"
-msgstr ""
+msgstr "Kon het delen van toepassingen niet starten"
 
 #: ../src/core/sipe-buddy.c:541 ../src/core/sipe-buddy.c:2301
 msgid "Mobile"
@@ -306,7 +307,7 @@ msgstr "\n\nAangezien deze client niet met ondersteuning voor audiogesprekken is
 #: ../src/core/sipe-conf.c:1111
 #, c-format
 msgid "wants to invite you to a conference call%s"
-msgstr ""
+msgstr "wil u uitnodigen voor een telefonische vergadering%s"
 
 #: ../src/core/sipe-conf.c:1459
 msgid ""
@@ -760,14 +761,14 @@ msgstr "Alleen urgente onderbrekingen"
 
 #: ../src/core/sipe-subscriptions.c:189
 msgid "Presence subscription failed!"
-msgstr ""
+msgstr "Aanwezigheidsabonnement mislukt!"
 
 #: ../src/core/sipe-subscriptions.c:190
 msgid ""
 "One or more buddies will therefore permanently show as offline.\n"
 "\n"
 "Please check that there are no corrupted SIP URIs in your contacts list."
-msgstr ""
+msgstr "Een of meer buddy’s verschijnen daarom permanent als offline.\n\nControleer of er geen beschadigde SIP-URI’s in uw contactenlijst staan."
 
 #: ../src/core/sipe-ucs.c:674
 msgid "UCS initialization failed!"
@@ -931,7 +932,7 @@ msgstr "Ontgrendelen"
 
 #: ../src/purple/purple-chat.c:338
 msgid "Show presentation"
-msgstr ""
+msgstr "Presentatie tonen"
 
 #: ../src/purple/purple-chat.c:345
 msgid "Meeting entry info"
@@ -1186,7 +1187,7 @@ msgstr "Proxy voor groepschat\nbedrijf.com of gebruiker@bedrijf.com\n(laat leeg 
 
 #: ../src/purple/purple-plugin-common.c:933
 msgid "Remote desktop client"
-msgstr ""
+msgstr "Extern-bureaubladclient"
 
 #: ../src/purple/purple-plugin-common.c:938
 msgid "Media encryption"
