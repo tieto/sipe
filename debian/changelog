@@ -1,6 +1,6 @@
 pidgin-sipe (1.22.0-1) UNRELEASED; urgency=medium
 
-  * New upstream release.
+  * New upstream release (Closes: #853612).
         - Feature #93: Support for Lync Autodiscover
         - Feature #6: Application Sharing Viewer
         - Fixed #315: Crash when contact list is empty
