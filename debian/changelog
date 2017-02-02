@@ -7,6 +7,8 @@ pidgin-sipe (1.22.0-1) UNRELEASED; urgency=medium
         - Fixed #314: sipe login problems with long pw
         - separate logging and debugging output
         - new translations: Greek (el), Lithuanian (lt)
+  * Add libfarstream-0.2-dev and libgstreamer-plugins-base1.0-dev
+    to Build-Depends.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 02 Feb 2017 14:07:13 +0100
 
