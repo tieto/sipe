@@ -1,3 +1,15 @@
+pidgin-sipe (1.22.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+        - Feature #93: Support for Lync Autodiscover
+        - Feature #6: Application Sharing Viewer
+        - Fixed #315: Crash when contact list is empty
+        - Fixed #314: sipe login problems with long pw
+        - separate logging and debugging output
+        - new translations: Greek (el), Lithuanian (lt)
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 02 Feb 2017 14:07:13 +0100
+
 pidgin-sipe (1.21.1-1) unstable; urgency=medium
 
   * New upstream release.
