@@ -15,7 +15,7 @@ Package: pidgin-sipe
 Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: gstreamer1.0-libav, gstreamer1.0-x
+Recommends: gstreamer1.0-libav, gstreamer1.0-x, remmina-plugin-rdp
 Description: Pidgin plugin for MS Office Communicator and MS Lync
  A third-party plugin for the Pidgin multi-protocol instant messenger.
  It implements the extended version of SIP/SIMPLE used by various products:

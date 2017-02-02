@@ -9,6 +9,7 @@ pidgin-sipe (1.22.0-1) UNRELEASED; urgency=medium
         - new translations: Greek (el), Lithuanian (lt)
   * Add libfarstream-0.2-dev and libgstreamer-plugins-base1.0-dev
     to Build-Depends.
+  * Recommend remmina RDP client plugin.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 02 Feb 2017 14:07:13 +0100
 
