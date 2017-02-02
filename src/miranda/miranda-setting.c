@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,6 +48,7 @@ static const gchar * const setting_name[SIPE_SETTING_LAST] = {
 	"login",          /* SIPE_SETTING_EMAIL_LOGIN    */
 	"password",       /* SIPE_SETTING_EMAIL_PASSWORD */
 	"groupchat_user", /* SIPE_SETTING_GROUPCHAT_USER */
+	"NOTDEFINED",     /* SIPE_SETTING_RDP_CLIENT     */
 	"useragent"       /* SIPE_SETTING_USER_AGENT     */
 };
 

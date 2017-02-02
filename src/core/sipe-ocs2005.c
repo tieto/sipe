@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -31,6 +31,7 @@
 
 #include "sipe-common.h"
 #include "sip-soap.h"
+#include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
 #include "sipe-cal.h"
@@ -289,7 +290,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 	const gchar *note_pub = NULL;
 	gchar *states = NULL;
 	gchar *calendar_data = NULL;
-	gchar *epid = get_epid(sipe_private);
+	const gchar *epid = sip_transport_epid(sipe_private);
 	gchar *from = sip_uri_self(sipe_private);
 	time_t now = time(NULL);
 	gchar *since_time_str = sipe_utils_time_to_str(now);
@@ -397,7 +398,6 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 	g_free(states);
 	g_free(calendar_data);
 	g_free(since_time_str);
-	g_free(epid);
 
 	sip_soap_raw_request_cb(sipe_private, from, body, NULL, NULL);
 

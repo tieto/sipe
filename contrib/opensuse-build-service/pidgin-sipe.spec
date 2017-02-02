@@ -92,6 +92,7 @@
 %if 0%{?suse_version} >= 1315
 %define has_gstreamer 0
 %define has_gstreamer1 1
+%define has_farstream 1
 %undefine nice_gstreamer
 %endif
 %endif
@@ -111,6 +112,7 @@
 %define build_telepathy 1
 %define build_ktp 1
 %if 0%{?fedora} >= 20
+%define has_farstream 1
 %define nice_gstreamer libnice-gstreamer
 %if 0%{?fedora} >= 21
 %define has_appdata 1
@@ -146,7 +148,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.21.1
+Version:        1.22.0
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -200,6 +202,10 @@ BuildRequires:  pkgconfig(gstreamer-0.10)
 %endif
 %if 0%{?has_gstreamer1:1}
 BuildRequires:  pkgconfig(gstreamer-1.0)
+%endif
+%if 0%{?has_farstream:1}
+BuildRequires:  pkgconfig(farstream-0.2)
+BuildRequires:  pkgconfig(gio-2.0)
 %endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
@@ -570,6 +576,15 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Wed Feb 01 2017 J. D. User <jduser@noreply.com> 1.22.0
+- update to 1.22.0
+
+* Sun Dec 18 2016 J. D. User <jduser@noreply.com> 1.21.1-*git*
+- add BR gio-2.0
+
+* Wed Jun 15 2016 J. D. User <jduser@noreply.com> 1.21.1-*git*
+- add BR farstream-0.2
+
 * Sat May 28 2016 J. D. User <jduser@noreply.com> 1.21.1
 - update to 1.21.1
 

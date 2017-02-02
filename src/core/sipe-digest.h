@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,10 @@
  */
 
 /* Plain digests */
+/* NOTE: can only be used by internal NTLMv2 implementation */
+#define SIPE_DIGEST_MD4_LENGTH 16
+void sipe_digest_md4(const guchar *data, gsize length, guchar *digest);
+
 #define SIPE_DIGEST_MD5_LENGTH 16
 void sipe_digest_md5(const guchar *data, gsize length, guchar *digest);
 

@@ -75,9 +75,7 @@ sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
 }
 
 struct sipe_backend_media_stream *
-sipe_backend_media_add_stream(struct sipe_media_call *media,
-			      const gchar *id,
-			      const gchar *participant,
+sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 			      SipeMediaType type,
 			      SipeIceVersion ice_version,
 			      gboolean initiator,
@@ -176,7 +174,8 @@ sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream)
 }
 
 struct sipe_backend_codec *
-sipe_backend_codec_new(int id, const char *name, SipeMediaType type, guint clock_rate)
+sipe_backend_codec_new(int id, const char *name, SipeMediaType type,
+		       guint clock_rate, guint channels)
 {
 	_NIF();
 	return NULL;

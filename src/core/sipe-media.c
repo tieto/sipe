@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -46,8 +46,11 @@
 #include "sipe-session.h"
 #include "sipe-utils.h"
 #include "sipe-nls.h"
-#include "sipe-schedule.h"
 #include "sipe-xml.h"
+
+/* [MS-SDPEXT] 3.1.5.31.2 says a range size of 100 SHOULD be used for video and
+ * some clients really demand this. */
+#define VIDEO_SSRC_COUNT 100
 
 struct sipe_media_call_private {
 	struct sipe_media_call public;
@@ -66,6 +69,8 @@ struct sipe_media_call_private {
 	gchar				*extra_invite_section;
 	gchar				*invite_content_type;
 
+	GSList				*ssrc_ranges;
+
 	struct sdpmsg			*smsg;
 	GSList				*failed_media;
 };
@@ -79,10 +84,12 @@ struct sipe_media_stream_private {
 	int encryption_key_id;
 	gboolean remote_candidates_and_codecs_set;
 	gboolean established;
+#ifdef HAVE_XDATA
+	gboolean sdp_negotiation_concluded;
+	gboolean writable;
+#endif
 
 	GSList *extra_sdp;
-
-	gboolean writable;
 
 	GQueue *write_queue;
 	GQueue *async_reads;
@@ -114,16 +121,28 @@ static void sipe_media_candidate_list_free(GList *candidates)
 }
 
 static void
-remove_stream(struct sipe_media_call* call,
-	      struct sipe_media_stream_private *stream_private)
+sipe_media_stream_free(struct sipe_media_stream_private *stream_private)
 {
-	struct sipe_media_call_private *call_private = SIPE_MEDIA_CALL_PRIVATE;
+	struct sipe_media_call_private *call_private;
+
+	call_private = (struct sipe_media_call_private *)SIPE_MEDIA_STREAM->call;
 
 	sipe_media_stream_set_data(SIPE_MEDIA_STREAM, NULL, NULL);
 
-	call_private->streams =
-			g_slist_remove(call_private->streams, stream_private);
-	sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
+	if (call_private) {
+		call_private->streams = g_slist_remove(call_private->streams,
+						       stream_private);
+
+		if (SIPE_MEDIA_STREAM->ssrc_range) {
+			call_private->ssrc_ranges =
+				g_slist_remove(call_private->ssrc_ranges,
+					       SIPE_MEDIA_STREAM->ssrc_range);
+		}
+	}
+
+	if (SIPE_MEDIA_STREAM->backend_private) {
+		sipe_backend_media_stream_free(SIPE_MEDIA_STREAM->backend_private);
+	}
 	g_free(SIPE_MEDIA_STREAM->id);
 	g_free(stream_private->encryption_key);
 	g_queue_free_full(stream_private->write_queue,
@@ -149,8 +168,7 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 					    (GHRFunc) call_private_equals, call_private);
 
 		while (call_private->streams) {
-			remove_stream(SIPE_MEDIA_CALL,
-				      call_private->streams->data);
+			sipe_media_stream_free(call_private->streams->data);
 		}
 
 		sipe_backend_media_free(call_private->public.backend_private);
@@ -165,6 +183,8 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 
 		// Frees any referenced extra invite data.
 		sipe_media_add_extra_invite_section(SIPE_MEDIA_CALL, NULL, NULL);
+
+		sipe_utils_slist_free_full(call_private->ssrc_ranges, g_free);
 
 		sdpmsg_free(call_private->smsg);
 		sipe_utils_slist_free_full(call_private->failed_media,
@@ -413,6 +433,8 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		type = SIPE_MEDIA_VIDEO;
 	else if (sipe_strequal(sdpmedia->name, "data"))
 		type = SIPE_MEDIA_APPLICATION;
+	else if (sipe_strequal(sdpmedia->name, "applicationsharing"))
+		type = SIPE_MEDIA_APPLICATION;
 	else {
 		// TODO: incompatible media, should not happen here
 		g_free(sdpmedia->name);
@@ -510,6 +532,17 @@ media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 		}
 
 		attributes = sipe_utils_nameval_add(attributes, "encryption", encryption);
+	}
+
+	if (SIPE_MEDIA_STREAM->ssrc_range) {
+		gchar *tmp;
+
+		tmp = g_strdup_printf("%u-%u",
+				      SIPE_MEDIA_STREAM->ssrc_range->begin,
+				      SIPE_MEDIA_STREAM->ssrc_range->end);
+		attributes = sipe_utils_nameval_add(attributes,
+						    "x-ssrc-range", tmp);
+		g_free(tmp);
 	}
 
 	// Process remote candidates
@@ -707,7 +740,8 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 		codec = sipe_backend_codec_new(c->id,
 					       c->name,
 					       c->type,
-					       c->clock_rate);
+					       c->clock_rate,
+					       c->channels);
 
 		for (j = c->parameters; j; j = j->next) {
 			struct sipnameval *attr = j->data;
@@ -871,10 +905,10 @@ static void phone_state_publish(struct sipe_core_private *sipe_private)
 	}
 }
 
-static void
-stream_end_cb(struct sipe_media_call* call, struct sipe_media_stream* stream)
+void
+sipe_core_media_stream_end(struct sipe_media_stream *stream)
 {
-	remove_stream(call, SIPE_MEDIA_STREAM_PRIVATE);
+	sipe_media_stream_free(SIPE_MEDIA_STREAM_PRIVATE);
 }
 
 static void
@@ -1045,7 +1079,6 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 	call_private->encryption_compatible = TRUE;
 
 	call_private->public.stream_initialized_cb  = stream_initialized_cb;
-	call_private->public.stream_end_cb          = stream_end_cb;
 	call_private->public.media_end_cb           = media_end_cb;
 	call_private->public.call_accept_cb         = call_accept_cb;
 	call_private->public.call_reject_cb         = call_reject_cb;
@@ -1066,14 +1099,94 @@ void sipe_media_hangup(struct sipe_media_call_private *call_private)
 	}
 }
 
+static gint
+ssrc_range_compare(const struct ssrc_range *a, const struct ssrc_range *b)
+{
+	if (a->begin < b->begin) {
+		return -1;
+	}
+	if (a->begin > b->begin) {
+		return 1;
+	}
+	return 0;
+}
+
+static void
+ssrc_range_update(GSList **ranges, GSList *media)
+{
+	for (; media; media = media->next) {
+		struct sdpmedia *m;
+		const char *ssrc_range;
+		gchar **parts;
+
+		m = media->data;
+		ssrc_range = sipe_utils_nameval_find(m->attributes,
+						     "x-ssrc-range");
+		if (!ssrc_range) {
+			continue;
+		}
+
+		parts = g_strsplit(ssrc_range, "-", 2);
+
+		if (parts[0] && parts[1]) {
+			struct ssrc_range *range;
+
+			range = g_new0(struct ssrc_range, 1);
+			range->begin = atoi(parts[0]);
+			range->end = atoi(parts[1]);
+
+			*ranges = sipe_utils_slist_insert_unique_sorted(
+					*ranges, range,
+					(GCompareFunc)ssrc_range_compare,
+					g_free);
+		}
+
+		g_strfreev(parts);
+	}
+}
+
+static struct ssrc_range *
+ssrc_range_allocate(GSList **ranges, guint32 len)
+{
+	struct ssrc_range *range;
+	GSList *i;
+
+	range = g_new0(struct ssrc_range, 1);
+	range->begin = 1;
+	range->end = range->begin + (len - 1);
+
+	for (i = *ranges; i; i = i->next) {
+		struct ssrc_range *r = i->data;
+
+		if (range->begin < r->begin && range->end < r->begin) {
+			break;
+		}
+
+		range->begin = r->end + 1;
+		range->end = range->begin + (len - 1);
+	}
+
+	/* As per [MS-SDPEXT] 3.1.5.31.1, a SSRC MUST be from 1 to 4294967040
+	 * inclusive. */
+	if (range->begin > range->end || range->end > 0xFFFFFF00) {
+		g_free(range);
+		SIPE_DEBUG_ERROR("Couldn't allocate SSRC range of %u", len);
+		return NULL;
+	}
+
+	*ranges = g_slist_insert_sorted(*ranges, range,
+					(GCompareFunc)ssrc_range_compare);
+
+	return range;
+}
+
 struct sipe_media_stream *
 sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		      SipeMediaType type, SipeIceVersion ice_version,
-		      gboolean initiator)
+		      gboolean initiator, guint32 ssrc_count)
 {
 	struct sipe_core_private *sipe_private;
 	struct sipe_media_stream_private *stream_private;
-	struct sipe_backend_media_stream *backend_stream;
 	struct sipe_backend_media_relays *backend_media_relays;
 	guint min_port;
 	guint max_port;
@@ -1107,25 +1220,48 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 			break;
 	}
 
-	backend_stream = sipe_backend_media_add_stream(call, id, call->with,
-						       type, ice_version,
-						       initiator,
-						       backend_media_relays,
-						       min_port, max_port);
-
-	sipe_backend_media_relays_free(backend_media_relays);
-
-	if (!backend_stream) {
-		return NULL;
-	}
-
 	stream_private = g_new0(struct sipe_media_stream_private, 1);
 	SIPE_MEDIA_STREAM->call = call;
 	SIPE_MEDIA_STREAM->id = g_strdup(id);
-	SIPE_MEDIA_STREAM->backend_private = backend_stream;
+	stream_private->write_queue = g_queue_new();
+	stream_private->async_reads = g_queue_new();
+
+	if (ssrc_count > 0) {
+		SIPE_MEDIA_STREAM->ssrc_range =
+			ssrc_range_allocate(&SIPE_MEDIA_CALL_PRIVATE->ssrc_ranges,
+					    ssrc_count);
+	}
+
+	SIPE_MEDIA_STREAM->backend_private =
+			sipe_backend_media_add_stream(SIPE_MEDIA_STREAM,
+						      type, ice_version,
+						      initiator,
+						      backend_media_relays,
+						      min_port, max_port);
+
+	sipe_backend_media_relays_free(backend_media_relays);
+
+	if (!SIPE_MEDIA_STREAM->backend_private) {
+		sipe_media_stream_free(stream_private);
+		return NULL;
+	}
+
+	if (type == SIPE_MEDIA_VIDEO) {
+		/* Declare that we can send and receive Video Source Requests
+		 * as per [MS-SDPEXT] 3.1.5.30.2. */
+		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
+				"rtcp-fb", "* x-message app send:src recv:src");
+
+		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
+				"rtcp-rsize", NULL);
+		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
+				"label", "main-video");
+		sipe_media_stream_add_extra_attribute(SIPE_MEDIA_STREAM,
+				"x-source", "main-video");
+	}
 
 #ifdef HAVE_SRTP
-	{
+	if (get_encryption_policy(sipe_private) != SIPE_ENCRYPTION_POLICY_REJECTED) {
 		int i;
 		stream_private->encryption_key = g_new0(guchar, SIPE_SRTP_KEY_LEN);
 		for (i = 0; i != SIPE_SRTP_KEY_LEN; ++i) {
@@ -1134,9 +1270,6 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 		stream_private->encryption_key_id = 1;
 	}
 #endif
-
-	stream_private->write_queue = g_queue_new();
-	stream_private->async_reads = g_queue_new();
 
 	SIPE_MEDIA_CALL_PRIVATE->streams =
 			g_slist_append(SIPE_MEDIA_CALL_PRIVATE->streams,
@@ -1149,7 +1282,7 @@ static void
 append_2007_fallback_if_needed(struct sipe_media_call_private *call_private)
 {
 	struct sipe_core_private *sipe_private = call_private->sipe_private;
-	const gchar *ip = sipe_backend_network_ip_address(SIPE_CORE_PUBLIC);
+	const gchar *ip = sip_transport_ip_address(sipe_private);
 	gchar *body;
 
 	if (sipe_media_get_sip_dialog(SIPE_MEDIA_CALL)->cseq != 0 ||
@@ -1190,7 +1323,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 
 	if (!sipe_media_stream_add(SIPE_MEDIA_CALL, "audio", SIPE_MEDIA_AUDIO,
 				   call_private->ice_version,
-				   TRUE)) {
+				   TRUE, 0)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occurred"),
 					  _("Error creating audio stream"));
@@ -1201,7 +1334,7 @@ sipe_media_initiate_call(struct sipe_core_private *sipe_private,
 	if (with_video &&
 	    !sipe_media_stream_add(SIPE_MEDIA_CALL, "video", SIPE_MEDIA_VIDEO,
 				   call_private->ice_version,
-				   TRUE)) {
+				   TRUE, VIDEO_SSRC_COUNT)) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occurred"),
 					  _("Error creating video stream"));
@@ -1278,7 +1411,7 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	stream = sipe_media_stream_add(SIPE_MEDIA_CALL, "audio",
 				       SIPE_MEDIA_AUDIO,
 				       call_private->ice_version,
-				       TRUE);
+				       TRUE, 0);
 	if (!stream) {
 		sipe_backend_notify_error(sipe_public,
 					  _("Error occurred"),
@@ -1299,13 +1432,16 @@ sipe_core_media_get_call(struct sipe_core_public *sipe_public)
 {
 	struct sipe_media_call * result = NULL;
 	GList *calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
+	GList *entry = calls;
 
-	for (; calls; calls = g_list_delete_link(calls, calls)) {
-		if (sipe_core_media_get_stream_by_id(calls->data, "audio")) {
-			result = calls->data;
+	while (entry) {
+		if (sipe_core_media_get_stream_by_id(entry->data, "audio")) {
+			result = entry->data;
 			break;
 		}
+		entry = entry->next;
 	}
+	g_list_free(calls);
 
 	return result;
 }
@@ -1401,14 +1537,36 @@ maybe_send_second_invite_response(struct sipe_media_call_private *call_private)
 	}
 
 	send_response_with_session_description(call_private, 200, "OK");
+
+#ifdef HAVE_XDATA
+	for (it = call_private->streams; it; it = it->next) {
+		struct sipe_media_stream_private *stream_private = it->data;
+
+		stream_private->sdp_negotiation_concluded = TRUE;
+		if (stream_private->writable) {
+			// We've become writable.
+			sipe_core_media_stream_writable(SIPE_MEDIA_STREAM, TRUE);
+		}
+	}
+#endif
 }
 
 struct sipe_media_call *
 process_incoming_invite_call(struct sipe_core_private *sipe_private,
-			     struct sipmsg *msg)
+			     struct sipmsg *msg,
+			     const gchar *sdp)
+{
+	return(process_incoming_invite_call_parsed_sdp(sipe_private,
+						       msg,
+						       sdpmsg_parse_msg(sdp)));
+}
+
+struct sipe_media_call *
+process_incoming_invite_call_parsed_sdp(struct sipe_core_private *sipe_private,
+					struct sipmsg *msg,
+					struct sdpmsg *smsg)
 {
 	struct sipe_media_call_private *call_private;
-	struct sdpmsg *smsg;
 	gboolean has_new_media = FALSE;
 	GSList *i;
 
@@ -1420,6 +1578,7 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		if (call && !is_media_session_msg(SIPE_MEDIA_CALL_PRIVATE, msg)) {
 			sip_transport_response(sipe_private, msg,
 					       486, "Busy Here", NULL);
+			sdpmsg_free(smsg);
 			return NULL;
 		}
 	}
@@ -1431,12 +1590,12 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		if (sipe_strequal(SIPE_MEDIA_CALL->with, self)) {
 			g_free(self);
 			sip_transport_response(sipe_private, msg, 488, "Not Acceptable Here", NULL);
+			sdpmsg_free(smsg);
 			return NULL;
 		}
 		g_free(self);
 	}
 
-	smsg = sdpmsg_parse_msg(msg->body);
 	if (!smsg) {
 		transport_response_unsupported_sdp(sipe_private, msg);
 		if (call_private) {
@@ -1449,7 +1608,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
 		SipeMediaCallFlags flags = 0;
 
-		if (strstr(msg->body, "m=data")) {
+		if (strstr(msg->body, "m=data") ||
+		    strstr(msg->body, "m=applicationsharing")) {
 			flags |= SIPE_MEDIA_CALL_NO_UI;
 		}
 
@@ -1468,6 +1628,8 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 		sipmsg_free(call_private->invitation);
 	call_private->invitation = sipmsg_copy(msg);
 
+	ssrc_range_update(&call_private->ssrc_ranges, smsg->media);
+
 	// Create any new media streams
 	for (i = smsg->media; i; i = i->next) {
 		struct sdpmedia *media = i->data;
@@ -1476,17 +1638,23 @@ process_incoming_invite_call(struct sipe_core_private *sipe_private,
 
 		if (   media->port != 0
 		    && !sipe_core_media_get_stream_by_id(SIPE_MEDIA_CALL, id)) {
+			guint32 ssrc_count = 0;
+
 			if (sipe_strequal(id, "audio"))
 				type = SIPE_MEDIA_AUDIO;
-			else if (sipe_strequal(id, "video"))
+			else if (sipe_strequal(id, "video")) {
 				type = SIPE_MEDIA_VIDEO;
-			else if (sipe_strequal(id, "data"))
+				ssrc_count = VIDEO_SSRC_COUNT;
+			} else if (sipe_strequal(id, "data"))
+				type = SIPE_MEDIA_APPLICATION;
+			else if (sipe_strequal(id, "applicationsharing"))
 				type = SIPE_MEDIA_APPLICATION;
 			else
 				continue;
 
 			sipe_media_stream_add(SIPE_MEDIA_CALL, id, type,
-					      smsg->ice_version, FALSE);
+					      smsg->ice_version, FALSE,
+					      ssrc_count);
 			has_new_media = TRUE;
 		}
 	}
@@ -1557,6 +1725,9 @@ sipe_media_send_final_ack(struct sipe_core_private *sipe_private,
 			  struct transaction *trans)
 {
 	struct sipe_media_call_private *call_private;
+#ifdef HAVE_XDATA
+	GSList *it;
+#endif
 
 	if (!sipe_media_send_ack(sipe_private, msg, trans))
 		return FALSE;
@@ -1564,6 +1735,18 @@ sipe_media_send_final_ack(struct sipe_core_private *sipe_private,
 	call_private = sipe_media_from_sipmsg(sipe_private, msg);
 
 	sipe_backend_media_accept(SIPE_MEDIA_CALL->backend_private, FALSE);
+
+#ifdef HAVE_XDATA
+	for (it = call_private->streams; it; it = it->next) {
+		struct sipe_media_stream_private *stream_private = it->data;
+
+		stream_private->sdp_negotiation_concluded = TRUE;
+		if (stream_private->writable) {
+			// We've become writable.
+			sipe_core_media_stream_writable(SIPE_MEDIA_STREAM, TRUE);
+		}
+	}
+#endif
 
 	return TRUE;
 }
@@ -1734,7 +1917,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				if (maybe_retry_call_with_ice_version(call_private, retry_ice_version, trans)) {
 					return TRUE;
 				}
-				// Break intentionally omitted
+				SIPE_FALLTHROUGH
 			}
 			default:
 				title = _("Error occurred");
@@ -1771,6 +1954,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 		return FALSE;
 	}
 
+	ssrc_range_update(&call_private->ssrc_ranges, smsg->media);
 	apply_remote_message(call_private, smsg);
 	sdpmsg_free(smsg);
 
@@ -2161,6 +2345,7 @@ gboolean
 sipe_media_stream_is_writable(struct sipe_media_stream *stream)
 {
 	return SIPE_MEDIA_STREAM_PRIVATE->writable &&
+	       SIPE_MEDIA_STREAM_PRIVATE->sdp_negotiation_concluded &&
 	       g_queue_is_empty(SIPE_MEDIA_STREAM_PRIVATE->write_queue);
 }
 #endif

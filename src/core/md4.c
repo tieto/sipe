@@ -1,64 +1,14 @@
 /* vim:set ts=2 sw=2 et cindent: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla.
- *
- * The Initial Developer of the Original Code is IBM Corporation.
- * Portions created by IBM Corporation are Copyright (C) 2003
- * IBM Corporation. All Rights Reserved.
- *
- * Contributor(s):
- *   Darin Fisher <darin@meer.net>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
-
-/*
- * Non-functional changes to remove dependencies on NSS headers
- *
- * Changes are flagged with __SIPE__REMOVE_NSS_DEPENDENCIES__
- *
- * Added Coverity warning suppression
- *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
  * "clean room" MD4 implementation (see RFC 1320)
  */
 
-#ifdef __SIPE__REMOVE_NSS_DEPENDENCIES__
-#else
-#include <glib.h>
-#endif /* __SIPE__REMOVE_NSS_DEPENDENCIES__ */
-
 #include <string.h>
 #include "md4.h"
-
-typedef PRUint32 Uint32;
-typedef PRUint8 Uint8;
 
 /* the "conditional" function */
 #define F(x,y,z) (((x) & (y)) | (~(x) & (z)))
@@ -82,9 +32,9 @@ typedef PRUint8 Uint8;
 #define RD3(a,b,c,d,k,s) a += H(b,c,d) + X[k] + 0x6ED9EBA1; a = ROTL(a,s)
 
 /* converts from word array to byte array, len is number of bytes */
-static void w2b(Uint8 *out, const Uint32 *in, Uint32 len)
+static void w2b(uint8_t *out, const uint32_t *in, uint32_t len)
 {
-  Uint8 *bp; const Uint32 *wp, *wpend;
+  uint8_t *bp; const uint32_t *wp, *wpend;
 
   bp = out;
   wp = in;
@@ -92,17 +42,17 @@ static void w2b(Uint8 *out, const Uint32 *in, Uint32 len)
 
   for (; wp != wpend; ++wp, bp += 4)
   {
-    bp[0] = (Uint8) ((*wp      ) & 0xFF);
-    bp[1] = (Uint8) ((*wp >>  8) & 0xFF);
-    bp[2] = (Uint8) ((*wp >> 16) & 0xFF);
-    bp[3] = (Uint8) ((*wp >> 24) & 0xFF);
+    bp[0] = (uint8_t) ((*wp      ) & 0xFF);
+    bp[1] = (uint8_t) ((*wp >>  8) & 0xFF);
+    bp[2] = (uint8_t) ((*wp >> 16) & 0xFF);
+    bp[3] = (uint8_t) ((*wp >> 24) & 0xFF);
   }
 }
 
 /* converts from byte array to word array, len is number of bytes */
-static void b2w(Uint32 *out, const Uint8 *in, Uint32 len)
+static void b2w(uint32_t *out, const uint8_t *in, uint32_t len)
 {
-  Uint32 *wp; const Uint8 *bp, *bpend;
+  uint32_t *wp; const uint8_t *bp, *bpend;
 
   wp = out;
   bp = in;
@@ -110,17 +60,17 @@ static void b2w(Uint32 *out, const Uint8 *in, Uint32 len)
 
   for (; bp != bpend; bp += 4, ++wp)
   {
-    *wp = (Uint32) (bp[0]      ) |
-          (Uint32) (bp[1] <<  8) |
-          (Uint32) (bp[2] << 16) |
-          (Uint32) (bp[3] << 24);
+    *wp = (uint32_t) (bp[0]      ) |
+          (uint32_t) (bp[1] <<  8) |
+          (uint32_t) (bp[2] << 16) |
+          (uint32_t) (bp[3] << 24);
   }
 }
 
 /* update state: data is 64 bytes in length */
-static void md4step(Uint32 state[4], const Uint8 *data)
+static void md4step(uint32_t state[4], const uint8_t *data)
 {
-  Uint32 A, B, C, D, X[16];
+  uint32_t A, B, C, D, X[16];
 
   b2w(X, data, 64);
 
@@ -150,10 +100,13 @@ static void md4step(Uint32 state[4], const Uint8 *data)
   state[3] += D;
 }
 
-void md4sum(const Uint8 *input, Uint32 inputLen, Uint8 *result)
+void md4sum(const uint8_t *input, uint32_t inputLen, uint8_t *result)
 {
-  Uint8 final[128];
-  Uint32 i, n, m, state[4];
+  uint8_t final[128];
+  uint32_t i, n, m, state[4];
+  uint64_t inputLenBits;
+  uint32_t inputLenBitsLow;
+  uint32_t inputLenBitsHigh;
 
   /* magic initial states */
   state[0] = 0x67452301;
@@ -174,10 +127,14 @@ void md4sum(const Uint8 *input, Uint32 inputLen, Uint8 *result)
   final[n] = 0x80;
   memset(final + n + 1, 0, 120 - (n + 1));
 
-  inputLen = inputLen << 3;
-  /* This code is correct: w2b() only accesses 4 bytes starting from &inputLen */
-  /* coverity[array_vs_singleton : FALSE] */
-  w2b(final + (n >= 56 ? 120 : 56), &inputLen, 4);
+  /* Append the original input length in bits as a 64-bit number. This is done
+   * in two 32-bit chunks, with the least-significant 32 bits first.
+   * w2b will handle endianness. */
+  inputLenBits = inputLen << 3;
+  inputLenBitsLow = (uint32_t)(inputLenBits & 0xFFFFFFFF);
+  w2b(final + (n >= 56 ? 120 : 56), &inputLenBitsLow, 4);
+  inputLenBitsHigh = (uint32_t)((inputLenBits >> 32) & 0xFFFFFFFF);
+  w2b(final + (n >= 56 ? 124 : 60), &inputLenBitsHigh, 4);
 
   md4step(state, final);
   if (n >= 56)

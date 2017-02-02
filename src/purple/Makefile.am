@@ -91,7 +91,6 @@ tests_SOURCES   = tests.c
 tests_CFLAGS    = $(libsipe_la_CFLAGS)
 tests_LDADD     = \
 	../core/libsipe_core_tests.la \
-	../core/libsipe_core.la \
 	../core/libsipe_core_crypto.la \
 	libsipe_backend.la \
 	$(NSS_LIBS) \
@@ -121,11 +120,13 @@ libsipe_backend_vv_la_SOURCES  = purple-media.c
 libsipe_backend_vv_la_CFLAGS   = \
 	$(libsipe_backend_la_CFLAGS) \
 	$(NICE_CFLAGS) \
-	$(GSTREAMER_CFLAGS)
+	$(GSTREAMER_CFLAGS) \
+	$(FARSTREAM_CFLAGS)
 libsipe_la_LIBADD             += \
 	libsipe_backend_vv.la \
 	$(NICE_LIBS) \
-	$(GSTREAMER_LIBS)
+	$(GSTREAMER_LIBS) \
+	$(FARSTREAM_LIBS)
 endif
 
 TESTS = $(check_PROGRAMS)

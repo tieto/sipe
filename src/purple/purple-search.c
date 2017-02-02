@@ -126,7 +126,7 @@ static void searchresults_add_buddy(PurpleConnection *gc,
 	purple_blist_request_add_buddy(purple_connection_get_account(gc),
 				       g_list_nth_data(row, 0),
 				       _("Other Contacts"),
-				       g_list_nth_data(row, 1));
+				       NULL);
 }
 
 

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2014-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2014-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -60,6 +60,7 @@ struct sdpcodec {
 	gint		 id;
 	gchar		*name;
 	gint		 clock_rate;
+	gint		 channels;
 	SipeMediaType	 type;
 	GSList		*parameters;
 };
@@ -71,7 +72,7 @@ struct sdpcodec {
  *
  * @return New @c sdpmsg or NULL if message can not be parsed.
  */
-struct sdpmsg *sdpmsg_parse_msg(gchar *msg);
+struct sdpmsg *sdpmsg_parse_msg(const gchar *msg);
 
 /**
  * Creates a SDP message from the @c sdpmsg structure.

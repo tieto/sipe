@@ -409,6 +409,18 @@ gchar *
 sipe_core_conf_entry_info(struct sipe_core_public *sipe_public,
 			  struct sipe_chat_session *chat_session);
 
+/**
+ * Checks if given chat session has an open RDP client window.
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @param chat_session (in) chat session structure
+ *
+ * @return @c TRUE if RDP session is in progress.
+ */
+gboolean
+sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
+				   struct sipe_chat_session *chat_session);
+
 /* call control (CSTA) */
 void sipe_core_buddy_make_call(struct sipe_core_public *sipe_public,
 			       const gchar *phone);
@@ -444,6 +456,14 @@ sipe_core_media_stream_readable(struct sipe_media_stream *stream);
 void
 sipe_core_media_stream_writable(struct sipe_media_stream *stream,
 				gboolean writable);
+
+/**
+ * Called by media backend when @c stream has ended and should be destroyed.
+ *
+ * @param stream (in) SIPE media stream data.
+ */
+void
+sipe_core_media_stream_end(struct sipe_media_stream *stream);
 
 /**
  * Connects to a conference call specified by given chat session
@@ -488,6 +508,20 @@ struct sipe_file_transfer *
 sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
 			     const gchar *who,
 			     const gchar *file);
+
+/* application sharing */
+
+/**
+ * Connects to a meeting's presentation
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @param chat_session (in) chat session structure
+ * @param user_must_accept (in) @c TRUE if user should be shown accept/decline
+ * 			   dialog before the action can proceed.
+ */
+void sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
+					   struct sipe_chat_session *chat_session,
+					   gboolean user_must_accept);
 
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
@@ -561,6 +595,38 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
 			  gboolean set_by_user,
 			  guint activity,
 			  const gchar *note);
+
+#define SIPE_MSRTP_VSR_HEADER_LEN  20
+#define SIPE_MSRTP_VSR_ENTRY_LEN   0x44
+#define SIPE_MSRTP_VSR_FCI_WORDLEN \
+	(SIPE_MSRTP_VSR_HEADER_LEN + SIPE_MSRTP_VSR_ENTRY_LEN) / 4
+
+#define SIPE_MSRTP_VSR_SOURCE_ANY  0xFFFFFFFE
+#define SIPE_MSRTP_VSR_SOURCE_NONE 0xFFFFFFFF
+
+/**
+ * Fills @buffer with Video Source Request described in [MS-RTP] 2.2.12.2.
+ *
+ * @param buffer (out) destination the VSR will be written to. The byte length
+ *               of @c buffer MUST be at least @c SIPE_MSRTP_VSR_HEADER_LEN +
+ *               @c SIPE_MSRTP_VSR_ENTRY_LEN.
+ * @param payload_type (in) payload ID of the codec negotiated with the peer.
+ */
+void sipe_core_msrtp_write_video_source_request(guint8 *buffer,
+						guint8 payload_type);
+
+/**
+ * Fills @buffer with customized Payload Content Scalability Information packet
+ * described in [MS-H264PF] consisting of a Stream Layout SEI Message (section
+ * 2.2.5) and a Bitstream Info SEI Message (section 2.2.7).
+ *
+ * @param buffer (out) destination the PACSI will be written to.
+ * @param nal_count (in) number of NAL units this packet describes.
+ *
+ * @return Byte length of the PACSI packet.
+ */
+gsize sipe_core_msrtp_write_video_scalability_info(guint8 *buffer,
+						   guint8 nal_count);
 
 #ifdef __cplusplus
 }

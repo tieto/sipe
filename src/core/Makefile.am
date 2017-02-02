@@ -67,6 +67,8 @@ libsipe_core_la_SOURCES = \
 	sipe-im.c \
 	sipe-incoming.h \
 	sipe-incoming.c \
+	sipe-lync-autodiscover.h \
+	sipe-lync-autodiscover.c \
 	sipe-mime-common.c \
 	sipe-notify.h \
 	sipe-notify.c \
@@ -112,8 +114,6 @@ else
 
 if !SIP_SEC_GSSAPI_ONLY
 libsipe_core_la_SOURCES += \
-	md4.h \
-	md4.c \
 	sip-sec-ntlm.h \
 	sip-sec-ntlm.c
 
@@ -122,6 +122,11 @@ noinst_LTLIBRARIES += \
 
 libsipe_core_tests_la_SOURCES = \
 	sip-sec-ntlm-tests.c
+libsipe_core_tests_la_LIBADD = \
+	libsipe_core_la-sipmsg.lo \
+	libsipe_core_la-sipe-sign.lo \
+	libsipe_core_la-sipe-utils.lo \
+	libsipe_core_la-uuid.lo
 endif
 
 endif
@@ -136,6 +141,11 @@ libsipe_core_crypto_la_SOURCES = \
 	sipe-cert-crypto-nss.c \
 	sipe-crypt-nss.c \
 	sipe-digest-nss.c
+if !SIP_SEC_GSSAPI_ONLY
+libsipe_core_crypto_la_SOURCES += \
+	md4.h \
+	md4.c
+endif
 endif
 
 libsipe_core_libxml2_la_SOURCES = \
@@ -195,12 +205,24 @@ libsipe_core_libxml2_la_CFLAGS = $(libsipe_core_la_CFLAGS) $(LIBXML2_CFLAGS)
 
 if SIPE_WITH_VV
 libsipe_core_la_SOURCES += sipe-media.h sipe-media.c \
-	sdpmsg.h sdpmsg.c
+	sdpmsg.h sdpmsg.c \
+	sipe-msrtp.c
 endif
 
 if SIPE_HAVE_XDATA
 libsipe_core_la_SOURCES += \
 	sipe-ft-lync.h sipe-ft-lync.c
+
+if SIPE_HAVE_APPSHARE
+libsipe_core_la_SOURCES += \
+	sipe-appshare.c \
+	sipe-appshare.h \
+	sipe-appshare-client.h \
+	sipe-appshare-remmina.c \
+	sipe-appshare-xfreerdp.c
+
+libsipe_core_la_CFLAGS += $(GIO_CFLAGS)
+endif
 endif
 
 check_PROGRAMS =
@@ -209,8 +231,8 @@ check_PROGRAMS += sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
 sipe_xml_tests_LDADD = \
-	libsipe_core.la \
 	libsipe_core_libxml2.la \
+	libsipe_core_la-sipe-utils.lo \
 	$(LIBXML2_LIBS) \
 	$(GLIB_LIBS)
 

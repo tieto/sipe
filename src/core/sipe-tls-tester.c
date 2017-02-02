@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -93,6 +93,14 @@ void sipe_backend_debug(sipe_debug_level level,
 	g_free(newformat);
 }
 
+/* needed when linking against NSS */
+void md4sum(const guchar *data, gsize length, guchar *digest);
+void md4sum(SIPE_UNUSED_PARAMETER const guchar *data,
+	    SIPE_UNUSED_PARAMETER gsize length,
+	    SIPE_UNUSED_PARAMETER guchar *digest)
+{
+}
+
 /*
  * Tester code
  */
@@ -159,15 +167,20 @@ static guchar *read_tls_record(int fd,
 		       length);
 
 		p = merged = g_malloc(length);
-		while (elem) {
-			struct record *record = elem->data;
+		if (merged) {
+			while (elem) {
+				struct record *record = elem->data;
 
-			memcpy(p, record->msg, record->length);
-			p += record->length;
-			g_free(record->msg);
-			g_free(record);
+				memcpy(p, record->msg, record->length);
+				p += record->length;
+				g_free(record->msg);
+				g_free(record);
 
-			elem = elem->next;
+				elem = elem->next;
+			}
+		} else {
+			printf("can't allocate %" G_GSIZE_FORMAT " bytes.\n",
+			       length);
 		}
 
 		g_slist_free(fragments);

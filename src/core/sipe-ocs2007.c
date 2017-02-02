@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -638,7 +638,6 @@ void sipe_ocs2007_change_access_level(struct sipe_core_private *sipe_private,
 				sipe_send_container_members_prepare(current_container_id, container->version, "remove", type, value, &container_xmls);
 				/* remove member from our cache, to be able to recalculate AL below */
 				container->members = g_slist_remove(container->members, member);
-				current_container_id = -1;
 			}
 		}
 	}

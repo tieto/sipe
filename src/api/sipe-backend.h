@@ -61,10 +61,14 @@ gchar *sipe_backend_version(void);
 /** DEBUGGING ****************************************************************/
 
 typedef enum {
+	SIPE_LOG_LEVEL_INFO,
+	SIPE_LOG_LEVEL_WARNING,
+	SIPE_LOG_LEVEL_ERROR,
 	SIPE_DEBUG_LEVEL_INFO,
 	SIPE_DEBUG_LEVEL_WARNING,
 	SIPE_DEBUG_LEVEL_ERROR,
 }  sipe_debug_level;
+#define SIPE_DEBUG_LEVEL_LOWEST SIPE_DEBUG_LEVEL_INFO
 
 /**
  * Output debug information without formatting
@@ -90,6 +94,12 @@ void sipe_backend_debug(sipe_debug_level level,
 			...) G_GNUC_PRINTF(2, 3);
 
 /* Convenience macros */
+#define SIPE_LOG_INFO(fmt, ...)          sipe_backend_debug(SIPE_LOG_LEVEL_INFO,    fmt, __VA_ARGS__)
+#define SIPE_LOG_INFO_NOFORMAT(msg)      sipe_backend_debug_literal(SIPE_LOG_LEVEL_INFO,    msg)
+#define SIPE_LOG_WARNING(fmt, ...)       sipe_backend_debug(SIPE_LOG_LEVEL_WARNING, fmt, __VA_ARGS__)
+#define SIPE_LOG_WARNING_NOFORMAT(msg)   sipe_backend_debug_literal(SIPE_LOG_LEVEL_WARNING, msg)
+#define SIPE_LOG_ERROR(fmt, ...)         sipe_backend_debug(SIPE_LOG_LEVEL_ERROR,   fmt, __VA_ARGS__)
+#define SIPE_LOG_ERROR_NOFORMAT(msg)     sipe_backend_debug_literal(SIPE_LOG_LEVEL_ERROR,   msg)
 #define SIPE_DEBUG_INFO(fmt, ...)        sipe_backend_debug(SIPE_DEBUG_LEVEL_INFO,    fmt, __VA_ARGS__)
 #define SIPE_DEBUG_INFO_NOFORMAT(msg)    sipe_backend_debug_literal(SIPE_DEBUG_LEVEL_INFO,    msg)
 #define SIPE_DEBUG_WARNING(fmt, ...)     sipe_backend_debug(SIPE_DEBUG_LEVEL_WARNING, fmt, __VA_ARGS__)
@@ -374,11 +384,17 @@ struct sipe_backend_candidate;
 struct sipe_backend_media_stream;
 struct sipe_backend_media_relays;
 
+struct ssrc_range {
+	guint32 begin;
+	guint32 end;
+};
+
 struct sipe_media_stream {
 	struct sipe_backend_media_stream *backend_private;
 
 	struct sipe_media_call *call;
 	gchar *id;
+	struct ssrc_range *ssrc_range;
 
 	void (*candidate_pairs_established_cb)(struct sipe_media_stream *);
 	void (*read_cb)(struct sipe_media_stream *);
@@ -393,8 +409,6 @@ struct sipe_media_call {
 
 	void (*stream_initialized_cb)(struct sipe_media_call *,
 				      struct sipe_media_stream *);
-	void (*stream_end_cb)(struct sipe_media_call *,
-			      struct sipe_media_stream *);
 	void (*media_end_cb)(struct sipe_media_call *);
 	void (*call_accept_cb)(struct sipe_media_call *, gboolean local);
 	void (*call_reject_cb)(struct sipe_media_call *, gboolean local);
@@ -425,9 +439,7 @@ struct sipe_backend_media_relays * sipe_backend_media_relays_convert(GSList *med
 								     gchar *password);
 void sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays);
 
-struct sipe_backend_media_stream *sipe_backend_media_add_stream(struct sipe_media_call *media,
-							  const gchar *id,
-							  const gchar *participant,
+struct sipe_backend_media_stream *sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 							  SipeMediaType type,
 							  SipeIceVersion ice_version,
 							  gboolean initiator,
@@ -470,7 +482,9 @@ void sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream);
 /* Codec handling */
 struct sipe_backend_codec *sipe_backend_codec_new(int id,
 						  const char *name,
-						  SipeMediaType type, guint clock_rate);
+						  SipeMediaType type,
+						  guint clock_rate,
+						  guint channels);
 void sipe_backend_codec_free(struct sipe_backend_codec *codec);
 int sipe_backend_codec_get_id(struct sipe_backend_codec *codec);
 /**
@@ -531,8 +545,6 @@ void sipe_backend_media_hangup(struct sipe_backend_media *media, gboolean local)
 void sipe_backend_media_reject(struct sipe_backend_media *media, gboolean local);
 
 /** NETWORK ******************************************************************/
-
-const gchar *sipe_backend_network_ip_address(struct sipe_core_public *sipe_public);
 
 struct sipe_backend_listendata;
 
@@ -609,6 +621,7 @@ typedef enum {
   SIPE_SETTING_EMAIL_LOGIN,
   SIPE_SETTING_EMAIL_PASSWORD,
   SIPE_SETTING_GROUPCHAT_USER,
+  SIPE_SETTING_RDP_CLIENT,
   SIPE_SETTING_USER_AGENT,
   SIPE_SETTING_LAST
 } sipe_setting;
@@ -654,6 +667,7 @@ typedef struct {
 struct sipe_transport_connection *sipe_backend_transport_connect(struct sipe_core_public *sipe_public,
 								 const sipe_connect_setup *setup);
 void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn);
+gchar *sipe_backend_transport_ip_address(struct sipe_transport_connection *conn);
 void sipe_backend_transport_message(struct sipe_transport_connection *conn,
 				    const gchar *buffer);
 void sipe_backend_transport_flush(struct sipe_transport_connection *conn);

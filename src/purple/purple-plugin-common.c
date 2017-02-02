@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -928,6 +928,11 @@ GList * sipe_purple_account_options()
 	 */
 	option = purple_account_option_string_new(_("Group Chat Proxy\n   company.com  or  user@company.com\n(leave empty to determine from Username)"), "groupchat_user", "");
 	options = g_list_append(options, option);
+
+#ifdef HAVE_APPSHARE
+	option = purple_account_option_string_new(_("Remote desktop client"), "rdp_client", "");
+	options = g_list_append(options, option);
+#endif
 
 #ifdef HAVE_SRTP
 	option = purple_account_option_list_new(_("Media encryption"), "encryption-policy", NULL);

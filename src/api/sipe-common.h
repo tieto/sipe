@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,12 @@
 #define SIPE_UNUSED_PARAMETER __attribute__((unused))
 #else
 #define SIPE_UNUSED_PARAMETER
+#endif
+
+#if defined(__GNUC__) && (__GNUC__ >= 7)
+#define SIPE_FALLTHROUGH __attribute__((fallthrough));
+#else
+#define SIPE_FALLTHROUGH
 #endif
 
 /* in order to remove internal.h dependency in mingw builds */

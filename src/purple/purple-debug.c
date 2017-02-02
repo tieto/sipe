@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
 
 #include "glib.h"
 #include "debug.h"
+#include "version.h"
 
 #include "sipe-backend.h"
 
@@ -36,23 +37,39 @@
  */
 gboolean AIDebugLoggingIsEnabled(void);
 #define SIPE_PURPLE_DEBUG_IS_ENABLED AIDebugLoggingIsEnabled()
-#else
+#define SIPE_PURPLE_DEBUG_IS_UNSAFE  AIDebugLoggingIsEnabled()
+#elif !PURPLE_VERSION_CHECK(2,6,0) && !PURPLE_VERSION_CHECK(3,0,0)
 #define SIPE_PURPLE_DEBUG_IS_ENABLED purple_debug_is_enabled()
+#define SIPE_PURPLE_DEBUG_IS_UNSAFE  purple_debug_is_enabled()
+#else
+/*
+ * The same problem happens when a client uses PurpleDebugUiOps->debug()
+ * to redirect it to stderr, e.g. bitlbee. Such a client will not call
+ * purple_debug_set_enabled(TRUE). Check also the other flags that were
+ * introduced in the 2.6.x API.
+ */
+#define SIPE_PURPLE_DEBUG_IS_ENABLED (purple_debug_is_enabled() || \
+				      purple_debug_is_verbose() || \
+				      purple_debug_is_unsafe())
+#define SIPE_PURPLE_DEBUG_IS_UNSAFE  purple_debug_is_unsafe()
 #endif
 
 void sipe_backend_debug_literal(sipe_debug_level level,
 				const gchar *msg)
 {
-	if (SIPE_PURPLE_DEBUG_IS_ENABLED) {
+	if ((level < SIPE_DEBUG_LEVEL_LOWEST) || SIPE_PURPLE_DEBUG_IS_ENABLED) {
 
 		/* purple_debug doesn't have a vprintf-like API call :-( */
 		switch (level) {
+		case SIPE_LOG_LEVEL_INFO:
 		case SIPE_DEBUG_LEVEL_INFO:
 			purple_debug_info("sipe", "%s\n", msg);
 			break;
+		case SIPE_LOG_LEVEL_WARNING:
 		case SIPE_DEBUG_LEVEL_WARNING:
 			purple_debug_warning("sipe", "%s\n", msg);
 			break;
+		case SIPE_LOG_LEVEL_ERROR:
 		case SIPE_DEBUG_LEVEL_ERROR:
 			purple_debug_error("sipe", "%s\n", msg);
 			break;
@@ -68,7 +85,7 @@ void sipe_backend_debug(sipe_debug_level level,
 
 	va_start(ap, format);
 
-	if (SIPE_PURPLE_DEBUG_IS_ENABLED) {
+	if ((level < SIPE_DEBUG_LEVEL_LOWEST) || SIPE_PURPLE_DEBUG_IS_ENABLED) {
 
 		/* purple_debug doesn't have a vprintf-like API call :-( */
 		gchar *msg = g_strdup_vprintf(format, ap);
@@ -81,7 +98,7 @@ void sipe_backend_debug(sipe_debug_level level,
 
 gboolean sipe_backend_debug_enabled(void)
 {
-	return SIPE_PURPLE_DEBUG_IS_ENABLED;
+	return SIPE_PURPLE_DEBUG_IS_UNSAFE;
 }
 
 /*
