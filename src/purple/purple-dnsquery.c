@@ -45,7 +45,6 @@
 
 #endif
 
-#include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 

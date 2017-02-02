@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -175,7 +175,6 @@ static gboolean connect_to_core(SipeConnection *self,
 		telepathy_private->message      = NULL;
 		telepathy_private->tls_manager  = self->tls_manager;
 		telepathy_private->transport    = NULL;
-		telepathy_private->ipaddress    = NULL;
 
 		/* make sure cache directory exists */
 		if (!g_file_test(telepathy_private->cache_dir,
@@ -322,9 +321,6 @@ static gboolean disconnect_from_core(gpointer data)
 		sipe_core_deallocate(sipe_public);
 	telepathy_private->public    = NULL;
 	telepathy_private->transport = NULL;
-
-	g_free(telepathy_private->ipaddress);
-	telepathy_private->ipaddress = NULL;
 
 	g_free(telepathy_private->message);
 	telepathy_private->message   = NULL;

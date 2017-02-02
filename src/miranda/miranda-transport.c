@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -201,6 +201,12 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 
 	g_free(transport->public.buffer);
 	g_free(transport);
+}
+
+gchar *sipe_backend_transport_ip_address(struct sipe_transport_connection *conn)
+{
+	// @TODO: provide correct implementation for Miranda
+	return("0.0.0.0");
 }
 
 void sipe_backend_transport_message(struct sipe_transport_connection *conn,

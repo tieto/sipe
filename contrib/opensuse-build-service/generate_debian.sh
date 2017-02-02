@@ -61,7 +61,8 @@ cp pidgin-sipe-telepathy.dsc pidgin-sipe.dsc
 #    Debian_x.y
 for os in \
     xUbuntu_15.10 \
-    xUbuntu_16.04; \
+    xUbuntu_16.04 \
+    xUbuntu_16.10; \
 do \
     cp pidgin-sipe-gstreamer1.dsc pidgin-sipe-${os}.dsc; \
 done

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -553,7 +553,7 @@ static void webticket_token(struct sipe_core_private *sipe_private,
 			if (wcd->token_state == TOKEN_STATE_FEDERATION) {
 				struct sipe_webticket *webticket = sipe_private->webticket;
 
-				SIPE_DEBUG_INFO_NOFORMAT("webticket_token: ADFS authentication failed - assuming Multi-Factor Authentication (MFA)");
+				SIPE_LOG_WARNING_NOFORMAT("webticket_token: ADFS authentication failed - assuming Multi-Factor Authentication (MFA)");
 
 				/* forget ADFS URI */
 				g_free(webticket->webticket_adfs_uri);
@@ -676,10 +676,11 @@ static void realminfo(struct sipe_core_private *sipe_private,
 										     "STSAuthURL"));
 		}
 
-		if (webticket->webticket_adfs_uri)
-			SIPE_DEBUG_INFO("realminfo: ADFS setup detected: %s",
+		if (webticket->webticket_adfs_uri) {
+			SIPE_LOG_INFO_NOFORMAT("realminfo: ADFS setup detected");
+			SIPE_DEBUG_INFO("realminfo: ADFS URI: %s",
 					webticket->webticket_adfs_uri);
-		else
+		} else
 			SIPE_DEBUG_INFO_NOFORMAT("realminfo: no RealmInfo found or no ADFS setup detected - try direct login");
 
 		if (fedbearer_authentication(sipe_private, wcd)) {
@@ -808,7 +809,7 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 		gchar *policy = g_strdup_printf("%s_policy", wcd->service_port);
 		gchar *ticket_uri = NULL;
 
-		SIPE_DEBUG_INFO("webservice_metadata: metadata for service %s retrieved successfully",
+		SIPE_DEBUG_INFO("service_metadata: metadata for service %s retrieved successfully",
 				uri);
 
 		/* WebTicket policies accepted by Web Service */
@@ -818,7 +819,7 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 			if (sipe_strcase_equal(sipe_xml_attribute(node, "Id"),
 					       policy)) {
 
-				SIPE_DEBUG_INFO_NOFORMAT("webservice_metadata: WebTicket policy found");
+				SIPE_DEBUG_INFO_NOFORMAT("service_metadata: WebTicket policy found");
 
 				ticket_uri = sipe_xml_data(sipe_xml_child(node,
 									  "ExactlyOne/All/EndorsingSupportingTokens/Policy/IssuedToken/Issuer/Address"));
@@ -831,7 +832,7 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 										  "ExactlyOne/All/SignedSupportingTokens/Policy/IssuedToken/Issuer/Address"));
 				}
 				if (ticket_uri) {
-					SIPE_DEBUG_INFO("webservice_metadata: WebTicket URI %s", ticket_uri);
+					SIPE_DEBUG_INFO("service_metadata: WebTicket URI %s", ticket_uri);
 				}
 				break;
 			}
@@ -848,13 +849,13 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 						       wcd->service_port)) {
 					const gchar *auth_uri;
 
-					SIPE_DEBUG_INFO_NOFORMAT("webservice_metadata: authentication port found");
+					SIPE_DEBUG_INFO_NOFORMAT("service_metadata: authentication port found");
 
 					auth_uri = sipe_xml_attribute(sipe_xml_child(node,
 										     "address"),
 								      "location");
 					if (auth_uri) {
-						SIPE_DEBUG_INFO("webservice_metadata: Auth URI %s", auth_uri);
+						SIPE_DEBUG_INFO("service_metadata: Auth URI %s", auth_uri);
 
 						if (sipe_svc_metadata(sipe_private,
 								      wcd->session,
@@ -885,12 +886,13 @@ static void service_metadata(struct sipe_core_private *sipe_private,
 	}
 }
 
-gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
-				struct sipe_svc_session *session,
-				const gchar *base_uri,
-				const gchar *port_name,
-				sipe_webticket_callback *callback,
-				gpointer callback_data)
+static gboolean webticket_request(struct sipe_core_private *sipe_private,
+				  struct sipe_svc_session *session,
+				  const gchar *base_uri,
+				  const gchar *auth_uri,
+				  const gchar *port_name,
+				  sipe_webticket_callback *callback,
+				  gpointer callback_data)
 {
 	struct sipe_webticket *webticket;
 	gboolean ret = FALSE;
@@ -899,7 +901,7 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 	webticket = sipe_private->webticket;
 
 	if (webticket->shutting_down) {
-		SIPE_DEBUG_ERROR("sipe_webticket_request: new Web Ticket request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
+		SIPE_DEBUG_ERROR("webticket_request: new Web Ticket request during shutdown: THIS SHOULD NOT HAPPEN! Debugging information:\n"
 				 "Base URI:  %s\n"
 				 "Port Name: %s\n",
 				 base_uri,
@@ -910,7 +912,7 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 
 		/* cache hit for this URI? */
 		if (wt) {
-			SIPE_DEBUG_INFO("sipe_webticket_request: using cached token for URI %s (Auth URI %s)",
+			SIPE_DEBUG_INFO("webticket_request: using cached token for URI %s (Auth URI %s)",
 					base_uri, wt->auth_uri);
 			callback(sipe_private,
 				 base_uri,
@@ -926,7 +928,7 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 
 			/* is there already a pending request for this URI? */
 			if (wcd) {
-				SIPE_DEBUG_INFO("sipe_webticket_request: pending request found for URI %s - queueing",
+				SIPE_DEBUG_INFO("webticket_request: pending request found for URI %s - queueing",
 						base_uri);
 				queue_request(wcd, callback, callback_data);
 				ret = TRUE;
@@ -936,16 +938,17 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 				ret = sipe_svc_metadata(sipe_private,
 							session,
 							base_uri,
-							service_metadata,
+							port_name ? service_metadata : webticket_metadata,
 							wcd);
 
 				if (ret) {
-					wcd->service_uri   = g_strdup(base_uri);
-					wcd->service_port  = port_name;
-					wcd->callback      = callback;
-					wcd->callback_data = callback_data;
-					wcd->session       = session;
-					wcd->token_state   = TOKEN_STATE_NONE;
+					wcd->service_uri      = g_strdup(base_uri);
+					wcd->service_port     = port_name;
+					wcd->service_auth_uri = g_strdup(auth_uri);
+					wcd->callback         = callback;
+					wcd->callback_data    = callback_data;
+					wcd->session          = session;
+					wcd->token_state      = TOKEN_STATE_NONE;
 					g_hash_table_insert(pending,
 							    wcd->service_uri, /* borrowed */
 							    wcd);             /* borrowed */
@@ -957,6 +960,38 @@ gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
 	}
 
 	return(ret);
+}
+
+gboolean sipe_webticket_request_with_port(struct sipe_core_private *sipe_private,
+					  struct sipe_svc_session *session,
+					  const gchar *base_uri,
+					  const gchar *port_name,
+					  sipe_webticket_callback *callback,
+					  gpointer callback_data)
+{
+	return(webticket_request(sipe_private,
+				 session,
+				 base_uri,
+				 NULL, /* Auth URI is determined via port_name */
+				 port_name,
+				 callback,
+				 callback_data));
+}
+
+gboolean sipe_webticket_request_with_auth(struct sipe_core_private *sipe_private,
+					  struct sipe_svc_session *session,
+					  const gchar *base_uri,
+					  const gchar *auth_uri,
+					  sipe_webticket_callback *callback,
+					  gpointer callback_data)
+{
+	return(webticket_request(sipe_private,
+				 session,
+				 base_uri,
+				 auth_uri,
+				 NULL,
+				 callback,
+				 callback_data));
 }
 
 /*

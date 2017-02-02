@@ -11,7 +11,7 @@
 # Check these page for latest MinGW/Pidgin URLs if you get fetch errors!
 #
 # update Pidgin version here
-export PIDGIN_VERSION=2.10.12
+export PIDGIN_VERSION=2.11.0
 
 # must be absolute path
 export PIDGIN_DEV_ROOT=$(pwd -P)/build-${PIDGIN_VERSION}
@@ -53,14 +53,12 @@ wget -nv http://ftp.gnome.org/pub/gnome/binaries/win32/dependencies/gettext-runt
 wget -nv https://developer.pidgin.im/static/win32/libxml2-2.9.2_daa1.tar.gz
 wget -nv https://developer.pidgin.im/static/win32/gtkspell-2.0.16.tar.bz2
 wget -nv https://developer.pidgin.im/static/win32/enchant_1.6.0_win32.zip
-wget -nv https://developer.pidgin.im/static/win32/nss-3.20.1-nspr-4.10.10.tar.gz
+wget -nv https://developer.pidgin.im/static/win32/nss-3.24-nspr-4.12.tar.gz
 wget -nv https://developer.pidgin.im/static/win32/silc-toolkit-1.1.12.tar.gz
 wget -nv https://developer.pidgin.im/static/win32/meanwhile-1.0.2_daa3-win32.zip
 wget -nv https://developer.pidgin.im/static/win32/cyrus-sasl-2.1.26_daa1.tar.gz
 wget -nv http://ftp.acc.umu.se/pub/GNOME/binaries/win32/intltool/0.40/intltool_0.40.4-1_win32.zip
 wget -nv http://prdownloads.sourceforge.net/pidgin/pidgin-${PIDGIN_VERSION}.tar.bz2
-# Fixes not included in source release
-wget -nv https://hg.pidgin.im/pidgin/main/raw-rev/30f7c83da15d
 
 echo 1>&2 unpacking pidgin dev stuff...
 unzip ${SOURCES_DIR}/gtk+-bundle_2.14.7-20090119_win32.zip -d ${DEV_DIR}/gtk_2_0-2.14
@@ -73,12 +71,11 @@ unzip ${SOURCES_DIR}/intltool_0.40.4-1_win32.zip -d ${DEV_DIR}/intltool_0.40.4-1
 cd ${DEV_DIR}
 tar xzf ${SOURCES_DIR}/libxml2-2.9.2_daa1.tar.gz
 tar xjf ${SOURCES_DIR}/gtkspell-2.0.16.tar.bz2
-tar xzf ${SOURCES_DIR}/nss-3.20.1-nspr-4.10.10.tar.gz
+tar xzf ${SOURCES_DIR}/nss-3.24-nspr-4.12.tar.gz
 tar xzf ${SOURCES_DIR}/silc-toolkit-1.1.12.tar.gz
 tar xzf ${SOURCES_DIR}/cyrus-sasl-2.1.26_daa1.tar.gz
 
 cd ${PIDGIN_DEV_ROOT}
 tar xjf ${SOURCES_DIR}/pidgin-${PIDGIN_VERSION}.tar.bz2
-patch -d pidgin-${PIDGIN_VERSION} -p1 -b -z.30f7c83da15d <${SOURCES_DIR}/30f7c83da15d
 
 echo 1>&2 done

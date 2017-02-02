@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,7 @@ append_attribute(struct sdpmedia *media, gchar *attr)
 }
 
 static gboolean
-parse_attributes(struct sdpmsg *smsg, gchar *msg) {
+parse_attributes(struct sdpmsg *smsg, const gchar *msg) {
 	gchar		**lines = g_strsplit(msg, "\r\n", 0);
 	gchar		**ptr = lines;
 
@@ -366,8 +366,8 @@ parse_codecs(GSList *attrs, SipeMediaType type, GSList **codecs)
 		struct sdpcodec *codec;
 		gchar **tokens;
 
-		tokens = g_strsplit_set(attr, " /", 3);
-		if (g_strv_length(tokens) != 3) {
+		tokens = g_strsplit_set(attr, " /", 4);
+		if (g_strv_length(tokens) < 3) {
 			g_strfreev(tokens);
 			return FALSE;
 		}
@@ -377,6 +377,10 @@ parse_codecs(GSList *attrs, SipeMediaType type, GSList **codecs)
 		codec->name = g_strdup(tokens[1]);
 		codec->clock_rate = atoi(tokens[2]);
 		codec->type = type;
+
+		if (type == SIPE_MEDIA_AUDIO) {
+			codec->channels = tokens[3] ? atoi(tokens[3]) : 1;
+		}
 
 		g_strfreev(tokens);
 
@@ -422,7 +426,7 @@ parse_encryption_key(GSList *attrs, guchar **key, int *key_id)
 }
 
 struct sdpmsg *
-sdpmsg_parse_msg(gchar *msg)
+sdpmsg_parse_msg(const gchar *msg)
 {
 	struct sdpmsg *smsg = g_new0(struct sdpmsg, 1);
 	GSList *i;
@@ -452,6 +456,8 @@ sdpmsg_parse_msg(gchar *msg)
 		else if (sipe_strequal(media->name, "video"))
 			type = SIPE_MEDIA_VIDEO;
 		else if (sipe_strequal(media->name, "data"))
+			type = SIPE_MEDIA_APPLICATION;
+		else if (sipe_strequal(media->name, "applicationsharing"))
 			type = SIPE_MEDIA_APPLICATION;
 		else {
 			// Unknown media type

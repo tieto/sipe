@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -886,6 +886,9 @@ sipe_conf_add(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 		"audio-video",
 #endif
+#ifdef HAVE_APPSHARE
+		"applicationsharing",
+#endif
 		NULL
 	};
 
@@ -948,6 +951,11 @@ struct conf_accept_ctx {
 	gchar *focus_uri;
 	struct sipmsg *msg;
 	struct sipe_user_ask_ctx *ask_ctx;
+
+	SipeUserAskCb accept_cb;
+	SipeUserAskCb decline_cb;
+
+	gpointer user_data;
 };
 
 static void
@@ -963,24 +971,15 @@ conf_accept_ctx_free(struct conf_accept_ctx *ctx)
 static void
 conf_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
 {
-	sipe_private->sessions_to_accept =
-			g_slist_remove(sipe_private->sessions_to_accept, ctx);
-
 	accept_incoming_invite_conf(sipe_private, ctx->focus_uri, TRUE, ctx->msg);
-	conf_accept_ctx_free(ctx);
 }
 
 static void
 conf_decline_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
 {
-	sipe_private->sessions_to_accept =
-			g_slist_remove(sipe_private->sessions_to_accept, ctx);
-
 	sip_transport_response(sipe_private,
 			       ctx->msg,
 			       603, "Decline", NULL);
-
-	conf_accept_ctx_free(ctx);
 }
 
 void
@@ -1023,32 +1022,53 @@ sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
 }
 
 static void
-ask_accept_voice_conference(struct sipe_core_private *sipe_private,
-			    const gchar *focus_uri,
-			    struct sipmsg *msg,
-			    SipeUserAskCb accept_cb,
-			    SipeUserAskCb decline_cb)
+accept_invitation_cb(struct sipe_core_private *sipe_private, gpointer data)
+{
+	struct conf_accept_ctx *ctx = data;
+
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	if (ctx->accept_cb) {
+		ctx->accept_cb(sipe_private, ctx);
+	}
+
+	conf_accept_ctx_free(ctx);
+}
+
+static void
+decline_invitation_cb(struct sipe_core_private *sipe_private, gpointer data)
+{
+	struct conf_accept_ctx *ctx = data;
+
+	sipe_private->sessions_to_accept =
+			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+
+	if (ctx->decline_cb) {
+		ctx->decline_cb(sipe_private, ctx);
+	}
+
+	conf_accept_ctx_free(ctx);
+}
+
+static void
+ask_accept_invitation(struct sipe_core_private *sipe_private,
+		      const gchar *focus_uri,
+		      const gchar *question,
+		      struct sipmsg *msg,
+		      SipeUserAskCb accept_cb,
+		      SipeUserAskCb decline_cb,
+		      gpointer user_data)
 {
 	gchar **parts;
 	gchar *alias;
-	gchar *ask_msg;
-	const gchar *novv_note;
+	gchar *question_str;
 	struct conf_accept_ctx *ctx;
-
-#ifdef HAVE_VV
-	novv_note = "";
-#else
-	novv_note = _("\n\nAs this client was not compiled with voice call "
-		      "support, if you accept, you will be able to contact "
-		      "the other participants only via IM session.");
-#endif
 
 	parts = g_strsplit(focus_uri, ";", 2);
 	alias = sipe_buddy_get_alias(sipe_private, parts[0]);
 
-	ask_msg = g_strdup_printf(_("%s wants to invite you "
-				  "to the conference call%s"),
-				  alias ? alias : parts[0], novv_note);
+	question_str = g_strdup_printf("%s %s", alias ? alias : parts[0], question);
 
 	g_free(alias);
 	g_strfreev(parts);
@@ -1059,12 +1079,42 @@ ask_accept_voice_conference(struct sipe_core_private *sipe_private,
 
 	ctx->focus_uri = g_strdup(focus_uri);
 	ctx->msg = msg ? sipmsg_copy(msg) : NULL;
-	ctx->ask_ctx = sipe_user_ask(sipe_private, ask_msg,
-				     _("Accept"), accept_cb,
-				     _("Decline"), decline_cb,
+	ctx->accept_cb = accept_cb;
+	ctx->decline_cb = decline_cb;
+	ctx->user_data = user_data;
+	ctx->ask_ctx = sipe_user_ask(sipe_private, question_str,
+				     _("Accept"), accept_invitation_cb,
+				     _("Decline"), decline_invitation_cb,
 				     ctx);
 
-	g_free(ask_msg);
+	g_free(question_str);
+}
+
+static void
+ask_accept_voice_conference(struct sipe_core_private *sipe_private,
+			    const gchar *focus_uri,
+			    struct sipmsg *msg,
+			    SipeUserAskCb accept_cb,
+			    SipeUserAskCb decline_cb)
+{
+	gchar *question;
+	const gchar *novv_note;
+
+#ifdef HAVE_VV
+	novv_note = "";
+#else
+	novv_note = _("\n\nAs this client was not compiled with voice call "
+		      "support, if you accept, you will be able to contact "
+		      "the other participants only via IM session.");
+#endif
+
+	question = g_strdup_printf(_("wants to invite you "
+				     "to a conference call%s"), novv_note);
+
+	ask_accept_invitation(sipe_private, focus_uri, question, msg,
+			      accept_cb, decline_cb, NULL);
+
+	g_free(question);
 }
 
 void
@@ -1141,26 +1191,73 @@ call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *c
 	struct sip_session *session;
 	session = sipe_session_find_conference(sipe_private, ctx->focus_uri);
 
-	sipe_private->sessions_to_accept =
-			g_slist_remove(sipe_private->sessions_to_accept, ctx);
-
 	if (session) {
 		sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
 						   session->chat_session);
 	}
-
-	conf_accept_ctx_free(ctx);
 }
 
-static void
-call_decline_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *ctx)
+#ifdef HAVE_APPSHARE
+gboolean
+sipe_core_conf_is_viewing_appshare(struct sipe_core_public *sipe_public,
+				   struct sipe_chat_session *chat_session)
 {
-	sipe_private->sessions_to_accept =
-			g_slist_remove(sipe_private->sessions_to_accept, ctx);
+	if (chat_session) {
+		gchar *mcu_uri;
+		GList *calls;
 
-	conf_accept_ctx_free(ctx);
+		mcu_uri = sipe_conf_build_uri(chat_session->id, "applicationsharing");
+		calls = g_hash_table_get_values(SIPE_CORE_PRIVATE->media_calls);
+
+		for (; calls; calls = g_list_delete_link(calls, calls)) {
+			struct sipe_media_call *call = calls->data;
+			if (sipe_strequal(call->with, mcu_uri)) {
+				break;
+			}
+		}
+
+		g_free(mcu_uri);
+
+		if (calls != NULL) {
+			g_list_free(calls);
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }
 
+static gboolean
+process_conference_appshare_endpoint(const sipe_xml *endpoint)
+{
+	gboolean presentation_added = FALSE;
+	const sipe_xml *media;
+
+	for (media = sipe_xml_child(endpoint, "media");
+	     media && !presentation_added;
+	     media = sipe_xml_twin(media)) {
+		gchar *type;
+		gchar *media_state;
+		gchar *status;
+
+		type = sipe_xml_data(sipe_xml_child(media, "type"));
+		media_state = sipe_xml_data(sipe_xml_child(media, "media-state"));
+		status = sipe_xml_data(sipe_xml_child(media, "status"));
+
+		if (sipe_strequal(type, "applicationsharing") &&
+		    sipe_strequal(media_state, "connected") &&
+		    sipe_strequal(status, "sendonly")) {
+			presentation_added = TRUE;
+		}
+
+		g_free(type);
+		g_free(media_state);
+		g_free(status);
+	}
+
+	return(presentation_added);
+}
+#endif // HAVE_APPSHARE
 #endif // HAVE_VV
 
 void
@@ -1175,7 +1272,10 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 	gboolean just_joined = FALSE;
 #ifdef HAVE_VV
 	gboolean audio_was_added = FALSE;
+#ifdef HAVE_APPSHARE
+	gboolean presentation_was_added = FALSE;
 #endif
+#endif // HAVE_VV
 
 	if (msg->response != 0 && msg->response != 200) return;
 
@@ -1305,6 +1405,13 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 								       self,
 								       session);
 #endif
+				} else if (sipe_strequal("applicationsharing", session_type)) {
+#ifdef HAVE_APPSHARE
+					if (!sipe_core_conf_is_viewing_appshare(SIPE_CORE_PUBLIC,
+										session->chat_session)) {
+						presentation_was_added = process_conference_appshare_endpoint(endpoint);
+					}
+#endif
 				}
 			}
 			if (!is_in_im_mcu) {
@@ -1323,9 +1430,16 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 		session->is_call = TRUE;
 		ask_accept_voice_conference(sipe_private, focus_uri, NULL,
 					    (SipeUserAskCb) call_accept_cb,
-					    (SipeUserAskCb) call_decline_cb);
+					    NULL);
+	}
+#ifdef HAVE_APPSHARE
+	if (presentation_was_added) {
+		sipe_core_appshare_connect_conference(SIPE_CORE_PUBLIC,
+						      session->chat_session,
+						      TRUE);
 	}
 #endif
+#endif // HAVE_VV
 
 	/* entity-view, locked */
 	for (node = sipe_xml_child(xn_conference_info, "conference-view/entity-view");

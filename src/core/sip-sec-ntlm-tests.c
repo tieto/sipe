@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  *
@@ -39,11 +39,19 @@
 #include <glib/gprintf.h>
 
 #include "sipmsg.h"
+#include "sip-transport.h"
+#include "sipe-common.h"
 #include "sipe-sign.h"
 #define _SIPE_COMPILING_TESTS
 #include "sip-sec-ntlm.c"
 
 #include "uuid.h"
+
+/* stub for sipe-utils.c */
+const gchar *sip_transport_epid(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private)
+{
+	return(NULL);
+}
 
 static int successes = 0;
 static int failures = 0;

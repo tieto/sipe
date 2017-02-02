@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -72,12 +72,14 @@
 #include "sipe-certificate.h"
 #include "sipe-dialog.h"
 #include "sipe-incoming.h"
+#include "sipe-lync-autodiscover.h"
 #include "sipe-nls.h"
 #include "sipe-notify.h"
 #include "sipe-schedule.h"
 #include "sipe-sign.h"
 #include "sipe-subscriptions.h"
 #include "sipe-utils.h"
+#include "uuid.h"
 
 struct sip_auth {
 	guint type;
@@ -102,6 +104,9 @@ struct sip_transport {
 	gchar *server_name;
 	guint  server_port;
 	gchar *server_version;
+
+	gchar *epid;
+	gchar *ip_address;           /* local IP address of transport socket */
 
 	gchar *user_agent;
 
@@ -720,14 +725,14 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 	struct sip_transport *transport = sipe_private->transport;
 	char *buf;
 	struct sipmsg *msg;
-	gchar *ourtag    = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : NULL;
-	gchar *theirtag  = dialog && dialog->theirtag  ? g_strdup(dialog->theirtag)  : NULL;
-	gchar *theirepid = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
-	gchar *callid    = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
-	gchar *branch    = dialog && dialog->callid    ? NULL : genbranch();
-	gchar *route     = g_strdup("");
-	gchar *epid      = get_epid(sipe_private);
-	int cseq         = dialog ? ++dialog->cseq : 1 /* as Call-Id is new in this case */;
+	gchar *ourtag     = dialog && dialog->ourtag    ? g_strdup(dialog->ourtag)    : NULL;
+	gchar *theirtag   = dialog && dialog->theirtag  ? g_strdup(dialog->theirtag)  : NULL;
+	gchar *theirepid  = dialog && dialog->theirepid ? g_strdup(dialog->theirepid) : NULL;
+	gchar *callid     = dialog && dialog->callid    ? g_strdup(dialog->callid)    : gencallid();
+	gchar *branch     = dialog && dialog->callid    ? NULL : genbranch();
+	gchar *route      = g_strdup("");
+	const gchar *epid = transport->epid;
+	int cseq          = dialog ? ++dialog->cseq : 1 /* as Call-Id is new in this case */;
 	struct transaction *trans = NULL;
 
 	if (dialog && dialog->routes)
@@ -770,7 +775,7 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 			method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
-			sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
+			transport->ip_address,
 			transport->connection->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
@@ -802,7 +807,6 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 	g_free(theirepid);
 	g_free(branch);
 	g_free(route);
-	g_free(epid);
 
 	sign_outgoing_message(sipe_private, msg);
 
@@ -991,7 +995,7 @@ static void do_reauthenticate_cb(struct sipe_core_private *sipe_private,
 	/* register again when security token expires */
 	/* we have to start a new authentication as the security token
 	 * is almost expired by sending a not signed REGISTER message */
-	SIPE_DEBUG_INFO_NOFORMAT("do a full reauthentication");
+	SIPE_LOG_INFO_NOFORMAT("do_reauthenticate_cb: do a full reauthentication");
 	sipe_auth_free(&transport->registrar);
 	sipe_auth_free(&transport->proxy);
 	sipe_schedule_cancel(sipe_private, "<registration>");
@@ -1008,7 +1012,7 @@ static void sip_transport_default_contact(struct sipe_core_private *sipe_private
 	sipe_private->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
 						sipe_private->username,
 						transport->connection->client_port,
-						sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
+						transport->ip_address,
 						TRANSPORT_DESCRIPTOR);
 }
 
@@ -1104,7 +1108,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					 */
 					guint reauth_timeout = transport->registrar.expires;
 
-					SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
+					SIPE_LOG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully");
 
 					if ((reauth_timeout == 0) ||
 					    (reauth_timeout >  8 * 60 * 60))
@@ -1157,11 +1161,11 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						if (sipe_strcase_equal(elem->value, "msrtc-event-categories")) {
 							/* We interpret this as OCS2007+ indicator */
 							SIPE_CORE_PRIVATE_FLAG_SET(OCS2007);
-							SIPE_DEBUG_INFO("Supported: %s (indicates OCS2007+)", elem->value);
+							SIPE_LOG_INFO("process_register_response: Supported: %s (indicates OCS2007+)", elem->value);
 						}
 						if (sipe_strcase_equal(elem->value, "adhoclist")) {
 							SIPE_CORE_PRIVATE_FLAG_SET(BATCHED_SUPPORT);
-							SIPE_DEBUG_INFO("Supported: %s", elem->value);
+							SIPE_DEBUG_INFO("process_register_response: Supported: %s", elem->value);
 						}
 					}
                                         if (sipe_strcase_equal(elem->name, "Allow-Events")){
@@ -1169,7 +1173,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						i = 0;
 						while (caps[i]) {
 							sipe_private->allowed_events =  g_slist_append(sipe_private->allowed_events, g_strdup(caps[i]));
-							SIPE_DEBUG_INFO("Allow-Events: %s", caps[i]);
+							SIPE_DEBUG_INFO("process_register_response: Allow-Events: %s", caps[i]);
 							i++;
 						}
 						g_strfreev(caps);
@@ -1177,7 +1181,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					if (sipe_strcase_equal(elem->name, "ms-user-logon-data")) {
 						if (sipe_strcase_equal(elem->value, "RemoteUser")) {
 							SIPE_CORE_PRIVATE_FLAG_SET(REMOTE_USER);
-							SIPE_DEBUG_INFO_NOFORMAT("ms-user-logon-data: RemoteUser (connected "
+							SIPE_DEBUG_INFO_NOFORMAT("process_register_response: ms-user-logon-data: RemoteUser (connected "
 										 "via Edge Server)");
 						}
 					}
@@ -1211,7 +1215,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			{
 				gchar *redirect = parse_from(sipmsg_find_header(msg, "Contact"));
 
-				SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully (with redirect)");
+				SIPE_LOG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully (with redirect)");
 
 				if (redirect && (g_ascii_strncasecmp("sip:", redirect, 4) == 0)) {
 					gchar **parts = g_strsplit(redirect + 4, ";", 0);
@@ -1275,7 +1279,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						sipe_auth_free(auth);
 						auth->type = failed;
 					} else {
-						SIPE_DEBUG_INFO_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
+						SIPE_LOG_ERROR_NOFORMAT("process_register_response: authentication handshake failed - giving up.");
 						sipe_backend_connection_error(SIPE_CORE_PUBLIC,
 									      SIPE_CONNECTION_ERROR_AUTHENTICATION_FAILED,
 									      _("Authentication failed"));
@@ -1456,7 +1460,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 				    "Allow-Events: presence\r\n"
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
 				    "%s",
-			      sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
+			      transport->ip_address,
 			      transport->connection->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,
@@ -1482,7 +1486,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 	if (deregister) {
 		/* Make sure that all messages are pushed to the server
 		   before the connection gets shut down */
-		SIPE_DEBUG_INFO_NOFORMAT("De-register from server. Flushing outstanding messages.");
+		SIPE_LOG_INFO_NOFORMAT("De-register from server. Flushing outstanding messages.");
 		sipe_backend_transport_flush(transport->connection);
 	}
 }
@@ -1498,6 +1502,9 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 
 	/* transport can be NULL during connection setup */
 	if (transport) {
+		SIPE_LOG_INFO("sip_transport_disconnect: dropping connection '%s:%u'",
+			      transport->server_name, transport->server_port);
+
 		sipe_backend_transport_disconnect(transport->connection);
 
 		sipe_auth_free(&transport->registrar);
@@ -1505,6 +1512,8 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 
 		g_free(transport->server_name);
 		g_free(transport->server_version);
+		g_free(transport->ip_address);
+		g_free(transport->epid);
 		g_free(transport->user_agent);
 
 		while (transport->transactions)
@@ -1825,6 +1834,14 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 	struct sip_transport *transport = sipe_private->transport;
+	gchar *self_sip_uri = sip_uri_self(sipe_private);
+
+	SIPE_LOG_INFO("sip_transport_connected: %s:%u",
+		      transport->server_name, transport->server_port);
+
+	while (sipe_private->lync_autodiscover_servers)
+		sipe_private->lync_autodiscover_servers =
+			sipe_lync_autodiscover_pop(sipe_private->lync_autodiscover_servers);
 
 	sipe_private->service_data = NULL;
 	sipe_private->address_data = NULL;
@@ -1837,9 +1854,16 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 	transport->keepalive_timeout = 60;
 	start_keepalive_timer(sipe_private, transport->keepalive_timeout);
 
+	transport->ip_address = sipe_backend_transport_ip_address(conn);
+	transport->epid       = sipe_get_epid(self_sip_uri,
+					      g_get_host_name(),
+					      transport->ip_address);
+	g_free(self_sip_uri);
+
 	do_register(sipe_private, FALSE);
 }
 
+static void resolve_next_lync(struct sipe_core_private *sipe_private);
 static void resolve_next_service(struct sipe_core_private *sipe_private,
 				 const struct sip_service_data *start);
 static void resolve_next_address(struct sipe_core_private *sipe_private,
@@ -1849,8 +1873,11 @@ static void sip_transport_error(struct sipe_transport_connection *conn,
 {
 	struct sipe_core_private *sipe_private = conn->user_data;
 
+	/* This failed attempt was based on a Lync Autodiscover result */
+	if (sipe_private->lync_autodiscover_servers) {
+		resolve_next_lync(sipe_private);
 	/* This failed attempt was based on a DNS SRV record */
-	if (sipe_private->service_data) {
+	} else if (sipe_private->service_data) {
 		resolve_next_service(sipe_private, NULL);
 	/* This failed attempt was based on a DNS A record */
 	} else if (sipe_private->address_data) {
@@ -1990,6 +2017,31 @@ static void sipe_core_dns_resolved(struct sipe_core_public *sipe_public,
 	}
 }
 
+static void resolve_next_lync(struct sipe_core_private *sipe_private)
+{
+	struct sipe_lync_autodiscover_data *lync_data = sipe_private->lync_autodiscover_servers->data;
+	guint type = sipe_private->transport_type;
+
+	if (lync_data) {
+		/* Try to connect to next server on the list */
+		if (type == SIPE_TRANSPORT_AUTO)
+			type = SIPE_TRANSPORT_TLS;
+
+		sipe_server_register(sipe_private,
+				     type,
+				     g_strdup(lync_data->server),
+				     lync_data->port);
+
+	} else {
+		/* We tried all servers -> try DNS SRV next */
+		SIPE_LOG_INFO_NOFORMAT("no Lync Autodiscover servers found; trying SRV records next");
+		resolve_next_service(sipe_private, services[type]);
+	}
+
+	sipe_private->lync_autodiscover_servers =
+		sipe_lync_autodiscover_pop(sipe_private->lync_autodiscover_servers);
+}
+
 static void resolve_next_service(struct sipe_core_private *sipe_private,
 				 const struct sip_service_data *start)
 {
@@ -2003,7 +2055,7 @@ static void resolve_next_service(struct sipe_core_private *sipe_private,
 			sipe_private->service_data = NULL;
 
 			/* Try A records list next */
-			SIPE_DEBUG_INFO_NOFORMAT("no SRV records found; trying A records next");
+			SIPE_LOG_INFO_NOFORMAT("no SRV records found; trying A records next");
 			resolve_next_address(sipe_private, TRUE);
 			return;
 		}
@@ -2035,7 +2087,7 @@ static void resolve_next_address(struct sipe_core_private *sipe_private,
 			sipe_private->address_data = NULL;
 
 			/* Try connecting to the SIP hostname directly */
-			SIPE_DEBUG_INFO_NOFORMAT("no SRV or A records found; using SIP domain as fallback");
+			SIPE_LOG_INFO_NOFORMAT("no SRV or A records found; using SIP domain as fallback");
 			if (type == SIPE_TRANSPORT_AUTO)
 				type = SIPE_TRANSPORT_TLS;
 
@@ -2057,6 +2109,19 @@ static void resolve_next_address(struct sipe_core_private *sipe_private,
 					(sipe_dns_resolved_cb) sipe_core_dns_resolved,
 					SIPE_CORE_PUBLIC);
 	g_free(hostname);
+}
+
+static void lync_autodiscover_cb(struct sipe_core_private *sipe_private,
+				 GSList *servers,
+				 SIPE_UNUSED_PARAMETER gpointer callback_data)
+{
+	if (servers) {
+		/* Lync Autodiscover succeeded */
+		SIPE_DEBUG_INFO_NOFORMAT("lync_autodiscover_cb: got server list");
+
+		sipe_private->lync_autodiscover_servers = servers;
+		resolve_next_lync(sipe_private);
+	}
 }
 
 /*
@@ -2097,8 +2162,8 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 		if (port)
 			port_number = atoi(port);
 
-		SIPE_DEBUG_INFO("sipe_core_connect: user specified SIP server %s:%d",
-				server, port_number);
+		SIPE_LOG_INFO("sipe_core_connect: user specified SIP server %s:%d",
+			      server, port_number);
 
 		sipe_server_register(sipe_private, transport,
 				     g_strdup(server), port_number);
@@ -2107,7 +2172,11 @@ void sipe_core_transport_sip_connect(struct sipe_core_public *sipe_public,
 
 		/* Remember user specified transport type */
 		sipe_private->transport_type = transport;
-		resolve_next_service(sipe_private, services[transport]);
+
+		/* Start with Lync Autodiscover first */
+		sipe_lync_autodiscover_start(sipe_private,
+					     lync_autodiscover_cb,
+					     NULL);
 	}
 }
 
@@ -2125,6 +2194,20 @@ int sip_transaction_cseq(struct transaction *trans)
 
 	sscanf(trans->key, "<%*[a-zA-Z0-9]><%d INVITE>", &cseq);
 	return cseq;
+}
+
+const gchar *sip_transport_epid(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->transport ?
+	       sipe_private->transport->epid :
+	       "0123456789ab");
+}
+
+const gchar *sip_transport_ip_address(struct sipe_core_private *sipe_private)
+{
+	return(sipe_private->transport ?
+	       sipe_private->transport->ip_address :
+	       "0.0.0.0");
 }
 
 /*

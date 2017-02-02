@@ -37,7 +37,6 @@
 
 #include "sipe-backend.h"
 #include "sipe-common.h"
-#include "sipe-core.h"
 
 /** BUDDIES ******************************************************************/
 
@@ -189,9 +188,7 @@ struct sipe_backend_media_relays * sipe_backend_media_relays_convert(SIPE_UNUSED
 								     SIPE_UNUSED_PARAMETER gchar *username,
 								     SIPE_UNUSED_PARAMETER gchar *password) { return(NULL); }
 void sipe_backend_media_relays_free(SIPE_UNUSED_PARAMETER struct sipe_backend_media_relays *media_relays) {}
-struct sipe_backend_media_stream *sipe_backend_media_add_stream(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
-								SIPE_UNUSED_PARAMETER const gchar *id,
-								SIPE_UNUSED_PARAMETER const gchar *participant,
+struct sipe_backend_media_stream *sipe_backend_media_add_stream(SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 								SIPE_UNUSED_PARAMETER SipeMediaType type,
 								SIPE_UNUSED_PARAMETER SipeIceVersion ice_version,
 								SIPE_UNUSED_PARAMETER gboolean initiator,
@@ -225,7 +222,8 @@ void sipe_backend_media_stream_free(SIPE_UNUSED_PARAMETER struct sipe_backend_me
 struct sipe_backend_codec *sipe_backend_codec_new(SIPE_UNUSED_PARAMETER int id,
 						  SIPE_UNUSED_PARAMETER const char *name,
 						  SIPE_UNUSED_PARAMETER SipeMediaType type,
-						  SIPE_UNUSED_PARAMETER guint clock_rate) { return(NULL); }
+						  SIPE_UNUSED_PARAMETER guint clock_rate,
+						  SIPE_UNUSED_PARAMETER guint channels) { return(NULL); }
 void sipe_backend_codec_free(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) {}
 int sipe_backend_codec_get_id(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) { return(0); }
 gchar *sipe_backend_codec_get_name(SIPE_UNUSED_PARAMETER struct sipe_backend_codec *codec) { return(g_strdup("")); }

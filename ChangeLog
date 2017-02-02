@@ -1,3 +1,15 @@
+version 1.22.0 "Application Sharing, Lync Autodiscover & Logging" (2017-02-01)
+	- Feature #93: Support for Lync Autodiscover (Stefan Becker)
+	- Feature #6: Application Sharing Viewer (Jakub Adam)
+	  * requires libpurple >= 2.12.0
+	  * needs an external RDP client - remmina and xfreerdp are supported
+	- Fixed #315: Crash when contact list is empty (Stefan Becker)
+	- Fixed #314: sipe login problems with long pw (Stefan Becker)
+	- separate logging and debugging output (Stefan Becker)
+	  * logging is always shown, e.g. in the Pidgin debug window
+	  * full message debugging now requires PURPLE_UNSAFE_DEBUG=1
+	- new translations: Greek (el), Lithuanian (lt)
+
 version 1.21.1 "Bug Fixes I" (2016-05-28)
 	- various bug fixes in media support (Jakub Adam)
 	- configure no longer ignores CFLAGS/LDFLAGS/LIBS (Stefan Becker)

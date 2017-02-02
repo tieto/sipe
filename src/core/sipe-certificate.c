@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -299,12 +299,12 @@ gboolean sipe_certificate_tls_dsk_generate(struct sipe_core_private *sipe_privat
 
 	ccd->session = sipe_svc_session_start();
 
-	ret = sipe_webticket_request(sipe_private,
-				     ccd->session,
-				     uri,
-				     "CertProvisioningServiceWebTicketProof_SHA1",
-				     certprov_webticket,
-				     ccd);
+	ret = sipe_webticket_request_with_port(sipe_private,
+					       ccd->session,
+					       uri,
+					       "CertProvisioningServiceWebTicketProof_SHA1",
+					       certprov_webticket,
+					       ccd);
 	if (ret) {
 		ccd->target = g_strdup(target);
 

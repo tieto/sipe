@@ -1,47 +1,7 @@
 /* vim:set ts=2 sw=2 et cindent: */
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is Mozilla.
- *
- * The Initial Developer of the Original Code is IBM Corporation.
- * Portions created by IBM Corporation are Copyright (C) 2003
- * IBM Corporation. All Rights Reserved.
- *
- * Contributor(s):
- *   Darin Fisher <darin@meer.net>
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
-
-/*
- * Non-functional changes to remove dependencies on NSS headers
- *
- * Changes are flagged with __SIPE__REMOVE_NSS_DEPENDENCIES__
- *
- * Copyright (C) 2011 SIPE Project <http://sipe.sourceforge.net/>
- */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef md4_h__
 #define md4_h__
@@ -50,12 +10,7 @@
 extern "C" {
 #endif
 
-#ifdef __SIPE__REMOVE_NSS_DEPENDENCIES__
-#include "prtypes.h"
-#else
-typedef guint32 PRUint32;
-typedef guint8 PRUint8;
-#endif /* __SIPE__REMOVE_NSS_DEPENDENCIES__ */
+#include <stdint.h>
 
 /**
  * md4sum - computes the MD4 sum over the input buffer per RFC 1320
@@ -74,7 +29,7 @@ typedef guint8 PRUint8;
  * interface would make more sense if that were a requirement.  Currently, this
  * is good enough for the applications we care about.
  */
-void md4sum(const PRUint8 *input, PRUint32 inputLen, PRUint8 *result);
+void md4sum(const uint8_t *input, uint32_t inputLen, uint8_t *result);
 
 #ifdef __cplusplus
 }

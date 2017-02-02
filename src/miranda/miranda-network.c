@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -42,46 +42,6 @@ const gchar *sipe_miranda_get_local_ip(void)
 {
 	struct hostent *localHost = gethostbyname("");
 	return inet_ntoa(*(struct in_addr *)*localHost->h_addr_list);
-}
-
-const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
-{
-	static gchar ip[60] = "\0";
-	WORD iptype;
-
-	sipe_miranda_getGlobalWord("iptype", &iptype);
-
-	if (iptype == SIPE_MIRANDA_IP_LOCAL)
-	{
-		struct hostent *localHost = gethostbyname("");
-		gchar *localIP = inet_ntoa(*(struct in_addr *)*localHost->h_addr_list);
-		strncpy(ip, localIP, 60);
-		SIPE_DEBUG_INFO("Local ip is <%s>", ip);
-	} else if (iptype == SIPE_MIRANDA_IP_MANUAL) {
-		gchar *tmp = sipe_miranda_getGlobalString("public_ip");
-		SIPE_DEBUG_INFO("Retrieving public ip option: <%s>", tmp);
-		strncpy(ip, tmp, 60);
-		mir_free(tmp);
-	} else {
-		DWORD bytesread = sizeof(ip);
-		gchar *cmd = sipe_miranda_getGlobalString("ipprog");
-		gchar *cmdline = g_strdup_printf("%s ip", cmd);
-
-		mir_free(cmd);
-		SIPE_DEBUG_INFO("Running command to retrieve ip: <%s>", cmdline);
-		if (!sipe_miranda_cmd(cmdline, ip, &bytesread))
-		{
-			SIPE_DEBUG_INFO("Could not run child program <%s> (%d)", cmdline, GetLastError());
-			g_free(cmdline);
-			return "0.0.0.0";
-		}
-
-		g_free(cmdline);
-		return ip;
-	}
-
-
-	return ip;
 }
 
 struct sipe_backend_listendata {

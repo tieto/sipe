@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -162,9 +162,9 @@ void sipe_buddy_update_finish(struct sipe_core_private *sipe_private);
  * Find buddy by URI
  *
  * @param sipe_private SIPE core data
- * @param uri          SIP URI of a buddy
+ * @param uri          SIP URI of a buddy (may be @c NULL)
  *
- * @return @c sipe_buddy structure
+ * @return @c sipe_buddy structure or @c NULL
  */
 struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private,
 					  const gchar *uri);
