@@ -252,7 +252,6 @@ It implements the extended version of SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 With this plugin you should be able to replace your Microsoft Office
 Communicator client with Pidgin.
@@ -279,7 +278,6 @@ It implements the extended version of SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package provides the protocol plugin for libpurple clients.
 
@@ -302,7 +300,6 @@ SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package provides the icon set for Empathy.
 
@@ -324,7 +321,6 @@ SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package provides the profile for KTP account manager.
 %endif
@@ -346,7 +342,6 @@ SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package provides the protocol support for Telepathy clients.
 
@@ -380,7 +375,6 @@ It implements the extended version of SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package contains the NSIS installer package of the protocol plugin
 for Pidgin on Windows.

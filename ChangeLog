@@ -1,3 +1,6 @@
+version 1.??.? "???" (????-??-??)
+	- drop references to Reuters Messaging (Stefan Becker)
+
 version 1.22.0 "Application Sharing, Lync Autodiscover & Logging" (2017-02-01)
 	- Feature #93: Support for Lync Autodiscover (Stefan Becker)
 	- Feature #6: Application Sharing Viewer (Jakub Adam)
