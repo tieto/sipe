@@ -1796,7 +1796,8 @@ sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stre
 }
 
 static gboolean
-maybe_retry_call_with_ice_version(struct sipe_media_call_private *call_private,
+maybe_retry_call_with_ice_version(struct sipe_core_private *sipe_private,
+				  struct sipe_media_call_private *call_private,
 				  SipeIceVersion ice_version,
 				  struct transaction *trans)
 {
@@ -1823,8 +1824,10 @@ maybe_retry_call_with_ice_version(struct sipe_media_call_private *call_private,
 		sipe_media_hangup(call_private);
 		SIPE_DEBUG_INFO("Retrying call with ICEv%d.",
 				ice_version == SIPE_ICE_DRAFT_6 ? 6 : 19);
-		sipe_media_initiate_call(call_private->sipe_private, with,
-					 ice_version, with_video);
+		sipe_media_initiate_call(sipe_private,
+					 with,
+					 ice_version,
+					 with_video);
 
 		g_free(with);
 		return TRUE;
@@ -1881,7 +1884,10 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 			case 415:
 				// OCS/Lync really sends response string with 'Mutipart' typo.
 				if (sipe_strequal(msg->responsestr, "Mutipart mime in content type not supported by Archiving CDR service") &&
-				    maybe_retry_call_with_ice_version(call_private, SIPE_ICE_DRAFT_6, trans)) {
+				    maybe_retry_call_with_ice_version(sipe_private,
+								      call_private,
+								      SIPE_ICE_DRAFT_6,
+								      trans)) {
 					return TRUE;
 				}
 				title = _("Unsupported media type");
@@ -1914,7 +1920,10 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 					retry_ice_version = SIPE_ICE_RFC_5245;
 				}
 
-				if (maybe_retry_call_with_ice_version(call_private, retry_ice_version, trans)) {
+				if (maybe_retry_call_with_ice_version(sipe_private,
+								      call_private,
+								      retry_ice_version,
+								      trans)) {
 					return TRUE;
 				}
 				SIPE_FALLTHROUGH
