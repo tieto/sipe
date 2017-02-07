@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1192,6 +1192,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						gchar **parts = g_strsplit_set(elem->value, "/.", 3);
 						if ((g_strv_length(parts) > 1) && (atoi(parts[1]) >= 6)) {
 							SIPE_CORE_PRIVATE_FLAG_SET(SFB);
+							SIPE_LOG_INFO_NOFORMAT("process_register_response: Skype for Business server detected");
 						}
 						g_strfreev(parts);
 					}
