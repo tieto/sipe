@@ -1285,7 +1285,8 @@ append_2007_fallback_if_needed(struct sipe_media_call_private *call_private)
 	const gchar *ip = sip_transport_ip_address(sipe_private);
 	gchar *body;
 
-	if (sipe_media_get_sip_dialog(SIPE_MEDIA_CALL)->cseq != 0 ||
+	if (SIPE_CORE_PRIVATE_FLAG_IS(SFB) ||
+	    sipe_media_get_sip_dialog(SIPE_MEDIA_CALL)->cseq != 0 ||
 	    call_private->ice_version != SIPE_ICE_RFC_5245 ||
 	    sipe_strequal(SIPE_MEDIA_CALL->with, sipe_private->test_call_bot_uri)) {
 		return;
