@@ -1153,6 +1153,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
                                 SIPE_CORE_PRIVATE_FLAG_UNSET(OCS2007);
 				SIPE_CORE_PRIVATE_FLAG_UNSET(REMOTE_USER);
 				SIPE_CORE_PRIVATE_FLAG_UNSET(BATCHED_SUPPORT);
+				SIPE_CORE_PRIVATE_FLAG_UNSET(SFB);
 
                                 while(hdr)
                                 {
@@ -1184,6 +1185,15 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 							SIPE_DEBUG_INFO_NOFORMAT("process_register_response: ms-user-logon-data: RemoteUser (connected "
 										 "via Edge Server)");
 						}
+					}
+					if (sipe_strcase_equal(elem->name, "Server")) {
+						/* Server string has format like 'RTC/6.0'.
+						 * We want to check the first digit. */
+						gchar **parts = g_strsplit_set(elem->value, "/.", 3);
+						if ((g_strv_length(parts) > 1) && (atoi(parts[1]) >= 6)) {
+							SIPE_CORE_PRIVATE_FLAG_SET(SFB);
+						}
+						g_strfreev(parts);
 					}
                                         hdr = g_slist_next(hdr);
                                 }

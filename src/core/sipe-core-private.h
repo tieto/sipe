@@ -217,6 +217,8 @@ struct sipe_core_private {
 #define SIPE_CORE_PRIVATE_FLAG_SSO                0x00800000
 /* server is Lync 2013+ */
 #define SIPE_CORE_PRIVATE_FLAG_LYNC2013           0x00400000
+/* server is Skype for Business (RTC/6.0 +) */
+#define SIPE_CORE_PRIVATE_FLAG_SFB                0x00200000
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)
