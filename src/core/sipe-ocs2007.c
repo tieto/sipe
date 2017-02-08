@@ -2343,11 +2343,11 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 		/* updated roaming information without device information - no need to update MPOP flag */
 	} else if (g_hash_table_size(devices) > 1) {
 		SIPE_CORE_PRIVATE_FLAG_SET(MPOP);
-		SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: multiple clients detected (%d)",
-				g_hash_table_size(devices));
+		SIPE_LOG_INFO("sipe_ocs2007_process_roaming_self: multiple clients detected (%d)",
+			      g_hash_table_size(devices));
 	} else {
 		SIPE_CORE_PRIVATE_FLAG_UNSET(MPOP);
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_ocs2007_process_roaming_self: single client detected");
+		SIPE_LOG_INFO_NOFORMAT("sipe_ocs2007_process_roaming_self: single client detected");
 	}
 	g_hash_table_destroy(devices);
 
