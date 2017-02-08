@@ -1168,8 +1168,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 							SIPE_CORE_PRIVATE_FLAG_SET(BATCHED_SUPPORT);
 							SIPE_DEBUG_INFO("process_register_response: Supported: %s", elem->value);
 						}
-					}
-                                        if (sipe_strcase_equal(elem->name, "Allow-Events")){
+					} else if (sipe_strcase_equal(elem->name, "Allow-Events")){
 						gchar **caps = g_strsplit(elem->value,",",0);
 						i = 0;
 						while (caps[i]) {
@@ -1178,21 +1177,22 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 							i++;
 						}
 						g_strfreev(caps);
-                                        }
-					if (sipe_strcase_equal(elem->name, "ms-user-logon-data")) {
+                                        } else if (sipe_strcase_equal(elem->name, "ms-user-logon-data")) {
 						if (sipe_strcase_equal(elem->value, "RemoteUser")) {
 							SIPE_CORE_PRIVATE_FLAG_SET(REMOTE_USER);
 							SIPE_DEBUG_INFO_NOFORMAT("process_register_response: ms-user-logon-data: RemoteUser (connected "
 										 "via Edge Server)");
 						}
-					}
-					if (sipe_strcase_equal(elem->name, "Server")) {
+					} else if (sipe_strcase_equal(elem->name, "Server")) {
 						/* Server string has format like 'RTC/6.0'.
 						 * We want to check the first digit. */
 						gchar **parts = g_strsplit_set(elem->value, "/.", 3);
-						if ((g_strv_length(parts) > 1) && (atoi(parts[1]) >= 6)) {
-							SIPE_CORE_PRIVATE_FLAG_SET(SFB);
-							SIPE_LOG_INFO_NOFORMAT("process_register_response: Skype for Business server detected");
+						if (g_strv_length(parts) > 1) {
+							uint version = atoi(parts[1]);
+							if (version >= 6) {
+								SIPE_CORE_PRIVATE_FLAG_SET(SFB);
+								SIPE_LOG_INFO("process_register_response: server version is %d >= 6 (indicates Skype for Business+)", version);
+							}
 						}
 						g_strfreev(parts);
 					}
