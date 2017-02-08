@@ -1188,7 +1188,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 						 * We want to check the first digit. */
 						gchar **parts = g_strsplit_set(elem->value, "/.", 3);
 						if (g_strv_length(parts) > 1) {
-							uint version = atoi(parts[1]);
+							guint version = atoi(parts[1]);
 							if (version >= 6) {
 								SIPE_CORE_PRIVATE_FLAG_SET(SFB);
 								SIPE_LOG_INFO("process_register_response: server version is %d >= 6 (indicates Skype for Business+)", version);
