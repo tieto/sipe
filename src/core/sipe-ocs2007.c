@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -2339,7 +2339,9 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 			sipe_private->our_publications ? (int) g_hash_table_size(sipe_private->our_publications) : -1);
 
 	/* active clients for user account */
-	if (g_hash_table_size(devices) > 1) {
+	if (g_hash_table_size(devices) == 0) {
+		/* updated roaming information without device information - no need to update MPOP flag */
+	} else if (g_hash_table_size(devices) > 1) {
 		SIPE_CORE_PRIVATE_FLAG_SET(MPOP);
 		SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: multiple clients detected (%d)",
 				g_hash_table_size(devices));
