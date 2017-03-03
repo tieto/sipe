@@ -301,11 +301,14 @@ sipe_purple_chat_menu(PurpleChat *chat)
 
 	if (conv) {
 		PurpleMenuAction *act = NULL;
+		struct sipe_chat_session *chat_session;
 
 		SIPE_DEBUG_INFO("sipe_purple_chat_menu: %p", conv);
 
+		chat_session = sipe_purple_chat_get_session(conv);
+
 		switch (sipe_core_chat_lock_status(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
-						   sipe_purple_chat_get_session(conv))) {
+						   chat_session)) {
 		case SIPE_CHAT_LOCK_STATUS_UNLOCKED:
 			act = purple_menu_action_new(_("Lock"),
 						     PURPLE_CALLBACK(sipe_purple_chat_menu_lock_cb),
@@ -323,29 +326,37 @@ sipe_purple_chat_menu(PurpleChat *chat)
 
 		if (act)
 			menu = g_list_prepend(menu, act);
+
+		switch (sipe_core_chat_type(chat_session)) {
+		case SIPE_CHAT_TYPE_CONFERENCE:
+		case SIPE_CHAT_TYPE_MULTIPARTY:
 #ifdef HAVE_VV
-		if (!sipe_core_media_get_call(PURPLE_CONV_TO_SIPE_CORE_PUBLIC)) {
-			act = NULL;
-			act = purple_menu_action_new(_("Join conference call"),
-						     PURPLE_CALLBACK(sipe_purple_chat_menu_join_call_cb),
-						     conv, NULL);
-			if (act)
-				menu = g_list_prepend(menu, act);
-		}
+			if (!sipe_core_media_get_call(PURPLE_CONV_TO_SIPE_CORE_PUBLIC)) {
+				act = NULL;
+				act = purple_menu_action_new(_("Join conference call"),
+							     PURPLE_CALLBACK(sipe_purple_chat_menu_join_call_cb),
+							     conv, NULL);
+				if (act)
+					menu = g_list_prepend(menu, act);
+			}
 #ifdef HAVE_APPSHARE
-		if (!sipe_core_conf_is_viewing_appshare(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
-							sipe_purple_chat_get_session(conv))) {
-			act = purple_menu_action_new(_("Show presentation"),
-						     PURPLE_CALLBACK(sipe_purple_chat_menu_show_presentation_cb),
-						     conv, NULL);
-			menu = g_list_prepend(menu, act);
-		}
+			if (!sipe_core_conf_is_viewing_appshare(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
+								chat_session)) {
+				act = purple_menu_action_new(_("Show presentation"),
+							     PURPLE_CALLBACK(sipe_purple_chat_menu_show_presentation_cb),
+							     conv, NULL);
+				menu = g_list_prepend(menu, act);
+			}
 #endif
 #endif // HAVE_VV
-		act = purple_menu_action_new(_("Meeting entry info"),
-					     PURPLE_CALLBACK(sipe_purple_chat_menu_entry_info_cb),
-					     conv, NULL);
-		menu = g_list_append(menu, act);
+			act = purple_menu_action_new(_("Meeting entry info"),
+						     PURPLE_CALLBACK(sipe_purple_chat_menu_entry_info_cb),
+						     conv, NULL);
+			menu = g_list_append(menu, act);
+			break;
+		default:
+			break;
+		}
 	}
 
 	return menu;
