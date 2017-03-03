@@ -36,7 +36,6 @@
 #include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sdpmsg.h"
-#include "sipe-chat.h"
 #include "sipe-conf.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
@@ -1393,7 +1392,8 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 		return;
 	}
 
-	av_uri = sipe_conf_build_uri(chat_session->id, "audio-video");
+	av_uri = sipe_conf_build_uri(sipe_core_chat_id(sipe_public, chat_session),
+				     "audio-video");
 	if (!av_uri) {
 		return;
 	}

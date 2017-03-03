@@ -343,6 +343,17 @@ const gchar *sipe_core_chat_id(struct sipe_core_public *sipe_public,
 			       struct sipe_chat_session *chat_session);
 
 /**
+ * Get type of chat session, e.g. group chat
+ */
+typedef enum {
+	SIPE_CHAT_TYPE_UNKNOWN = 0,
+	SIPE_CHAT_TYPE_MULTIPARTY,
+	SIPE_CHAT_TYPE_CONFERENCE,
+	SIPE_CHAT_TYPE_GROUPCHAT
+} sipe_chat_type;
+sipe_chat_type sipe_core_chat_type(struct sipe_chat_session *chat_session);
+
+/**
  * Invite to chat
  */
 void sipe_core_chat_invite(struct sipe_core_public *sipe_public,

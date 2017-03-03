@@ -32,9 +32,9 @@
 
 #include "sip-transport.h"
 #include "sipe-backend.h"
+#include "sipe-core.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
-#include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-session.h"
