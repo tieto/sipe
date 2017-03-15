@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,9 +34,9 @@
 #include "sipmsg.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
-#include "sipe-core.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
+#include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-dialog.h"
 #include "sipe-groupchat.h"
@@ -62,7 +62,7 @@ sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 
 static GList *chat_sessions = NULL;
 
-struct sipe_chat_session *sipe_chat_create_session(sipe_chat_type type,
+struct sipe_chat_session *sipe_chat_create_session(guint type,
 						   const gchar *id,
 						   const gchar *title)
 {
@@ -108,7 +108,7 @@ const gchar *sipe_core_chat_id(SIPE_UNUSED_PARAMETER struct sipe_core_public *si
 	return(chat_session->id);
 }
 
-sipe_chat_type sipe_core_chat_type(struct sipe_chat_session *chat_session)
+guint sipe_core_chat_type(struct sipe_chat_session *chat_session)
 {
 	return(chat_session ? chat_session->type : SIPE_CHAT_TYPE_UNKNOWN);
 }

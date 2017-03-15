@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,6 +25,13 @@ struct sipe_core_private;
 struct sip_session;
 struct sipe_backend_chat_session;
 
+enum sipe_chat_type {
+	SIPE_CHAT_TYPE_UNKNOWN = 0,
+	SIPE_CHAT_TYPE_MULTIPARTY,
+	SIPE_CHAT_TYPE_CONFERENCE,
+	SIPE_CHAT_TYPE_GROUPCHAT
+};
+
 struct sipe_chat_session {
 	struct sipe_backend_chat_session *backend;
 
@@ -40,7 +47,8 @@ struct sipe_chat_session {
 	/* Human readable chat identifier (can have duplicates) */
 	gchar *title;
 
-	sipe_chat_type type;
+	/* SIPE_CHAT_TYPE_xxx */
+	guint type;
 
 	gchar *join_url;
 	gchar *dial_in_conf_id;
@@ -55,8 +63,9 @@ struct sipe_chat_session {
  * @param session
  */
 struct sipe_chat_session *
-sipe_chat_create_session(sipe_chat_type type,
-			 const gchar *id, const gchar *title);
+sipe_chat_create_session(guint type,
+			 const gchar *id,
+			 const gchar *title);
 
 /**
  * Remove a chat session

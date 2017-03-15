@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -345,13 +345,11 @@ const gchar *sipe_core_chat_id(struct sipe_core_public *sipe_public,
 /**
  * Get type of chat session, e.g. group chat
  */
-typedef enum {
-	SIPE_CHAT_TYPE_UNKNOWN = 0,
-	SIPE_CHAT_TYPE_MULTIPARTY,
-	SIPE_CHAT_TYPE_CONFERENCE,
-	SIPE_CHAT_TYPE_GROUPCHAT
-} sipe_chat_type;
-sipe_chat_type sipe_core_chat_type(struct sipe_chat_session *chat_session);
+#define SIPE_CHAT_TYPE_UNKNOWN    0
+#define SIPE_CHAT_TYPE_MULTIPARTY 1
+#define SIPE_CHAT_TYPE_CONFERENCE 2
+#define SIPE_CHAT_TYPE_GROUPCHAT  3
+guint sipe_core_chat_type(struct sipe_chat_session *chat_session);
 
 /**
  * Invite to chat
