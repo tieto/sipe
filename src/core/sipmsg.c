@@ -928,6 +928,17 @@ sipe_parse_html(const char *html, char **attributes, char **message)
 				msg[retcount++] = '\n';
 				c += 4;
 			}
+			else if (!g_ascii_strncasecmp(c + 1, "div>", 4))
+			{
+				msg[retcount++] = '\r';
+				msg[retcount++] = '\n';
+				c += 5;
+				if (!g_ascii_strncasecmp(c, "<br></div>", 10)) {
+					/* This is an empty paragraph; replace it with
+					 * one line break. */
+					c += 10;
+				}
+			}
 			else if (!g_ascii_strncasecmp(c + 1, "i>", 2))
 			{
 				if (!has_italic)
