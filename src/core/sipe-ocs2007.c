@@ -1349,6 +1349,21 @@ static gchar *sipe_publish_get_category_cal_free_busy(struct sipe_core_private *
 	return res;
 }
 
+#ifdef HAVE_VV
+#define SIPE_PUB_XML_DEVICE_VV \
+				"<voice capture=\"true\" render=\"true\" publish=\"false\"/>"\
+				"<video capture=\"true\" render=\"true\" publish=\"false\"/>"
+#else
+#define SIPE_PUB_XML_DEVICE_VV
+#endif
+
+#ifdef HAVE_FREERDP
+#define SIPE_PUB_XML_DEVICE_APPSHARE \
+				"<applicationSharing capture=\"true\" render=\"true\" publish=\"false\"/>"\
+				"<contentPowerPoint capture=\"true\" render=\"true\" publish=\"false\"/>"
+#else
+#define SIPE_PUB_XML_DEVICE_APPSHARE
+#endif
 
 /**
  * Publishes 'device' category.
@@ -1366,6 +1381,8 @@ static gchar *sipe_publish_get_category_cal_free_busy(struct sipe_core_private *
 				"<text capture=\"true\" render=\"true\" publish=\"false\"/>"\
 				"<gifInk capture=\"false\" render=\"true\" publish=\"false\"/>"\
 				"<isfInk capture=\"false\" render=\"true\" publish=\"false\"/>"\
+				SIPE_PUB_XML_DEVICE_VV\
+				SIPE_PUB_XML_DEVICE_APPSHARE\
 			"</capabilities>"\
 			"<timezone>%s</timezone>"\
 			"<machineName>%s</machineName>"\
