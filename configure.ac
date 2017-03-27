@@ -498,6 +498,13 @@ AM_CONDITIONAL(SIPE_HAVE_APPSHARE, [test "x$ac_have_appshare" == xyes])
 AS_IF([test "x$ac_have_appshare" == xyes],
 	[AC_DEFINE(HAVE_APPSHARE, 1, [Define to 1 if we have appshare support.])])
 
+dnl telepathy code parts rely on interfaces that require GValueArray. This
+dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there
+dnl is no backward compatible replacement implementation possible
+AS_IF([test "x$enable_telepathy" != xno],
+	[AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_30,
+                   [We need GValueArray for which no replacement is available])])
+
 dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
 LOCALE_CPPFLAGS='-DLOCALEDIR=\"$(datadir)/locale\"'
