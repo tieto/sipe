@@ -1401,8 +1401,8 @@ static gchar *sipe_publish_get_category_device(struct sipe_core_private *sipe_pr
 	guint device_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_DEVICE);
 	/* key is <category><instance><container> */
 	gchar *key = g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2);
-	struct sipe_publication *publication =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "device"), key);
+	GHashTable *tmp = g_hash_table_lookup(sipe_private->our_publications, "device");
+	struct sipe_publication *publication = tmp ? g_hash_table_lookup(tmp, key) : NULL;
 
 	g_free(key);
 
