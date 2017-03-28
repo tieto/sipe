@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -225,7 +225,8 @@ static void password_manager_cb(GObject *source,
 								      NULL,
 								      TP_CONNECTION_STATUS_REASON_AUTHENTICATION_FAILED);
 		}
-		g_error_free(error);
+		if (error)
+			g_error_free(error);
 	} else {
 
 		g_free(self->password);
