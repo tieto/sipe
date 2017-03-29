@@ -238,7 +238,8 @@ static void dns_srv_response(GObject *source,
 				g_srv_target_get_port(targets->data));
 	}
 
-	g_error_free(error);
+	if (error)
+		g_error_free(error);
 	g_resolver_free_targets(targets);
 	sipe_dns_query_free(query);
 }
