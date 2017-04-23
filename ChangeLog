@@ -1,5 +1,6 @@
 version 1.??.? "???" (????-??-??)
 	- Fixed #320: Multiple client detection broken (Stefan Becker)
+	- speed up Lync Autodiscover by using AccessLocation (Andrey Vaynberger)
 	- purple: avoid rare SSL read deadlock (Stefan Becker)
 	- drop references to Reuters Messaging (Stefan Becker)
 
