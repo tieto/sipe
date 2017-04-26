@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -730,7 +730,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 					gchar *hash = sipe_xml_data(sipe_xml_child(node, "hash"));
 					gboolean found = FALSE;
 
-					if (!is_empty(uri) && !is_empty(hash)) {
+					if (!is_empty(photo_url) && !is_empty(hash)) {
 						sipe_buddy_update_photo(sipe_private,
 									uri,
 									hash,
