@@ -1011,8 +1011,6 @@ error_cb(struct sipe_media_call *call, gchar *message)
 				       call_private->invitation,
 				       488, "Not Acceptable Here", NULL);
 	}
-
-	sipe_backend_media_hangup(call->backend_private, initiator || accepted);
 }
 
 struct sipe_media_call *
