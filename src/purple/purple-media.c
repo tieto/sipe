@@ -1112,7 +1112,7 @@ sipe_backend_codec_new(int id, const char *name, SipeMediaType type,
 {
 	PurpleMediaCodec *codec;
 
-	if (sipe_strequal(name, "X-H264UC")) {
+	if (sipe_strcase_equal(name, "X-H264UC")) {
 		name = "H264";
 	}
 
