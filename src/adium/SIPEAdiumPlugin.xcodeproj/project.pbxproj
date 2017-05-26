@@ -838,9 +838,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
-				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
-				SDKROOT = macosx10.9;
 			};
 			name = Debug;
 		};
@@ -848,9 +846,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
-				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
-				SDKROOT = macosx10.9;
 			};
 			name = Release;
 		};
@@ -858,9 +854,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB93183AA0BD004351FF /* Debug.xcconfig */;
 			buildSettings = {
-				CLANG_LINK_OBJC_RUNTIME = NO;
 				ONLY_ACTIVE_ARCH = YES;
-				SDKROOT = macosx10.9;
 			};
 			name = Debug;
 		};
@@ -868,8 +862,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB96183AA0BD004351FF /* Release.xcconfig */;
 			buildSettings = {
-				CLANG_LINK_OBJC_RUNTIME = NO;
-				SDKROOT = macosx10.9;
 			};
 			name = Release;
 		};
@@ -877,8 +869,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB92183AA0BD004351FF /* Debug-Release.xcconfig */;
 			buildSettings = {
-				CLANG_LINK_OBJC_RUNTIME = NO;
-				SDKROOT = macosx10.9;
 			};
 			name = "Debug-Release";
 		};
@@ -886,9 +876,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 7BB8CB97183AA0BD004351FF /* SIPEAdiumPlugin.xcconfig */;
 			buildSettings = {
-				CLANG_LINK_OBJC_RUNTIME = NO;
 				COMBINE_HIDPI_IMAGES = YES;
-				SDKROOT = macosx10.9;
 			};
 			name = "Debug-Release";
 		};
