@@ -1,6 +1,11 @@
 version 1.??.? "???" (????-??-??)
 	- Fixed #320: Multiple client detection broken (Stefan Becker)
 	- speed up Lync Autodiscover by using AccessLocation (Andrey Vaynberger)
+        - adium: update build instructions for Xcode 7.x or newer (Stefan Becker)
+          * the build environment used for releases 1.22.0 or older (Xcode 6.x
+            on OS X 10.11) is no longer available to the project
+          * releases starting with 1.??.? will use Xcode 8.x on macOS 10.12
+          * build target continues to be OS X 10.9
 	- purple: avoid rare SSL read deadlock (Stefan Becker)
 	- drop references to Reuters Messaging (Stefan Becker)
 
