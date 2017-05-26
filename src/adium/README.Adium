@@ -19,10 +19,10 @@ Follow the instructions at their URL above.
 The directory needs to be called "adium" and at the same level as SIPE source
 code directory.
 
-2. Build the SIPEAdiumPlugin Xcode project
+2. Build the SIPEAdiumPlugin XCode project
 ------------------------------------------
 
-In Xcode go to the Menu File -> Open..., browse to the locatio of your SIPE
+In XCode go to the Menu File -> Open..., browse to the locatio of your SIPE
 source tree, go into the src/adium directory, select SIPEAdiumPlugin.xcodeproj
 and press "Open".
 
@@ -32,3 +32,17 @@ NOTE: please always make sure that the correct scheme has been selected by
 
 Now you can just select Product -> Build and after a short while you should
 get a SIPEAdiumPlugin binary that you can install into your Adium application. 
+
+NOTE: XCode 7.x (and newer?):
+
+* XCode 6.4 no longer runs on OS X 10.12.x
+* SDKs for OS X 10.11 or newer no longer contain support for OpenSSL.
+  See https://github.com/devernay/xcodelegacy how to extract & install older
+  SDKs for OS X 10.9 & 10.10 from the XCode 6.4 installation package.
+* Base SDK selection under "Build Settings" is no longer global. You have to
+  switch from "Combined" to "Levels" mode and change the Base SDK on all
+  levels. That includes the Adium sub-project too!
+* Disable "Implicitly Link Objective-C Runtime Support" under "Language -
+  Objective C" to avoid linker errors.
+* Ignore the errors "OCUnit is deprecated" by clicking on them and then
+  selecting "Not Now" in the dialog that pops up.
