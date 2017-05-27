@@ -11,7 +11,7 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2017-01-30 14:46+0000\n"
+"PO-Revision-Date: 2017-02-04 19:08+0000\n"
 "Last-Translator: Moo\n"
 "Language-Team: Lithuanian (http://www.transifex.com/stefanb/pidgin-sipe/language/lt/)\n"
 "MIME-Version: 1.0\n"
@@ -113,7 +113,7 @@ msgstr "Kalendorius"
 
 #: ../src/core/sipe-buddy.c:837
 msgid "Meeting in"
-msgstr ""
+msgstr "Susitikimo vieta"
 
 #: ../src/core/sipe-buddy.c:841
 msgid "Meeting about"
@@ -121,11 +121,11 @@ msgstr "Susitikimas apie"
 
 #: ../src/core/sipe-buddy.c:846
 msgid "Out of office note"
-msgstr ""
+msgstr "\"Nėra biure\" raštelis"
 
 #: ../src/core/sipe-buddy.c:846
 msgid "Note"
-msgstr ""
+msgstr "Raštelis"
 
 #: ../src/core/sipe-buddy.c:851 ../src/core/sipe-buddy.c:2346
 #: ../src/purple/purple-buddy.c:633
@@ -200,25 +200,25 @@ msgstr "Tinkinta1"
 
 #: ../src/core/sipe-buddy.c:2335
 msgid "Send email..."
-msgstr ""
+msgstr "Siųsti el. paštą..."
 
 #: ../src/core/sipe-cal.c:906
 msgid "Free"
-msgstr ""
+msgstr "Laisvas"
 
 #: ../src/core/sipe-cal.c:907
 msgid "Tentative"
-msgstr ""
+msgstr "Preliminariai užimtas"
 
 #. SIPE_ACTIVITY_BUSY
 #: ../src/core/sipe-cal.c:908 ../src/core/sipe-status.c:57
 msgid "Busy"
-msgstr ""
+msgstr "Užimtas"
 
 #. SIPE_ACTIVITY_OOF
 #: ../src/core/sipe-cal.c:909 ../src/core/sipe-status.c:68
 msgid "Out of office"
-msgstr ""
+msgstr "Nėra biure"
 
 #: ../src/core/sipe-cal.c:910
 msgid "No data"
@@ -231,12 +231,12 @@ msgstr "Šiuo metu %s"
 
 #: ../src/core/sipe-cal.c:1024
 msgid "Outside of working hours for next 8 hours"
-msgstr ""
+msgstr "Kitas 8 valandas ne darbe"
 
 #: ../src/core/sipe-cal.c:1026
 #, c-format
 msgid "%s for next 8 hours"
-msgstr ""
+msgstr "%s kitas 8 valandas"
 
 #: ../src/core/sipe-cal.c:1035
 msgid "Not working"
@@ -250,22 +250,22 @@ msgstr "%s iki %.2d:%.2d"
 #: ../src/core/sipe-cal.c:1047
 #, c-format
 msgid "%s. Outside of working hours at %.2d:%.2d"
-msgstr ""
+msgstr "%s. Darbo laikas baigiasi %.2d:%.2d"
 
 #: ../src/core/sipe-cal.c:1052
 #, c-format
 msgid "%s. %s at %.2d:%.2d"
-msgstr ""
+msgstr "%s. %s %.2d:%.2d"
 
 #: ../src/core/sipe-certificate.c:233 ../src/core/sipe-certificate.c:277
 #, c-format
 msgid "Certificate request to %s failed"
-msgstr ""
+msgstr "%s liudijimo užklausa nepavyko"
 
 #: ../src/core/sipe-certificate.c:284
 #, c-format
 msgid "Web ticket request to %s failed"
-msgstr ""
+msgstr "%s saityno bilieto užklausa nepavyko"
 
 #. Generate next ID
 #: ../src/core/sipe-chat.c:246
@@ -324,7 +324,7 @@ msgstr "Jūs buvote atjungti nuo šios konferencijos."
 
 #: ../src/core/sipe-conf.c:1656
 msgid "Dial-in info"
-msgstr ""
+msgstr "Numerio rinkimo informacija"
 
 #: ../src/core/sipe-conf.c:1657
 msgid "Number"
@@ -344,7 +344,7 @@ msgstr "Organizatorius"
 
 #: ../src/core/sipe-conf.c:1665
 msgid "Alternative dial-in numbers"
-msgstr ""
+msgstr "Alternatyvūs numerio rinkimo numeriai"
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
@@ -430,13 +430,13 @@ msgstr "Naudotojo vardas turėtų būti tinkamas SIP URI\nPavyzdys: naudotojas@k
 
 #: ../src/core/sipe-core.c:288
 msgid "Password is required when Single Sign-On is not enabled"
-msgstr ""
+msgstr "Slaptažodis reikalingas, kai nėra įjungtas vieningas prisijungimas (Single Sign-On)"
 
 #: ../src/core/sipe-core.c:298
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
-msgstr ""
+msgstr "Pateikiant el. pašto adresą, jis turi būti teisingas\nPavyzdys: naudotojas@kompanija.com"
 
 #: ../src/core/sipe-core.c:307
 msgid "SIP Exchange user name contains whitespace"
@@ -447,13 +447,13 @@ msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
 "Example: https://domino.corp.com/maildatabase.nsf"
-msgstr ""
+msgstr "Pateikiant el. pašto paslaugų URL, jis turi būti teisingas\nPavyzdys: https://exchange.corp.com/EWS/Exchange.asmx\nPavyzdys: https://domino.corp.com/maildatabase.nsf"
 
 #. Translators: (!) should be as in localized Lotus Notes to be able to
 #. extract meeting location
 #: ../src/core/sipe-domino.c:260 ../src/core/sipe-domino.c:261
 msgid "Location:"
-msgstr ""
+msgstr "Vieta:"
 
 #: ../src/core/sipe-ft.c:264 ../src/core/sipe-ft-tftp.c:109
 #: ../src/core/sipe-ft-tftp.c:393 ../src/core/sipe-ft-tftp.c:422
@@ -565,7 +565,7 @@ msgstr "Nepavyksta užmegzti skambutį"
 
 #: ../src/core/sipe-media.c:870 ../src/core/sipe-media.c:1905
 msgid "Encryption settings of peer are incompatible with ours."
-msgstr ""
+msgstr "Pašnekovo šifravimo nustatymai yra nesuderinami su mūsų."
 
 #: ../src/core/sipe-media.c:963
 #, c-format
@@ -647,13 +647,13 @@ msgstr "Užblokuotas"
 #: ../src/core/sipe-ocs2007.c:459 ../src/purple/purple-buddy.c:636
 #: ../src/purple/purple-buddy.c:643
 msgid "Personal"
-msgstr ""
+msgstr "Asmeninis"
 
 #. index 0
 #: ../src/core/sipe-ocs2007.c:460 ../src/purple/purple-buddy.c:637
 #: ../src/purple/purple-buddy.c:644
 msgid "Team"
-msgstr ""
+msgstr "Komanda"
 
 #. SIPE_BUDDY_INFO_WORK_PHONE_DISPLAY
 #. SIPE_BUDDY_INFO_COMPANY
@@ -666,7 +666,7 @@ msgstr "Kompanija"
 #: ../src/core/sipe-ocs2007.c:462 ../src/purple/purple-buddy.c:639
 #: ../src/purple/purple-buddy.c:646
 msgid "Public"
-msgstr ""
+msgstr "Viešas"
 
 #: ../src/core/sipe-ocs2007.c:464
 msgid "Unknown"
@@ -675,7 +675,7 @@ msgstr "Nežinoma"
 #. Translators: remove (clear) previously assigned access level
 #: ../src/core/sipe-ocs2007.c:2570
 msgid "Unspecify"
-msgstr ""
+msgstr "Nebenurodinėti"
 
 #: ../src/core/sipe-ocs2007.c:2589
 msgid "People in my company"
@@ -683,16 +683,16 @@ msgstr "Žmonės mano kompanijoje"
 
 #: ../src/core/sipe-ocs2007.c:2599
 msgid "People in domains connected with my company"
-msgstr ""
+msgstr "Žmonės viešuosiuose tinkluose, prijungtuose prie mano kompanijos"
 
 #: ../src/core/sipe-ocs2007.c:2608
 msgid "People in public domains"
-msgstr ""
+msgstr "Žmonės viešuosiuose tinkluose"
 
 #: ../src/core/sipe-ocs2007.c:2618
 #, c-format
 msgid "People at %s"
-msgstr ""
+msgstr "Žmonės ties %s"
 
 #: ../src/core/sipe-ocs2007.c:2643
 msgid "Add new domain..."
@@ -704,7 +704,7 @@ msgstr "Žinynas internete..."
 
 #: ../src/core/sipe-ocs2007.c:2680
 msgid "Access groups"
-msgstr ""
+msgstr "Prieigos grupės"
 
 #. * This has nothing to do with Availability numbers, like 3500 (online).
 #. * Just a mapping of Communicator Activities to tokens/translations
@@ -716,31 +716,31 @@ msgstr ""
 #. SIPE_ACTIVITY_INACTIVE
 #: ../src/core/sipe-status.c:56
 msgid "Inactive"
-msgstr ""
+msgstr "Neaktyvus"
 
 #. SIPE_ACTIVITY_BUSYIDLE
 #: ../src/core/sipe-status.c:58
 msgid "Busy-Idle"
-msgstr ""
+msgstr "Užimtas-Neveiklus"
 
 #. SIPE_ACTIVITY_DND
 #. SIPE_ACTIVITY_BRB
 #: ../src/core/sipe-status.c:60
 msgid "Be right back"
-msgstr ""
+msgstr "Netrukus grįšiu"
 
 #. SIPE_ACTIVITY_AWAY
 #. SIPE_ACTIVITY_LUNCH
 #: ../src/core/sipe-status.c:62
 msgid "Out to lunch"
-msgstr ""
+msgstr "Pietauju"
 
 #. SIPE_ACTIVITY_INVISIBLE
 #. SIPE_ACTIVITY_OFFLINE
 #. SIPE_ACTIVITY_ON_PHONE
 #: ../src/core/sipe-status.c:65
 msgid "In a call"
-msgstr ""
+msgstr "Dalyvauju skambutyje"
 
 #. SIPE_ACTIVITY_IN_CONF
 #: ../src/core/sipe-status.c:66
@@ -755,18 +755,18 @@ msgstr "Susitikime"
 #. SIPE_ACTIVITY_URGENT_ONLY
 #: ../src/core/sipe-status.c:69
 msgid "Urgent interruptions only"
-msgstr ""
+msgstr "Tik skubūs pertraukimai"
 
 #: ../src/core/sipe-subscriptions.c:189
 msgid "Presence subscription failed!"
-msgstr ""
+msgstr "Prisijungimo būsenos prenumerata nepavyko!"
 
 #: ../src/core/sipe-subscriptions.c:190
 msgid ""
 "One or more buddies will therefore permanently show as offline.\n"
 "\n"
 "Please check that there are no corrupted SIP URIs in your contacts list."
-msgstr ""
+msgstr "Dėl to, vienas ar daugiau bičiulių bus visą laiką rodomi kaip atsijungę.\n\nPrašome patikrinti ar jūsų kontaktų sąraše nėra sugadintų SIP URI."
 
 #: ../src/core/sipe-ucs.c:674
 msgid "UCS initialization failed!"
@@ -777,14 +777,14 @@ msgid ""
 "Couldn't find an Exchange server with the default Email settings. Therefore the contacts list will not work.\n"
 "\n"
 "You'll need to provide Email settings in the account setup."
-msgstr ""
+msgstr "Nepavyko rasti Exchange serverio su numatytaisiais el. pašto nustatymais. Dėl to, kontaktų sąrašas neveiks.\n\nJums reikės pateikti el. pašto nustatymus paskyros sąrankoje."
 
 #: ../src/core/sipe-ucs.c:677
 msgid ""
 "Couldn't find an Exchange server with the Email settings provided in the account setup. Therefore the contacts list will not work.\n"
 "\n"
 "Please correct your Email settings."
-msgstr ""
+msgstr "Nepavyko rasti Exchange serverio su paskyros sąrankoje pateiktais el. pašto nustatymais. Dėl to, kontaktų sąrašas neveiks.\n\nPrašome ištaisyti savo el. pašto nustatymus."
 
 #. Service unavailable; Server Internal Error; Server Time-out
 #. Not acceptable all.
@@ -799,7 +799,7 @@ msgstr "Jūsų žinutė ar pakvietimas nebuvo pristatytas, tikriausiai, dėl to,
 #, c-format
 msgid ""
 "This message was not delivered to %s because the service is not available"
-msgstr ""
+msgstr "Ši žinutė nebuvo pristatyta pašnekovui %s, kadangi paslauga yra neprieinama"
 
 #. Busy Here
 #: ../src/core/sipe-user.c:84
@@ -807,7 +807,7 @@ msgstr ""
 msgid ""
 "This message was not delivered to %s because one or more recipients do not "
 "want to be disturbed"
-msgstr ""
+msgstr "Ši žinutė nebuvo pristatyta pašnekovui %s, kadangi vienas ar daugiau gavėjų nenori būti trukdomi"
 
 #. Unsupported media type
 #: ../src/core/sipe-user.c:86
@@ -815,14 +815,14 @@ msgstr ""
 msgid ""
 "This message was not delivered to %s because one or more recipients don't "
 "support this type of message"
-msgstr ""
+msgstr "Ši žinutė nebuvo pristatyta pašnekovui %s, kadangi vienas ar daugiau gavėjų nepalaiko šio žinutės tipo"
 
 #: ../src/core/sipe-user.c:88
 #, c-format
 msgid ""
 "This message was not delivered to %s because one or more recipients are "
 "offline"
-msgstr ""
+msgstr "Ši žinutė nebuvo pristatyta pašnekovui %s, kadangi vienas ar daugiau gavėjų yra atsijungę"
 
 #. SIPE_BUDDY_INFO_DISPLAY_NAME
 #: ../src/purple/purple-buddy.c:67
@@ -842,12 +842,12 @@ msgstr "Miestas"
 #. SIPE_BUDDY_INFO_STATE
 #: ../src/purple/purple-buddy.c:70
 msgid "State"
-msgstr ""
+msgstr "Valstija"
 
 #. SIPE_BUDDY_INFO_OFFICE
 #: ../src/purple/purple-buddy.c:71
 msgid "Office"
-msgstr ""
+msgstr "Biuras"
 
 #. SIPE_BUDDY_INFO_DEPARTMENT
 #. SIPE_BUDDY_INFO_COUNTRY
@@ -859,7 +859,7 @@ msgstr "Šalis"
 #. SIPE_BUDDY_INFO_WORK_PHONE
 #: ../src/purple/purple-buddy.c:74
 msgid "Business phone"
-msgstr ""
+msgstr "Darbo telefonas"
 
 #. SIPE_BUDDY_INFO_EMAIL
 #: ../src/purple/purple-buddy.c:77
@@ -893,7 +893,7 @@ msgstr "Įrenginys"
 
 #: ../src/purple/purple-buddy.c:260 ../src/purple/purple-buddy.c:278
 msgid "you"
-msgstr ""
+msgstr "jūs"
 
 #: ../src/purple/purple-buddy.c:584
 msgid ""
@@ -930,7 +930,7 @@ msgstr "Atrakinti"
 
 #: ../src/purple/purple-chat.c:338
 msgid "Show presentation"
-msgstr ""
+msgstr "Rodyti pristatymą"
 
 #: ../src/purple/purple-chat.c:345
 msgid "Meeting entry info"
@@ -950,11 +950,11 @@ msgstr "Pakviesti"
 
 #: ../src/purple/purple-groupchat.c:166
 msgid "Private"
-msgstr ""
+msgstr "Privatus"
 
 #: ../src/purple/purple-groupchat.c:169
 msgid "Log"
-msgstr ""
+msgstr "Žurnalas"
 
 #: ../src/purple/purple-groupchat.c:172
 msgid "Description"
@@ -990,7 +990,7 @@ msgstr "Telefono numeris"
 #: ../src/purple/purple-plugin-common.c:728
 #: ../src/purple/purple-plugin-common.c:729
 msgid "Call a phone number"
-msgstr ""
+msgstr "Skambinti telefono numeriu"
 
 #: ../src/purple/purple-plugin-common.c:732
 msgid "_Call"
@@ -1007,7 +1007,7 @@ msgstr "Susitikimo vieta"
 
 #: ../src/purple/purple-plugin-common.c:762
 msgid "Alternatively"
-msgstr ""
+msgstr "Kitu atveju"
 
 #: ../src/purple/purple-plugin-common.c:764
 msgid "Organizer email"
@@ -1051,7 +1051,7 @@ msgstr "Apie SIPE papildinį..."
 
 #: ../src/purple/purple-plugin-common.c:826
 msgid "Contact search..."
-msgstr ""
+msgstr "Kontaktų paieška..."
 
 #: ../src/purple/purple-plugin-common.c:830
 msgid "Call a phone number..."
@@ -1140,7 +1140,7 @@ msgstr "TLS-DSK"
 #. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
 #: ../src/purple/purple-plugin-common.c:900
 msgid "Use Single Sign-On"
-msgstr ""
+msgstr "Naudoti vieningą prisijungimą (Single Sign-On)"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
