@@ -72,25 +72,29 @@ struct sipe_cert_crypto *sipe_cert_crypto_init(void)
 	/* allocate memory for RSA key */
 	scc->key = RSA_new();
 	if (scc->key) {
-		BIGNUM e;
-		BN_init(&e);
+		BIGNUM *e = BN_new();
 
-		/* RSA parameters - should those be configurable? */
-		if (BN_set_word(&e, RSA_F4)) {
-		        SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: generate key pair, this might take a while...");
-			if (RSA_generate_key_ex(scc->key, 2048, &e, NULL)) {
-				SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: key pair generated");
-				BN_clear(&e);
-				return(scc);
-			}
+		if (e) {
+			/* RSA parameters - should those be configurable? */
+			if (BN_set_word(e, RSA_F4)) {
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: generate key pair, this might take a while...");
+				if (RSA_generate_key_ex(scc->key, 2048, e, NULL)) {
+					SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: key pair generated");
+					BN_free(e);
+					return(scc);
 
-			SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: key generation failed");
-			BN_clear(&e);
-		}
+				} else
+					SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: key generation failed");
 
-		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: big number initialization failed");
+			} else
+				SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: big number initialization failed");
+
+			BN_free(e);
+		} else
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: memory allocation for big number failed");
+
 	} else
-		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: memory allocation failed");
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: memory allocation for RSA key failed");
 
 	sipe_cert_crypto_free(scc);
 	return(NULL);
