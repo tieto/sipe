@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,7 @@
  * Certificate routines implementation based on OpenSSL.
  */
 
+#include <openssl/bn.h>
 #include <openssl/evp.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
@@ -68,17 +69,30 @@ struct sipe_cert_crypto *sipe_cert_crypto_init(void)
 {
 	struct sipe_cert_crypto *scc = g_new0(struct sipe_cert_crypto, 1);
 
-	/* RSA parameters - should those be configurable? */
-	SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: generate key pair, this might take a while...");
-	scc->key = RSA_generate_key(2048, 65537, NULL, NULL);
-
+	/* allocate memory for RSA key */
+	scc->key = RSA_new();
 	if (scc->key) {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: key pair generated");
-		return(scc);
-	}
+		BIGNUM e;
+		BN_init(&e);
 
-	SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: key generation failed");
-	g_free(scc);
+		/* RSA parameters - should those be configurable? */
+		if (BN_set_word(&e, RSA_F4)) {
+		        SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: generate key pair, this might take a while...");
+			if (RSA_generate_key_ex(scc->key, 2048, &e, NULL)) {
+				SIPE_DEBUG_INFO_NOFORMAT("sipe_cert_crypto_init: key pair generated");
+				BN_clear(&e);
+				return(scc);
+			}
+
+			SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: key generation failed");
+			BN_clear(&e);
+		}
+
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: big number initialization failed");
+	} else
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_cert_crypto_init: memory allocation failed");
+
+	sipe_cert_crypto_free(scc);
 	return(NULL);
 }
 
