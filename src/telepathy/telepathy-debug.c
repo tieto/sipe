@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -67,7 +67,7 @@ static guint          flags = 0;
 
 void sipe_telepathy_debug_init(void)
 {
-	static const GDebugKey const keys[] = {
+	static const GDebugKey keys[] = {
 		/* This simulates pidgin's --debug flag, i.e. we only see
 		 * output from SIPE if this is set.
 		 *

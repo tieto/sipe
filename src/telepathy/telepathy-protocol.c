@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -108,7 +108,7 @@ static const TpCMParamSpec *get_parameters(SIPE_UNUSED_PARAMETER TpBaseProtocol 
 		.setter_data = NULL,       \
 	}
 
-	static const TpCMParamSpec const sipe_parameters[] = {
+	static const TpCMParamSpec sipe_parameters[] = {
 		SIPE_PROTOCOL_PARAMETER("account",
 					DBUS_TYPE_STRING_AS_STRING,
 					G_TYPE_STRING,
