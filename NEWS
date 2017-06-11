@@ -1,4 +1,4 @@
-version 1.22.1 "Bug Fixes I" (2017-06-10)
+version 1.22.1 "Bug Fixes I" (2017-06-11)
 	- Fixed #320: Multiple client detection broken (Stefan Becker)
 	- speed up Lync Autodiscover by using AccessLocation (Andrey Vaynberger)
 	- adium: update build instructions for Xcode 7.x or newer (Stefan Becker)

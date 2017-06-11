@@ -570,7 +570,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* Sat Jun 10 2017 J. D. User <jduser@noreply.com> 1.22.1
+* Sun Jun 11 2017 J. D. User <jduser@noreply.com> 1.22.1
 - update to 1.22.1
 
 * Wed Feb 01 2017 J. D. User <jduser@noreply.com> 1.22.0

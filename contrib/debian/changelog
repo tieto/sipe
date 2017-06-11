@@ -1,6 +1,6 @@
 pidgin-sipe (1.22.1-1) unstable; urgency=low
 
-  * New upstream version 1.22.1 "Bug Fixes I" (2017-06-10)
+  * New upstream version 1.22.1 "Bug Fixes I" (2017-06-11)
 	- Fixed #320: Multiple client detection broken (Stefan Becker)
 	- speed up Lync Autodiscover by using AccessLocation (Andrey Vaynberger)
 	- adium: update build instructions for Xcode 7.x or newer (Stefan Becker)
@@ -14,7 +14,7 @@ pidgin-sipe (1.22.1-1) unstable; urgency=low
 	- drop references to Reuters Messaging (Stefan Becker)
 	- updated translations: Lithuanian (lt), Russian (ru), Swedish (sv), Turkish (tr)
 
- -- Stefan Becker <chemobejk@gmail.com>  Sat, 10 Jun 2017 23:10:00 +0300
+ -- Stefan Becker <chemobejk@gmail.com>  Sun, 11 Jun 2017 18:38:00 +0300
 
 pidgin-sipe (1.22.0-1) unstable; urgency=low
 
