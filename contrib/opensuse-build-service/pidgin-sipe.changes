@@ -11,6 +11,7 @@ Sat Jun 10 20:20:00 UTC 2017 - chemobejk@gmail.com
       * build target continues to be OS X 10.9
     - purple: avoid rare SSL read deadlock (Stefan Becker)
     - various minor fixes (Michael Olbrich)
+    - crypto: make code compile with OpenSSL 1.1.0 (Stefan Becker)
     - drop references to Reuters Messaging (Stefan Becker)
     - updated translations: Lithuanian (lt), Swedish (sv), Turkish (tr)
 

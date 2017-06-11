@@ -8,5 +8,6 @@ version 1.22.1 "Bug Fixes I" (2017-06-10)
 	  * build target continues to be OS X 10.9
 	- purple: avoid rare SSL read deadlock (Stefan Becker)
 	- various minor fixes (Michael Olbrich)
+	- crypto: make code compile with OpenSSL 1.1.0 (Stefan Becker)
 	- drop references to Reuters Messaging (Stefan Becker)
 	- updated translations: Lithuanian (lt), Swedish (sv), Turkish (tr)
