@@ -11,13 +11,14 @@
 # Stefan Becker <chemobejk@gmail.com>, 2011
 # Ivan Gromov <summer.is.gone@gmail.com>, 2015
 # G0LDEN_key <the.golden.key@gmail.com>, 2013,2015
+# Дмитрий Д. <dalinger4life@gmail.com>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2017-01-23 17:47+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2017-06-06 08:29+0000\n"
+"Last-Translator: Дмитрий Д. <dalinger4life@gmail.com>\n"
 "Language-Team: Russian (http://www.transifex.com/stefanb/pidgin-sipe/language/ru/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -82,7 +83,7 @@ msgstr "Получена недопустимая подпись сообщен�
 #: ../src/core/sipe-appshare.c:458
 #, c-format
 msgid "%s wants to start presenting"
-msgstr ""
+msgstr "%s желает начать презентацию"
 
 #: ../src/core/sipe-appshare.c:462 ../src/core/sipe-conf.c:1086
 msgid "Accept"
@@ -311,7 +312,7 @@ msgstr "\n\nДанное приложение не поддерживает го
 #: ../src/core/sipe-conf.c:1111
 #, c-format
 msgid "wants to invite you to a conference call%s"
-msgstr ""
+msgstr "хочет пригласить вас на конференцию %s"
 
 #: ../src/core/sipe-conf.c:1459
 msgid ""
@@ -936,7 +937,7 @@ msgstr "Разблокировать"
 
 #: ../src/purple/purple-chat.c:338
 msgid "Show presentation"
-msgstr ""
+msgstr "Показать презентацию"
 
 #: ../src/purple/purple-chat.c:345
 msgid "Meeting entry info"
@@ -1191,7 +1192,7 @@ msgstr "Прокси пруппового чата \ncompany.com или user@com
 
 #: ../src/purple/purple-plugin-common.c:933
 msgid "Remote desktop client"
-msgstr ""
+msgstr "Клиент удалённого рабочего стола"
 
 #: ../src/purple/purple-plugin-common.c:938
 msgid "Media encryption"

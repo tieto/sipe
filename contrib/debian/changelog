@@ -12,7 +12,7 @@ pidgin-sipe (1.22.1-1) unstable; urgency=low
 	- various minor fixes (Michael Olbrich)
 	- crypto: make code compile with OpenSSL 1.1.0 (Stefan Becker)
 	- drop references to Reuters Messaging (Stefan Becker)
-	- updated translations: Lithuanian (lt), Swedish (sv), Turkish (tr)
+	- updated translations: Lithuanian (lt), Russian (ru), Swedish (sv), Turkish (tr)
 
  -- Stefan Becker <chemobejk@gmail.com>  Sat, 10 Jun 2017 23:10:00 +0300
 
