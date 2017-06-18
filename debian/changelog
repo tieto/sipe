@@ -1,17 +1,23 @@
-pidgin-sipe (1.22.0-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.22.1-1) UNRELEASED; urgency=medium
 
   * New upstream release (Closes: #853612).
         - Feature #93: Support for Lync Autodiscover
         - Feature #6: Application Sharing Viewer
         - Fixed #315: Crash when contact list is empty
         - Fixed #314: sipe login problems with long pw
+        - Fixed #320: Multiple client detection broken
         - separate logging and debugging output
-        - new translations: Greek (el), Lithuanian (lt)
+        - speed up Lync Autodiscover by using AccessLocation
+        - purple: avoid rare SSL read deadlock
+        - crypto: make code compile with OpenSSL 1.1.0
+        - drop references to Reuters Messaging
+        - new translations: Greek (el), Lithuanian (lt), Russian (ru),
+          Swedish (sv), Turkish (tr)
   * Add libfarstream-0.2-dev and libgstreamer-plugins-base1.0-dev
     to Build-Depends.
   * Recommend remmina RDP client plugin.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Thu, 02 Feb 2017 14:07:13 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 18 Jun 2017 12:57:42 +0200
 
 pidgin-sipe (1.21.1-1) unstable; urgency=medium
 
