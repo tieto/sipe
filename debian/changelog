@@ -1,4 +1,4 @@
-pidgin-sipe (1.22.1-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.22.1-1) unstable; urgency=medium
 
   * New upstream release (Closes: #853612).
         - Feature #93: Support for Lync Autodiscover
@@ -17,7 +17,7 @@ pidgin-sipe (1.22.1-1) UNRELEASED; urgency=medium
     to Build-Depends.
   * Recommend remmina RDP client plugin.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 18 Jun 2017 12:57:42 +0200
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 18 Jun 2017 14:04:30 +0200
 
 pidgin-sipe (1.21.1-1) unstable; urgency=medium
 
