@@ -104,6 +104,7 @@ AS_IF([test "x$enable_quality_check" = xyes],
 			"-Wcast-align" \
 			"-Wdeclaration-after-statement" \
 			"-Wdeprecated-declarations" \
+			"-Wduplicate-decl-specifier" \
 			"-Winit-self" \
 			"-Wmaybe-uninitialized" \
 			"-Wmissing-declarations" \
@@ -373,14 +374,25 @@ AS_IF([test "x$enable_purple" != xno],
 		 dnl check whether enable voice and video support
 		 AS_IF([test "x$with_vv" = xno], [], dnl disabled by user
 		       [AC_MSG_CHECKING(for purple voice and video support)
-		        AC_RUN_IFELSE(
+			purple_has_media=no
+			AC_RUN_IFELSE(
 				[AC_LANG_PROGRAM([[
 #include <media.h>
 					]],
 					[[return (purple_media_get_type() == G_TYPE_NONE ? 1 : 0);]]
 				)],
-				[AC_MSG_RESULT(ok)
-				 PKG_CHECK_MODULES(NICE, [nice >= 0.1.0],
+				[purple_has_media=yes
+				 AC_MSG_RESULT(ok)
+				],
+				[AC_MSG_RESULT([no - your purple hasn't been compiled with voice and video support.])],
+				[AS_IF([test "x$with_vv" = xyes],
+				       [purple_has_media=yes
+				        AC_MSG_RESULT([yes - enabling voice and video support for cross compiling on users' request.])],
+				       [AC_MSG_RESULT([no - disabled for cross compiling.])])
+				]
+		        )
+			AS_IF([test "x$purple_has_media" = xyes],
+				[PKG_CHECK_MODULES(NICE, [nice >= 0.1.0],
 					dnl sipe-media.c uses g_slist_free_full()
 					[PKG_CHECK_MODULES(_SIPE_MEDIA_RECHECK_PLEASE_IGNORE, [$purple_pkgconfig >= 2.8.0],
 						dnl check purple pkgconfig for gstreamer version
@@ -406,9 +418,8 @@ AS_IF([test "x$enable_purple" != xno],
 								[AC_MSG_NOTICE(Farstream required: disabling purple voice and video support)])],
 							[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
 						[AC_MSG_NOTICE(libpurple >= 2.8.0 required: disabling purple voice and video support)])],
-					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])],
-				[AC_MSG_RESULT(no - your purple hasn't been compiled with voice and video support.)],
-				[AC_MSG_WARN([cross compiling: not checking])])
+					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])
+				])
 		       ])
 
 		 dnl SRTP and XDATA require media backend
@@ -498,11 +509,11 @@ AM_CONDITIONAL(SIPE_HAVE_APPSHARE, [test "x$ac_have_appshare" == xyes])
 AS_IF([test "x$ac_have_appshare" == xyes],
 	[AC_DEFINE(HAVE_APPSHARE, 1, [Define to 1 if we have appshare support.])])
 
-dnl these code parts rely on interfaces that require GValueArray. This
+dnl telepathy code parts rely on interfaces that require GValueArray. This
 dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there
 dnl is no backward compatible replacement implementation possible
-AS_IF([test "x$with_purple_vv" != xno -o "x$enable_telepathy" != xno],
-	[AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_28,
+AS_IF([test "x$enable_telepathy" != xno],
+	[AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_30,
                    [We need GValueArray for which no replacement is available])])
 
 dnl i18n

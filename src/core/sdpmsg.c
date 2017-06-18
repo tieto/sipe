@@ -235,6 +235,8 @@ parse_candidates(GSList *attrs, SipeIceVersion *ice_version, GSList **candidates
 
 	g_return_val_if_fail(*candidates == NULL, FALSE);
 
+	*ice_version = SIPE_ICE_NO_ICE;
+
 	while ((attr = sipe_utils_nameval_find_instance(attrs, "candidate", i++))) {
 		gchar **tokens = g_strsplit_set(attr, " ", 0);
 		gboolean parsed_ok;
@@ -262,9 +264,6 @@ parse_candidates(GSList *attrs, SipeIceVersion *ice_version, GSList **candidates
 			return FALSE;
 		}
 	}
-
-	if (!(*candidates))
-		*ice_version = SIPE_ICE_NO_ICE;
 
 	if (*ice_version == SIPE_ICE_RFC_5245) {
 		const gchar *username = sipe_utils_nameval_find(attrs, "ice-ufrag");
@@ -436,19 +435,25 @@ sdpmsg_parse_msg(const gchar *msg)
 		return NULL;
 	}
 
+	smsg->ice_version = SIPE_ICE_NO_ICE;
 	for (i = smsg->media; i; i = i->next) {
 		struct sdpmedia *media = i->data;
 		SipeMediaType type;
+		SipeIceVersion detected_ice_version;
 
-		if (!parse_candidates(media->attributes, &smsg->ice_version,
+		if (!parse_candidates(media->attributes, &detected_ice_version,
 				      &media->candidates)) {
 			sdpmsg_free(smsg);
 			return NULL;
 		}
 
-		if (!media->candidates && media->port != 0) {
-			// No a=candidate in SDP message, this seems to be MSOC 2005
-			media->candidates = create_legacy_candidates(smsg->ip, media->port);
+		if (media->port != 0) {
+			smsg->ice_version = detected_ice_version;
+
+			if (!media->candidates) {
+				// No a=candidate in SDP message, this seems to be MSOC 2005
+				media->candidates = create_legacy_candidates(smsg->ip, media->port);
+			}
 		}
 
 		if (sipe_strequal(media->name, "audio"))

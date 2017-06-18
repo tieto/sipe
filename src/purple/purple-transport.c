@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -128,6 +128,20 @@ static void transport_common_input(struct sipe_transport_purple *transport)
 			     readlen);
 
 		if (len < 0 && errno == EAGAIN) {
+			/*
+			 * Work around rare SSL read deadlock situation
+			 *
+			 * When we went around the loop then the previous call
+			 * to purple_ssl_read() filled the buffer exactly. If
+			 * it also happened to read all pending bytes then it
+			 * seems that the next call returns len < 0 with EAGAIN
+			 * instead of the expected len == 0.
+			 */
+			if (transport->gsc && !firstread) {
+				SIPE_DEBUG_INFO("transport_input_common: SSL read deadlock detected - assuming message is %" G_GSIZE_FORMAT " bytes long", conn->buffer_used);
+				break;
+			}
+
 			/* Try again later */
 			return;
 		} else if (len < 0) {

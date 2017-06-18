@@ -58,11 +58,12 @@ rm checksums.txt
 # All current platforms currently support telepathy - use only default .dsc
 cp pidgin-sipe-telepathy.dsc pidgin-sipe.dsc
 # Overwrite those .dsc's that have support for gstreamer1.0
-#    Debian_x.y
 for os in \
+    Debian_9.0 \
     xUbuntu_15.10 \
     xUbuntu_16.04 \
-    xUbuntu_16.10; \
+    xUbuntu_16.10 \
+    xUbuntu_17.04; \
 do \
     cp pidgin-sipe-gstreamer1.dsc pidgin-sipe-${os}.dsc; \
 done
