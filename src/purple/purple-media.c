@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -83,12 +83,6 @@ struct sipe_backend_media_stream {
 	GObject *rtpsession;
 	gulong on_sending_rtcp_cb_id;
 };
-
-#if PURPLE_VERSION_CHECK(3,0,0)
-#define SIPE_RELAYS_G_TYPE G_TYPE_PTR_ARRAY
-#else
-#define SIPE_RELAYS_G_TYPE G_TYPE_VALUE_ARRAY
-#endif
 
 void
 sipe_backend_media_stream_free(struct sipe_backend_media_stream *stream)
@@ -442,17 +436,7 @@ append_relay(struct sipe_backend_media_relays *relay_info, const gchar *ip,
 			NULL);
 
 	if (gst_relay_info) {
-#if PURPLE_VERSION_CHECK(3,0,0)
 		g_ptr_array_add((GPtrArray *)relay_info, gst_relay_info);
-#else
-		GValue value;
-		memset(&value, 0, sizeof(GValue));
-		g_value_init(&value, GST_TYPE_STRUCTURE);
-		gst_value_set_structure(&value, gst_relay_info);
-
-		g_value_array_append((GValueArray *)relay_info, &value);
-		gst_structure_free(gst_relay_info);
-#endif
 	}
 }
 
@@ -462,11 +446,7 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 	struct sipe_backend_media_relays *relay_info;
 
 	relay_info = (struct sipe_backend_media_relays *)
-#if PURPLE_VERSION_CHECK(3,0,0)
 			g_ptr_array_new_with_free_func((GDestroyNotify) gst_structure_free);
-#else
-			g_value_array_new(0);
-#endif
 
 	for (; media_relays; media_relays = media_relays->next) {\
 		struct sipe_media_relay *relay = media_relays->data;
@@ -496,11 +476,7 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 void
 sipe_backend_media_relays_free(struct sipe_backend_media_relays *media_relays)
 {
-#if !PURPLE_VERSION_CHECK(3,0,0)
-	g_value_array_free((GValueArray *)media_relays);
-#else
 	g_ptr_array_unref((GPtrArray *)media_relays);
-#endif
 }
 
 #ifdef HAVE_XDATA
@@ -660,7 +636,10 @@ h264_buffer_cb(SIPE_UNUSED_PARAMETER GstPad *pad, GstPadProbeInfo *info,
 								 nal_count);
 	gst_memory_unmap(memory, &map);
 	gst_memory_resize(memory, 0, pacsi_len);
+
+	buffer = gst_buffer_make_writable(buffer);
 	gst_buffer_insert_memory(buffer, 0, memory);
+	GST_PAD_PROBE_INFO_DATA(info) = buffer;
 
 	return GST_PAD_PROBE_OK;
 }
@@ -681,7 +660,7 @@ find_payloader(GValue *value, GstCaps *rtpcaps)
 	 * first that does NOT consume RTP frames. */
 	result = gst_caps_can_intersect(caps, rtpcaps);
 
-	gst_object_unref(caps);
+	gst_caps_unref(caps);
 	gst_object_unref(sinkpad);
 
 	return result;
@@ -885,7 +864,7 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 
 		if (media_relays) {
 			params[params_cnt].name = "relay-info";
-			g_value_init(&params[params_cnt].value, SIPE_RELAYS_G_TYPE);
+			g_value_init(&params[params_cnt].value, G_TYPE_PTR_ARRAY);
 			g_value_set_boxed(&params[params_cnt].value, media_relays);
 			relay_info = &params[params_cnt].value;
 			++params_cnt;
@@ -1133,7 +1112,7 @@ sipe_backend_codec_new(int id, const char *name, SipeMediaType type,
 {
 	PurpleMediaCodec *codec;
 
-	if (sipe_strequal(name, "X-H264UC")) {
+	if (sipe_strcase_equal(name, "X-H264UC")) {
 		name = "H264";
 	}
 

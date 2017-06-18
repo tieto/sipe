@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -157,6 +157,7 @@ void sipe_core_destroy(void);
 
 /** Utility functions exported by the core to backends ***********************/
 gboolean sipe_strequal(const gchar *left, const gchar *right);
+gboolean sipe_strcase_equal(const gchar *left, const gchar *right);
 
 GSList *
 sipe_utils_nameval_add(GSList *list, const gchar *name, const gchar *value);
@@ -341,6 +342,15 @@ const gchar *sipe_core_transport_sip_server_name(struct sipe_core_public *sipe_p
  */
 const gchar *sipe_core_chat_id(struct sipe_core_public *sipe_public,
 			       struct sipe_chat_session *chat_session);
+
+/**
+ * Get type of chat session, e.g. group chat
+ */
+#define SIPE_CHAT_TYPE_UNKNOWN    0
+#define SIPE_CHAT_TYPE_MULTIPARTY 1
+#define SIPE_CHAT_TYPE_CONFERENCE 2
+#define SIPE_CHAT_TYPE_GROUPCHAT  3
+guint sipe_core_chat_type(struct sipe_chat_session *chat_session);
 
 /**
  * Invite to chat

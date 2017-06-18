@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2016-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -151,6 +151,7 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 	sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 	const sipe_xml *node;
 	gboolean next = TRUE;
+	const gchar *access_location;
 
 	/* Root: resources exposed by this server */
 	for (node = sipe_xml_child(xml, "Root/Link");
@@ -186,6 +187,8 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 		}
 	}
 
+	access_location = sipe_xml_attribute(xml, "AccessLocation");
+
 	/* User: topology information of the user’s home server */
 	if ((node = sipe_xml_child(xml, "User")) != NULL) {
 		gpointer id = request->id;
@@ -196,12 +199,20 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 
 			/* List is reversed, i.e. internal will be tried first */
 			servers = g_slist_prepend(NULL, NULL);
-			servers = sipe_lync_autodiscover_add(servers,
-							     node,
-							     "SipClientExternalAccess");
-			servers = sipe_lync_autodiscover_add(servers,
-							     node,
-							     "SipClientInternalAccess");
+
+			if (!access_location ||
+			    sipe_strcase_equal(access_location, "external")) {
+				servers = sipe_lync_autodiscover_add(servers,
+								     node,
+								     "SipClientExternalAccess");
+			}
+
+			if (!access_location ||
+			    sipe_strcase_equal(access_location, "internal")) {
+				servers = sipe_lync_autodiscover_add(servers,
+								     node,
+								     "SipClientInternalAccess");
+			}
 
 			/* Callback takes ownership of servers list */
 			(*request->cb)(sipe_private, servers, request->cb_data);

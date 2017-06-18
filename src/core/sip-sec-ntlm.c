@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009, 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
@@ -888,7 +888,7 @@ MAC (guint32 flags,
 			memcpy(seal_key_, seal_key, seal_key_len);
 		}
 
-		SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): Extented Session Security");
+		SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): Extended Session Security");
 
 		res_ptr = result;
 		res_ptr[0] = GUINT32_TO_LE(1); // 4 bytes
@@ -917,7 +917,7 @@ MAC (guint32 flags,
 			GUINT32_TO_LE(sequence)
 		}; // 4, 4, 4 bytes
 
-		SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): *NO* Extented Session Security");
+		SIPE_DEBUG_INFO_NOFORMAT("NTLM MAC(): *NO* Extended Session Security");
 
 		RC4K(seal_key, seal_key_len, (const guchar *)plaintext, 12, (guchar *)(result+1));
 

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 #include <openssl/md4.h>
 #endif
 #include <openssl/md5.h>
+#include <openssl/opensslv.h>
 #include <openssl/sha.h>
 
 #include "glib.h"
@@ -76,10 +77,15 @@ void sipe_digest_hmac_sha1(const guchar *key, gsize key_length,
 /* Stream HMAC(SHA1) digest for file transfer */
 gpointer sipe_digest_ft_start(const guchar *sha1_digest)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	HMAC_CTX *ctx = g_malloc(sizeof(HMAC_CTX));
 	HMAC_CTX_init(ctx);
+#else
+	/* OpenSSL 1.1.0 or newer */
+	HMAC_CTX *ctx = HMAC_CTX_new();
+#endif
 	/* used are only the first 16 bytes of the 20 byte SHA1 digest */
-	HMAC_Init(ctx, sha1_digest, 16, EVP_sha1());
+	HMAC_Init_ex(ctx, sha1_digest, 16, EVP_sha1(), NULL);
 	return(ctx);
 }
 
@@ -95,8 +101,13 @@ void sipe_digest_ft_end(gpointer context, guchar *digest)
 
 void sipe_digest_ft_destroy(gpointer context)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	HMAC_CTX_cleanup(context);
 	g_free(context);
+#else
+	/* OpenSSL 1.1.0 or newer */
+	HMAC_CTX_free(context);
+#endif
 }
 
 /* Stream digests, e.g. for TLS */

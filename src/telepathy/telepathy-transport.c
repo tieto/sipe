@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -88,7 +88,8 @@ static void read_completed(GObject *stream,
 				SIPE_DEBUG_ERROR("read_completed: error: %s", msg);
 				if (transport->error)
 					transport->error(conn, msg);
-				g_error_free(error);
+				if (error)
+					g_error_free(error);
 				return;
 			} else if (len == 0) {
 				SIPE_DEBUG_ERROR_NOFORMAT("read_completed: server has disconnected");
@@ -171,7 +172,8 @@ static void socket_connected(GObject *client,
 			SIPE_DEBUG_ERROR("socket_connected: failed: %s", msg);
 			if (transport->error)
 				transport->error(SIPE_TRANSPORT_CONNECTION, msg);
-			g_error_free(error);
+			if (error)
+				g_error_free(error);
 		}
 	} else if (g_cancellable_is_cancelled(transport->cancel)) {
 		/* connect already succeeded when transport was disconnected */
@@ -437,7 +439,8 @@ static void write_completed(GObject *stream,
 		SIPE_DEBUG_ERROR("write_completed: error: %s", msg);
 		if (transport->error)
 			transport->error(SIPE_TRANSPORT_CONNECTION, msg);
-		g_error_free(error);
+		if (error)
+			g_error_free(error);
 
 		/* error during flush: give up and close transport */
 		if (transport->do_flush)

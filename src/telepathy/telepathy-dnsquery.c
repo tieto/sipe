@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -52,7 +52,8 @@ static void dns_srv_response(GObject *resolver,
 	} else {
 		SIPE_DEBUG_INFO("dns_srv_response: failed: %s",
 				error ? error->message : "UNKNOWN");
-		g_error_free(error);
+		if (error)
+			g_error_free(error);
 		if (query->callback)
 			query->callback(query->extradata, NULL, 0);
 	}
@@ -105,7 +106,8 @@ static void dns_a_response(GObject *resolver,
 	} else {
 		SIPE_DEBUG_INFO("dns_a_response: failed: %s",
 				error ? error->message : "UNKNOWN");
-		g_error_free(error);
+		if (error)
+			g_error_free(error);
 		if (query->callback)
 			query->callback(query->extradata, NULL, 0);
 	}

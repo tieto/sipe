@@ -196,7 +196,6 @@ gchar *sipe_core_about(void)
 		" - Microsoft Office Communications Server 2007<br/>"
 		" - Microsoft Live Communications Server 2005<br/>"
 		" - Microsoft Live Communications Server 2003<br/>"
-		" - Reuters Messaging<br/>"
 		"<br/>"
 		/* 2 */   "%s: <a href=\"" PACKAGE_URL "\">" PACKAGE_URL "</a><br/>"
 		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/p/sipe/discussion/688534/\">%s</a><br/>"
