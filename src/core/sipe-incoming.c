@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -29,10 +29,10 @@
 
 #include <glib.h>
 
-#include "sipe-common.h"
 #include "sipmsg.h"
 #include "sip-csta.h"
 #include "sip-transport.h"
+#include "sipe-appshare.h"
 #include "sipe-backend.h"
 #include "sipe-chat.h"
 #include "sipe-conf.h"
@@ -306,8 +306,8 @@ static void send_invite_response(struct sipe_core_private *sipe_private,
 		"t=0 0\r\n"
 		"m=%s %d sip sip:%s\r\n"
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
-		sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
-		sipe_backend_network_ip_address(SIPE_CORE_PUBLIC),
+		sip_transport_ip_address(sipe_private),
+		sip_transport_ip_address(sipe_private),
 		SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) ? "message" : "x-ms-message",
 		sip_transport_port(sipe_private),
 		sipe_private->username);
@@ -412,10 +412,23 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 
 #ifdef HAVE_VV
+	/* Application sharing */
+	if (sipe_strcase_equal(content_type, "application/sdp") && msg->body &&
+	    strstr(msg->body, "m=applicationsharing") &&
+	    sipe_strequal(sipmsg_find_header(msg, "CSeq"), "1 INVITE")) {
+#ifdef HAVE_APPSHARE
+		process_incoming_invite_appshare(sipe_private, msg);
+#else
+		sip_transport_response(sipe_private, msg,
+				       488, "Not Acceptable Here", NULL);
+#endif
+		return;
+	}
+
 	/* Invitation to audio call or file transfer */
 	if (msg->body &&
-	    (strstr(msg->body, "m=audio") || strstr(msg->body, "m=data"))) {
-		process_incoming_invite_call(sipe_private, msg);
+	    (strstr(msg->body, "m=audio") || strstr(msg->body, "m=data") || strstr(msg->body, "m=applicationsharing"))) {
+		process_incoming_invite_call(sipe_private, msg, msg->body);
 		return;
 	}
 #endif

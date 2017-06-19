@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -206,6 +206,10 @@ sipe_session_remove(struct sipe_core_private *sipe_private,
 	g_hash_table_destroy(session->unconfirmed_messages);
 	if (session->conf_unconfirmed_messages)
 		g_hash_table_destroy(session->conf_unconfirmed_messages);
+
+	if (session->chat_session) {
+		sipe_chat_remove_session(session->chat_session);
+	}
 
 	g_free(session->with);
 	g_free(session->callid);

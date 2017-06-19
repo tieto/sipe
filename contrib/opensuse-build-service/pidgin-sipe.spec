@@ -92,6 +92,7 @@
 %if 0%{?suse_version} >= 1315
 %define has_gstreamer 0
 %define has_gstreamer1 1
+%define has_farstream 1
 %undefine nice_gstreamer
 %endif
 %endif
@@ -111,6 +112,7 @@
 %define build_telepathy 1
 %define build_ktp 1
 %if 0%{?fedora} >= 20
+%define has_farstream 1
 %define nice_gstreamer libnice-gstreamer
 %if 0%{?fedora} >= 21
 %define has_appdata 1
@@ -146,7 +148,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.21.1
+Version:        1.22.1
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -201,6 +203,10 @@ BuildRequires:  pkgconfig(gstreamer-0.10)
 %if 0%{?has_gstreamer1:1}
 BuildRequires:  pkgconfig(gstreamer-1.0)
 %endif
+%if 0%{?has_farstream:1}
+BuildRequires:  pkgconfig(farstream-0.2)
+BuildRequires:  pkgconfig(gio-2.0)
+%endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
 BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
@@ -246,7 +252,6 @@ It implements the extended version of SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 With this plugin you should be able to replace your Microsoft Office
 Communicator client with Pidgin.
@@ -273,7 +278,6 @@ It implements the extended version of SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package provides the protocol plugin for libpurple clients.
 
@@ -296,7 +300,6 @@ SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package provides the icon set for Empathy.
 
@@ -318,7 +321,6 @@ SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package provides the profile for KTP account manager.
 %endif
@@ -340,7 +342,6 @@ SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package provides the protocol support for Telepathy clients.
 
@@ -374,7 +375,6 @@ It implements the extended version of SIP/SIMPLE used by various products:
     * Microsoft Lync Server
     * Microsoft Office Communications Server (OCS 2007/2007 R2)
     * Microsoft Live Communications Server (LCS 2003/2005)
-    * Reuters Messaging
 
 This package contains the NSIS installer package of the protocol plugin
 for Pidgin on Windows.
@@ -570,6 +570,18 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Jun 11 2017 J. D. User <jduser@noreply.com> 1.22.1
+- update to 1.22.1
+
+* Wed Feb 01 2017 J. D. User <jduser@noreply.com> 1.22.0
+- update to 1.22.0
+
+* Sun Dec 18 2016 J. D. User <jduser@noreply.com> 1.21.1-*git*
+- add BR gio-2.0
+
+* Wed Jun 15 2016 J. D. User <jduser@noreply.com> 1.21.1-*git*
+- add BR farstream-0.2
+
 * Sat May 28 2016 J. D. User <jduser@noreply.com> 1.21.1
 - update to 1.21.1
 

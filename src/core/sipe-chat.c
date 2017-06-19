@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,6 +44,7 @@
 #include "sipe-nls.h"
 #include "sipe-schedule.h"
 #include "sipe-session.h"
+#include "sipe-user.h"
 #include "sipe-utils.h"
 #include "sipe-xml.h"
 
@@ -61,7 +62,7 @@ sipe_invite_to_chat(struct sipe_core_private *sipe_private,
 
 static GList *chat_sessions = NULL;
 
-struct sipe_chat_session *sipe_chat_create_session(enum sipe_chat_type type,
+struct sipe_chat_session *sipe_chat_create_session(guint type,
 						   const gchar *id,
 						   const gchar *title)
 {
@@ -83,6 +84,11 @@ void sipe_chat_remove_session(struct sipe_chat_session *session)
 	g_free(session->join_url);
 	g_free(session->dial_in_conf_id);
 	g_free(session->organizer);
+
+	if (session->appshare_ask_ctx) {
+		sipe_user_close_ask(session->appshare_ask_ctx);
+	}
+
 	g_free(session);
 }
 
@@ -100,6 +106,11 @@ const gchar *sipe_core_chat_id(SIPE_UNUSED_PARAMETER struct sipe_core_public *si
 			       struct sipe_chat_session *chat_session)
 {
 	return(chat_session->id);
+}
+
+guint sipe_core_chat_type(struct sipe_chat_session *chat_session)
+{
+	return(chat_session ? chat_session->type : SIPE_CHAT_TYPE_UNKNOWN);
 }
 
 void sipe_core_chat_invite(struct sipe_core_public *sipe_public,
@@ -250,7 +261,6 @@ sipe_refer(struct sipe_core_private *sipe_private,
 {
 	gchar *hdr;
 	gchar *contact;
-	gchar *epid = get_epid(sipe_private);
 	struct sip_dialog *dialog = sipe_dialog_find(session,
 						     session->chat_session->id);
 	const char *ourtag = dialog && dialog->ourtag ? dialog->ourtag : NULL;
@@ -266,8 +276,7 @@ sipe_refer(struct sipe_core_private *sipe_private,
 		sipe_private->username,
 		ourtag ? ";tag=" : "",
 		ourtag ? ourtag : "",
-		epid);
-	g_free(epid);
+		sip_transport_epid(sipe_private));
 
 	sip_transport_request(sipe_private,
 			      "REFER",

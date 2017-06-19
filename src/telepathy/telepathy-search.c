@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -284,7 +284,7 @@ static void get_property(GObject *object,
 	{
 	case CHANNEL_PROP_SEARCH_KEYS: {
 		/* vCard/Telepathy search field names */
-		static const gchar const *search_keys[] = {
+		static const gchar *search_keys[] = {
 			SIPE_TELEPATHY_SEARCH_KEY_FIRST,
 			SIPE_TELEPATHY_SEARCH_KEY_LAST,
 			SIPE_TELEPATHY_SEARCH_KEY_EMAIL,

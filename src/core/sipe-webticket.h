@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-12 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,7 +49,7 @@ typedef void (sipe_webticket_callback)(struct sipe_core_private *sipe_private,
 				       gpointer callback_data);
 
 /**
- * Request a Web Ticket for Web Service URI
+ * Request a Web Ticket for Web Service URI with port name
  *
  * NOTE: the callback can be called immediately if the Web Ticket is cached.
  *       The callback data must therefore be properly initialized already.
@@ -61,12 +61,32 @@ typedef void (sipe_webticket_callback)(struct sipe_core_private *sipe_private,
  * @param callback_data callback data
  * @return              @c TRUE if web ticket fetch was triggered
  */
-gboolean sipe_webticket_request(struct sipe_core_private *sipe_private,
-				struct sipe_svc_session *session,
-				const gchar *base_uri,
-				const gchar *port_name,
-				sipe_webticket_callback *callback,
-				gpointer callback_data);
+gboolean sipe_webticket_request_with_port(struct sipe_core_private *sipe_private,
+					  struct sipe_svc_session *session,
+					  const gchar *base_uri,
+					  const gchar *port_name,
+					  sipe_webticket_callback *callback,
+					  gpointer callback_data);
+
+/**
+ * Request a Web Ticket for Web Service URI with Authentication URI
+ *
+ * NOTE: the callback can be called immediately if the Web Ticket is cached.
+ *       The callback data must therefore be properly initialized already.
+ *
+ * @param sipe_private  SIPE core private data
+ * @param base_uri      URI
+ * @param auth_uri      Authentication URI
+ * @param callback      callback function
+ * @param callback_data callback data
+ * @return              @c TRUE if web ticket fetch was triggered
+ */
+gboolean sipe_webticket_request_with_auth(struct sipe_core_private *sipe_private,
+					  struct sipe_svc_session *session,
+					  const gchar *base_uri,
+					  const gchar *auth_uri,
+					  sipe_webticket_callback *callback,
+					  gpointer callback_data);
 
 /**
  * Free webticket data

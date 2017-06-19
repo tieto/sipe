@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -50,7 +50,7 @@ append_attribute(struct sdpmedia *media, gchar *attr)
 }
 
 static gboolean
-parse_attributes(struct sdpmsg *smsg, gchar *msg) {
+parse_attributes(struct sdpmsg *smsg, const gchar *msg) {
 	gchar		**lines = g_strsplit(msg, "\r\n", 0);
 	gchar		**ptr = lines;
 
@@ -235,6 +235,8 @@ parse_candidates(GSList *attrs, SipeIceVersion *ice_version, GSList **candidates
 
 	g_return_val_if_fail(*candidates == NULL, FALSE);
 
+	*ice_version = SIPE_ICE_NO_ICE;
+
 	while ((attr = sipe_utils_nameval_find_instance(attrs, "candidate", i++))) {
 		gchar **tokens = g_strsplit_set(attr, " ", 0);
 		gboolean parsed_ok;
@@ -262,9 +264,6 @@ parse_candidates(GSList *attrs, SipeIceVersion *ice_version, GSList **candidates
 			return FALSE;
 		}
 	}
-
-	if (!(*candidates))
-		*ice_version = SIPE_ICE_NO_ICE;
 
 	if (*ice_version == SIPE_ICE_RFC_5245) {
 		const gchar *username = sipe_utils_nameval_find(attrs, "ice-ufrag");
@@ -366,8 +365,8 @@ parse_codecs(GSList *attrs, SipeMediaType type, GSList **codecs)
 		struct sdpcodec *codec;
 		gchar **tokens;
 
-		tokens = g_strsplit_set(attr, " /", 3);
-		if (g_strv_length(tokens) != 3) {
+		tokens = g_strsplit_set(attr, " /", 4);
+		if (g_strv_length(tokens) < 3) {
 			g_strfreev(tokens);
 			return FALSE;
 		}
@@ -377,6 +376,10 @@ parse_codecs(GSList *attrs, SipeMediaType type, GSList **codecs)
 		codec->name = g_strdup(tokens[1]);
 		codec->clock_rate = atoi(tokens[2]);
 		codec->type = type;
+
+		if (type == SIPE_MEDIA_AUDIO) {
+			codec->channels = tokens[3] ? atoi(tokens[3]) : 1;
+		}
 
 		g_strfreev(tokens);
 
@@ -422,7 +425,7 @@ parse_encryption_key(GSList *attrs, guchar **key, int *key_id)
 }
 
 struct sdpmsg *
-sdpmsg_parse_msg(gchar *msg)
+sdpmsg_parse_msg(const gchar *msg)
 {
 	struct sdpmsg *smsg = g_new0(struct sdpmsg, 1);
 	GSList *i;
@@ -432,19 +435,25 @@ sdpmsg_parse_msg(gchar *msg)
 		return NULL;
 	}
 
+	smsg->ice_version = SIPE_ICE_NO_ICE;
 	for (i = smsg->media; i; i = i->next) {
 		struct sdpmedia *media = i->data;
 		SipeMediaType type;
+		SipeIceVersion detected_ice_version;
 
-		if (!parse_candidates(media->attributes, &smsg->ice_version,
+		if (!parse_candidates(media->attributes, &detected_ice_version,
 				      &media->candidates)) {
 			sdpmsg_free(smsg);
 			return NULL;
 		}
 
-		if (!media->candidates && media->port != 0) {
-			// No a=candidate in SDP message, this seems to be MSOC 2005
-			media->candidates = create_legacy_candidates(smsg->ip, media->port);
+		if (media->port != 0) {
+			smsg->ice_version = detected_ice_version;
+
+			if (!media->candidates) {
+				// No a=candidate in SDP message, this seems to be MSOC 2005
+				media->candidates = create_legacy_candidates(smsg->ip, media->port);
+			}
 		}
 
 		if (sipe_strequal(media->name, "audio"))
@@ -452,6 +461,8 @@ sdpmsg_parse_msg(gchar *msg)
 		else if (sipe_strequal(media->name, "video"))
 			type = SIPE_MEDIA_VIDEO;
 		else if (sipe_strequal(media->name, "data"))
+			type = SIPE_MEDIA_APPLICATION;
+		else if (sipe_strequal(media->name, "applicationsharing"))
 			type = SIPE_MEDIA_APPLICATION;
 		else {
 			// Unknown media type

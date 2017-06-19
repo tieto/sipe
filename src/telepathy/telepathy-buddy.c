@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -498,7 +498,8 @@ static void request_contact_info(TpSvcConnectionInterfaceContactInfo *iface,
 	info  = convert_contact_info(buddy);
 	if (!info) {
 		dbus_g_method_return_error(context, error);
-		g_error_free(error);
+		if (error)
+			g_error_free(error);
 		return;
 	}
 

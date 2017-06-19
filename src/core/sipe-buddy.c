@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -344,6 +344,7 @@ void sipe_buddy_cleanup_local_list(struct sipe_core_private *sipe_private)
 struct sipe_buddy *sipe_buddy_find_by_uri(struct sipe_core_private *sipe_private,
 					  const gchar *uri)
 {
+	if (!uri) return(NULL);
 	return(g_hash_table_lookup(sipe_private->buddies->uri, uri));
 }
 
@@ -1051,12 +1052,12 @@ static void ms_dlx_webticket(struct sipe_core_private *sipe_private,
 static void ms_dlx_webticket_request(struct sipe_core_private *sipe_private,
 				     struct ms_dlx_data *mdd)
 {
-	if (!sipe_webticket_request(sipe_private,
-				    mdd->session,
-				    sipe_private->dlx_uri,
-				    "AddressBookWebTicketBearer",
-				    ms_dlx_webticket,
-				    mdd)) {
+	if (!sipe_webticket_request_with_port(sipe_private,
+					      mdd->session,
+					      sipe_private->dlx_uri,
+					      "AddressBookWebTicketBearer",
+					      ms_dlx_webticket,
+					      mdd)) {
 		SIPE_DEBUG_ERROR("ms_dlx_webticket_request: couldn't request webticket for %s",
 				 sipe_private->dlx_uri);
 		mdd->failed_callback(sipe_private, mdd);
@@ -1971,11 +1972,42 @@ void sipe_buddy_update_photo(struct sipe_core_private *sipe_private,
 				gchar *ews_url = sipe_xml_data(sipe_xml_child(xml, "ewsUrl"));
 				gchar *email = sipe_xml_data(sipe_xml_child(xml, "primarySMTP"));
 
-				if (!is_empty(ews_url) && !is_empty(email))
+				if (!is_empty(ews_url) && !is_empty(email)) {
+					/*
+					 * Workaround for missing Office 365 buddy icons
+					 *
+					 * (All?) Office 365 contact cards have the following
+					 * XML embedded as the photo URI XML node text:
+					 *
+					 *    <ewsUrl>https://outlook.office365.com/EWS/Exchange.asmx/WSSecurity</ewsUrl>
+					 *    <primarySMTP>user@company.com</primarySMTP>
+					 *
+					 * The simple HTTP request by get_user_photo_request()
+					 * is rejected with 401. But the response contains
+					 *
+					 *    WWW-Authenticate: Basic Realm=""
+					 *
+					 * to which the HTTP transport answers with a retry
+					 * using Basic authentication. That in turn is rejected
+					 * with 500 and thus the buddy icon retrieval fails.
+					 *
+					 * As a quick workaround strip the trailing "/WSSecurity"
+					 * from the URL. The HTTP request for the buddy icon
+					 * retrieval will work with this stripped URL.
+					 *
+					 * @TODO: this is probably not the correct approach.
+					 *        get_user_photo_request() should be updated
+					 *        to support also a webticket request.
+					 */
+					gchar *tmp = g_strrstr(ews_url, "/WSSecurity");
+					if (tmp)
+						*tmp = '\0';
+
 					data->request = get_user_photo_request(sipe_private,
 									       data,
 									       ews_url,
 									       email);
+				}
 
 				g_free(email);
 				g_free(ews_url);

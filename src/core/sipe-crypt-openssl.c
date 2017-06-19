@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -48,27 +48,26 @@ static void openssl_oneshot_crypt(const EVP_CIPHER *type,
 				  const guchar *plaintext, gsize plaintext_length,
 				  guchar *encrypted_text)
 {
-	EVP_CIPHER_CTX ctx;
+	EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 	int encrypted_length = 0;
 
 	/* initialize context */
-	EVP_CIPHER_CTX_init(&ctx);
-	EVP_EncryptInit_ex(&ctx, type, NULL, key, NULL);
+	EVP_EncryptInit_ex(ctx, type, NULL, key, NULL);
 
 	/* set encryption parameters */
 	if (key_length)
-		EVP_CIPHER_CTX_set_key_length(&ctx, key_length);
-	EVP_EncryptInit_ex(&ctx, NULL, NULL, key, NULL);
+		EVP_CIPHER_CTX_set_key_length(ctx, key_length);
+	EVP_EncryptInit_ex(ctx, NULL, NULL, key, NULL);
 
 	/* encrypt */
-	EVP_EncryptUpdate(&ctx,
+	EVP_EncryptUpdate(ctx,
 			  encrypted_text, &encrypted_length,
 			  plaintext, plaintext_length);
 	encrypted_text += encrypted_length;
-	EVP_EncryptFinal_ex(&ctx, encrypted_text, &encrypted_length);
+	EVP_EncryptFinal_ex(ctx, encrypted_text, &encrypted_length);
 
 	/* cleanup */
-	EVP_CIPHER_CTX_cleanup(&ctx);
+	EVP_CIPHER_CTX_free(ctx);
 }
 
 /* DES CBC with 56-bit key */
@@ -154,10 +153,9 @@ static gpointer openssl_EVP_init(const EVP_CIPHER *type,
 				 gsize key_length,
 				 const guchar *iv)
 {
-	EVP_CIPHER_CTX *ctx = g_malloc(sizeof(EVP_CIPHER_CTX));
+	EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
 
 	/* initialize context */
-	EVP_CIPHER_CTX_init(ctx);
 	EVP_EncryptInit_ex(ctx, type, NULL, key, iv);
 
 	/* set encryption parameters */
@@ -183,8 +181,7 @@ void sipe_crypt_ft_stream(gpointer context,
 
 void sipe_crypt_ft_destroy(gpointer context)
 {
-	EVP_CIPHER_CTX_cleanup(context);
-	g_free(context);
+	EVP_CIPHER_CTX_free(context);
 }
 
 /* Stream RC4 cipher for TLS with variable key length */
@@ -203,8 +200,7 @@ void sipe_crypt_tls_stream(gpointer context,
 
 void sipe_crypt_tls_destroy(gpointer context)
 {
-	EVP_CIPHER_CTX_cleanup(context);
-	g_free(context);
+	EVP_CIPHER_CTX_free(context);
 }
 
 /* Block AES-CBC cipher for TLS */
@@ -245,8 +241,7 @@ void sipe_crypt_tls_block(const guchar *key, gsize key_length,
 		if (context) {
 			int tmp;
 			EVP_EncryptUpdate(context, out, &tmp, in, length);
-			EVP_CIPHER_CTX_cleanup(context);
-			g_free(context);
+			EVP_CIPHER_CTX_free(context);
 		}
 	}
 }

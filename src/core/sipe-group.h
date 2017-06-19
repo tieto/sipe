@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,6 +39,14 @@ struct sipe_group *sipe_group_find_by_id(struct sipe_core_private *sipe_private,
 struct sipe_group *sipe_group_find_by_name(struct sipe_core_private *sipe_private,
 					   const gchar * name);
 
+/**
+ * Request creation of group @c name on the server and add buddy @c who to it
+ *
+ * @param sipe_private SIPE core data
+ * @param trans        UCS transaction (@c NULL when UCS is not in use)
+ * @param name         name of group
+ * @param who          SIP URI of buddy (may be @c NULL, i.e. empty group)
+ */
 void sipe_group_create(struct sipe_core_private *sipe_private,
 		       struct sipe_ucs_transaction *trans,
 		       const gchar *name,

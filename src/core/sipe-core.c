@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -86,6 +86,7 @@
 #include "sipe-group.h"
 #include "sipe-groupchat.h"
 #include "sipe-http.h"
+#include "sipe-lync-autodiscover.h"
 #include "sipe-media.h"
 #include "sipe-mime.h"
 #include "sipe-nls.h"
@@ -132,6 +133,9 @@ static const gchar * const sipe_core_build_options[] = {
 #endif
 #ifdef HAVE_XDATA
 	"Lync FT",
+#endif
+#ifdef HAVE_APPSHARE
+	"Application Sharing",
 #endif
 #endif
 
@@ -192,7 +196,6 @@ gchar *sipe_core_about(void)
 		" - Microsoft Office Communications Server 2007<br/>"
 		" - Microsoft Live Communications Server 2005<br/>"
 		" - Microsoft Live Communications Server 2003<br/>"
-		" - Reuters Messaging<br/>"
 		"<br/>"
 		/* 2 */   "%s: <a href=\"" PACKAGE_URL "\">" PACKAGE_URL "</a><br/>"
 		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/p/sipe/discussion/688534/\">%s</a><br/>"
@@ -261,8 +264,11 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 {
 	struct sipe_core_private *sipe_private;
 	gchar **user_domain;
+	gchar *options = g_strjoinv(" / ", (gchar **) sipe_core_build_options);
 
-	SIPE_DEBUG_INFO("sipe_core_allocate: SIPE version " SIPE_CORE_VERSION " signin_name '%s'", signin_name);
+	SIPE_LOG_INFO("sipe_core_allocate: SIPE version " SIPE_CORE_VERSION "%s)", options);
+	g_free(options);
+	SIPE_DEBUG_INFO("sipe_core_allocate: signin_name '%s'", signin_name);
 
 	/* ensure that sign-in name doesn't contain invalid characters */
 	if (strpbrk(signin_name, "\t\v\r\n") != NULL) {
@@ -345,6 +351,7 @@ struct sipe_core_public *sipe_core_allocate(const gchar *signin_name,
 	sipe_private->our_publications = g_hash_table_new_full(g_str_hash, g_str_equal,
 							       g_free, (GDestroyNotify)g_hash_table_destroy);
 	sipe_subscriptions_init(sipe_private);
+	sipe_lync_autodiscover_init(sipe_private);
 	sipe_ews_autodiscover_init(sipe_private);
 	sipe_status_set_activity(sipe_private, SIPE_ACTIVITY_UNSET);
 
@@ -374,9 +381,6 @@ void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
 
 void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 {
-	g_free(sipe_private->epid);
-	sipe_private->epid = NULL;
-
 	sipe_http_free(sipe_private);
 	sip_transport_disconnect(sipe_private);
 
@@ -401,6 +405,10 @@ void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 	sipe_private->focus_factory_uri = NULL;
 
 	sipe_groupchat_free(sipe_private);
+
+	while (sipe_private->lync_autodiscover_servers)
+		sipe_private->lync_autodiscover_servers =
+			sipe_lync_autodiscover_pop(sipe_private->lync_autodiscover_servers);
 }
 
 void sipe_core_deallocate(struct sipe_core_public *sipe_public)
@@ -429,6 +437,7 @@ void sipe_core_deallocate(struct sipe_core_public *sipe_public)
 	sipe_svc_free(sipe_private);
 	sipe_webticket_free(sipe_private);
 	sipe_ucs_free(sipe_private);
+	sipe_lync_autodiscover_free(sipe_private);
 
 	if (sipe_backend_connection_is_valid(SIPE_CORE_PUBLIC)) {
 		sipe_subscriptions_unsubscribe(sipe_private);
