@@ -1,3 +1,13 @@
-version 1.21.1 "Bug Fixes I" (2016-05-28)
-	- various bug fixes in media support (Jakub Adam)
-	- configure no longer ignores CFLAGS/LDFLAGS/LIBS (Stefan Becker)
+version 1.22.1 "Bug Fixes I" (2017-06-11)
+	- Fixed #320: Multiple client detection broken (Stefan Becker)
+	- speed up Lync Autodiscover by using AccessLocation (Andrey Vaynberger)
+	- adium: update build instructions for Xcode 7.x or newer (Stefan Becker)
+	  * the build environment used for releases 1.22.0 or older (Xcode 6.x
+	    on OS X 10.11) is no longer available to the project
+	  * releases starting with 1.??.? will use Xcode 8.x on macOS 10.12
+	  * build target continues to be OS X 10.9
+	- purple: avoid rare SSL read deadlock (Stefan Becker)
+	- various minor fixes (Michael Olbrich)
+	- crypto: make code compile with OpenSSL 1.1.0 (Stefan Becker)
+	- drop references to Reuters Messaging (Stefan Becker)
+	- updated translations: Lithuanian (lt), Russian (ru), Swedish (sv), Turkish (tr)

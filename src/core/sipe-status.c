@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -29,7 +29,6 @@
 
 #include <glib.h>
 
-#include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-cal.h"
 #include "sipe-core.h"
@@ -37,7 +36,6 @@
 #include "sipe-nls.h"
 #include "sipe-ocs2005.h"
 #include "sipe-ocs2007.h"
-#include "sipe-schedule.h"
 #include "sipe-status.h"
 #include "sipe-utils.h"
 

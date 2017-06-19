@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -27,6 +27,7 @@
 
 #include <glib.h>
 
+#include "sip-transport.h"
 #include "sipe-common.h"
 #include "sipe-crypt.h"
 #include "uuid.h"
@@ -63,7 +64,12 @@ void sipe_backend_debug(sipe_debug_level level,
 	g_free(newformat);
 }
 
-const gchar *sipe_backend_network_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+const gchar *sip_transport_epid(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private)
+{
+	return(NULL);
+}
+
+const gchar *sip_transport_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_private *sipe_private)
 {
 	return(NULL);
 }
@@ -78,6 +84,14 @@ char *sipe_get_epid(SIPE_UNUSED_PARAMETER const char *self_sip_uri,
 		    SIPE_UNUSED_PARAMETER const char *ip_address)
 {
 	return(NULL);
+}
+
+/* needed when linking against NSS */
+void md4sum(const guchar *data, gsize length, guchar *digest);
+void md4sum(SIPE_UNUSED_PARAMETER const guchar *data,
+	    SIPE_UNUSED_PARAMETER gsize length,
+	    SIPE_UNUSED_PARAMETER guchar *digest)
+{
 }
 
 /*

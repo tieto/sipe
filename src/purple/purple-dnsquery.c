@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -45,7 +45,6 @@
 
 #endif
 
-#include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
 
@@ -105,7 +104,8 @@ static void dns_a_response(GObject *source,
 			address_str ? query->port : 0);
 
 	g_free(address_str);
-	g_error_free(error);
+	if (error)
+		g_error_free(error);
 	g_resolver_free_addresses(hosts);
 	sipe_dns_query_free(query);
 }
@@ -238,7 +238,8 @@ static void dns_srv_response(GObject *source,
 				g_srv_target_get_port(targets->data));
 	}
 
-	g_error_free(error);
+	if (error)
+		g_error_free(error);
 	g_resolver_free_targets(targets);
 	sipe_dns_query_free(query);
 }

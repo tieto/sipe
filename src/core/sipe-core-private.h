@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@ struct sipe_groupchat;
 struct sipe_groups;
 struct sipe_http;
 struct sipe_http_request;
+struct sipe_lync_autodiscover;
 struct sipe_media_call_private;
 struct sipe_svc;
 struct sipe_ucs;
@@ -52,6 +53,7 @@ struct sipe_core_private {
 
 	/* sip-transport.c private data */
 	struct sip_transport *transport;
+	GSList *lync_autodiscover_servers;           /* Lync autodiscover */
 	const struct sip_service_data *service_data; /* autodiscovery SRV records */
 	const struct sip_address_data *address_data; /* autodiscovery A records */
 	guint transport_type;
@@ -68,7 +70,6 @@ struct sipe_core_private {
 	/* SIPE protocol information */
 	gchar *contact;
 	gchar *register_callid;
-	gchar *epid;
 	gchar *focus_factory_uri;
 	GSList *sessions;
 	GSList *sessions_to_accept;
@@ -102,6 +103,9 @@ struct sipe_core_private {
 
 	/* EWS autodiscover */
 	struct sipe_ews_autodiscover *ews_autodiscover;
+
+	/* Lync autodiscover */
+	struct sipe_lync_autodiscover *lync_autodiscover;
 
 	/*
 	 * 2005 Custom XML piece
@@ -213,6 +217,8 @@ struct sipe_core_private {
 #define SIPE_CORE_PRIVATE_FLAG_SSO                0x00800000
 /* server is Lync 2013+ */
 #define SIPE_CORE_PRIVATE_FLAG_LYNC2013           0x00400000
+/* server is Skype for Business (RTC/6.0 +) */
+#define SIPE_CORE_PRIVATE_FLAG_SFB                0x00200000
 
 #define SIPE_CORE_PUBLIC_FLAG_IS(flag)    \
 	((sipe_private->public.flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)

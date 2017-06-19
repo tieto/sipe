@@ -1,7 +1,7 @@
 Compiling SIPE plugin for Adium
 ===============================
 
-To compile the Adium plugin you will need XCode and the source code from
+To compile the Adium plugin you will need Xcode and the source code from
 the following URLs:
 
 * Adium 1.5+ code: http://trac.adium.im/wiki/GettingNewestAdiumSource
@@ -32,3 +32,23 @@ NOTE: please always make sure that the correct scheme has been selected by
 
 Now you can just select Product -> Build and after a short while you should
 get a SIPEAdiumPlugin binary that you can install into your Adium application. 
+
+NOTE: Xcode 7.x and newer:
+
+* Xcode 6.4 no longer runs on macOS 10.12
+* SDKs for OS X 10.11 or newer no longer contain support for OpenSSL. See
+
+      https://github.com/devernay/xcodelegacy
+
+  how to extract & install SDKs for
+
+    * OS X 10.9 & 10.10 from the Xcode 6.4 installation package
+    * OS X 10.11 from the Xcode 7.3.1 installation package
+
+* Base SDK selection under "Build Settings" is no longer global. You have to
+  switch from "Combined" to "Levels" mode and change the Base SDK on all
+  levels. That includes the Adium sub-project too!
+* Disable "Implicitly Link Objective-C Runtime Support" under "Language -
+  Objective C" to avoid linker errors.
+* Ignore the errors "OCUnit is deprecated" by clicking on them and then
+  selecting "Not Now" in the dialog that pops up.

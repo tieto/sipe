@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,14 +23,30 @@
 /**
  * Digest routines implementation based on OpenSSL
  */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <openssl/evp.h>
 #include <openssl/hmac.h>
+#if !(defined(HAVE_GSSAPI_ONLY) || defined(HAVE_SSPI))
+#include <openssl/md4.h>
+#endif
 #include <openssl/md5.h>
+#include <openssl/opensslv.h>
 #include <openssl/sha.h>
 
 #include "glib.h"
 
 #include "sipe-digest.h"
+
+#if !(defined(HAVE_GSSAPI_ONLY) || defined(HAVE_SSPI))
+/* One-shot MD4 digest - only used by internal NTLMv2 implementation */
+void sipe_digest_md4(const guchar *data, gsize length, guchar *digest)
+{
+	MD4(data, length, digest);
+}
+#endif
 
 /* One-shot MD5/SHA-1 digests */
 void sipe_digest_md5(const guchar *data, gsize length, guchar *digest)
@@ -61,10 +77,15 @@ void sipe_digest_hmac_sha1(const guchar *key, gsize key_length,
 /* Stream HMAC(SHA1) digest for file transfer */
 gpointer sipe_digest_ft_start(const guchar *sha1_digest)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	HMAC_CTX *ctx = g_malloc(sizeof(HMAC_CTX));
 	HMAC_CTX_init(ctx);
+#else
+	/* OpenSSL 1.1.0 or newer */
+	HMAC_CTX *ctx = HMAC_CTX_new();
+#endif
 	/* used are only the first 16 bytes of the 20 byte SHA1 digest */
-	HMAC_Init(ctx, sha1_digest, 16, EVP_sha1());
+	HMAC_Init_ex(ctx, sha1_digest, 16, EVP_sha1(), NULL);
 	return(ctx);
 }
 
@@ -80,8 +101,13 @@ void sipe_digest_ft_end(gpointer context, guchar *digest)
 
 void sipe_digest_ft_destroy(gpointer context)
 {
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
 	HMAC_CTX_cleanup(context);
 	g_free(context);
+#else
+	/* OpenSSL 1.1.0 or newer */
+	HMAC_CTX_free(context);
+#endif
 }
 
 /* Stream digests, e.g. for TLS */

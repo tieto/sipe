@@ -217,7 +217,7 @@ ft_start(PurpleXfer *xfer)
 			flags = 0;
 		}
 		/* @TODO: ignoring potential error return - how to handle? */
-		fcntl(purple_xfer_get_fd(xfer), F_SETFL, flags | O_NONBLOCK);
+		(void) fcntl(purple_xfer_get_fd(xfer), F_SETFL, flags | O_NONBLOCK);
 	}
 
 	if (ft->ft_start) {

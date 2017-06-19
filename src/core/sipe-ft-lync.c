@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2014-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2014-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -220,8 +220,9 @@ create_pipe(int pipefd[2])
 		return FALSE;
 	}
 
-	fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL) | O_NONBLOCK);
-	fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL) | O_NONBLOCK);
+	/* @TODO: ignoring potential error return - how to handle? */
+	(void) fcntl(pipefd[0], F_SETFL, fcntl(pipefd[0], F_GETFL) | O_NONBLOCK);
+	(void) fcntl(pipefd[1], F_SETFL, fcntl(pipefd[1], F_GETFL) | O_NONBLOCK);
 
 	return TRUE;
 #endif
@@ -459,7 +460,6 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 				struct sipmsg *msg)
 {
 	struct sipe_file_transfer_lync *ft_private;
-	struct sipe_media_call *call;
 	struct sipe_media_stream *stream;
 
 	ft_private = g_new0(struct sipe_file_transfer_lync, 1);
@@ -472,40 +472,45 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 		return;
 	}
 
-	/* Replace multipart message body with the selected SDP part and
-	 * initialize media session as if invited to a media call. */
-	g_free(msg->body);
-	msg->body = ft_private->sdp;
-	msg->bodylen = strlen(msg->body);
+	/* Use the selected SDP part of multipart SIP message to initialize
+	 * media session. */
+	ft_private->call = process_incoming_invite_call(sipe_private,
+							msg,
+							ft_private->sdp);
+	g_free(ft_private->sdp);
 	ft_private->sdp = NULL;
 
-	ft_private->call = process_incoming_invite_call(sipe_private, msg);
 	if (!ft_private->call) {
 		sip_transport_response(sipe_private, msg, 500, "Server Internal Error", NULL);
 		sipe_file_transfer_lync_free(ft_private);
 		return;
 	}
 
-	call = ft_private->call;
-
 	ft_private->public.ft_init = ft_lync_incoming_init;
 	ft_private->public.ft_request_denied = ft_lync_request_denied;
 	ft_private->public.ft_cancelled = ft_lync_incoming_cancelled;
 	ft_private->public.ft_end = ft_lync_end;
 
-	ft_private->call_reject_parent_cb = call->call_reject_cb;
-	call->call_reject_cb = call_reject_cb;
+	ft_private->call_reject_parent_cb = ft_private->call->call_reject_cb;
+	ft_private->call->call_reject_cb = call_reject_cb;
 
-	stream = sipe_core_media_get_stream_by_id(call, "data");
-	stream->candidate_pairs_established_cb = candidate_pairs_established_cb;
-	stream->read_cb = read_cb;
-	sipe_media_stream_add_extra_attribute(stream, "recvonly", NULL);
-	sipe_media_stream_set_data(stream, ft_private,
-				   (GDestroyNotify)sipe_file_transfer_lync_free);
+	stream = sipe_core_media_get_stream_by_id(ft_private->call, "data");
+	if (stream) {
+		stream->candidate_pairs_established_cb = candidate_pairs_established_cb;
+		stream->read_cb = read_cb;
+		sipe_media_stream_add_extra_attribute(stream, "recvonly", NULL);
+		sipe_media_stream_set_data(stream, ft_private,
+					   (GDestroyNotify)sipe_file_transfer_lync_free);
 
-	sipe_backend_ft_incoming(SIPE_CORE_PUBLIC, SIPE_FILE_TRANSFER,
-				 call->with, ft_private->file_name,
-				 ft_private->file_size);
+		sipe_backend_ft_incoming(SIPE_CORE_PUBLIC, SIPE_FILE_TRANSFER,
+					 ft_private->call->with,
+					 ft_private->file_name,
+					 ft_private->file_size);
+	} else {
+		sip_transport_response(sipe_private, msg, 500, "Server Internal Error", NULL);
+		sipe_file_transfer_lync_free(ft_private);
+		return;
+	}
 }
 
 static void
@@ -751,7 +756,7 @@ ft_lync_outgoing_init(struct sipe_file_transfer *ft, const gchar *filename,
 	call->call_reject_cb = call_reject_cb;
 
 	stream = sipe_media_stream_add(call, "data", SIPE_MEDIA_APPLICATION,
-				       SIPE_ICE_RFC_5245, TRUE);
+				       SIPE_ICE_RFC_5245, TRUE, 0);
 	if (!stream) {
 		sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 					  _("Error occurred"),

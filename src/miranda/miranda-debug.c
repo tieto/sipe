@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-11 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,7 +58,7 @@ void sipe_backend_debug(sipe_debug_level level,
 
 	va_start(ap,format);
 
-	if (sipe_backend_debug_enabled()) {
+	if ((level < SIPE_DEBUG_LEVEL_LOWEST) || sipe_backend_debug_enabled()) {
 		gchar *msg = g_strdup_vprintf(format, ap);
 		sipe_backend_debug_literal(level, msg);
 		g_free(msg);

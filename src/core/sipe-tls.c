@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1087,6 +1087,8 @@ static void compile_encrypted_tls_record(struct tls_internal_state *state,
 		padding_length   = 0;
 		encrypted_length = message_length;
 	} else {
+		if (message_length < TLS_RECORD_HEADER_LENGTH) /* make Coverity happy */
+			return;
 		padding_length   = TLS_AES_CBC_BLOCK_LENGTH - (message_length - TLS_RECORD_HEADER_LENGTH + 1) % TLS_AES_CBC_BLOCK_LENGTH;
 		encrypted_length = message_length + padding_length + 1;
 	}

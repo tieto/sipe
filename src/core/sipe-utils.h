@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -107,16 +107,6 @@ struct sipe_transport_connection;
  * First hexadecimal digit is 0x4; last seven hexadecimal digits uniquely define the calendar.
  */
 #define SIPE_PUB_NOTE_OOF	400
-
-/**
- * Returns epid value.
- *
- * @param sipe_private (in) SIPE core private data
- *
- * @return epid. Must be g_free()'d.
- */
-gchar *
-get_epid(struct sipe_core_private *sipe_private);
 
 /**
  * Returns UUID value.

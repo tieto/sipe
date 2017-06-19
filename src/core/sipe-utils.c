@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 
 #include <glib.h>
 
+#include "sip-transport.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"    /* to ensure same API for backends */
 #include "sipe-core-private.h"
@@ -192,25 +193,9 @@ const gchar *sipe_get_no_sip_uri(const gchar *sip_uri)
 	}
 }
 
-gchar *
-get_epid(struct sipe_core_private *sipe_private)
-{
-	if (!sipe_private->epid) {
-		gchar *self_sip_uri = sip_uri_self(sipe_private);
-		sipe_private->epid = sipe_get_epid(self_sip_uri,
-						   g_get_host_name(),
-						   sipe_backend_network_ip_address(SIPE_CORE_PUBLIC));
-		g_free(self_sip_uri);
-	}
-	return g_strdup(sipe_private->epid);
-}
-
 gchar *get_uuid(struct sipe_core_private *sipe_private)
 {
-	gchar *epid = get_epid(sipe_private);
-	gchar *uuid = generateUUIDfromEPID(epid);
-	g_free(epid);
-	return(uuid);
+	return(generateUUIDfromEPID(sip_transport_epid(sipe_private)));
 }
 
 
@@ -219,10 +204,8 @@ sipe_get_pub_instance(struct sipe_core_private *sipe_private,
 		      int publication_key)
 {
 	unsigned res = 0;
-	gchar *epid = get_epid(sipe_private);
 
-	sscanf(epid, "%08x", &res);
-	g_free(epid);
+	sscanf(sip_transport_epid(sipe_private), "%08x", &res);
 
 	if (publication_key == SIPE_PUB_DEVICE) {
 		/* as is */

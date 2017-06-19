@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -638,7 +638,6 @@ void sipe_ocs2007_change_access_level(struct sipe_core_private *sipe_private,
 				sipe_send_container_members_prepare(current_container_id, container->version, "remove", type, value, &container_xmls);
 				/* remove member from our cache, to be able to recalculate AL below */
 				container->members = g_slist_remove(container->members, member);
-				current_container_id = -1;
 			}
 		}
 	}
@@ -1350,6 +1349,21 @@ static gchar *sipe_publish_get_category_cal_free_busy(struct sipe_core_private *
 	return res;
 }
 
+#ifdef HAVE_VV
+#define SIPE_PUB_XML_DEVICE_VV \
+				"<voice capture=\"true\" render=\"true\" publish=\"false\"/>"\
+				"<video capture=\"true\" render=\"true\" publish=\"false\"/>"
+#else
+#define SIPE_PUB_XML_DEVICE_VV
+#endif
+
+#ifdef HAVE_FREERDP
+#define SIPE_PUB_XML_DEVICE_APPSHARE \
+				"<applicationSharing capture=\"true\" render=\"true\" publish=\"false\"/>"\
+				"<contentPowerPoint capture=\"true\" render=\"true\" publish=\"false\"/>"
+#else
+#define SIPE_PUB_XML_DEVICE_APPSHARE
+#endif
 
 /**
  * Publishes 'device' category.
@@ -1367,6 +1381,8 @@ static gchar *sipe_publish_get_category_cal_free_busy(struct sipe_core_private *
 				"<text capture=\"true\" render=\"true\" publish=\"false\"/>"\
 				"<gifInk capture=\"false\" render=\"true\" publish=\"false\"/>"\
 				"<isfInk capture=\"false\" render=\"true\" publish=\"false\"/>"\
+				SIPE_PUB_XML_DEVICE_VV\
+				SIPE_PUB_XML_DEVICE_APPSHARE\
 			"</capabilities>"\
 			"<timezone>%s</timezone>"\
 			"<machineName>%s</machineName>"\
@@ -1385,8 +1401,8 @@ static gchar *sipe_publish_get_category_device(struct sipe_core_private *sipe_pr
 	guint device_instance = sipe_get_pub_instance(sipe_private, SIPE_PUB_DEVICE);
 	/* key is <category><instance><container> */
 	gchar *key = g_strdup_printf("<%s><%u><%u>", "device", device_instance, 2);
-	struct sipe_publication *publication =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "device"), key);
+	GHashTable *tmp = g_hash_table_lookup(sipe_private->our_publications, "device");
+	struct sipe_publication *publication = tmp ? g_hash_table_lookup(tmp, key) : NULL;
 
 	g_free(key);
 
@@ -2340,13 +2356,15 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 			sipe_private->our_publications ? (int) g_hash_table_size(sipe_private->our_publications) : -1);
 
 	/* active clients for user account */
-	if (g_hash_table_size(devices) > 1) {
+	if (g_hash_table_size(devices) == 0) {
+		/* updated roaming information without device information - no need to update MPOP flag */
+	} else if (g_hash_table_size(devices) > 1) {
 		SIPE_CORE_PRIVATE_FLAG_SET(MPOP);
-		SIPE_DEBUG_INFO("sipe_ocs2007_process_roaming_self: multiple clients detected (%d)",
-				g_hash_table_size(devices));
+		SIPE_LOG_INFO("sipe_ocs2007_process_roaming_self: multiple clients detected (%d)",
+			      g_hash_table_size(devices));
 	} else {
 		SIPE_CORE_PRIVATE_FLAG_UNSET(MPOP);
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_ocs2007_process_roaming_self: single client detected");
+		SIPE_LOG_INFO_NOFORMAT("sipe_ocs2007_process_roaming_self: single client detected");
 	}
 	g_hash_table_destroy(devices);
 

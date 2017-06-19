@@ -1011,6 +1011,8 @@ static void chatserver_response(struct sipe_core_private *sipe_private,
 		for (r = response_table; r->key; r++) {
 			if (sipe_strcase_equal(id, r->key)) {
 				(*r->handler)(sipe_private, session, result, message, data);
+				/* session can be invalid now */
+				session = NULL;
 				break;
 			}
 		}
