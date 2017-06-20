@@ -693,12 +693,22 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 	return g_string_free(result, FALSE);
 }
 
+static gint
+remote_candidates_sort_cb(struct sdpcandidate *c1, struct sdpcandidate *c2)
+{
+	return c1->component - c2->component;
+}
+
 static gchar *
 remote_candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 {
 	GString *result = g_string_new("");
 
 	if (candidates) {
+		// Sort the candidates by increasing component IDs.
+		candidates = g_slist_sort(candidates,
+					  (GCompareFunc)remote_candidates_sort_cb);
+
 		if (ice_version == SIPE_ICE_RFC_5245) {
 			GSList *i;
 			g_string_append(result, "a=remote-candidates:");
