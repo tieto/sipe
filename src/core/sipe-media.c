@@ -1279,6 +1279,7 @@ static void
 append_2007_fallback_if_needed(struct sipe_media_call_private *call_private)
 {
 	struct sipe_core_private *sipe_private = call_private->sipe_private;
+	const gchar *marker = sip_transport_sdp_address_marker(sipe_private);
 	const gchar *ip = sip_transport_ip_address(sipe_private);
 	gchar *body;
 
@@ -1293,11 +1294,12 @@ append_2007_fallback_if_needed(struct sipe_media_call_private *call_private)
 			       "Content-Transfer-Encoding: 7bit\r\n"
 			       "Content-Disposition: session; handling=optional; ms-proxy-2007fallback\r\n"
 			       "\r\n"
-			       "o=- 0 0 IN IP4 %s\r\n"
+			       "o=- 0 0 IN %s %s\r\n"
 			       "s=session\r\n"
-			       "c=IN IP4 %s\r\n"
+			       "c=IN %s %s\r\n"
 			       "m=audio 0 RTP/AVP\r\n",
-			       ip, ip);
+			       marker, ip,
+			       marker, ip);
 	sipe_media_add_extra_invite_section(SIPE_MEDIA_CALL,
 					    "multipart/alternative", body);
 }
