@@ -300,13 +300,15 @@ static void send_invite_response(struct sipe_core_private *sipe_private,
 {
 	gchar *body = g_strdup_printf(
 		"v=0\r\n"
-		"o=- 0 0 IN IP4 %s\r\n"
+		"o=- 0 0 IN %s %s\r\n"
 		"s=session\r\n"
-		"c=IN IP4 %s\r\n"
+		"c=IN %s %s\r\n"
 		"t=0 0\r\n"
 		"m=%s %d sip sip:%s\r\n"
 		"a=accept-types:" SDP_ACCEPT_TYPES "\r\n",
+		sip_transport_sdp_address_marker(sipe_private),
 		sip_transport_ip_address(sipe_private),
+		sip_transport_sdp_address_marker(sipe_private),
 		sip_transport_ip_address(sipe_private),
 		SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) ? "message" : "x-ms-message",
 		sip_transport_port(sipe_private),
