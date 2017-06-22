@@ -48,7 +48,8 @@
  *
  * Specification references:
  *
- *   - [MS-SIPAE]:    http://msdn.microsoft.com/en-us/library/cc431510.aspx
+ *   - [MS-SIPAE]: http://msdn.microsoft.com/en-us/library/cc431510.aspx
+ *   - RFC2732:    http://www.ietf.org/rfc/rfc2732.txt
  */
 
 #ifdef HAVE_CONFIG_H
@@ -106,7 +107,9 @@ struct sip_transport {
 	gchar *server_version;
 
 	gchar *epid;
-	gchar *ip_address;           /* local IP address of transport socket */
+	                             /* local IP address of transport socket   */
+	gchar *ip_address;   	     /* RAW X.X.X.X (IPv4),  X:X:...:X  (IPv6) */
+	gchar *uri_address;   	     /* URI X.X.X.X (IPv4), [X:X:...:X] (IPv6) */
 
 	gchar *user_agent;
 
@@ -775,7 +778,7 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 			method,
 			dialog && dialog->request ? dialog->request : url,
 			TRANSPORT_DESCRIPTOR,
-			transport->ip_address,
+			transport->uri_address,
 			transport->connection->client_port,
 			branch ? ";branch=" : "",
 			branch ? branch : "",
@@ -1012,7 +1015,7 @@ static void sip_transport_default_contact(struct sipe_core_private *sipe_private
 	sipe_private->contact = g_strdup_printf("<sip:%s:%d;maddr=%s;transport=%s>;proxy=replace",
 						sipe_private->username,
 						transport->connection->client_port,
-						transport->ip_address,
+						transport->uri_address,
 						TRANSPORT_DESCRIPTOR);
 }
 
@@ -1471,7 +1474,7 @@ static void do_register(struct sipe_core_private *sipe_private,
 				    "Allow-Events: presence\r\n"
 				    "ms-keep-alive: UAC;hop-hop=yes\r\n"
 				    "%s",
-			      transport->ip_address,
+			      transport->uri_address,
 			      transport->connection->client_port,
 			      TRANSPORT_DESCRIPTOR,
 			      uuid,
@@ -1523,6 +1526,7 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 
 		g_free(transport->server_name);
 		g_free(transport->server_version);
+		g_free(transport->uri_address);
 		g_free(transport->ip_address);
 		g_free(transport->epid);
 		g_free(transport->user_agent);
@@ -1866,6 +1870,11 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 	start_keepalive_timer(sipe_private, transport->keepalive_timeout);
 
 	transport->ip_address = sipe_backend_transport_ip_address(conn);
+	if (strchr(transport->ip_address, ':') != NULL)
+		/* RFC2732: Format for Literal IPv6 Addresses in URL's */
+		transport->uri_address = g_strdup_printf("[%s]", transport->ip_address);
+	else
+		transport->uri_address = g_strdup(transport->ip_address);
 	transport->epid       = sipe_get_epid(self_sip_uri,
 					      g_get_host_name(),
 					      transport->ip_address);
