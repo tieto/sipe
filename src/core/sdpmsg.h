@@ -102,3 +102,12 @@ void sdpcodec_free(struct sdpcodec *codec);
  * Deallocates @c sdpmedia.
  */
 void sdpmedia_free(struct sdpmedia *media);
+
+/**
+ * Get SDP address marker for IP address
+ *
+ * @param ip address
+ *
+ * @return address marker string for IP address
+ */
+const gchar *sdpmsg_address_marker(const gchar *ip);
