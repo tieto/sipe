@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -550,9 +550,12 @@ void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
 
 gboolean sipe_utils_ip_is_private(const char *ip)
 {
-	return g_str_has_prefix(ip, "10.")      ||
+	return /* IPv4 */
+	       g_str_has_prefix(ip, "10.")      ||
 	       g_str_has_prefix(ip, "172.16.")  ||
-	       g_str_has_prefix(ip, "192.168.");
+	       g_str_has_prefix(ip, "192.168.") ||
+	       /* IPV6 */
+	       g_str_has_prefix(ip, "fd");
 }
 
 gchar *sipe_utils_presence_key(const gchar *uri)
