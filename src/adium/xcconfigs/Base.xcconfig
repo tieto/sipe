@@ -12,7 +12,7 @@ INFOPLIST_PREPROCESS = YES
 MACOSX_DEPLOYMENT_TARGET = 10.8
 
 FRAMEWORK_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)"/** "../../../adium/Frameworks"
-HEADER_SEARCH_PATHS = "../../../adium/Frameworks/libglib.framework/Headers" "../../../adium/Frameworks/libpurple.framework/Headers" "../../../adium/Frameworks/libintl.framework/Headers" "$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers" "$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers" "$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers" ../purple ../api /usr/include/libxml2
+HEADER_SEARCH_PATHS = "../../../adium/Frameworks/libglib.framework/Headers" "../../../adium/Frameworks/libpurple.framework/Headers" "../../../adium/Frameworks/libintl.framework/Headers" "$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers" "$(BUILT_PRODUCTS_DIR)/AIUtilities.framework/Headers" "$(BUILT_PRODUCTS_DIR)/AdiumLibpurple.framework/Headers" ../purple ../api /usr/include/libxml2 . ../../../openssl-0.9.8za/include
 
 // Hack to work around how xcconfig pre-processor handles double-slash as a comment (even in a quoted string!!) :(
 SLASH=/
