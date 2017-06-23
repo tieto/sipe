@@ -93,7 +93,6 @@
 		B13FAC0F119D585A001CE037 /* sipe-xml.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD3119D585A001CE037 /* sipe-xml.c */; };
 		B13FAC13119D585A001CE037 /* sipmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD7119D585A001CE037 /* sipmsg.c */; };
 		B13FAC15119D585A001CE037 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD9119D585A001CE037 /* uuid.c */; };
-		B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAC60119D721E001CE037 /* libxml2.dylib */; };
 		B89F38821BDEB0D30017B509 /* sipe-ft-lync.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F38811BDEB0D30017B509 /* sipe-ft-lync.c */; };
 		B89F388D1BDEB0F00017B509 /* sipe-mime-common.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F388C1BDEB0F00017B509 /* sipe-mime-common.c */; };
 		B89F388F1BDEB10B0017B509 /* purple-plugin-common.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F388E1BDEB10B0017B509 /* purple-plugin-common.c */; };
@@ -273,7 +272,6 @@
 		B13FABD3119D585A001CE037 /* sipe-xml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-xml.c"; sourceTree = "<group>"; };
 		B13FABD7119D585A001CE037 /* sipmsg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sipmsg.c; sourceTree = "<group>"; };
 		B13FABD9119D585A001CE037 /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = uuid.c; sourceTree = "<group>"; };
-		B13FAC60119D721E001CE037 /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
 		B82FA4181847524B00AE581B /* sipe-cert-crypto-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-cert-crypto-openssl.c"; sourceTree = "<group>"; };
 		B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-crypt-openssl.c"; sourceTree = "<group>"; };
 		B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-digest-openssl.c"; sourceTree = "<group>"; };
@@ -306,7 +304,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,7 +404,6 @@
 		7B1E80001665C79300E0C654 /* Other Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				B13FAC60119D721E001CE037 /* libxml2.dylib */,
 			);
 			name = "Other Libraries";
 			sourceTree = "<group>";
