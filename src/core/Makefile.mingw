@@ -1,6 +1,6 @@
 ################################### tell Emacs this is a -*- makefile-gmake -*-
 #
-# Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #
@@ -70,7 +70,8 @@ PURPLE_INCLUDE_PATHS += -I$(PURPLE_TOP) \
 ##
 ##  SOURCES, OBJECTS
 ##
-CLEAN_C_SRC =		sip-soap.c \
+CLEAN_C_SRC =		sdpmsg.c \
+			sip-soap.c \
 			sip-transport.c \
 			sipe-conf.c \
 			sipe-core.c \
