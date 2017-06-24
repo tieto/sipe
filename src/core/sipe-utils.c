@@ -558,6 +558,11 @@ gboolean sipe_utils_ip_is_private(const char *ip)
 	       g_str_has_prefix(ip, "fd");
 }
 
+const gchar *sipe_utils_ip_sdp_address_marker(const gchar *ip)
+{
+	return(ip && strchr(ip, ':') ? "IP6" : "IP4");
+}
+
 gchar *sipe_utils_presence_key(const gchar *uri)
 {
 	return g_strdup_printf("<presence><%s>", uri);

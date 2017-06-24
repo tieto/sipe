@@ -761,7 +761,7 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 	if (media->port != 0) {
 		if (!sipe_strequal(msg->ip, media->ip)) {
 			media_conninfo = g_strdup_printf("c=IN %s %s\r\n",
-							 sdpmsg_address_marker(media->ip),
+							 sipe_utils_ip_sdp_address_marker(media->ip),
 							 media->ip);
 		}
 
@@ -845,7 +845,7 @@ sdpmsg_to_string(const struct sdpmsg *msg)
 {
 	GString *body = g_string_new(NULL);
 	GSList *i;
-	const gchar *marker = sdpmsg_address_marker(msg->ip);
+	const gchar *marker = sipe_utils_ip_sdp_address_marker(msg->ip);
 
 	g_string_append_printf(
 		body,
@@ -945,11 +945,6 @@ sdpmsg_free(struct sdpmsg *msg)
 				  (GDestroyNotify) sdpmedia_free);
 		g_free(msg);
 	}
-}
-
-const gchar *sdpmsg_address_marker(const gchar *ip)
-{
-	return(ip && strchr(ip, ':') ? "IP6" : "IP4");
 }
 
 /*

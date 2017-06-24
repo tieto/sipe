@@ -68,7 +68,6 @@
 #include "sip-sec-digest.h"
 #include "sip-transport.h"
 #include "sipe-backend.h"
-#include "sdpmsg.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-certificate.h"
@@ -1877,7 +1876,7 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 		transport->uri_address = g_strdup_printf("[%s]", transport->ip_address);
 	else
 		transport->uri_address = g_strdup(transport->ip_address);
-	transport->sdp_marker = sdpmsg_address_marker(transport->ip_address);
+	transport->sdp_marker = sipe_utils_ip_sdp_address_marker(transport->ip_address);
 	transport->epid       = sipe_get_epid(self_sip_uri,
 					      g_get_host_name(),
 					      transport->ip_address);
