@@ -4,11 +4,13 @@ Compiling SIPE plugin for Adium
 To compile the Adium plugin you will need Xcode and the source code from
 the following URLs:
 
-* Adium 1.5+ code: http://trac.adium.im/wiki/GettingNewestAdiumSource
-* SIPE code:       http://sourceforge.net/projects/sipe/files/sipe/
+- Adium 1.5+:      http://trac.adium.im/wiki/GettingNewestAdiumSource
+- OpenSSL 0.9.8za: https://www.openssl.org/source/old/0.9.x/openssl-0.9.8za.tar.gz
+- SIPE:            http://sourceforge.net/projects/sipe/files/sipe/
+
 
 1. Get Adium
--------------
+------------
 
 NOTE: you only have to do this step once. If you don't change the Adium
       source code, then you can reuse the results from this step in future
@@ -16,13 +18,32 @@ NOTE: you only have to do this step once. If you don't change the Adium
 
 Follow the instructions at their URL above.
 
-The directory needs to be called "adium" and at the same level as SIPE source
-code directory.
+The directory needs to be called "adium" and must be located at the same
+level as the SIPE source code directory.
 
-2. Build the SIPEAdiumPlugin Xcode project
+
+2. Get OpenSSL
+--------------
+
+NOTE: you only have to do this step once. If you don't change the OpenSSL
+      source code, then you can reuse the results from this step in future
+      SIPEAdiumPlugin builds.
+
+Execute the following commands in the Terminal application to download and
+unpack the source code:
+
+    $ cd my_working_directory
+    $ curl -o openssl-0.9.8za.tar.gz https://www.openssl.org/source/old/0.9.x/openssl-0.9.8za.tar.gz
+    $ tar -xf openssl-0.9.8za.tar.gz
+
+The directory needs to be called "openssl-0.9.8za" and must be located at
+the same level as the SIPE source code directory.
+
+
+3. Build the SIPEAdiumPlugin Xcode project
 ------------------------------------------
 
-In Xcode go to the Menu File -> Open..., browse to the locatio of your SIPE
+In Xcode go to the Menu File -> Open..., browse to the location of your SIPE
 source tree, go into the src/adium directory, select SIPEAdiumPlugin.xcodeproj
 and press "Open".
 
@@ -33,22 +54,42 @@ NOTE: please always make sure that the correct scheme has been selected by
 Now you can just select Product -> Build and after a short while you should
 get a SIPEAdiumPlugin binary that you can install into your Adium application. 
 
-NOTE: Xcode 7.x and newer:
 
-* Xcode 6.4 no longer runs on macOS 10.12
-* SDKs for OS X 10.11 or newer no longer contain support for OpenSSL. See
+4. Build SIPEAdiumPlugin for an older Max OS X release
+------------------------------------------------------
 
-      https://github.com/devernay/xcodelegacy
+If your Xcode does not have the SDK for the older Mac OS X release then please
+see
 
-  how to extract & install SDKs for
+    https://github.com/devernay/xcodelegacy
 
-    * OS X 10.9 & 10.10 from the Xcode 6.4 installation package
-    * OS X 10.11 from the Xcode 7.3.1 installation package
+how to extract & install SDKs for
 
-* Base SDK selection under "Build Settings" is no longer global. You have to
-  switch from "Combined" to "Levels" mode and change the Base SDK on all
-  levels. That includes the Adium sub-project too!
-* Disable "Implicitly Link Objective-C Runtime Support" under "Language -
-  Objective C" to avoid linker errors.
-* Ignore the errors "OCUnit is deprecated" by clicking on them and then
-  selecting "Not Now" in the dialog that pops up.
+    - OS X 10.9 & 10.10 from the Xcode 6.4 installation package
+    - OS X 10.11 from the Xcode 7.3.1 installation package
+
+Installing all SDKs in one go seems to break Xcode builds, so please make sure
+to install each SDK separately with
+
+    $ sudo ./XcodeLegacy.sh -osxXXXX install
+
+Xcode no longer seems to apply project build settings top-down. To make
+changes please
+
+    - select the SIPEAdiumPlugin or Adium project
+    - select the "Build Settings" tab
+    - change from "Basic" to "All" (on the left)
+    - change from "Combined" to "Levels" (in the middle)
+    - find the line with the setting you want to change (use search field)
+    - select that line
+    - change the setting at the right-most(!) place in that line
+    - you will notice that all places to the left change automatically
+
+Settings to change
+
+    SDK to    |  Base SDK  | Implicitly Link Objective-C  | Other
+    build for |            | Runtime Support (Adium only) |
+   -----------|------------|------------------------------|-------------------
+     10.11    | OS X 10.11 |    <No change necessary>     |
+     10.10    | OS X 10.10 |    <No change necessary>     | Adium <= 1.5.10.3
+     10.9     | OS X 10.9  |            No                | Adium <= 1.5.10.3
