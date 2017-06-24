@@ -1,5 +1,6 @@
 version 1.??.? "???" (????-??-??)
 	- Feature #99: IPv6 addresses in SIP & SDP messages (Stefan Becker)
+	- Feature #96: Support for OS X 10.11+ SDK (Stefan Becker)
 
 version 1.22.1 "Bug Fixes I" (2017-06-11)
 	- Fixed #320: Multiple client detection broken (Stefan Becker)
