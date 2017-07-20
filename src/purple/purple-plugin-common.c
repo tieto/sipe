@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -905,6 +905,9 @@ GList * sipe_purple_account_options()
 	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 	 */
 	option = purple_account_option_bool_new(_("Don't publish my calendar information"), "dont-publish", FALSE);
+	options = g_list_append(options, option);
+
+	option = purple_account_option_bool_new(_("Show profile pictures from web\n(potentially dangerous)"), "web-photo-allowed", FALSE);
 	options = g_list_append(options, option);
 
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");

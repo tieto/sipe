@@ -899,6 +899,11 @@ gboolean sipe_backend_uses_photo(void)
 	return(TRUE);
 }
 
+gboolean sipe_backend_buddy_web_photo_allowed(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
+{
+	return(FALSE);
+}
+
 static void buddy_photo_updated(struct sipe_backend_private *telepathy_private,
 				struct telepathy_buddy *buddy,
 				const gchar *photo,

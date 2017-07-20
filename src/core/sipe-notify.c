@@ -726,9 +726,20 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 				for (node = sipe_xml_child(card, "photo");
 				     node;
 				     node = sipe_xml_twin(node)) {
-					gchar *photo_url = sipe_xml_data(sipe_xml_child(node, "uri"));
-					gchar *hash = sipe_xml_data(sipe_xml_child(node, "hash"));
+					const gchar *type = sipe_xml_attribute(node, "type");
+					gchar *photo_url;
+					gchar *hash;
 					gboolean found = FALSE;
+
+					if (sipe_strequal(type, "default") &&
+					    !sipe_backend_buddy_web_photo_allowed(SIPE_CORE_PUBLIC)) {
+						SIPE_DEBUG_INFO("Skipping download of web profile picture "
+								"for %s", uri);
+						continue;
+					}
+
+					photo_url = sipe_xml_data(sipe_xml_child(node, "uri"));
+					hash = sipe_xml_data(sipe_xml_child(node, "hash"));
 
 					if (!is_empty(photo_url) && !is_empty(hash)) {
 						sipe_buddy_update_photo(sipe_private,
