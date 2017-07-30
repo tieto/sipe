@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -973,15 +973,6 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
  * @return @c TRUE if backend is photo capable, otherwise @FALSE
  */
 gboolean sipe_backend_uses_photo(void);
-
-/**
- * Checks whether the user has enabled downloading custom profile pictures from
- * web URIs.
- *
- * @param sipe_public The handle representing the protocol instance making the call
- * @return @c TRUE if web photos are allowed, otherwise @c FALSE
- */
-gboolean sipe_backend_buddy_web_photo_allowed(struct sipe_core_public *sipe_public);
 
 /**
  * Gives backend a photo image associated with a SIP URI. Backend has ownership

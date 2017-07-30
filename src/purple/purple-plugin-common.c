@@ -363,6 +363,12 @@ static gboolean get_dont_publish_flag(PurpleAccount *account)
 	return(purple_account_get_bool(account, "dont-publish", FALSE));
 }
 
+static gboolean get_allow_web_photo_flag(PurpleAccount *account)
+{
+	/* default is to not allow insecure download of buddy icons from web */
+	return purple_account_get_bool(account, "allow-web-photo", FALSE);
+}
+
 static void connect_to_core(PurpleConnection *gc,
 			    PurpleAccount *account,
 			    const gchar *password)
@@ -407,6 +413,9 @@ static void connect_to_core(PurpleConnection *gc,
 	SIPE_CORE_FLAG_UNSET(DONT_PUBLISH);
 	if (get_dont_publish_flag(account))
 		SIPE_CORE_FLAG_SET(DONT_PUBLISH);
+	SIPE_CORE_FLAG_UNSET(ALLOW_WEB_PHOTO);
+	if (get_allow_web_photo_flag(account))
+		SIPE_CORE_FLAG_SET(ALLOW_WEB_PHOTO);
 
 	purple_connection_set_protocol_data(gc, sipe_public);
 	purple_connection_set_flags(gc,
@@ -907,7 +916,7 @@ GList * sipe_purple_account_options()
 	option = purple_account_option_bool_new(_("Don't publish my calendar information"), "dont-publish", FALSE);
 	options = g_list_append(options, option);
 
-	option = purple_account_option_bool_new(_("Show profile pictures from web\n(potentially dangerous)"), "web-photo-allowed", FALSE);
+	option = purple_account_option_bool_new(_("Show profile pictures from web\n(potentially dangerous)"), "allow-web-photo", FALSE);
 	options = g_list_append(options, option);
 
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-12 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -746,11 +746,6 @@ sipe_miranda_GetInfo( SIPPROTO *pr, HANDLE hContact, int infoType )
 }
 
 gboolean sipe_backend_uses_photo(void)
-{
-	return FALSE;
-}
-
-gboolean sipe_backend_buddy_web_photo_allowed(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public)
 {
 	return FALSE;
 }
