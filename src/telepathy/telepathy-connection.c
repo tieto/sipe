@@ -76,6 +76,7 @@ typedef struct _SipeConnection {
 	gchar *authentication;
 	gboolean sso;
 	gboolean dont_publish;
+	gboolean allow_web_photo;
 	gboolean is_disconnecting;
 
 	GPtrArray *contact_info_fields;
@@ -188,6 +189,9 @@ static gboolean connect_to_core(SipeConnection *self,
 		SIPE_CORE_FLAG_UNSET(DONT_PUBLISH);
 		if (self->dont_publish)
 			SIPE_CORE_FLAG_SET(DONT_PUBLISH);
+		SIPE_CORE_FLAG_UNSET(ALLOW_WEB_PHOTO);
+		if (self->allow_web_photo)
+			SIPE_CORE_FLAG_SET(ALLOW_WEB_PHOTO);
 
 		sipe_core_transport_sip_connect(sipe_public,
 						self->transport,
@@ -771,6 +775,13 @@ TpBaseConnection *sipe_telepathy_connection_new(TpBaseProtocol *protocol,
 		conn->dont_publish = boolean_value;
 	else
 		conn->dont_publish = FALSE;
+
+	/* Allow insecure download of buddy icons from web */
+	boolean_value = tp_asv_get_boolean(params, "allow-web-photo", &valid);
+	if (valid)
+		conn->allow_web_photo = boolean_value;
+	else
+		conn->allow_web_photo = FALSE;
 
 	return(TP_BASE_CONNECTION(conn));
 }
