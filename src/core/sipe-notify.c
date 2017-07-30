@@ -732,9 +732,8 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 					gboolean found = FALSE;
 
 					if (sipe_strequal(type, "default") &&
-					    !sipe_backend_buddy_web_photo_allowed(SIPE_CORE_PUBLIC)) {
-						SIPE_DEBUG_INFO("Skipping download of web profile picture "
-								"for %s", uri);
+					    !SIPE_CORE_PUBLIC_FLAG_IS(ALLOW_WEB_PHOTO)) {
+						SIPE_DEBUG_INFO("process_incoming_notify_rlmi: skipping download of web profile picture for %s", uri);
 						continue;
 					}
 
