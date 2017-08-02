@@ -24,6 +24,7 @@
 #define KEY_SIPE_AUTH_SCHEME            @"SIPE:Authentication Scheme"
 #define KEY_SIPE_AUTODISCOVER           @"SIPE:Autodiscover"
 #define KEY_SIPE_BEAST_DISABLE          @"SIPE:BEAST Disable"
+#define KEY_SIPE_ALLOW_WEB_PHOTO        @"SIPE:Allow Web Photo"
 
 #define PURPLE_SSL_CDSA_BEAST_TLS_WORKAROUND "ssl_cdsa_beast_tls_workaround"
 

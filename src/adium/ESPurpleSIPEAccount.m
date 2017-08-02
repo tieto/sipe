@@ -118,6 +118,7 @@
      @"dont-publish",                  KEY_SIPE_DONT_PUBLISH,
      @"authentication",                KEY_SIPE_AUTH_SCHEME,
      @"ssl_cdsa_beast_tls_workaround", KEY_SIPE_BEAST_DISABLE,
+     @"allow-web-photo",               KEY_SIPE_ALLOW_WEB_PHOTO,
      nil
      ];
 
