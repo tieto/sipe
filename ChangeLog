@@ -1,6 +1,10 @@
 version 1.??.? "???" (????-??-??)
 	- Feature #99: IPv6 addresses in SIP & SDP messages (Stefan Becker)
 	- Feature #96: Support for OS X 10.11+ SDK (Stefan Becker)
+	- don't load buddy photos from unknown sites by default (Jakub Adam, Stefan Becker)
+	  * custom web URIs pose a security risk as they may be abused
+	  * users can override this behaviour in the account settings
+	  * Office365 accounts should not be affected by this change
 
 version 1.22.1 "Bug Fixes I" (2017-06-11)
 	- Fixed #320: Multiple client detection broken (Stefan Becker)
