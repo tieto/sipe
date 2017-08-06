@@ -22,6 +22,8 @@
 
 #include <glib.h>
 
+#include "connection.h"
+
 #include "sipe-core.h"
 
 #include "purple-dbus.h"
@@ -38,13 +40,20 @@
  *
  * @param account (in) libpurple account (may be @c NULL)
  *
- * @return true if it is safe to use PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC
+ * @return @c TRUE if it is safe to use PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC
  */
 static gboolean account_is_valid(PurpleAccount *account)
 {
-	return(account &&
-	       purple_account_get_connection(account) &&
-	       !purple_account_is_disconnecting(account));
+	gboolean valid = FALSE;
+
+	if (account && !purple_account_is_disconnecting(account)) {
+		PurpleConnection *gc = purple_account_get_connection(account);
+
+		if (gc && PURPLE_CONNECTION_IS_CONNECTED(gc))
+			valid = TRUE;
+	}
+
+	return(valid);
 }
 
 void sipe_join_conference_uri(PurpleAccount *account,
