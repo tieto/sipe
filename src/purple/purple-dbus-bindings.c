@@ -41,13 +41,27 @@
 /*
  * The generated xxx_DBUS() functions need to be copied here
  */
-/* @TODO... */
+static DBusMessage*
+sipe_join_conference_uri_DBUS(DBusMessage *message_DBUS, DBusError *error_DBUS) {
+	DBusMessage *reply_DBUS;
+	dbus_int32_t account_ID;
+	PurpleAccount *account;
+	const char *uri;
+	dbus_message_get_args(message_DBUS, error_DBUS, DBUS_TYPE_INT32, &account_ID, DBUS_TYPE_STRING, &uri, DBUS_TYPE_INVALID);
+	CHECK_ERROR(error_DBUS);
+	PURPLE_DBUS_ID_TO_POINTER(account, account_ID, PurpleAccount, error_DBUS);
+	uri = (uri && uri[0]) ? uri : NULL;
+	sipe_join_conference_uri(account, uri);
+	reply_DBUS = dbus_message_new_method_return (message_DBUS);
+	dbus_message_append_args(reply_DBUS, DBUS_TYPE_INVALID);
+	return reply_DBUS;
+}
 
 /*
  * The contents of bindings_DBUS[] need to be copied here
  */
 PurpleDBusBinding sipe_purple_dbus_bindings[] = {
-	/* @TODO... */
+	{"SipeJoinConferenceUri", "in\0i\0account\0in\0s\0uri\0", sipe_join_conference_uri_DBUS},
 	{NULL, NULL, NULL}
 };
 

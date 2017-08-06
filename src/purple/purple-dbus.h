@@ -21,10 +21,18 @@
  */
 
 #include "dbus-server.h"
+#include "account.h"
 
 extern PurpleDBusBinding sipe_purple_dbus_bindings[];
 
-/* @TODO: add DBUS_EXPORT void sipe_xyz(void); here... */
+/**
+ * SipeJoinConferenceUri - join conference using URI
+ *
+ * @param account (in) libpurple account
+ * @param uri     (in) URI string
+ */
+DBUS_EXPORT void sipe_join_conference_uri(PurpleAccount *account,
+					  const gchar *uri);
 
 /*
   Local Variables:
