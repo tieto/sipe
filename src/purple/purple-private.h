@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,12 @@
 
 #define SIPE_PURPLE_PROTOCOL_OPTIONS OPT_PROTO_CHAT_TOPIC | OPT_PROTO_PASSWORD_OPTIONAL
 
-#if !PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "conversationtypes.h" /* PurpleIMTypingState */
+#include "plugins.h"           /* PurplePlugin */
+#else
+#include "conversation.h"      /* PurpleTypingState */
+#include "plugin.h"            /* PurplePlugin */
 #define PurpleIMTypingState PurpleTypingState
 #define _PurpleProtocolAction _PurplePluginAction
 #endif
@@ -57,6 +62,7 @@ struct _PurpleConnection;
 struct _PurpleConversation;
 struct _PurpleGroup;
 struct _PurpleMessage;
+struct _PurpleNotifyUserInfo;
 struct _PurplePluginAction;
 struct _PurpleRoomlist;
 struct _PurpleStatus;
