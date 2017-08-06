@@ -655,10 +655,12 @@ PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *
 gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 #ifdef HAVE_VV
-	struct sigaction action;
-	memset(&action, 0, sizeof (action));
-	action.sa_handler = sipe_purple_sigusr1_handler;
-	sigaction(SIGUSR1, &action, NULL);
+	{
+		struct sigaction action;
+		memset(&action, 0, sizeof (action));
+		action.sa_handler = sipe_purple_sigusr1_handler;
+		sigaction(SIGUSR1, &action, NULL);
+	}
 #endif
 
 	sipe_purple_activity_init();
