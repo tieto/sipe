@@ -51,10 +51,14 @@ for my $accountId (@{ $accounts }) {
     # Filter out SIPE accounts that are online
     if (($protocolId eq 'prpl-sipe') && ($connectionId != 0)) {
 
-        # Call interface for each parameter on the command line
-        for my $uri (@ARGV) {
-            print "Trying to join conference '${uri}' on SIPE account '${username}'...\n";
-            $purple->SipeJoinConferenceUri($accountId, $uri);
+	# Filter out SIPE accounts that are really connected
+	if ($purple->PurpleConnectionIsConnected($connectionId)) {
+
+	    # Call interface for each parameter on the command line
+	    for my $uri (@ARGV) {
+		print "Trying to join conference '${uri}' on SIPE account '${username}'...\n";
+		$purple->SipeJoinConferenceUri($accountId, $uri);
+	    }
 	}
     }
 }
