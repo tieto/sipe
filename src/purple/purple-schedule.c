@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,14 @@
 
 #include <glib.h>
 
+#include "version.h"
+#if PURPLE_VERSION_CHECK(3,0,0)
+#else
 #include "eventloop.h"
+#define g_timeout_add(t, f, d)         purple_timeout_add(t, f, d)
+#define g_timeout_add_seconds(t, f, d) purple_timeout_add_seconds(t, f, d)
+#define g_source_remove(t)             purple_timeout_remove(t)
+#endif
 
 #include "sipe-common.h"
 #include "sipe-backend.h"
@@ -47,9 +54,9 @@ gpointer sipe_backend_schedule_seconds(SIPE_UNUSED_PARAMETER struct sipe_core_pu
 {
 	struct purple_schedule *schedule = g_malloc(sizeof(struct purple_schedule));
 	schedule->core_data = data;
-	schedule->timeout_handler = purple_timeout_add_seconds(timeout,
-							       purple_timeout_execute,
-							       schedule);
+	schedule->timeout_handler = g_timeout_add_seconds(timeout,
+							  purple_timeout_execute,
+							  schedule);
 	return(schedule);
 }
 
@@ -59,9 +66,9 @@ gpointer sipe_backend_schedule_mseconds(SIPE_UNUSED_PARAMETER struct sipe_core_p
 {
 	struct purple_schedule *schedule = g_malloc(sizeof(struct purple_schedule));
 	schedule->core_data = data;
-	schedule->timeout_handler = purple_timeout_add(timeout,
-						       purple_timeout_execute,
-						       schedule);
+	schedule->timeout_handler = g_timeout_add(timeout,
+						  purple_timeout_execute,
+						  schedule);
 	return(schedule);
 }
 
@@ -69,10 +76,10 @@ void sipe_backend_schedule_cancel(SIPE_UNUSED_PARAMETER struct sipe_core_public 
 				  gpointer data)
 {
 	struct purple_schedule *schedule = data;
-	purple_timeout_remove(schedule->timeout_handler);
+	g_source_remove(schedule->timeout_handler);
 	g_free(schedule);
 }
-	
+
 /*
   Local Variables:
   mode: c

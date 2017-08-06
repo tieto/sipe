@@ -46,6 +46,7 @@
 #define SIPE_PURPLE_ACTION_TO_CONNECTION              action->connection
 #else
 #include "blist.h"
+#define g_source_remove(t)                            purple_timeout_remove(t)
 #define PURPLE_CONNECTION_FLAG_ALLOW_CUSTOM_SMILEY    PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY
 #define PURPLE_CONNECTION_FLAG_FORMATTING_WBFO        PURPLE_CONNECTION_FORMATTING_WBFO
 #define PURPLE_CONNECTION_FLAG_HTML                   PURPLE_CONNECTION_HTML
@@ -530,7 +531,7 @@ void sipe_purple_close(PurpleConnection *gc)
 		sipe_purple_chat_destroy_rejoin(purple_private);
 
 		if (purple_private->deferred_status_timeout)
-			purple_timeout_remove(purple_private->deferred_status_timeout);
+			g_source_remove(purple_private->deferred_status_timeout);
 		g_free(purple_private->deferred_status_note);
 
 		g_free(purple_private);
