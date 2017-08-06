@@ -125,6 +125,11 @@ static const gchar * const sipe_core_build_options[] = {
 #endif
 #endif
 
+	/* D-Bus */
+#ifdef HAVE_DBUS
+	"D-Bus",
+#endif
+
 	/* Media */
 #ifdef HAVE_VV
 	"Voice & Video",
