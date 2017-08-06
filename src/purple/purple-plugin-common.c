@@ -36,6 +36,10 @@
 #include "request.h"
 #include "version.h"
 
+#ifdef HAVE_DBUS
+#include "purple-dbus.h"
+#endif
+
 /* Backward compatibility when compiling against 2.4.x API */
 #if !PURPLE_VERSION_CHECK(2,5,0) && !PURPLE_VERSION_CHECK(3,0,0)
 #define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
@@ -654,6 +658,11 @@ PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *
 /* PurplePluginInfo function calls & data structure */
 gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
+#ifdef HAVE_DBUS
+	PURPLE_DBUS_RETURN_FALSE_IF_DISABLED(plugin);
+	purple_dbus_register_bindings(plugin, sipe_purple_dbus_bindings);
+#endif
+
 #ifdef HAVE_VV
 	{
 		struct sigaction action;
