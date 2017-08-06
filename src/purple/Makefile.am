@@ -101,6 +101,13 @@ tests_LDADD     = \
 endif
 endif
 
+if SIPE_DBUS
+libsipe_backend_la_SOURCES += \
+	purple-dbus.c \
+	purple-dbus.h \
+	purple-dbus-bindings.c
+endif
+
 if SIPE_MIME_GMIME
 libsipe_la_LIBADD += \
 	../core/libsipe_core_mime.la \
