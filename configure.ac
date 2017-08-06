@@ -214,6 +214,23 @@ AM_CONDITIONAL(SIP_SEC_GSSAPI, [test "x$with_krb5" != xno])
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
 
+dnl check for DBUS support
+AC_ARG_WITH([dbus],
+	[AC_HELP_STRING([--with-dbus],
+		[compile with D-BUS support @<:@default=check@:>@])],
+	[AS_IF([test "x$withval" = xyes], [with_dbus=check])],
+	[with_dbus=check])
+
+AS_IF([test "x$with_dbus" = xno], [], dnl disabled by user
+      [test "x$with_dbus" = xcheck],  dnl autodetect with pkg-config
+	[PKG_CHECK_MODULES(DBUS, [dbus-1],
+		[with_dbus=yes],
+		[with_dbus=no])
+	])
+AM_CONDITIONAL(SIPE_DBUS, [test "x$with_dbus" = xyes])
+AS_IF([test "x$with_dbus" = xyes],
+	[AC_DEFINE(HAVE_DBUS, 1, [Define if D-BUS should be used in sipe.])])
+
 AC_ARG_ENABLE(gssapi_only,
 	[AS_HELP_STRING([--enable-gssapi-only],
 			[disable all internal authentication code and only use
