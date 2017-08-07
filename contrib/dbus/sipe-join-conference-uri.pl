@@ -27,41 +27,21 @@ use 5.024;
 use strict;
 use warnings;
 
-use Net::DBus;
+use FindBin;
+use lib $FindBin::Bin;
+use SipeHelper;
 
 # Check command line parameters
 die "usage: $0 <conference URI> [<conference URI> ...]\n"
     unless @ARGV;
 
-# Connect to libpurple over the session bus
-my $bus     = Net::DBus->session;
-my $service = $bus->get_service('im.pidgin.purple.PurpleService');
-my $purple  = $service->get_object('/im/pidgin/purple/PurpleObject',
-				   'im.pidgin.purple.PurpleInterface');
-
-# Get list of enabled accounts
-my $accounts = $purple->PurpleAccountsGetAllActive();
-for my $accountId (@{ $accounts }) {
-    my $username     = $purple->PurpleAccountGetUsername($accountId);
-    my $protocolId   = $purple->PurpleAccountGetProtocolId($accountId);
-    my $protocolName = $purple->PurpleAccountGetProtocolName($accountId);
-    my $connectionId = $purple->PurpleAccountGetConnection($accountId);
-    print "found account ${accountId}: ${username} (${protocolId}/${protocolName}, ${connectionId})\n";
-
-    # Filter out SIPE accounts that are online
-    if (($protocolId eq 'prpl-sipe') && ($connectionId != 0)) {
-
-	# Filter out SIPE accounts that are really connected
-	if ($purple->PurpleConnectionIsConnected($connectionId)) {
-
-	    # Call interface for each parameter on the command line
-	    for my $uri (@ARGV) {
-		print "Trying to join conference '${uri}' on SIPE account '${username}'...\n";
-		$purple->SipeJoinConferenceUri($accountId, $uri);
-	    }
-	}
+SipeHelper::forSipeAccounts(sub {
+    my($purple, $accountId, $username) = @_;
+    for my $uri (@ARGV) {
+	print "Trying to join conference '${uri}' on SIPE account '${username}'...\n";
+	$purple->SipeJoinConferenceUri($accountId, $uri);
     }
-}
+});
 
 # That's all folks...
 exit 0;
