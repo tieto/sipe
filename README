@@ -110,6 +110,48 @@ translate SIPE to your native language at Transifex:
 The service offers a convenient web editor.
 
 
+D-Bus support (libpurple backend only)
+======================================
+
+If libpurple and SIPE have been compiled with D-Bus support and the D-Bus
+backend has been successfully initialized at libpurple start, then SIPE
+extends the libpurple D-Bus interface with the following APIs:
+
+    Function                        | Description
+    --------------------------------------------------------------------------
+    SipeJoinConferenceUri(aId, uri) | Same as "Meeting location" in the dialog
+                                    | opened by "Join scheduled conference..."
+
+To use the APIs from a script you'll need a D-Bus object for the libpurple
+interface and a valid & connected account ID as first parameter. An invalid
+account ID will cause SIPE to silently ignore the D-Bus invocation.
+
+Example script code (without error checks to keep it simple):
+
+Perl:
+
+    use Net::DBus;
+    my $bus      = Net::DBus->session;
+    my $service  = $bus->get_service('im.pidgin.purple.PurpleService');
+    my $purple   = $service->get_object('/im/pidgin/purple/PurpleObject',
+                                        'im.pidgin.purple.PurpleInterface');
+    my $accounts = $purple->PurpleAccountsGetAllActive();
+    for my $accountId (@{ $accounts }) {
+        $purple->SipeXYZ($accountId, parameters... );
+    }
+
+Python:
+
+    import dbus
+    bus      = dbus.SessionBus()
+    object   = bus.get_object("im.pidgin.purple.PurpleService",
+                              "/im/pidgin/purple/PurpleObject")
+    purple   = dbus.Interface(object, "im.pidgin.purple.PurpleInterface")
+    accounts = purple.PurpleAccountsGetAllActive()
+    for accountId in accounts:
+        purple.SipeXYZ(accountId, parameters... );
+
+
 Installing from a distribution repository
 =========================================
 
@@ -194,6 +236,12 @@ authenticate with NTLM via GSSAPI then you'll need one of the following
 packages
 
 	gssntlmssp-devel
+
+If you want to enable the D-Bus support then you'll need one of the
+following packages
+
+	libdbus-1-dev
+	dbus-devel
 
 If you want to enable Voice & Video features then you'll need some of the
 following packages. You need to install the same version of the GStreamer
