@@ -22,6 +22,7 @@
 
 #include <glib.h>
 
+#include "account.h"
 #include "connection.h"
 
 #include "sipe-core.h"
@@ -46,7 +47,9 @@ static gboolean account_is_valid(PurpleAccount *account)
 {
 	gboolean valid = FALSE;
 
-	if (account && !purple_account_is_disconnecting(account)) {
+	if (account &&
+	    !purple_account_is_disconnecting(account) &&
+	    (sipe_strequal(purple_account_get_protocol_id(account), SIPE_PURPLE_PLUGIN_ID))) {
 		PurpleConnection *gc = purple_account_get_connection(account);
 
 		if (gc && PURPLE_CONNECTION_IS_CONNECTED(gc))
