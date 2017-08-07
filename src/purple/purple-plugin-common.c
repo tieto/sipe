@@ -659,8 +659,10 @@ PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *
 gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
 #ifdef HAVE_DBUS
-	PURPLE_DBUS_RETURN_FALSE_IF_DISABLED(plugin);
-	purple_dbus_register_bindings(plugin, sipe_purple_dbus_bindings);
+	if (purple_dbus_get_init_error() == NULL) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_plugin_load: registering D-Bus bindings");
+		purple_dbus_register_bindings(plugin, sipe_purple_dbus_bindings);
+	}
 #endif
 
 #ifdef HAVE_VV
