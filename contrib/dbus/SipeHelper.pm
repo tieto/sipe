@@ -32,15 +32,27 @@ use Carp;
 use Net::DBus;
 
 # Connect to libpurple over the session bus
-my $bus     = Net::DBus->session;
-my $service = $bus->get_service('im.pidgin.purple.PurpleService');
-my $purple  = $service->get_object('/im/pidgin/purple/PurpleObject',
-				   'im.pidgin.purple.PurpleInterface');
+my $purple;
+sub init()
+{
+    eval {
+	my $bus     = Net::DBus->session;
+	my $service = $bus->get_service('im.pidgin.purple.PurpleService');
+	$purple     = $service->get_object('/im/pidgin/purple/PurpleObject',
+					   'im.pidgin.purple.PurpleInterface');
+    };
+    die "ERROR: can't find any active libpurple D-Bus instance, Are you sure you started Pidgin/Finch?\n\n$@"
+	if $@;
+}
 
-sub forSipeAccounts($) {
+# Call code reference for all active SIPE accounts
+sub forSipeAccounts($)
+{
     my($code) = @_;
-    croak "${code} should be code reference"
+    croak "ERROR: ${code} should be code reference"
 	unless ref($code) eq "CODE";
+    croak "ERROR: called without initializing"
+	unless $purple;
 
     # Get list of enabled accounts
     my $accounts = $purple->PurpleAccountsGetAllActive();

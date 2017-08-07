@@ -35,6 +35,7 @@ use SipeHelper;
 die "usage: $0 <conference URI> [<conference URI> ...]\n"
     unless @ARGV;
 
+SipeHelper::init();
 SipeHelper::forSipeAccounts(sub {
     my($purple, $accountId, $username) = @_;
     for my $uri (@ARGV) {
