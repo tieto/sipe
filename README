@@ -131,25 +131,22 @@ Example script code (without error checks to keep it simple):
 Perl:
 
     use Net::DBus;
-    my $bus      = Net::DBus->session;
-    my $service  = $bus->get_service('im.pidgin.purple.PurpleService');
-    my $purple   = $service->get_object('/im/pidgin/purple/PurpleObject',
-                                        'im.pidgin.purple.PurpleInterface');
-    my $accounts = $purple->PurpleAccountsGetAllActive();
-    for my $accountId (@{ $accounts }) {
-        $purple->SipeXYZ($accountId, parameters... );
-    }
+    my $bus       = Net::DBus->session;
+    my $service   = $bus->get_service('im.pidgin.purple.PurpleService');
+    my $purple    = $service->get_object('/im/pidgin/purple/PurpleObject',
+                                         'im.pidgin.purple.PurpleInterface');
+    my $accountId = $purple->PurpleAccountsFind($accountName, 'prpl-sipe');
+    $purple->SipeXYZ($accountId, parameters... );
 
 Python:
 
     import dbus
-    bus      = dbus.SessionBus()
-    object   = bus.get_object("im.pidgin.purple.PurpleService",
-                              "/im/pidgin/purple/PurpleObject")
-    purple   = dbus.Interface(object, "im.pidgin.purple.PurpleInterface")
-    accounts = purple.PurpleAccountsGetAllActive()
-    for accountId in accounts:
-        purple.SipeXYZ(accountId, parameters... );
+    bus       = dbus.SessionBus()
+    object    = bus.get_object("im.pidgin.purple.PurpleService",
+                               "/im/pidgin/purple/PurpleObject")
+    purple    = dbus.Interface(object, "im.pidgin.purple.PurpleInterface")
+    accountId = purple.PurpleAccountsFind($accountName, 'prpl-sipe')
+    purple.SipeXYZ(accountId, parameters... );
 
 
 Installing from a distribution repository
