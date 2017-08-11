@@ -26,7 +26,7 @@
 
 /*
  * The contents of this file need to be updated when any line which starts
- * with DBUS_EXPORT in purple-private.h gets added/removed/changed.
+ * with DBUS_EXPORT in purple-dbus.h gets added/removed/changed.
  *
  * You'll need access to the Pidgin source code to update this file:
  *

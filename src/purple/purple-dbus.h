@@ -20,6 +20,16 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+/*
+ * Work around some versions of dbus-server.h that redefine DBUS_EXPORT
+ * without checking that it is already defined. Include dbus/dbus.h first
+ * to suppress the implicit inclusion through dbus-server.h. Then undefine
+ * the macro to avoid the potential build failure.
+ */
+#include <dbus/dbus.h>
+#ifdef DBUS_EXPORT
+#undef DBUS_EXPORT
+#endif
 #include "dbus-server.h"
 #include "account.h"
 
