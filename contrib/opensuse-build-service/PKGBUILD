@@ -9,7 +9,7 @@ license=('GPL2')
 url="http://sipe.sourceforge.net/"
 depends=('gmime' 'libpurple')
 makedepends=('intltool')
-options=('!libtool' '!buildflags')
+optdepends=('krb5: Kerberos support')
 source=( ${pkgname}-${pkgver}.tar.gz )
 sha256sums=( '@@SHA256SUM@@' )
 

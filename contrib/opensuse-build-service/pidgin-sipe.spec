@@ -80,6 +80,7 @@
 %define has_pidgin 1
 
 %if 0%{?suse_version}
+%define dbus_devel dbus-1-devel
 %define nss_develname mozilla-nss-devel
 # SLES11 defines suse_version = 1110
 %if 0%{?suse_version} > 1110
@@ -90,9 +91,9 @@
 %define nice_gstreamer gstreamer-0_10-libnice
 # Leap 42.1 or SLES12
 %if 0%{?suse_version} >= 1315
-%define has_gstreamer 0
 %define has_gstreamer1 1
 %define has_farstream 1
+%undefine has_gstreamer
 %undefine nice_gstreamer
 %endif
 %endif
@@ -106,7 +107,16 @@
 %define pkg_group Applications/Communications
 %endif
 
+# workaround for Fedora Rawhide
+%if 0%{?fedora_version}
 %if 0%{?fedora}
+%else
+%define fedora %{?fedora_version}
+%endif
+%endif
+
+%if 0%{?fedora}
+%define dbus_devel dbus-devel
 %define has_libnice 1
 %define has_gstreamer 1
 %define build_telepathy 1
@@ -118,8 +128,8 @@
 %define has_appdata 1
 %define has_gssntlmssp 1
 %if 0%{?fedora} >= 22
-%define has_gstreamer 0
 %define has_gstreamer1 1
+%undefine has_gstreamer
 %undefine nice_gstreamer
 %endif
 %endif
@@ -127,6 +137,7 @@
 %endif
 
 %if 0%{?centos_version} || 0%{?scientificlinux_version}
+%define dbus_devel dbus-devel
 %define rhel_base_version %{?centos_version}%{?scientificlinux_version}
 %if %{rhel_base_version} >= 600
 %define has_gstreamer 1
@@ -186,6 +197,7 @@ BuildRequires:  %{mingw_prefix}pidgin
 # Standard Linux build setup
 #
 BuildRequires:  libpurple-devel >= 2.4.0
+BuildRequires:  %{dbus_devel}
 BuildRequires:  libxml2-devel
 BuildRequires:  %{nss_develname}
 BuildRequires:  gettext-devel
@@ -197,11 +209,12 @@ BuildRequires:  libnice-devel
 Requires:       %{nice_gstreamer}
 %endif
 %endif
+%if 0%{?has_gstreamer1:1}
+BuildRequires:  pkgconfig(gstreamer-1.0)
+%else
 %if 0%{?has_gstreamer:1}
 BuildRequires:  pkgconfig(gstreamer-0.10)
 %endif
-%if 0%{?has_gstreamer1:1}
-BuildRequires:  pkgconfig(gstreamer-1.0)
 %endif
 %if 0%{?has_farstream:1}
 BuildRequires:  pkgconfig(farstream-0.2)
@@ -570,6 +583,10 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Aug 11 2017 J. D. User <jduser@noreply.com> 1.22.1-*git*
+- add BR dbus-1
+- fix incorrect BR gstreamer-0.10 when gstreamer-1.0 is selected
+
 * Sun Jun 11 2017 J. D. User <jduser@noreply.com> 1.22.1
 - update to 1.22.1
 

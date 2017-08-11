@@ -41,6 +41,7 @@ URL:            http://sipe.sourceforge.net/
 
 BuildRequires:  pkgconfig(glib-2.0) >= 2.12.0
 BuildRequires:  pkgconfig(gmodule-2.0) >= 2.12.0
+BuildRequires:  pkgconfig(dbus-1)
 BuildRequires:  pkgconfig(libxml-2.0)
 BuildRequires:  pkgconfig(nss)
 BuildRequires:  pkgconfig(purple) >= 2.4.0
@@ -298,6 +299,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Fri Aug 11 2017 J. D. User <jduser@noreply.com> 1.22.1-*git*
+- add BR dbus-1
+
 * Sun Jun 11 2017 J. D. User <jduser@noreply.com> 1.22.1
 - update to 1.22.1
 
