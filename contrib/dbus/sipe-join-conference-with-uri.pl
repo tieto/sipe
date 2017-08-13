@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# @file sipe-join-conference-uri.pl
+# @file sipe-join-conference-with-uri.pl
 #
 # pidgin-sipe
 #
@@ -21,7 +21,7 @@
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 #
 #
-# Test code for D-Bus interface "SipeJoinConferenceUri"
+# Test code for D-Bus interface "SipeJoinConferenceWithUri"
 #
 use 5.024;
 use strict;
@@ -40,7 +40,7 @@ SipeHelper::forSipeAccounts(sub {
     my($purple, $accountId, $username) = @_;
     for my $uri (@ARGV) {
 	print "Trying to join conference '${uri}' on SIPE account '${username}'...\n";
-	$purple->SipeJoinConferenceUri($accountId, $uri);
+	$purple->SipeJoinConferenceWithUri($accountId, $uri);
     }
 });
 

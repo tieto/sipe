@@ -59,8 +59,8 @@ static gboolean account_is_valid(PurpleAccount *account)
 	return(valid);
 }
 
-void sipe_join_conference_uri(PurpleAccount *account,
-			      const gchar *uri)
+void sipe_join_conference_with_uri(PurpleAccount *account,
+				   const gchar *uri)
 {
 	/* Make sure URI is valid before calling to core */
 	if (account_is_valid(account) && uri)

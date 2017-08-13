@@ -42,7 +42,7 @@
  * The generated xxx_DBUS() functions need to be copied here
  */
 static DBusMessage*
-sipe_join_conference_uri_DBUS(DBusMessage *message_DBUS, DBusError *error_DBUS) {
+sipe_join_conference_with_uri_DBUS(DBusMessage *message_DBUS, DBusError *error_DBUS) {
 	DBusMessage *reply_DBUS;
 	dbus_int32_t account_ID;
 	PurpleAccount *account;
@@ -51,7 +51,7 @@ sipe_join_conference_uri_DBUS(DBusMessage *message_DBUS, DBusError *error_DBUS) 
 	CHECK_ERROR(error_DBUS);
 	PURPLE_DBUS_ID_TO_POINTER(account, account_ID, PurpleAccount, error_DBUS);
 	uri = (uri && uri[0]) ? uri : NULL;
-	sipe_join_conference_uri(account, uri);
+	sipe_join_conference_with_uri(account, uri);
 	reply_DBUS = dbus_message_new_method_return (message_DBUS);
 	dbus_message_append_args(reply_DBUS, DBUS_TYPE_INVALID);
 	return reply_DBUS;
@@ -61,7 +61,7 @@ sipe_join_conference_uri_DBUS(DBusMessage *message_DBUS, DBusError *error_DBUS) 
  * The contents of bindings_DBUS[] need to be copied here
  */
 PurpleDBusBinding sipe_purple_dbus_bindings[] = {
-	{"SipeJoinConferenceUri", "in\0i\0account\0in\0s\0uri\0", sipe_join_conference_uri_DBUS},
+	{"SipeJoinConferenceWithUri", "in\0i\0account\0in\0s\0uri\0", sipe_join_conference_with_uri_DBUS},
 	{NULL, NULL, NULL}
 };
 
