@@ -117,11 +117,15 @@ If libpurple and SIPE have been compiled with D-Bus support and the D-Bus
 backend has been successfully initialized at libpurple start, then SIPE
 extends the libpurple D-Bus interface with the following APIs:
 
-    Function                            | Description
+    Function                                         | Description
     --------------------------------------------------------------------------
-    SipeJoinConferenceWithUri(aId, uri) | Same as "Meeting location" in the
-					| dialog opened by "Join scheduled
-					|  conference..."
+    SipeJoinConferenceWithOrganizerAndId(aId, o, id) | Same as "Org. email"
+                                                     | and "Meeting ID" in the
+						     | dialog opened by "Join
+						     | scheduled confernce..."
+    SipeJoinConferenceWithUri(aId, uri)              | Same as "Meeting loc."
+						     | in the dialog opened by
+						     | "Join scheduled conf..."
 
 To use the APIs from a script you'll need a D-Bus object for the libpurple
 interface and a valid & connected account ID as first parameter. An invalid

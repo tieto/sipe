@@ -36,6 +36,18 @@
 extern PurpleDBusBinding sipe_purple_dbus_bindings[];
 
 /**
+ * SipeJoinConferenceWithOrganizerAndId - join conference using
+ * organizer account name and meeting ID
+ *
+ * @param account   (in) libpurple account
+ * @param organizer (in) organizer account name
+ * @param id        (in) meeting ID string
+ */
+DBUS_EXPORT void sipe_join_conference_with_organizer_and_id(PurpleAccount *account,
+							    const gchar *organizer,
+							    const gchar *meeting_id);
+
+/**
  * SipeJoinConferenceWithUri - join conference using URI
  *
  * @param account (in) libpurple account
