@@ -1472,6 +1472,8 @@ void sipe_core_media_phone_call(struct sipe_core_public *sipe_public,
 {
 	g_return_if_fail(sipe_public);
 
+	SIPE_DEBUG_INFO("sipe_core_media_phone_call: %s", phone_number ? phone_number : "(null)");
+
 	if (phone_number_is_valid(phone_number)) {
 		gchar *phone_uri = g_strdup_printf("sip:%s@%s;user=phone",
 				phone_number, sipe_public->sip_domain);
