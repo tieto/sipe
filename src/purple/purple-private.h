@@ -201,6 +201,8 @@ gboolean sipe_purple_plugin_unload(PurplePlugin *plugin);
 gpointer sipe_purple_user_split(void);
 GList *sipe_purple_account_options(void);
 
+void sipe_purple_republish_calendar(struct _PurpleAccount *account);
+
 GList *sipe_purple_actions(void);
 gchar *sipe_purple_status_text(struct _PurpleBuddy *buddy);
 void sipe_purple_tooltip_text(struct _PurpleBuddy *buddy,
