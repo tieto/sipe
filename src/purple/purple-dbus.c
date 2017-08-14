@@ -97,6 +97,12 @@ void sipe_join_conference_with_uri(PurpleAccount *account,
 				      NULL);
 }
 
+void sipe_republish_calendar(PurpleAccount *account)
+{
+	if (account_is_valid(account))
+		sipe_purple_republish_calendar(account);
+}
+
 /*
   Local Variables:
   mode: c

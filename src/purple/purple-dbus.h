@@ -65,6 +65,11 @@ DBUS_EXPORT void sipe_join_conference_with_organizer_and_id(PurpleAccount *accou
 DBUS_EXPORT void sipe_join_conference_with_uri(PurpleAccount *account,
 					       const gchar *uri);
 
+/**
+ * SipeRepublishCalendar
+ */
+DBUS_EXPORT void sipe_republish_calendar(PurpleAccount *account);
+
 /*
   Local Variables:
   mode: c
