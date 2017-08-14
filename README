@@ -119,6 +119,8 @@ extends the libpurple D-Bus interface with the following APIs:
 
     Function                                         | Description
     --------------------------------------------------------------------------
+    SipeCallPhoneNumber(aId, number)                 | Same as "Call a phone
+                                                     | number" menu
     SipeJoinConferenceWithOrganizerAndId(aId, o, id) | Same as "Org. email"
                                                      | and "Meeting ID" in the
 						     | dialog opened by "Join

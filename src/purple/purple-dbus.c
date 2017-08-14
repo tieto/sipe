@@ -20,6 +20,10 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <glib.h>
 
 #include "account.h"
@@ -58,6 +62,17 @@ static gboolean account_is_valid(PurpleAccount *account)
 
 	return(valid);
 }
+
+#ifdef HAVE_VV
+void sipe_call_phone_number(PurpleAccount *account,
+			    const gchar *phone_number)
+{
+	/* Make sure phone number is valid before calling to core */
+	if (account_is_valid(account) && phone_number)
+		sipe_core_media_phone_call(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
+					   phone_number);
+}
+#endif
 
 void sipe_join_conference_with_organizer_and_id(PurpleAccount *account,
 						const gchar *organizer,

@@ -36,6 +36,15 @@
 extern PurpleDBusBinding sipe_purple_dbus_bindings[];
 
 /**
+ * SipeCallPhoneNumber - call phone number
+ *
+ * @param account (in) libpurple account
+ * @param number  (in) phone number string
+ */
+DBUS_EXPORT void sipe_call_phone_number(PurpleAccount *account,
+					const gchar *phone_number);
+
+/**
  * SipeJoinConferenceWithOrganizerAndId - join conference using
  * organizer account name and meeting ID
  *
