@@ -1,4 +1,5 @@
-version 1.??.? "???" (????-??-??)
+version 1.??.? "D-Bus, IPv6" (????-??-??)
+	- Feature #100: Extend libpurple D-Bus interface (Stefan Becker)
 	- Feature #99: IPv6 addresses in SIP & SDP messages (Stefan Becker)
 	- Feature #96: Support for OS X 10.11+ SDK (Stefan Becker)
 	- don't load buddy photos from unknown sites by default (Jakub Adam, Stefan Becker)
