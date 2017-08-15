@@ -810,7 +810,7 @@ static void sipe_purple_show_join_conference(PurpleProtocolAction *action)
 			      gc);
 }
 
-void sipe_purple_republish_calendar(struct _PurpleAccount *account)
+void sipe_purple_republish_calendar(PurpleAccount *account)
 {
 	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
 	if (get_dont_publish_flag(account)) {
@@ -829,18 +829,22 @@ static void sipe_purple_republish_calendar_action(PurpleProtocolAction *action)
 	sipe_purple_republish_calendar(account);
 }
 
-static void sipe_purple_reset_status(PurpleProtocolAction *action)
+void sipe_purple_reset_status(PurpleAccount *account)
 {
-	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
-	PurpleAccount *account = purple_connection_get_account(gc);
-
 	if (get_dont_publish_flag(account)) {
-		sipe_backend_notify_error(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+		sipe_backend_notify_error(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
 					  _("Publishing of calendar information has been disabled"),
 					  NULL);
 	} else {
-		sipe_core_reset_status(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+		sipe_core_reset_status(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC);
 	}
+}
+
+static void sipe_purple_reset_status_action(PurpleProtocolAction *action)
+{
+	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
+	PurpleAccount *account = purple_connection_get_account(gc);
+	sipe_purple_reset_status(account);
 }
 
 GList *sipe_purple_actions()
@@ -868,7 +872,7 @@ GList *sipe_purple_actions()
 	act = purple_protocol_action_new(_("Republish Calendar"), sipe_purple_republish_calendar_action);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_protocol_action_new(_("Reset status"), sipe_purple_reset_status);
+	act = purple_protocol_action_new(_("Reset status"), sipe_purple_reset_status_action);
 	menu = g_list_prepend(menu, act);
 
 	return g_list_reverse(menu);

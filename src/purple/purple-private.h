@@ -202,6 +202,7 @@ gpointer sipe_purple_user_split(void);
 GList *sipe_purple_account_options(void);
 
 void sipe_purple_republish_calendar(struct _PurpleAccount *account);
+void sipe_purple_reset_status(struct _PurpleAccount *account);
 
 GList *sipe_purple_actions(void);
 gchar *sipe_purple_status_text(struct _PurpleBuddy *buddy);
