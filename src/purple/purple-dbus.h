@@ -70,6 +70,11 @@ DBUS_EXPORT void sipe_join_conference_with_uri(PurpleAccount *account,
  */
 DBUS_EXPORT void sipe_republish_calendar(PurpleAccount *account);
 
+/**
+ * SipeResetStatus
+ */
+DBUS_EXPORT void sipe_reset_status(PurpleAccount *account);
+
 /*
   Local Variables:
   mode: c

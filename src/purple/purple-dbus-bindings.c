@@ -111,6 +111,20 @@ sipe_republish_calendar_DBUS(DBusMessage *message_DBUS, DBusError *error_DBUS) {
 	return reply_DBUS;
 }
 
+static DBusMessage*
+sipe_reset_status_DBUS(DBusMessage *message_DBUS, DBusError *error_DBUS) {
+	DBusMessage *reply_DBUS;
+	dbus_int32_t account_ID;
+	PurpleAccount *account;
+	dbus_message_get_args(message_DBUS, error_DBUS, DBUS_TYPE_INT32, &account_ID, DBUS_TYPE_INVALID);
+	CHECK_ERROR(error_DBUS);
+	PURPLE_DBUS_ID_TO_POINTER(account, account_ID, PurpleAccount, error_DBUS);
+	sipe_reset_status(account);
+	reply_DBUS = dbus_message_new_method_return (message_DBUS);
+	dbus_message_append_args(reply_DBUS, DBUS_TYPE_INVALID);
+	return reply_DBUS;
+}
+
 /*
  * The contents of bindings_DBUS[] need to be copied here
  */
@@ -121,6 +135,7 @@ PurpleDBusBinding sipe_purple_dbus_bindings[] = {
 	{"SipeJoinConferenceWithOrganizerAndId", "in\0i\0account\0in\0s\0organizer\0in\0s\0meeting_id\0", sipe_join_conference_with_organizer_and_id_DBUS},
 	{"SipeJoinConferenceWithUri", "in\0i\0account\0in\0s\0uri\0", sipe_join_conference_with_uri_DBUS},
 	{"SipeRepublishCalendar", "in\0i\0account\0", sipe_republish_calendar_DBUS},
+	{"SipeResetStatus", "in\0i\0account\0", sipe_reset_status_DBUS},
 	{NULL, NULL, NULL}
 };
 

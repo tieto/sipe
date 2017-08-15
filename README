@@ -130,6 +130,8 @@ extends the libpurple D-Bus interface with the following APIs:
 						     | "Join scheduled conf..."
     SipeRepublishCalendar(aId)                       | Same as "Republish
 						     | Calendar" menu
+    SipeResetStatus(aId)                             | Same as "Reset
+						     | status" menu
 
 To use the APIs from a script you'll need a D-Bus object for the libpurple
 interface and a valid & connected account ID as first parameter. An invalid

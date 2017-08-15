@@ -103,6 +103,12 @@ void sipe_republish_calendar(PurpleAccount *account)
 		sipe_purple_republish_calendar(account);
 }
 
+void sipe_reset_status(PurpleAccount *account)
+{
+	if (account_is_valid(account))
+		sipe_purple_reset_status(account);
+}
+
 /*
   Local Variables:
   mode: c
