@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -124,6 +124,9 @@ void sipe_status_set_activity(struct sipe_core_private *sipe_private,
 void sipe_core_reset_status(struct sipe_core_public *sipe_public)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
+
+	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_reset_status: start");
+
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007))
 		sipe_ocs2007_reset_status(sipe_private);
 	else
