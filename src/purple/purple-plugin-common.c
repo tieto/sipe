@@ -527,7 +527,7 @@ void sipe_purple_close(PurpleConnection *gc)
 		sipe_purple_chat_destroy_rejoin(purple_private);
 
 		if (purple_private->deferred_status_timeout)
-			purple_timeout_remove(purple_private->deferred_status_timeout);
+			g_source_remove(purple_private->deferred_status_timeout);
 		g_free(purple_private->deferred_status_note);
 
 		g_free(purple_private);

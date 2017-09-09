@@ -145,7 +145,7 @@ void
 sipe_backend_ft_set_completed(struct sipe_file_transfer *ft)
 {
 	purple_xfer_set_completed(FT_TO_PURPLE_XFER, TRUE);
-	purple_timeout_add(0, end_transfer_cb, FT_TO_PURPLE_XFER);
+	g_timeout_add(0, end_transfer_cb, FT_TO_PURPLE_XFER);
 }
 
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft)
