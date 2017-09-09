@@ -183,14 +183,14 @@ void sipe_purple_set_status(PurpleAccount *account,
 
 		} else {
 			if (purple_private->deferred_status_timeout)
-				purple_timeout_remove(purple_private->deferred_status_timeout);
+				g_source_remove(purple_private->deferred_status_timeout);
 			g_free(purple_private->deferred_status_note);
 
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_set_status[CB]: defer status update");
 
 			purple_private->deferred_status_note     = g_strdup(note);
 			purple_private->deferred_status_activity = activity;
-			purple_private->deferred_status_timeout  = purple_timeout_add_seconds(1,
+			purple_private->deferred_status_timeout  = g_timeout_add(1000,
 											      sipe_purple_status_timeout,
 											      purple_private);
 		}
@@ -216,7 +216,7 @@ void sipe_purple_set_idle(PurpleConnection *gc,
 		if (!purple_private->user_is_not_idle) {
 			/* timeout not expired -> state changed by machine */
 			if (purple_private->deferred_status_timeout)
-				purple_timeout_remove(purple_private->deferred_status_timeout);
+				g_source_remove(purple_private->deferred_status_timeout);
 			sipe_purple_status_deferred_update(purple_private, FALSE);
 		}
 	}

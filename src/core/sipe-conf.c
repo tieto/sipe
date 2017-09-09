@@ -1399,8 +1399,9 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 						sipe_backend_chat_operator(session->chat_session->backend,
 									   user_uri);
 					}
+        }
 #ifdef HAVE_VV
-				} else if (sipe_strequal("audio-video", session_type)) {
+				else if (sipe_strequal("audio-video", session_type)) {
 					if (!session->is_call)
 						audio_was_added = TRUE;
 					process_conference_av_endpoint(endpoint,
