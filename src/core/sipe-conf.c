@@ -385,16 +385,22 @@ static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 			 * If present, domainOwnerJoinLauncherUrl redirects to
 			 * a page from where we still may extract the focus URI.
 			 */
-			gchar *launcher_url;
-			static const gchar launcher_url_prefix[] =
-					"var domainOwnerJoinLauncherUrl = \"";
+			gchar *launcher_url = NULL;
+			static const gchar *launcher_url_prefix[] = {
+				"var domainOwnerJoinLauncherUrl = \"",
+				"sb-data-domainOwnerJoinLauncherUrl=\"",
+				NULL
+			};
+			const gchar **p;
 
 			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI "
 					"found from URL '%s'", uri);
 
-			launcher_url = extract_uri_from_html(body,
-							     launcher_url_prefix,
-							     sizeof (launcher_url_prefix) - 1);
+			for (p = launcher_url_prefix; !launcher_url && *p; ++p) {
+				launcher_url = extract_uri_from_html(body,
+								     *p,
+								     strlen(*p));
+			}
 
 			if (launcher_url &&
 			    sipe_conf_check_for_lync_url(sipe_private, launcher_url)) {
