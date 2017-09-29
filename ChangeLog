@@ -1,6 +1,5 @@
 version 1.??.? "D-Bus, IPv6" (????-??-??)
 	- Feature #101: Mac OS X 10.13 OpenSSL support (Stefan Becker)
-	  * quick fix: hard-code linking against crypto.0.9.8 using older SDK
 	- Feature #100: Extend libpurple D-Bus interface (Stefan Becker)
 	- Feature #99: IPv6 addresses in SIP & SDP messages (Stefan Becker)
 	- Feature #96: Support for OS X 10.11+ SDK (Stefan Becker)

@@ -6,7 +6,7 @@
 //
 //
 PRODUCT_NAME = SIPEAdiumPlugin
-OTHER_LDFLAGS = -lxml2 -lcrypto.0.9.8 -undefined dynamic_lookup
+OTHER_LDFLAGS = -lxml2 -Lopenssl -lcrypto.0.9.8 -undefined dynamic_lookup
 LD_RUNPATH_SEARCH_PATHS = @loader_path/../Frameworks
 INFOPLIST_FILE = Info.plist
 WRAPPER_EXTENSION = AdiumLibpurplePlugin
