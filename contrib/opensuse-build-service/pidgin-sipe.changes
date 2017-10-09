@@ -1,4 +1,18 @@
 -------------------------------------------------------------------
+Mon Oct  9 19:50:00 UTC 2017 - chemobejk@gmail.com
+
+- Update to version 1.23.0 "D-Bus, IPv6, OS X 10.11+" (2017-10-??)
+    - Feature #101: Mac OS X 10.13 OpenSSL support (Stefan Becker)
+    - Feature #100: Extend libpurple D-Bus interface (Stefan Becker)
+    - Feature #99: IPv6 addresses in SIP & SDP messages (Stefan Becker)
+    - Feature #96: Support for OS X 10.11+ SDK (Stefan Becker)
+    - don't load buddy photos from unknown sites by default (Jakub Adam, Stefan Becker)
+      * custom web URIs pose a security risk as they may be abused
+      * users can override this behaviour in the account settings
+      * Office365 accounts should not be affected by this change
+    - add support for GMime 3.0 API (Stefan Becker)
+
+-------------------------------------------------------------------
 Sun Jun 11 15:38:00 UTC 2017 - chemobejk@gmail.com
 
 - Update to version 1.22.1:
@@ -7,7 +21,7 @@ Sun Jun 11 15:38:00 UTC 2017 - chemobejk@gmail.com
     - adium: update build instructions for Xcode 7.x or newer (Stefan Becker)
       * the build environment used for releases 1.22.0 or older (Xcode 6.x
         on OS X 10.11) is no longer available to the project
-      * releases starting with 1.??.? will use Xcode 8.x on macOS 10.12
+      * releases starting with 1.22.1 will use Xcode 8.x on macOS 10.12
       * build target continues to be OS X 10.9
     - purple: avoid rare SSL read deadlock (Stefan Becker)
     - various minor fixes (Michael Olbrich)
