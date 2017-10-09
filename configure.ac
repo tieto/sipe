@@ -252,12 +252,15 @@ PKG_CHECK_MODULES(GMODULE, [gmodule-2.0 >= 2.12.0])
 
 dnl check for gmime
 dnl See also: https://bugzilla.gnome.org/show_bug.cgi?id=613653#c8
-PKG_CHECK_MODULES(GMIME, [gmime-2.6 >= 2.5.2],
+PKG_CHECK_MODULES(GMIME, [gmime-3.0 >= 3.0.0],
 	[ac_have_gmime=yes],
-	[PKG_CHECK_MODULES(GMIME, [gmime-2.4 >= 2.4.16],
+	[PKG_CHECK_MODULES(GMIME, [gmime-2.6 >= 2.5.2],
 		[ac_have_gmime=yes],
-		[ac_have_gmime=no])
-])
+		[PKG_CHECK_MODULES(GMIME, [gmime-2.4 >= 2.4.16],
+			[ac_have_gmime=yes],
+			[ac_have_gmime=no])
+		])
+	])
 AM_CONDITIONAL(SIPE_MIME_GMIME, [test "x$ac_have_gmime" = xyes])
 AS_IF([test "x$ac_have_gmime" = xyes],
 	[AC_DEFINE(HAVE_GMIME, 1, [Define if gmime should be used in sipe.])])

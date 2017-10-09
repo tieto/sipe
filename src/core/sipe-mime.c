@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,6 +41,11 @@
 
 #include <gmime/gmime.h>
 
+#if !GMIME_CHECK_VERSION(3,0,0)
+#define g_mime_part_get_content(p)         g_mime_part_get_content_object(p)
+#define g_mime_parser_construct_part(p, o) g_mime_parser_construct_part(p)
+#endif
+
 #include "sipe-mime.h"
 
 #include "sipe-backend.h"
@@ -48,7 +53,11 @@
 
 void sipe_mime_init(void)
 {
-	g_mime_init(0);
+	g_mime_init(
+#if !GMIME_CHECK_VERSION(3,0,0)
+		0
+#endif
+	);
 }
 
 void sipe_mime_shutdown(void)
@@ -64,18 +73,30 @@ struct gmime_callback_data {
 static GSList *gmime_fields_to_nameval(GMimeObject *part)
 {
 	GMimeHeaderList *headers = g_mime_object_get_header_list(part);
-	GMimeHeaderIter *iter = g_mime_header_iter_new();
 	GSList *fields = NULL;
+#if GMIME_CHECK_VERSION(3,0,0)
+	guint count = g_mime_header_list_get_count(headers);
+	guint index;
+
+	for (index = 0; index < count; index++) {
+		GMimeHeader *header = g_mime_header_list_get_header_at(headers,
+								       index);
+		fields = sipe_utils_nameval_add(fields,
+						g_mime_header_get_name(header),
+						g_mime_header_get_value(header));
+	}
+#else
+	GMimeHeaderIter *iter = g_mime_header_iter_new();
 
 	if (g_mime_header_list_get_iter(headers, iter)) {
 		do {
 			fields = sipe_utils_nameval_add(fields,
 							g_mime_header_iter_get_name(iter),
 							g_mime_header_iter_get_value(iter));
-
 		} while (g_mime_header_iter_next(iter));
 	}
 	g_mime_header_iter_free(iter);
+#endif
 
 	return fields;
 }
@@ -84,7 +105,7 @@ static void gmime_callback(SIPE_UNUSED_PARAMETER GMimeObject *parent,
 			   GMimeObject *part,
 			   gpointer user_data)
 {
-	GMimeDataWrapper *data = g_mime_part_get_content_object((GMimePart *)part);
+	GMimeDataWrapper *data = g_mime_part_get_content((GMimePart *)part);
 
 	if (data) {
 		GMimeStream *stream = g_mime_data_wrapper_get_stream(data);
@@ -143,7 +164,8 @@ void sipe_mime_parts_foreach(const gchar *type,
 
 	if (stream) {
 		GMimeParser *parser = g_mime_parser_new_with_stream(stream);
-		GMimeMultipart *multipart = (GMimeMultipart *)g_mime_parser_construct_part(parser);
+		GMimeMultipart *multipart = (GMimeMultipart *)g_mime_parser_construct_part(parser,
+											   NULL);
 
 		if (multipart) {
 			struct gmime_callback_data cd = {callback, user_data};
