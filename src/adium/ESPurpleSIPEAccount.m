@@ -9,11 +9,11 @@
 //  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
 //
 
-#import <AISharedAdium.h>
+#import <Adium/AISharedAdium.h>
 #import <AIAdium.h>
 #import <Adium/AIStatus.h>
 #import <Adium/AIStatusControllerProtocol.h>
-#import <ESDebugAILog.h>
+#import <Adium/ESDebugAILog.h>
 #import <Adium/AIListContact.h>
 #import "AIContactController.h"
 

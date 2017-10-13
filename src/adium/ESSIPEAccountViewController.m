@@ -8,7 +8,7 @@
 //
 
 #import <AdiumLibpurple/CBPurpleAccount.h>
-#import <ESDebugAILog.h>
+#import <Adium/ESDebugAILog.h>
 #import "ESSIPEAccountViewController.h"
 
 #include "prpl.h"

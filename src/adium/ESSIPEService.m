@@ -11,7 +11,7 @@
 #import <AIUtilities/AICharacterSetAdditions.h>
 #import <AIUtilities/AIImageAdditions.h>
 #import <Adium/AIStatusControllerProtocol.h>
-#import <AISharedAdium.h>
+#import <Adium/AISharedAdium.h>
 
 #import "DCPurpleSIPEJoinChatViewController.h"
 #import "ESSIPEAccountViewController.h"
