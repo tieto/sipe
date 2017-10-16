@@ -10,7 +10,6 @@
 //
 
 #import <Adium/AISharedAdium.h>
-#import <AIAdium.h>
 #import <Adium/AIStatus.h>
 #import <Adium/AIStatusControllerProtocol.h>
 #import <Adium/ESDebugAILog.h>
