@@ -15,9 +15,5 @@ DEPLOYMENT_LOCATION = YES
 DEPLOYMENT_POSTPROCESSING = YES
 DSTROOT =
 INSTALL_PATH = $(HOME)/Library/Application Support/Adium 2.0/PlugIns/
-USER_HEADER_SEARCH_PATHS = ../../../adium/Source
-
-
-
-
-
+FRAMEWORK_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)" ../../../adium/Frameworks
+USER_HEADER_SEARCH_PATHS = "$(BUILT_PRODUCTS_DIR)/Adium.framework/Headers" ../../../adium/Source
