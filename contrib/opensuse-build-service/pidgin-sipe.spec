@@ -5,6 +5,7 @@
 #
 #     RedHat family (CentOS, Fedora, RHEL, ScientificLinux)
 #     SUSE family (openSUSE, SLED, SLES)
+#     Mageia
 #     Windows (mingw32, mingw64)
 #
 
@@ -77,7 +78,13 @@
 %define ktp_files        ktp-accounts-kcm-sipe
 
 
+%define has_make_install 1
 %define has_pidgin 1
+
+%if 0%{?mageia}
+# Mageia requires a lot of special case handling...
+%define has_appdata 1
+%endif
 
 %if 0%{?suse_version}
 %define dbus_devel dbus-1-devel
@@ -139,6 +146,9 @@
 %if 0%{?centos_version} || 0%{?scientificlinux_version}
 %define dbus_devel dbus-devel
 %define rhel_base_version %{?centos_version}%{?scientificlinux_version}
+%if %{rhel_base_version} < 600
+%define has_make_install 0
+%endif
 %if %{rhel_base_version} >= 600
 %define has_gstreamer 1
 %define has_libnice 1
@@ -196,6 +206,25 @@ BuildRequires:  %{mingw_prefix}pidgin
 #
 # Standard Linux build setup
 #
+# Special case handling for Mageia
+%if 0%{?mageia}
+BuildRequires:  intltool
+BuildRequires:  pkgconfig(dbus-1)
+BuildRequires:  pkgconfig(farstream-0.2)
+BuildRequires:  pkgconfig(gio-2.0)
+BuildRequires:  pkgconfig(glib-2.0) >= 2.28.0
+BuildRequires:  pkgconfig(gstreamer-1.0)
+BuildRequires:  pkgconfig(krb5)
+BuildRequires:  pkgconfig(nice)
+BuildRequires:  pkgconfig(nss)
+BuildRequires:  pkgconfig(purple)
+BuildRequires:  pkgconfig(libxml-2.0)
+
+# It seems linking against -lpurple is severely broken on Mageia...
+BuildRequires:  pkgconfig(libgadu)
+
+# All other Linuxes
+%else
 BuildRequires:  libpurple-devel >= 2.4.0
 BuildRequires:  %{dbus_devel}
 BuildRequires:  libxml2-devel
@@ -244,6 +273,8 @@ Requires:       pidgin
 %endif
 %if 0%{?build_telepathy:1}
 BuildRequires:  empathy
+%endif
+
 %endif
 
 # End Windows cross-compilation/Linux build setup
@@ -422,6 +453,16 @@ autoreconf --verbose --install --force
 #
 # Standard Linux build
 #
+# Special case handling for Mageia
+%if 0%{?mageia}
+%configure2_5x \
+    --with-krb5 \
+    --disable-telepathy
+%make_build
+%make_build check
+
+# All other Linuxes
+%else
 %configure \
 %if !0%{?_without_kerberos:1}
     --with-krb5 \
@@ -434,6 +475,7 @@ autoreconf --verbose --install --force
 %endif
 make %{?_smp_mflags}
 make %{?_smp_mflags} check
+%endif
 
 # End Windows cross-compilation/Linux build setup
 %endif
@@ -476,7 +518,11 @@ rm -f %{buildroot}/pidgin-sipe.nsi
 #
 # Standard Linux install
 #
+%if 0%{?has_make_install}
+%make_install
+%else
 %makeinstall
+%endif
 
 # End Windows cross-compilation/Linux build setup
 %endif
