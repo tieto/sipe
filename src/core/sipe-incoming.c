@@ -267,22 +267,27 @@ static gboolean sipe_process_incoming_x_msmsgsinvite(struct sipe_core_private *s
 static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 				const gchar *body, gsize length)
 {
-	const gchar *type = sipe_utils_nameval_find(fields, "Content-Type");
-	const gchar *cd = sipe_utils_nameval_find(fields, "Content-Disposition");
+	struct sipmsg *msg = user_data;
+	const gchar *type;
+	gchar *body_lcase;
 
-	if (!g_str_has_prefix(type, "application/sdp"))
+	if (g_str_has_prefix(sipmsg_find_header(msg, "Content-Type"),
+			     "application/sdp")) {
+		/* We have already found suitable alternative and set message's body
+		 * and Content-Type accordingly. */
+		return;
+	}
+
+	type = sipe_utils_nameval_find(fields, "Content-Type");
+
+	if (!body || !g_str_has_prefix(type, "application/sdp"))
 		return;
 
-	if (!cd || !strstr(cd, "ms-proxy-2007fallback")) {
-		struct sipmsg *msg = user_data;
-		const gchar* msg_ct = sipmsg_find_header(msg, "Content-Type");
+	body_lcase = g_ascii_strdown(body, length);
 
-		if (g_str_has_prefix(msg_ct, "application/sdp")) {
-			/* We have already found suitable alternative and set message's body
-			 * and Content-Type accordingly */
-			return;
-		}
-
+	if (strstr(body_lcase, " typ host") || strstr(body_lcase, " typ relay") ||
+	    strstr(body_lcase, " typ srflx") || strstr(body_lcase, " typ prflx")) {
+		/* RFC 5245 SDP body */
 		sipmsg_remove_header_now(msg, "Content-Type");
 		sipmsg_add_header_now(msg, "Content-Type", type);
 
@@ -292,6 +297,8 @@ static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 		msg->body = g_strndup(body, length);
 		msg->bodylen = length;
 	}
+
+	g_free(body_lcase);
 }
 #endif
 
