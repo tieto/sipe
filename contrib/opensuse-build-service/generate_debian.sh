@@ -63,7 +63,8 @@ for os in \
     xUbuntu_15.10 \
     xUbuntu_16.04 \
     xUbuntu_16.10 \
-    xUbuntu_17.04; \
+    xUbuntu_17.04 \
+    xUbuntu_17.10; \
 do \
     cp pidgin-sipe-gstreamer1.dsc pidgin-sipe-${os}.dsc; \
 done
