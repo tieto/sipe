@@ -7,15 +7,15 @@
 # Translators:
 # Anibal Avelar <debianmx@gmail.com>, 2012
 # Bruno Martins <inactive+skorzen@transifex.com>, 2012
-# Bruno Queiros <bqueiros@gmail.com>, 2014-2015
+# Bruno Queiros <bqueiros@gmail.com>, 2014-2015,2017
 # Filipe Boleto <fboleto@gmail.com>, 2011,2015-2016
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2017-10-09 16:38+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2017-10-10 08:55+0000\n"
+"Last-Translator: Bruno Queiros <bqueiros@gmail.com>\n"
 "Language-Team: Portuguese (http://www.transifex.com/stefanb/pidgin-sipe/language/pt/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -80,7 +80,7 @@ msgstr "Recebida uma assinatura de mensagem inválida"
 #: ../src/core/sipe-appshare.c:458
 #, c-format
 msgid "%s wants to start presenting"
-msgstr ""
+msgstr "%s deseja iniciar a apresentação"
 
 #: ../src/core/sipe-appshare.c:462 ../src/core/sipe-conf.c:1092
 msgid "Accept"
@@ -92,15 +92,15 @@ msgstr "Negar"
 
 #: ../src/core/sipe-appshare.c:501 ../src/core/sipe-appshare.c:599
 msgid "Application sharing error"
-msgstr ""
+msgstr "Erro na partilha de aplicação"
 
 #: ../src/core/sipe-appshare.c:502
 msgid "Unknown remote desktop client configured."
-msgstr ""
+msgstr "Cliente de desktop remoto desconhecido configurado."
 
 #: ../src/core/sipe-appshare.c:600
 msgid "Couldn't connect application sharing"
-msgstr ""
+msgstr "Não foi possível ligar à partilha de aplicação"
 
 #: ../src/core/sipe-buddy.c:541 ../src/core/sipe-buddy.c:2332
 msgid "Mobile"
@@ -307,7 +307,7 @@ msgstr "\n\nComo este cliente não foi compilado com suporte a chamadas de voz, 
 #: ../src/core/sipe-conf.c:1117
 #, c-format
 msgid "wants to invite you to a conference call%s"
-msgstr ""
+msgstr "deseja convidá-lo para uma chamada de conferência%s"
 
 #: ../src/core/sipe-conf.c:1465
 msgid ""
@@ -761,14 +761,14 @@ msgstr "Apenas interrupções urgentes"
 
 #: ../src/core/sipe-subscriptions.c:189
 msgid "Presence subscription failed!"
-msgstr ""
+msgstr "Subscrição de presença falhou!"
 
 #: ../src/core/sipe-subscriptions.c:190
 msgid ""
 "One or more buddies will therefore permanently show as offline.\n"
 "\n"
 "Please check that there are no corrupted SIP URIs in your contacts list."
-msgstr ""
+msgstr "Um ou mais amigos irão por isso aparecer como offline permanentemente..\n\nPor favor verifique que não existem SIP URIs corrompidos na sua lista de contactos."
 
 #: ../src/core/sipe-ucs.c:674
 msgid "UCS initialization failed!"
@@ -932,7 +932,7 @@ msgstr "Desbloquear"
 
 #: ../src/purple/purple-chat.c:345
 msgid "Show presentation"
-msgstr ""
+msgstr "Mostrar apresentação"
 
 #: ../src/purple/purple-chat.c:352
 msgid "Meeting entry info"
@@ -1154,7 +1154,7 @@ msgstr "Não publicar a minha informação de calendário"
 msgid ""
 "Show profile pictures from web\n"
 "(potentially dangerous)"
-msgstr ""
+msgstr "Mostrar imagem de perfil da web\n(potencialmente perigoso)"
 
 #: ../src/purple/purple-plugin-common.c:945
 msgid ""
@@ -1193,7 +1193,7 @@ msgstr "Proxy de chat de grupo \n   company.com ou user@company.com \n(deixe em 
 
 #: ../src/purple/purple-plugin-common.c:968
 msgid "Remote desktop client"
-msgstr ""
+msgstr "Cliente de desktop remoto"
 
 #: ../src/purple/purple-plugin-common.c:973
 msgid "Media encryption"
