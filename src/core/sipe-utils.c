@@ -312,12 +312,7 @@ void sipe_utils_message_debug(const gchar *type,
 gboolean
 sipe_strequal(const gchar *left, const gchar *right)
 {
-#if GLIB_CHECK_VERSION(2,16,0)
 	return (g_strcmp0(left, right) == 0);
-#else
-	return ((left == NULL && right == NULL) ||
-	        (left != NULL && right != NULL && strcmp(left, right) == 0));
-#endif
 }
 
 gboolean
@@ -329,15 +324,7 @@ sipe_strcase_equal(const gchar *left, const gchar *right)
 
 gint sipe_strcompare(gconstpointer a, gconstpointer b)
 {
-#if GLIB_CHECK_VERSION(2,16,0)
 	return (g_strcmp0(a, b));
-#else
-	if (!a)
-		return -(a != b);
-	if (!b)
-		return a != b;
-	return strcmp(a, b);
-#endif
 }
 
 time_t
