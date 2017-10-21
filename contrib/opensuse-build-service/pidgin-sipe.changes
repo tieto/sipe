@@ -11,7 +11,8 @@ Mon Oct  9 19:50:00 UTC 2017 - chemobejk@gmail.com
       * users can override this behaviour in the account settings
       * Office365 accounts should not be affected by this change
     - add support for GMime 3.0 API (Stefan Becker)
-    - raise BR glib-2.0 >= 2.18.0
+    - raise BR glib-2.0 >= 2.18.0 (Stefan Becker)
+    - drop support for GMime 2.4 (Stefan Becker)
 
 -------------------------------------------------------------------
 Sun Jun 11 15:38:00 UTC 2017 - chemobejk@gmail.com

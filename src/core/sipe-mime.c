@@ -41,6 +41,10 @@
 
 #include <gmime/gmime.h>
 
+#if !GMIME_CHECK_VERSION(2,6,0)
+#error GMime >= 2.6.0 is required to build SIPE
+#endif
+
 #if !GMIME_CHECK_VERSION(3,0,0)
 #define g_mime_part_get_content(p)         g_mime_part_get_content_object(p)
 #define g_mime_parser_construct_part(p, o) g_mime_parser_construct_part(p)
