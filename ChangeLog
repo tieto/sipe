@@ -8,6 +8,7 @@ version 1.23.0 "D-Bus, IPv6, OS X 10.11+" (2017-10-??)
 	  * users can override this behaviour in the account settings
 	  * Office365 accounts should not be affected by this change
 	- add support for GMime 3.0 API (Stefan Becker)
+	- raise BR glib-2.0 >= 2.18.0
 
 version 1.22.1 "Bug Fixes I" (2017-06-11)
 	- Fixed #320: Multiple client detection broken (Stefan Becker)

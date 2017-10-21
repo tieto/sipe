@@ -100,6 +100,10 @@
 #include "sipe-utils.h"
 #include "sipe-webticket.h"
 
+#if !GLIB_CHECK_VERSION(2,18,0)
+#error glib-2.0 >= 2.18.0 is required to build SIPE
+#endif
+
 #ifdef PACKAGE_GIT_COMMIT
 #define SIPE_CORE_VERSION PACKAGE_VERSION " (git commit " PACKAGE_GIT_COMMIT " / "
 #else
