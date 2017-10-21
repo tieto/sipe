@@ -190,7 +190,7 @@ BuildRequires:  %{mingw_prefix}cross-gcc
 BuildRequires:  %{mingw_prefix}cross-binutils
 BuildRequires:  %{mingw_prefix}gettext-runtime
 BuildRequires:  %{mingw_prefix}cross-pkg-config
-BuildRequires:  %{mingw_prefix}glib2-devel >= 2.12.0
+BuildRequires:  %{mingw_prefix}glib2-devel >= 2.18.0
 BuildRequires:  %{mingw_prefix}libxml2-devel
 BuildRequires:  %{mingw_prefix}mozilla-nss-devel
 BuildRequires:  %{mingw_prefix}libpurple-devel >= 2.4.0
@@ -252,8 +252,9 @@ BuildRequires:  pkgconfig(gio-2.0)
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
 BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
+BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
 BuildRequires:  gmime-devel
-BuildRequires:  glib2-devel >= 2.28.0
+BuildRequires:  pkgconfig(glib-2.0) >= 2.32.0
 %endif
 
 # Configurable components
@@ -283,7 +284,7 @@ BuildRequires:  empathy
 Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 BuildRequires:  libtool
 BuildRequires:  intltool
-BuildRequires:  glib2-devel >= 2.12.0
+BuildRequires:  glib2-devel >= 2.18.0
 
 
 %description
@@ -631,6 +632,7 @@ rm -rf %{buildroot}
 %changelog
 * DDD MMM DD 2017 J. D. User <jduser@noreply.com> 1.23.0
 - update to 1.23.0
+- raise BR glib-2.0 >= 2.18.0
 
 * Fri Aug 11 2017 J. D. User <jduser@noreply.com> 1.22.1-*git*
 - add BR dbus-1

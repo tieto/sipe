@@ -10,6 +10,7 @@ pidgin-sipe (1.23.0-1) unstable; urgency=low
 	  * users can override this behaviour in the account settings
 	  * Office365 accounts should not be affected by this change
 	- add support for GMime 3.0 API (Stefan Becker)
+	- raise BR glib-2.0 >= 2.18.0
 
  -- Stefan Becker <chemobejk@gmail.com>  Mon, 09 Oct 2017 22:50:00 +0300
 

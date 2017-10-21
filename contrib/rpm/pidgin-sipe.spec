@@ -1,6 +1,6 @@
 #
 # Example SPEC file to generate a RPM for pidgin-sipe.
-# It should work out-of-the-box on Fedora 10+ or RHEL5+.
+# It should work out-of-the-box for any current Fedora or RHEL release.
 #
 %if 0%{?_with_git:1}
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -39,8 +39,8 @@ Group:          %{pkg_group}
 License:        GPLv2+
 URL:            http://sipe.sourceforge.net/
 
-BuildRequires:  pkgconfig(glib-2.0) >= 2.12.0
-BuildRequires:  pkgconfig(gmodule-2.0) >= 2.12.0
+BuildRequires:  pkgconfig(glib-2.0) >= 2.18.0
+BuildRequires:  pkgconfig(gmodule-2.0) >= 2.18.0
 BuildRequires:  pkgconfig(dbus-1)
 BuildRequires:  pkgconfig(libxml-2.0)
 BuildRequires:  pkgconfig(nss)
@@ -301,6 +301,7 @@ rm -rf %{buildroot}
 %changelog
 * DDD MMM DD 2017 J. D. User <jduser@noreply.com> 1.23.0
 - update to 1.23.0
+- raise BR glib-2.0 >= 2.18.0
 
 * Fri Aug 11 2017 J. D. User <jduser@noreply.com> 1.22.1-*git*
 - add BR dbus-1
