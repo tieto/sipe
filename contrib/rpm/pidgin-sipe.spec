@@ -39,9 +39,9 @@ Group:          %{pkg_group}
 License:        GPLv2+
 URL:            http://sipe.sourceforge.net/
 
+BuildRequires:  pkgconfig(dbus-1)
 BuildRequires:  pkgconfig(glib-2.0) >= 2.18.0
 BuildRequires:  pkgconfig(gmodule-2.0) >= 2.18.0
-BuildRequires:  pkgconfig(dbus-1)
 BuildRequires:  pkgconfig(libxml-2.0)
 BuildRequires:  pkgconfig(nss)
 BuildRequires:  pkgconfig(purple) >= 2.7.0
@@ -62,18 +62,18 @@ BuildRequires:  pkgconfig(nice) >= 0.1.0
 %endif
 # Use "--without telepathy" to disable telepathy
 %if !0%{?_without_telepathy:1}
-BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
-BuildRequires:  pkgconfig(glib-2.0) >= 2.28.0
-BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
-BuildRequires:  pkgconfig(gobject-2.0)
-BuildRequires:  pkgconfig(dbus-glib-1)
 BuildRequires:  gmime-devel
+BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
+BuildRequires:  pkgconfig(glib-2.0) >= 2.32.0
+BuildRequires:  pkgconfig(gobject-2.0)
+BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
 %endif
 
 # Configurable components
 # Use "--without kerberos" to disable krb5
 %if !0%{?_without_kerberos:1}
-BuildRequires:  krb5-devel
+BuildRequires:  pkgconfig(krb5)
 %if 0%{?fedora} || 0%{?rhel} >= 7
 BuildRequires:  gssntlmssp-devel >= 0.5.0
 %define         requires_gssntlmssp 1

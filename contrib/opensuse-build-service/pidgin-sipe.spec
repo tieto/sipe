@@ -81,18 +81,14 @@
 %define has_pidgin 1
 
 %if 0%{?mageia}
-# Mageia requires a lot of special case handling...
 %define has_appdata 1
+%define has_gstreamer 1
 %endif
 
 %if 0%{?suse_version}
-%define dbus_devel dbus-1-devel
-%define nss_develname mozilla-nss-devel
 %define has_appdata 1
 %define has_gstreamer 1
 %define build_telepathy 1
-%else
-%define nss_develname nss-devel
 %endif
 
 %if 0%{?suse_version} || 0%{?sles_version}
@@ -110,7 +106,6 @@
 %endif
 
 %if 0%{?fedora}
-%define dbus_devel dbus-devel
 %define has_appdata 1
 %define has_gssntlmssp 1
 %define has_gstreamer 1
@@ -119,7 +114,7 @@
 %endif
 
 %if 0%{?centos_version} || 0%{?scientificlinux_version}
-%define dbus_devel dbus-devel
+%define has_krb5devel 1
 %define rhel_base_version %{?centos_version}%{?scientificlinux_version}
 %if %{rhel_base_version} >= 700
 # pidgin has been removed, but libpurple still exists
@@ -153,6 +148,8 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 #!BuildIgnore:   post-build-checks
 
+BuildRequires:  libtool
+BuildRequires:  intltool
 BuildRequires:  %{mingw_prefix}filesystem >= 23
 BuildRequires:  %{mingw_prefix}cross-gcc
 BuildRequires:  %{mingw_prefix}cross-binutils
@@ -174,48 +171,43 @@ BuildRequires:  %{mingw_prefix}pidgin
 #
 # Standard Linux build setup
 #
-# Special case handling for Mageia
-%if 0%{?mageia}
+BuildRequires:  libtool
+BuildRequires:  intltool
 BuildRequires:  pkgconfig(dbus-1)
-BuildRequires:  pkgconfig(farstream-0.2)
-BuildRequires:  pkgconfig(gio-2.0)
-BuildRequires:  pkgconfig(glib-2.0) >= 2.28.0
-BuildRequires:  pkgconfig(gstreamer-1.0)
-BuildRequires:  pkgconfig(krb5)
-BuildRequires:  pkgconfig(nice)
+BuildRequires:  pkgconfig(glib-2.0) >= 2.18.0
+BuildRequires:  pkgconfig(gmodule-2.0) >= 2.18.0
+BuildRequires:  pkgconfig(libxml-2.0)
 BuildRequires:  pkgconfig(nss)
 BuildRequires:  pkgconfig(purple) >= 2.7.0
-BuildRequires:  pkgconfig(libxml-2.0)
-
+%if 0%{?mageia}
 # It seems linking against -lpurple is severely broken on Mageia...
 BuildRequires:  pkgconfig(libgadu)
-
-# All other Linuxes
-%else
-BuildRequires:  libpurple-devel >= 2.7.0
-BuildRequires:  %{dbus_devel}
-BuildRequires:  libxml2-devel
-BuildRequires:  %{nss_develname}
-BuildRequires:  gettext-devel
+%endif
 %if 0%{?has_gstreamer:1}
 BuildRequires:  pkgconfig(farstream-0.2)
 BuildRequires:  pkgconfig(gio-2.0)
 BuildRequires:  pkgconfig(gstreamer-1.0)
-BuildRequires:  libnice-devel
+BuildRequires:  pkgconfig(nice) >= 0.1.0
 %endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
-BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
-BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
 BuildRequires:  gmime-devel
+BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
 BuildRequires:  pkgconfig(glib-2.0) >= 2.32.0
+BuildRequires:  pkgconfig(gobject-2.0)
+BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
 %endif
 
 # Configurable components
 # Use "--without kerberos" to disable krb5
 %if !0%{?_without_kerberos:1}
+%if 0%{?has_krb5devel:1}
 BuildRequires:  krb5-devel
-%if 0%{?has_gssntlmssp}
+%else
+BuildRequires:  pkgconfig(krb5)
+%endif
+%if 0%{?has_gssntlmssp:1}
 BuildRequires:  gssntlmssp-devel >= 0.5.0
 Requires:       gssntlmssp >= 0.5.0
 %endif
@@ -230,15 +222,10 @@ Requires:       pidgin
 BuildRequires:  empathy
 %endif
 
-%endif
-
 # End Windows cross-compilation/Linux build setup
 %endif
 
 Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
-BuildRequires:  libtool
-BuildRequires:  intltool
-BuildRequires:  glib2-devel >= 2.18.0
 
 
 %description
