@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1252,7 +1252,7 @@ void sipe_core_groupchat_join(struct sipe_core_public *sipe_public,
 	} else {
 		/* Add it to the queue but avoid duplicates */
 		if (!g_slist_find_custom(groupchat->join_queue, uri,
-					 sipe_strcompare)) {
+					 (GCompareFunc)g_strcmp0)) {
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_core_groupchat_join: URI queued");
 			groupchat->join_queue = g_slist_prepend(groupchat->join_queue,
 								g_strdup(uri));

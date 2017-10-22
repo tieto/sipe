@@ -196,9 +196,9 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 static gint
 candidate_sort_cb(struct sdpcandidate *c1, struct sdpcandidate *c2)
 {
-	int cmp = sipe_strcompare(c1->foundation, c2->foundation);
+	int cmp = g_strcmp0(c1->foundation, c2->foundation);
 	if (cmp == 0) {
-		cmp = sipe_strcompare(c1->username, c2->username);
+		cmp = g_strcmp0(c1->username, c2->username);
 		if (cmp == 0)
 			cmp = c1->component - c2->component;
 	}

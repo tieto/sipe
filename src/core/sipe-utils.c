@@ -322,11 +322,6 @@ sipe_strcase_equal(const gchar *left, const gchar *right)
 	        (left != NULL && right != NULL && g_ascii_strcasecmp(left, right) == 0));
 }
 
-gint sipe_strcompare(gconstpointer a, gconstpointer b)
-{
-	return (g_strcmp0(a, b));
-}
-
 time_t
 sipe_utils_str_to_time(const gchar *timestamp)
 {

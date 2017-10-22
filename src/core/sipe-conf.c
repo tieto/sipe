@@ -202,7 +202,7 @@ sipe_conf_supports_mcu_type(struct sipe_core_private *sipe_private,
 			    const gchar *type)
 {
 	return g_slist_find_custom(sipe_private->conf_mcu_types, type,
-				   sipe_strcompare) != NULL;
+				   (GCompareFunc)g_strcmp0) != NULL;
 }
 
 /**
