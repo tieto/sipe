@@ -61,7 +61,6 @@ cp pidgin-sipe-gstreamer1.dsc pidgin-sipe.dsc
 for os in \
     Debian_7.0 \
     Debian_8.0 \
-    xUbuntu_12.04 \
     xUbuntu_14.04; \
 do \
     cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \

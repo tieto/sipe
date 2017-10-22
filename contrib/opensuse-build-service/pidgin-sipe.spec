@@ -78,7 +78,6 @@
 %define ktp_files        ktp-accounts-kcm-sipe
 
 
-%define has_make_install 1
 %define has_pidgin 1
 
 %if 0%{?mageia}
@@ -89,21 +88,9 @@
 %if 0%{?suse_version}
 %define dbus_devel dbus-1-devel
 %define nss_develname mozilla-nss-devel
-# SLES11 defines suse_version = 1110
-%if 0%{?suse_version} > 1110
 %define has_appdata 1
-%define has_libnice 1
 %define has_gstreamer 1
 %define build_telepathy 1
-%define nice_gstreamer gstreamer-0_10-libnice
-# Leap 42.1 or SLES12
-%if 0%{?suse_version} >= 1315
-%define has_gstreamer1 1
-%define has_farstream 1
-%undefine has_gstreamer
-%undefine nice_gstreamer
-%endif
-%endif
 %else
 %define nss_develname nss-devel
 %endif
@@ -124,38 +111,19 @@
 
 %if 0%{?fedora}
 %define dbus_devel dbus-devel
-%define has_libnice 1
+%define has_appdata 1
+%define has_gssntlmssp 1
 %define has_gstreamer 1
 %define build_telepathy 1
 %define build_ktp 1
-%if 0%{?fedora} >= 20
-%define has_farstream 1
-%define nice_gstreamer libnice-gstreamer
-%if 0%{?fedora} >= 21
-%define has_appdata 1
-%define has_gssntlmssp 1
-%if 0%{?fedora} >= 22
-%define has_gstreamer1 1
-%undefine has_gstreamer
-%undefine nice_gstreamer
-%endif
-%endif
-%endif
 %endif
 
 %if 0%{?centos_version} || 0%{?scientificlinux_version}
 %define dbus_devel dbus-devel
 %define rhel_base_version %{?centos_version}%{?scientificlinux_version}
-%if %{rhel_base_version} < 600
-%define has_make_install 0
-%endif
-%if %{rhel_base_version} >= 600
-%define has_gstreamer 1
-%define has_libnice 1
 %if %{rhel_base_version} >= 700
 # pidgin has been removed, but libpurple still exists
 %define has_pidgin 0
-%endif
 %endif
 %endif
 
@@ -208,7 +176,6 @@ BuildRequires:  %{mingw_prefix}pidgin
 #
 # Special case handling for Mageia
 %if 0%{?mageia}
-BuildRequires:  intltool
 BuildRequires:  pkgconfig(dbus-1)
 BuildRequires:  pkgconfig(farstream-0.2)
 BuildRequires:  pkgconfig(gio-2.0)
@@ -230,24 +197,11 @@ BuildRequires:  %{dbus_devel}
 BuildRequires:  libxml2-devel
 BuildRequires:  %{nss_develname}
 BuildRequires:  gettext-devel
-# The following two are required to enable Voice & Video features
-%if 0%{?has_libnice:1}
-BuildRequires:  libnice-devel
-%if 0%{?nice_gstreamer:1}
-# Dependency required when gstreamer support is split into two packages
-Requires:       %{nice_gstreamer}
-%endif
-%endif
-%if 0%{?has_gstreamer1:1}
-BuildRequires:  pkgconfig(gstreamer-1.0)
-%else
 %if 0%{?has_gstreamer:1}
-BuildRequires:  pkgconfig(gstreamer-0.10)
-%endif
-%endif
-%if 0%{?has_farstream:1}
 BuildRequires:  pkgconfig(farstream-0.2)
 BuildRequires:  pkgconfig(gio-2.0)
+BuildRequires:  pkgconfig(gstreamer-1.0)
+BuildRequires:  libnice-devel
 %endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
@@ -519,20 +473,12 @@ rm -f %{buildroot}/pidgin-sipe.nsi
 #
 # Standard Linux install
 #
-%if 0%{?has_make_install}
 %make_install
-%else
-%makeinstall
-%endif
 
 # End Windows cross-compilation/Linux build setup
 %endif
 
 find %{buildroot} -type f -name "*.la" -delete -print
-# SLES11 defines suse_version = 1110
-%if 0%{?suse_version} && 0%{?suse_version} < 1120
-rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
-%endif
 # Pidgin doesn't have 24 or 32 pixel icons
 rm -f \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
@@ -614,10 +560,7 @@ rm -rf %{buildroot}
 %{_datadir}/appdata/%{name}.metainfo.xml
 %endif
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
-# SLES11 defines suse_version = 1110
-%if !0%{?suse_version} || 0%{?suse_version} >= 1120
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
-%endif
 %endif
 %endif
 

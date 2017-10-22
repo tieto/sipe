@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20160405git4fedafa
+%define git       20171022gitfe34eaec
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -57,16 +57,8 @@ BuildRequires:  libtool
 BuildRequires:  pkgconfig(purple) >= 2.8.0
 BuildRequires:  pkgconfig(farstream-0.2)
 BuildRequires:  pkgconfig(gio-2.0)
-BuildRequires:  pkgconfig(nice) >= 0.1.0
-%if 0%{?fedora} >= 22
 BuildRequires:  pkgconfig(gstreamer-1.0)
-%else
-%if 0%{?fedora} >= 20
-# Dependency required when gstreamer support is split into two packages
-%define         requires_libnice_gstreamer 1
-%endif
-BuildRequires:  pkgconfig(gstreamer-0.10)
-%endif
+BuildRequires:  pkgconfig(nice) >= 0.1.0
 %endif
 # Use "--without telepathy" to disable telepathy
 %if !0%{?_without_telepathy:1}
@@ -82,7 +74,7 @@ BuildRequires:  gmime-devel
 # Use "--without kerberos" to disable krb5
 %if !0%{?_without_kerberos:1}
 BuildRequires:  krb5-devel
-%if 0%{?fedora} >= 21
+%if 0%{?fedora} || 0%{?rhel} >= 7
 BuildRequires:  gssntlmssp-devel >= 0.5.0
 %define         requires_gssntlmssp 1
 %endif
@@ -114,9 +106,6 @@ Group:          %{pkg_group}
 License:        GPLv2+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
-%if 0%{?requires_libnice_gstreamer}
-Requires:       libnice-gstreamer
-%endif
 %if 0%{?requires_gssntlmssp}
 Requires:       gssntlmssp >= 0.5.0
 %endif
@@ -182,10 +171,6 @@ Group:          %{pkg_group}
 License:        GPLv2+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
-%if 0%{?requires_libnice_gstreamer}
-# @TODO: remove comment when telepathy plugin supports Voice & Video features
-#Requires:       libnice-gstreamer
-%endif
 %if 0%{?requires_gssntlmssp}
 Requires:       gssntlmssp >= 0.5.0
 %endif
@@ -243,17 +228,20 @@ This package provides common files for the SIPE protocol plugins:
     --disable-telepathy
 %endif
 make %{?_smp_mflags}
-make %{?_smp_mflags} check
 
 
 %install
-%makeinstall
+%make_install
 find %{buildroot} -type f -name "*.la" -delete -print
 # Pidgin doesn't have 24 or 32 pixel icons
 rm -f \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/32/sipe.png
 %find_lang %{name}
+
+
+%check
+make %{?_smp_mflags} check
 
 
 %clean
