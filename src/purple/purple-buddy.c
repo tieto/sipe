@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -152,10 +152,10 @@ gchar *sipe_backend_buddy_get_local_alias(SIPE_UNUSED_PARAMETER struct sipe_core
 					  const sipe_backend_buddy who)
 {
 	return g_strdup(
-#if PURPLE_VERSION_CHECK(2,6,0)
-		purple_buddy_get_local_buddy_alias(who)
-#else
+#if PURPLE_VERSION_CHECK(3,0,0)
 		purple_buddy_get_local_alias(who)
+#else
+		purple_buddy_get_local_buddy_alias(who)
 #endif
 		);
 }

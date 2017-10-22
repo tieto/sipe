@@ -615,7 +615,6 @@ void sipe_purple_group_remove(PurpleConnection *gc, PurpleGroup *group)
 			       purple_group_get_name(group));
 }
 
-#if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)
 GHashTable *
 sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 {
@@ -625,7 +624,6 @@ sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 	return table;
 }
 
-#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 #ifdef HAVE_VV
 
 static void
@@ -650,8 +648,6 @@ PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *
 	       | PURPLE_MEDIA_CAPS_AUDIO_VIDEO
 	       | PURPLE_MEDIA_CAPS_MODIFY_SESSION;
 }
-#endif
-#endif
 #endif
 
 /* PurplePluginInfo function calls & data structure */
