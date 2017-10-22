@@ -40,9 +40,8 @@
 #include "purple-dbus.h"
 #endif
 
-/* Backward compatibility when compiling against 2.4.x API */
-#if !PURPLE_VERSION_CHECK(2,5,0) && !PURPLE_VERSION_CHECK(3,0,0)
-#define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
+#if !(PURPLE_VERSION_CHECK(2,7,0) || PURPLE_VERSION_CHECK(3,0,0))
+#error purple >= 2.7.0 is required to build SIPE
 #endif
 
 #if PURPLE_VERSION_CHECK(3,0,0)

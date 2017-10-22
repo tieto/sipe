@@ -371,7 +371,7 @@ with_purple_vv=no
 AS_IF([test "x$enable_purple" != xno],
 	[PKG_CHECK_MODULES(PURPLE, [purple-3],
 		[purple_pkgconfig=purple-3],
-		[PKG_CHECK_MODULES(PURPLE, [purple >= 2.4.0],
+		[PKG_CHECK_MODULES(PURPLE, [purple >= 2.7.0],
 			[purple_pkgconfig=purple],
 			[enable_purple=no])])
 

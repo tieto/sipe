@@ -9,6 +9,7 @@ version 1.23.0 "D-Bus, IPv6, OS X 10.11+" (2017-10-??)
 	  * Office365 accounts should not be affected by this change
 	- add support for GMime 3.0 API (Stefan Becker)
 	- raise BR glib-2.0 >= 2.18.0 (Stefan Becker)
+	- raise BR purple >= 2.7.0 (Stefan Becker)
 	- drop support for GMime 2.4 (Stefan Becker)
 
 version 1.22.1 "Bug Fixes I" (2017-06-11)
