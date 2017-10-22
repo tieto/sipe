@@ -44,7 +44,7 @@ BuildRequires:  pkgconfig(gmodule-2.0) >= 2.18.0
 BuildRequires:  pkgconfig(dbus-1)
 BuildRequires:  pkgconfig(libxml-2.0)
 BuildRequires:  pkgconfig(nss)
-BuildRequires:  pkgconfig(purple) >= 2.4.0
+BuildRequires:  pkgconfig(purple) >= 2.7.0
 %if 0%{?_with_git:1}
 BuildRequires:  autoconf
 BuildRequires:  automake
@@ -302,6 +302,7 @@ rm -rf %{buildroot}
 * DDD MMM DD 2017 J. D. User <jduser@noreply.com> 1.23.0
 - update to 1.23.0
 - raise BR glib-2.0 >= 2.18.0
+- raise BR purple >= 2.7.0
 
 * Fri Aug 11 2017 J. D. User <jduser@noreply.com> 1.22.1-*git*
 - add BR dbus-1

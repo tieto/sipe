@@ -193,7 +193,7 @@ BuildRequires:  %{mingw_prefix}cross-pkg-config
 BuildRequires:  %{mingw_prefix}glib2-devel >= 2.18.0
 BuildRequires:  %{mingw_prefix}libxml2-devel
 BuildRequires:  %{mingw_prefix}mozilla-nss-devel
-BuildRequires:  %{mingw_prefix}libpurple-devel >= 2.4.0
+BuildRequires:  %{mingw_prefix}libpurple-devel >= 2.7.0
 BuildRequires:  %{mingw_prefix}cross-nsis
 
 # For directory ownership
@@ -217,7 +217,7 @@ BuildRequires:  pkgconfig(gstreamer-1.0)
 BuildRequires:  pkgconfig(krb5)
 BuildRequires:  pkgconfig(nice)
 BuildRequires:  pkgconfig(nss)
-BuildRequires:  pkgconfig(purple)
+BuildRequires:  pkgconfig(purple) >= 2.7.0
 BuildRequires:  pkgconfig(libxml-2.0)
 
 # It seems linking against -lpurple is severely broken on Mageia...
@@ -225,7 +225,7 @@ BuildRequires:  pkgconfig(libgadu)
 
 # All other Linuxes
 %else
-BuildRequires:  libpurple-devel >= 2.4.0
+BuildRequires:  libpurple-devel >= 2.7.0
 BuildRequires:  %{dbus_devel}
 BuildRequires:  libxml2-devel
 BuildRequires:  %{nss_develname}
@@ -633,6 +633,7 @@ rm -rf %{buildroot}
 * DDD MMM DD 2017 J. D. User <jduser@noreply.com> 1.23.0
 - update to 1.23.0
 - raise BR glib-2.0 >= 2.18.0
+- raise BR purple >= 2.7.0
 
 * Fri Aug 11 2017 J. D. User <jduser@noreply.com> 1.22.1-*git*
 - add BR dbus-1
