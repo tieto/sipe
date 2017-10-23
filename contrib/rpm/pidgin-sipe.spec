@@ -58,6 +58,7 @@ BuildRequires:  pkgconfig(purple) >= 2.8.0
 BuildRequires:  pkgconfig(farstream-0.2)
 BuildRequires:  pkgconfig(gio-2.0)
 BuildRequires:  pkgconfig(gstreamer-1.0)
+BuildRequires:  pkgconfig(gstreamer-rtp-1.0)
 BuildRequires:  pkgconfig(nice) >= 0.1.0
 %endif
 # Use "--without telepathy" to disable telepathy
