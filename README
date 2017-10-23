@@ -258,27 +258,17 @@ If you want to enable Voice & Video features then you'll need some of the
 following packages. You need to install the same version of the GStreamer
 development packages which where used to compile Pidgin!
 
-	libnice-dev                 (>= 0.1.0)
-	libgstreamer0.10-dev
-or	libgstreamer1.0-dev
-	for encryption support (at compile time):
-	libpurple-dev               (>= 2.10.12)
-	libnice-dev                 (>= 0.1.13)
+	libfarstream-0.2-dev
 	libgstreamer1.0-dev
-	for encryption support (at run time):
-	libfarstream-0.2
-	gstreamer1.0-plugins-bad
+	libgstreamer-plugins-base1.0-dev
+	libnice-dev                   (>= 0.1.13)
+	libpurple-dev                 (>= 2.10.12)
 
-	libnice-devel               (>= 0.1.0)
-	gstreamer-devel
-or	gstreamer1-devel
-	for encryption support (at compile time):
-	libpurple-devel             (>= 2.10.12)
-	libnice-devel               (>= 0.1.13)
+	farstream02-devel
 	gstreamer1-devel
-	for encryption support (at run time):
-	farstream02
-	gstreamer1-plugins-bad-free
+	gstreamer1-plugins-base-devel
+	libnice-devel                 (>= 0.1.13)
+	libpurple-devel               (>= 2.10.12)
 
 Now you should be able to compile the source code with
 

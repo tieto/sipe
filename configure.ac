@@ -415,24 +415,26 @@ AS_IF([test "x$enable_purple" != xno],
 						[gstreamer_pkgconfig=`$PKG_CONFIG --variable=gstreamer $purple_pkgconfig`
 						AS_IF([test "x$gstreamer_pkgconfig" == x],
 							[AS_IF([test "x$purple_pkgconfig" == xpurple-3],
-								[gstreamer_pkgconfig=1.0], [gstreamer_pkgconfig=0.10])])
-						gstreamer_pkgconfig="gstreamer-$gstreamer_pkgconfig gstreamer-rtp-$gstreamer_pkgconfig"
+								[gstreamer_pkgconfig=1.0])])
+						AS_IF([test "x$gstreamer_pkgconfig" == x1.0],
+							[gstreamer_pkgconfig="gstreamer-$gstreamer_pkgconfig gstreamer-rtp-$gstreamer_pkgconfig"
 
-						AC_MSG_NOTICE([using packages "$gstreamer_pkgconfig".])
-						PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
-							[PKG_CHECK_MODULES(FARSTREAM, [farstream-0.2],
-								[with_purple_vv=yes
+							AC_MSG_NOTICE([using packages "$gstreamer_pkgconfig".])
+							PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
+								[PKG_CHECK_MODULES(FARSTREAM, [farstream-0.2],
+									[with_purple_vv=yes
 
-								 AC_COMPILE_IFELSE(
-									[AC_LANG_PROGRAM([[
+									 AC_COMPILE_IFELSE(
+									 	 [AC_LANG_PROGRAM([[
 #include <media.h>
-										]],
-										[[return (PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE);]]
+											]],
+											[[return (PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE);]]
+										 )],
+										 [AC_DEFINE(HAVE_PURPLE_NEW_TCP_ENUMS, 1, [Define if libpurple has new TCP enums in media backend.])]
 									)],
-									[AC_DEFINE(HAVE_PURPLE_NEW_TCP_ENUMS, 1, [Define if libpurple has new TCP enums in media backend.])]
-								)],
-								[AC_MSG_NOTICE(Farstream required: disabling purple voice and video support)])],
-							[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
+									[AC_MSG_NOTICE(Farstream required: disabling purple voice and video support)])],
+								[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
+							[AC_MSG_NOTICE(your purple hasn't been compiled against GStreamer 1.0: disabling purple voice and video support)])],
 						[AC_MSG_NOTICE(libpurple >= 2.8.0 required: disabling purple voice and video support)])],
 					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])
 				])
