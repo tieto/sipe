@@ -14,6 +14,7 @@ Mon Oct  9 19:50:00 UTC 2017 - chemobejk@gmail.com
     - raise BR glib-2.0 >= 2.18.0 (Stefan Becker)
     - raise BR purple >= 2.7.0 (Stefan Becker)
     - drop support for GMime 2.4 (Stefan Becker)
+    - drop support for gstreamer-0.10 (Stefan Becker)
 
 -------------------------------------------------------------------
 Sun Jun 11 15:38:00 UTC 2017 - chemobejk@gmail.com

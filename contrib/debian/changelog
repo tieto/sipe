@@ -13,6 +13,7 @@ pidgin-sipe (1.23.0-1) unstable; urgency=low
 	- raise BR glib-2.0 >= 2.18.0 (Stefan Becker)
 	- raise BR purple >= 2.7.0 (Stefan Becker)
 	- drop support for GMime 2.4 (Stefan Becker)
+	- drop support for gstreamer-0.10 (Stefan Becker)
 
  -- Stefan Becker <chemobejk@gmail.com>  Mon, 09 Oct 2017 22:50:00 +0300
 
