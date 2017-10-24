@@ -55,7 +55,21 @@ Now you can just select Product -> Build and after a short while you should
 get a SIPEAdiumPlugin binary that you can install into your Adium application. 
 
 
-4. Build SIPEAdiumPlugin for an older Max OS X release
+4. Generate & verify the release archive
+----------------------------------------
+
+The build copies the files into your Adium plugin directory. Use the following
+commands to generate the release archive:
+
+    $ cd ~/Library/Application\ Support/Adium\ 2.0/PlugIns
+    $ zip -r ~/SIPEAdiumPlugin.zip SIPEAdiumPlugin.AdiumLibpurplePlugin/
+
+You need to have a bash 4 to run the verification script, e.g. on a Linux box
+
+    $ src/adium/check_release.sh ~/SIPEAdiumPlugin.zip
+
+
+5. Build SIPEAdiumPlugin for an older Max OS X release
 ------------------------------------------------------
 
 If your Xcode does not have the SDK for the older Mac OS X release then please
