@@ -1937,9 +1937,13 @@ sipe_core_media_stream_candidate_pair_established(struct sipe_media_stream *stre
 	stream_schedule_cancel_timeout(call, SIPE_MEDIA_STREAM_PRIVATE);
 
 	if (stream->candidate_pairs_established_cb) {
-		stream->candidate_pairs_established_cb(stream);
+		/* If the call is cancelled in this callback, continuing
+		 * further will cause a crash in trying to access the freed
+		 * variable 'stream'
+		 */
+		if (!stream->candidate_pairs_established_cb(stream))
+			return;
 	}
-
 	if (sipe_backend_media_is_initiator(stream->call, NULL)) {
 		GSList *streams = SIPE_MEDIA_CALL_PRIVATE->streams;
 		for (; streams; streams = streams->next) {

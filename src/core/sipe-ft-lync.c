@@ -181,7 +181,7 @@ mime_mixed_cb(gpointer user_data, const GSList *fields, const gchar *body,
 	}
 }
 
-static void
+static gboolean
 candidate_pairs_established_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_file_transfer_lync *ft_private;
@@ -195,7 +195,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 			"</downloadFile>"
 		"</request>";
 
-	g_return_if_fail(sipe_strequal(stream->id, "data"));
+	g_return_val_if_fail(sipe_strequal(stream->id, "data"), TRUE);
 
 	ft_private = sipe_media_stream_get_data(stream);
 
@@ -206,6 +206,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 						 ft_private->id,
 						 ft_private->file_name),
 				 ft_private, NULL);
+	return TRUE;
 }
 
 static gboolean

@@ -734,7 +734,7 @@ set_shared_display_area(rdpShadowServer *server, guint monitor_id)
 	}
 }
 
-static void
+static gboolean
 candidate_pairs_established_cb(struct sipe_media_stream *stream)
 {
 	struct sipe_appshare *appshare;
@@ -744,7 +744,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 	rdpShadowServer* server;
 	const gchar *server_error = NULL;
 
-	g_return_if_fail(sipe_strequal(stream->id, "applicationsharing"));
+	g_return_val_if_fail(sipe_strequal(stream->id, "applicationsharing"), TRUE);
 
 	appshare = sipe_media_stream_get_data(stream);
 
@@ -784,7 +784,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 			shadow_server_uninit(server);
 			shadow_server_free(server);
 		}
-		return;
+		return FALSE;
 	}
 
 	appshare->server = server;
@@ -797,7 +797,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 				 error->message);
 		g_error_free(error);
 		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
-		return;
+		return FALSE;
 	}
 
 	g_socket_set_blocking(appshare->socket, FALSE);
@@ -812,7 +812,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 		SIPE_DEBUG_ERROR("Can't connect to RDP server: %s", error->message);
 		g_error_free(error);
 		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
-		return;
+		return FALSE;
 	}
 
 	appshare->channel = g_io_channel_unix_new(g_socket_get_fd(appshare->socket));
@@ -824,7 +824,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 				 error->message);
 		g_error_free(error);
 		sipe_backend_media_hangup(stream->call->backend_private, TRUE);
-		return;
+		return FALSE;
 	}
 
 	appshare->rdp_channel_readable_watch_id =
@@ -833,6 +833,7 @@ candidate_pairs_established_cb(struct sipe_media_stream *stream)
 
 	// Appshare structure initialized; don't call this again.
 	stream->candidate_pairs_established_cb = NULL;
+	return TRUE;
 }
 
 void
