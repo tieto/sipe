@@ -288,7 +288,7 @@ rm -rf %{buildroot}
 
 
 %changelog
-* DDD MMM DD 2017 J. D. User <jduser@noreply.com> 1.23.0
+* Sat Oct 28 2017 J. D. User <jduser@noreply.com> 1.23.0
 - update to 1.23.0
 - raise BR glib-2.0 >= 2.18.0
 - raise BR purple >= 2.7.0

@@ -1,4 +1,4 @@
-version 1.23.0 "D-Bus, IPv6, OS X 10.11+" (2017-10-??)
+version 1.23.0 "D-Bus, IPv6, OS X 10.11+" (2017-10-28)
 	- Feature #101: Mac OS X 10.13 OpenSSL support (Stefan Becker)
 	- Feature #100: Extend libpurple D-Bus interface (Stefan Becker)
 	- Feature #99: IPv6 addresses in SIP & SDP messages (Stefan Becker)
