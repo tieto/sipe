@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -143,14 +143,8 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* unregister_user */
 	NULL,					/* send_attention */
 	NULL,					/* get_attention_types */
-#if !PURPLE_VERSION_CHECK(2,5,0)
-	/* Backward compatibility when compiling against 2.4.x API */
-	(void (*)(void))			/* _purple_reserved4 */
-#endif
 	sizeof(PurplePluginProtocolInfo),       /* struct_size */
-#if PURPLE_VERSION_CHECK(2,5,0)
 	sipe_purple_get_account_text_table,	/* get_account_text_table */
-#if PURPLE_VERSION_CHECK(2,6,0)
 #ifdef HAVE_VV
 	sipe_purple_initiate_media,		/* initiate_media */
 	sipe_purple_get_media_caps,		/* get_media_caps */
@@ -158,16 +152,12 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* initiate_media */
 	NULL,					/* get_media_caps */
 #endif
-#if PURPLE_VERSION_CHECK(2,7,0)
 	NULL,					/* get_moods */
 	NULL,					/* set_public_alias */
 	NULL,					/* get_public_alias */
 #if PURPLE_VERSION_CHECK(2,8,0)
 	NULL,					/* add_buddy_with_invite */
 	NULL,					/* add_buddies_with_invite */
-#endif
-#endif
-#endif
 #endif
 };
 #ifdef __GNUC__

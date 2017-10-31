@@ -693,12 +693,22 @@ candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 	return g_string_free(result, FALSE);
 }
 
+static gint
+remote_candidates_sort_cb(struct sdpcandidate *c1, struct sdpcandidate *c2)
+{
+	return c1->component - c2->component;
+}
+
 static gchar *
 remote_candidates_to_string(GSList *candidates, SipeIceVersion ice_version)
 {
 	GString *result = g_string_new("");
 
 	if (candidates) {
+		// Sort the candidates by increasing component IDs.
+		candidates = g_slist_sort(candidates,
+					  (GCompareFunc)remote_candidates_sort_cb);
+
 		if (ice_version == SIPE_ICE_RFC_5245) {
 			GSList *i;
 			g_string_append(result, "a=remote-candidates:");
@@ -760,7 +770,9 @@ media_to_string(const struct sdpmsg *msg, const struct sdpmedia *media)
 
 	if (media->port != 0) {
 		if (!sipe_strequal(msg->ip, media->ip)) {
-			media_conninfo = g_strdup_printf("c=IN IP4 %s\r\n", media->ip);
+			media_conninfo = g_strdup_printf("c=IN %s %s\r\n",
+							 sipe_utils_ip_sdp_address_marker(media->ip),
+							 media->ip);
 		}
 
 		codecs_str = codecs_to_string(media->codecs);
@@ -843,16 +855,18 @@ sdpmsg_to_string(const struct sdpmsg *msg)
 {
 	GString *body = g_string_new(NULL);
 	GSList *i;
+	const gchar *marker = sipe_utils_ip_sdp_address_marker(msg->ip);
 
 	g_string_append_printf(
 		body,
 		"v=0\r\n"
-		"o=- 0 0 IN IP4 %s\r\n"
+		"o=- 0 0 IN %s %s\r\n"
 		"s=session\r\n"
-		"c=IN IP4 %s\r\n"
+		"c=IN %s %s\r\n"
 		"b=CT:99980\r\n"
 		"t=0 0\r\n",
-		msg->ip, msg->ip);
+		marker, msg->ip,
+		marker, msg->ip);
 
 
 	for (i = msg->media; i; i = i->next) {

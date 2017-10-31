@@ -110,6 +110,59 @@ translate SIPE to your native language at Transifex:
 The service offers a convenient web editor.
 
 
+D-Bus support (libpurple backend only)
+======================================
+
+If libpurple and SIPE have been compiled with D-Bus support and the D-Bus
+backend has been successfully initialized at libpurple start, then SIPE
+extends the libpurple D-Bus interface with the following APIs:
+
+    Function		  Description
+
+    SipeCallPhoneNumber(aId, phone_number)
+			  Same as "Call a phone number" menu
+
+    SipeJoinConferenceWithOrganizerAndId(aId, organizer_email, meeting_id)
+			  Same as "Organizer email" and "Meeting ID" in the
+			  dialog opened by "Join scheduled conference..."
+
+    SipeJoinConferenceWithUri(aId, uri)
+			  Same as "Meeting location" in the dialog opened by
+			  "Join scheduled conference..."
+
+    SipeRepublishCalendar(aId)
+			  Same as "Republish Calendar" menu
+
+    SipeResetStatus(aId)
+			  Same as "Reset status" menu
+
+To use the APIs from a script you'll need a D-Bus object for the libpurple
+interface and a valid & connected account ID as first parameter. An invalid
+account ID will cause SIPE to silently ignore the D-Bus invocation.
+
+Example script code (without error checks to keep it simple):
+
+Perl:
+
+    use Net::DBus;
+    my $bus       = Net::DBus->session;
+    my $service   = $bus->get_service('im.pidgin.purple.PurpleService');
+    my $purple    = $service->get_object('/im/pidgin/purple/PurpleObject',
+                                         'im.pidgin.purple.PurpleInterface');
+    my $accountId = $purple->PurpleAccountsFind($accountName, 'prpl-sipe');
+    $purple->SipeXYZ($accountId, parameters... );
+
+Python:
+
+    import dbus
+    bus       = dbus.SessionBus()
+    object    = bus.get_object("im.pidgin.purple.PurpleService",
+                               "/im/pidgin/purple/PurpleObject")
+    purple    = dbus.Interface(object, "im.pidgin.purple.PurpleInterface")
+    accountId = purple.PurpleAccountsFind($accountName, 'prpl-sipe')
+    purple.SipeXYZ(accountId, parameters... );
+
+
 Installing from a distribution repository
 =========================================
 
@@ -195,31 +248,27 @@ packages
 
 	gssntlmssp-devel
 
+If you want to enable the D-Bus support then you'll need one of the
+following packages
+
+	libdbus-1-dev
+	dbus-devel
+
 If you want to enable Voice & Video features then you'll need some of the
 following packages. You need to install the same version of the GStreamer
 development packages which where used to compile Pidgin!
 
-	libnice-dev                 (>= 0.1.0)
-	libgstreamer0.10-dev
-or	libgstreamer1.0-dev
-	for encryption support (at compile time):
-	libpurple-dev               (>= 2.10.12)
-	libnice-dev                 (>= 0.1.13)
+	libfarstream-0.2-dev
 	libgstreamer1.0-dev
-	for encryption support (at run time):
-	libfarstream-0.2
-	gstreamer1.0-plugins-bad
+	libgstreamer-plugins-base1.0-dev
+	libnice-dev                   (>= 0.1.13)
+	libpurple-dev                 (>= 2.10.12)
 
-	libnice-devel               (>= 0.1.0)
-	gstreamer-devel
-or	gstreamer1-devel
-	for encryption support (at compile time):
-	libpurple-devel             (>= 2.10.12)
-	libnice-devel               (>= 0.1.13)
+	farstream02-devel
 	gstreamer1-devel
-	for encryption support (at run time):
-	farstream02
-	gstreamer1-plugins-bad-free
+	gstreamer1-plugins-base-devel
+	libnice-devel                 (>= 0.1.13)
+	libpurple-devel               (>= 2.10.12)
 
 Now you should be able to compile the source code with
 

@@ -111,7 +111,9 @@ struct sipe_backend_private;
  * Flags
  */
 /* user disabled calendar information publishing */
-#define SIPE_CORE_FLAG_DONT_PUBLISH 0x00000001
+#define SIPE_CORE_FLAG_DONT_PUBLISH    0x00000001
+/* user enabled insecure buddy icon download from web */
+#define SIPE_CORE_FLAG_ALLOW_WEB_PHOTO 0x00000002
 
 #define SIPE_CORE_FLAG_IS(flag)    \
 	((sipe_public->flags & SIPE_CORE_FLAG_ ## flag) == SIPE_CORE_FLAG_ ## flag)

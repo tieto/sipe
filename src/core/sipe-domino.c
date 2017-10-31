@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 pier11 <pier11@operamail.com>
  *
  *
@@ -388,46 +388,10 @@ static void sipe_domino_process_login_response(SIPE_UNUSED_PARAMETER struct sipe
 
 static gchar *sipe_domino_uri_escape(const gchar *string)
 {
-	gchar *escaped;
-
 	if (!string) return(NULL);
 	if (!g_utf8_validate(string, -1, NULL)) return(NULL);
 
-#if GLIB_CHECK_VERSION(2,16,0)
-	escaped = g_uri_escape_string(string, NULL, FALSE);
-#else
-	/* loosely based on libpurple/util.c:purple_url_encode() */
-	{
-		GString *buf = g_string_new(NULL);
-
-		while (*string) {
-			gunichar c = g_utf8_get_char(string);
-
-			/* If the character is an ASCII character and is alphanumeric
-			 * no need to escape */
-			if (c < 128 &&
-			    (isalnum(c) || c == '-' || c == '.' || c == '_' || c == '~')) {
-				g_string_append_c(buf, c);
-			} else {
-				gchar *p, utf_char[6];
-				guint bytes = g_unichar_to_utf8(c, utf_char);
-
-				p = utf_char;
-				while (bytes-- > 0) {
-					g_string_append_printf(buf,
-							       "%%%02X",
-							       *p++ & 0xff);
-				}
-			}
-
-			string = g_utf8_next_char(string);
-		}
-
-		escaped = g_string_free(buf, FALSE);
-	}
-#endif
-
-	return(escaped);
+	return(g_uri_escape_string(string, NULL, FALSE));
 }
 
 static void

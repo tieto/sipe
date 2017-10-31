@@ -19,11 +19,9 @@
 		1CE49FF314A17F4D00663393 /* sip-soap.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE49FF014A17F4D00663393 /* sip-soap.c */; };
 		1CE49FF414A17F4D00663393 /* sipe-notify.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE49FF114A17F4D00663393 /* sipe-notify.c */; };
 		1CE49FF514A17F4D00663393 /* sipe-webticket.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE49FF214A17F4D00663393 /* sipe-webticket.c */; };
-		1CE4A00614A17FD100663393 /* sip-sec-ntlm-tests.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */; };
 		1CE4A00714A17FD100663393 /* sip-sec-digest.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00114A17FD100663393 /* sip-sec-digest.c */; };
 		1CE4A00814A17FD100663393 /* sip-sec-tls-dsk.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */; };
 		1CE4A00A14A17FD100663393 /* sipe-certificate.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00214A17FD100663393 /* sipe-certificate.c */; };
-		1CE4A00C14A17FD100663393 /* sipe-tls-tester.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00414A17FD100663393 /* sipe-tls-tester.c */; };
 		1CE4A00D14A17FD100663393 /* sipe-tls.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A00514A17FD100663393 /* sipe-tls.c */; };
 		1CE4A01E14A180E100663393 /* purple-search.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A01C14A180E100663393 /* purple-search.c */; };
 		1CE4A01F14A180E100663393 /* purple-status.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CE4A01D14A180E100663393 /* purple-status.c */; };
@@ -34,7 +32,6 @@
 		1CF260FD12C2DFA00045B6CC /* purple-im.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F512C2DFA00045B6CC /* purple-im.c */; };
 		1CF260FF12C2DFA00045B6CC /* purple-notify.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F712C2DFA00045B6CC /* purple-notify.c */; };
 		1CF2610012C2DFA00045B6CC /* purple-user.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF260F812C2DFA00045B6CC /* purple-user.c */; };
-		1CF2611412C2E1AA0045B6CC /* sdpmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2610812C2E1AA0045B6CC /* sdpmsg.c */; };
 		1CF2611812C2E1AA0045B6CC /* sipe-groupchat.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2610C12C2E1AA0045B6CC /* sipe-groupchat.c */; };
 		1CF2611912C2E1AA0045B6CC /* sipe-incoming.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2610D12C2E1AA0045B6CC /* sipe-incoming.c */; };
 		1CF2611B12C2E1AA0045B6CC /* sipe-ucs.c in Sources */ = {isa = PBXBuildFile; fileRef = 1CF2610F12C2E1AA0045B6CC /* sipe-ucs.c */; };
@@ -68,8 +65,6 @@
 		B13FAB6A119D5155001CE037 /* purple-schedule.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5A119D5155001CE037 /* purple-schedule.c */; };
 		B13FAB6B119D5155001CE037 /* purple-setting.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5B119D5155001CE037 /* purple-setting.c */; };
 		B13FAB6C119D5155001CE037 /* purple-transport.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5C119D5155001CE037 /* purple-transport.c */; };
-		B13FAB6D119D5155001CE037 /* tests-load.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5D119D5155001CE037 /* tests-load.c */; };
-		B13FAB6E119D5155001CE037 /* tests.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FAB5E119D5155001CE037 /* tests.c */; };
 		B13FABDF119D585A001CE037 /* sip-csta.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA3119D585A001CE037 /* sip-csta.c */; };
 		B13FABE1119D585A001CE037 /* sip-sec-gssapi.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA5119D585A001CE037 /* sip-sec-gssapi.c */; };
 		B13FABE5119D585A001CE037 /* sip-sec-ntlm.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */; };
@@ -81,7 +76,6 @@
 		B13FABF3119D585A001CE037 /* sipe-conf.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABB7119D585A001CE037 /* sipe-conf.c */; };
 		B13FABF6119D585A001CE037 /* sipe-core.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBA119D585A001CE037 /* sipe-core.c */; };
 		B13FABF8119D585A001CE037 /* sipe-dialog.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBC119D585A001CE037 /* sipe-dialog.c */; };
-		B13FABFB119D585A001CE037 /* sipe-domino.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABBF119D585A001CE037 /* sipe-domino.c */; };
 		B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC1119D585A001CE037 /* sipe-ews.c */; };
 		B13FABFE119D585A001CE037 /* sipe-ews-autodiscover.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */; };
 		B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABC3119D585A001CE037 /* sipe-ft.c */; };
@@ -93,7 +87,6 @@
 		B13FAC0F119D585A001CE037 /* sipe-xml.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD3119D585A001CE037 /* sipe-xml.c */; };
 		B13FAC13119D585A001CE037 /* sipmsg.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD7119D585A001CE037 /* sipmsg.c */; };
 		B13FAC15119D585A001CE037 /* uuid.c in Sources */ = {isa = PBXBuildFile; fileRef = B13FABD9119D585A001CE037 /* uuid.c */; };
-		B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B13FAC60119D721E001CE037 /* libxml2.dylib */; };
 		B89F38821BDEB0D30017B509 /* sipe-ft-lync.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F38811BDEB0D30017B509 /* sipe-ft-lync.c */; };
 		B89F388D1BDEB0F00017B509 /* sipe-mime-common.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F388C1BDEB0F00017B509 /* sipe-mime-common.c */; };
 		B89F388F1BDEB10B0017B509 /* purple-plugin-common.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F388E1BDEB10B0017B509 /* purple-plugin-common.c */; };
@@ -197,11 +190,9 @@
 		1CE49FF014A17F4D00663393 /* sip-soap.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-soap.c"; sourceTree = "<group>"; };
 		1CE49FF114A17F4D00663393 /* sipe-notify.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-notify.c"; sourceTree = "<group>"; };
 		1CE49FF214A17F4D00663393 /* sipe-webticket.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-webticket.c"; sourceTree = "<group>"; };
-		1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-ntlm-tests.c"; sourceTree = "<group>"; };
 		1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-tls-dsk.c"; sourceTree = "<group>"; };
 		1CE4A00114A17FD100663393 /* sip-sec-digest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-digest.c"; sourceTree = "<group>"; };
 		1CE4A00214A17FD100663393 /* sipe-certificate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-certificate.c"; sourceTree = "<group>"; };
-		1CE4A00414A17FD100663393 /* sipe-tls-tester.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-tls-tester.c"; sourceTree = "<group>"; };
 		1CE4A00514A17FD100663393 /* sipe-tls.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-tls.c"; sourceTree = "<group>"; };
 		1CE4A01C14A180E100663393 /* purple-search.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-search.c"; sourceTree = "<group>"; };
 		1CE4A01D14A180E100663393 /* purple-status.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-status.c"; sourceTree = "<group>"; };
@@ -212,7 +203,6 @@
 		1CF260F512C2DFA00045B6CC /* purple-im.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-im.c"; sourceTree = "<group>"; };
 		1CF260F712C2DFA00045B6CC /* purple-notify.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-notify.c"; sourceTree = "<group>"; };
 		1CF260F812C2DFA00045B6CC /* purple-user.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-user.c"; sourceTree = "<group>"; };
-		1CF2610812C2E1AA0045B6CC /* sdpmsg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sdpmsg.c; sourceTree = "<group>"; };
 		1CF2610C12C2E1AA0045B6CC /* sipe-groupchat.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-groupchat.c"; sourceTree = "<group>"; };
 		1CF2610D12C2E1AA0045B6CC /* sipe-incoming.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-incoming.c"; sourceTree = "<group>"; };
 		1CF2610F12C2E1AA0045B6CC /* sipe-ucs.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ucs.c"; sourceTree = "<group>"; };
@@ -248,8 +238,6 @@
 		B13FAB5A119D5155001CE037 /* purple-schedule.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-schedule.c"; sourceTree = "<group>"; };
 		B13FAB5B119D5155001CE037 /* purple-setting.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-setting.c"; sourceTree = "<group>"; };
 		B13FAB5C119D5155001CE037 /* purple-transport.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-transport.c"; sourceTree = "<group>"; };
-		B13FAB5D119D5155001CE037 /* tests-load.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "tests-load.c"; sourceTree = "<group>"; };
-		B13FAB5E119D5155001CE037 /* tests.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tests.c; sourceTree = "<group>"; };
 		B13FABA3119D585A001CE037 /* sip-csta.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-csta.c"; sourceTree = "<group>"; };
 		B13FABA5119D585A001CE037 /* sip-sec-gssapi.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-gssapi.c"; sourceTree = "<group>"; };
 		B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sip-sec-ntlm.c"; sourceTree = "<group>"; };
@@ -261,7 +249,6 @@
 		B13FABB7119D585A001CE037 /* sipe-conf.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-conf.c"; sourceTree = "<group>"; };
 		B13FABBA119D585A001CE037 /* sipe-core.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-core.c"; sourceTree = "<group>"; };
 		B13FABBC119D585A001CE037 /* sipe-dialog.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-dialog.c"; sourceTree = "<group>"; };
-		B13FABBF119D585A001CE037 /* sipe-domino.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-domino.c"; sourceTree = "<group>"; };
 		B13FABC1119D585A001CE037 /* sipe-ews.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ews.c"; sourceTree = "<group>"; };
 		B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ews-autodiscover.c"; sourceTree = "<group>"; };
 		B13FABC3119D585A001CE037 /* sipe-ft.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ft.c"; sourceTree = "<group>"; };
@@ -273,7 +260,6 @@
 		B13FABD3119D585A001CE037 /* sipe-xml.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-xml.c"; sourceTree = "<group>"; };
 		B13FABD7119D585A001CE037 /* sipmsg.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sipmsg.c; sourceTree = "<group>"; };
 		B13FABD9119D585A001CE037 /* uuid.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = uuid.c; sourceTree = "<group>"; };
-		B13FAC60119D721E001CE037 /* libxml2.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.dylib; path = usr/lib/libxml2.dylib; sourceTree = SDKROOT; };
 		B82FA4181847524B00AE581B /* sipe-cert-crypto-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-cert-crypto-openssl.c"; sourceTree = "<group>"; };
 		B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-crypt-openssl.c"; sourceTree = "<group>"; };
 		B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-digest-openssl.c"; sourceTree = "<group>"; };
@@ -306,7 +292,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B13FAC61119D721E001CE037 /* libxml2.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,7 +392,6 @@
 		7B1E80001665C79300E0C654 /* Other Libraries */ = {
 			isa = PBXGroup;
 			children = (
-				B13FAC60119D721E001CE037 /* libxml2.dylib */,
 			);
 			name = "Other Libraries";
 			sourceTree = "<group>";
@@ -462,8 +446,6 @@
 				1CE4A01D14A180E100663393 /* purple-status.c */,
 				B13FAB5C119D5155001CE037 /* purple-transport.c */,
 				1CF260F812C2DFA00045B6CC /* purple-user.c */,
-				B13FAB5D119D5155001CE037 /* tests-load.c */,
-				B13FAB5E119D5155001CE037 /* tests.c */,
 			);
 			name = purple;
 			path = ../purple;
@@ -472,13 +454,11 @@
 		B13FAB9C119D585A001CE037 /* core */ = {
 			isa = PBXGroup;
 			children = (
-				1CF2610812C2E1AA0045B6CC /* sdpmsg.c */,
 				B13FABA3119D585A001CE037 /* sip-csta.c */,
 				7B78059D16DFF8D200B844A6 /* sip-sec-basic.c */,
 				1CE4A00114A17FD100663393 /* sip-sec-digest.c */,
 				B13FABA5119D585A001CE037 /* sip-sec-gssapi.c */,
 				7B78059916DFF8D200B844A6 /* sip-sec-negotiate.c */,
-				1CE49FFE14A17FD100663393 /* sip-sec-ntlm-tests.c */,
 				B13FABA9119D585A001CE037 /* sip-sec-ntlm.c */,
 				1CE4A00014A17FD100663393 /* sip-sec-tls-dsk.c */,
 				B13FABAD119D585A001CE037 /* sip-sec.c */,
@@ -494,7 +474,6 @@
 				B82FA4191847524B00AE581B /* sipe-crypt-openssl.c */,
 				B13FABBC119D585A001CE037 /* sipe-dialog.c */,
 				B82FA41A1847524B00AE581B /* sipe-digest-openssl.c */,
-				B13FABBF119D585A001CE037 /* sipe-domino.c */,
 				B13FABC2119D585A001CE037 /* sipe-ews-autodiscover.c */,
 				B13FABC1119D585A001CE037 /* sipe-ews.c */,
 				B89F38811BDEB0D30017B509 /* sipe-ft-lync.c */,
@@ -518,7 +497,6 @@
 				1CE49FE914A17EF000663393 /* sipe-status.c */,
 				1CF2611012C2E1AA0045B6CC /* sipe-subscriptions.c */,
 				1CE49FB114A17CF000663393 /* sipe-svc.c */,
-				1CE4A00414A17FD100663393 /* sipe-tls-tester.c */,
 				1CE4A00514A17FD100663393 /* sipe-tls.c */,
 				1CF2610F12C2E1AA0045B6CC /* sipe-ucs.c */,
 				1CF2611112C2E1AA0045B6CC /* sipe-user.c */,
@@ -566,6 +544,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 1DEB913A08733D840010E9CD /* Build configuration list for PBXNativeTarget "SIPEAdiumPlugin" */;
 			buildPhases = (
+				B8F496C51F96858B00ACE906 /* Run Script to create symlinks to separate Adium build directory (optional) */,
 				7B1E80021665E5DA00E0C654 /* Headers */,
 				8D5B49AF048680CD000E48DA /* Resources */,
 				8D5B49B1048680CD000E48DA /* Sources */,
@@ -702,6 +681,23 @@
 		};
 /* End PBXResourcesBuildPhase section */
 
+/* Begin PBXShellScriptBuildPhase section */
+		B8F496C51F96858B00ACE906 /* Run Script to create symlinks to separate Adium build directory (optional) */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Run Script to create symlinks to separate Adium build directory (optional)";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = ./find_adium_build.sh;
+		};
+/* End PBXShellScriptBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		8D5B49B1048680CD000E48DA /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -740,8 +736,6 @@
 				B13FAB6A119D5155001CE037 /* purple-schedule.c in Sources */,
 				B13FAB6B119D5155001CE037 /* purple-setting.c in Sources */,
 				B13FAB6C119D5155001CE037 /* purple-transport.c in Sources */,
-				B13FAB6D119D5155001CE037 /* tests-load.c in Sources */,
-				B13FAB6E119D5155001CE037 /* tests.c in Sources */,
 				B13FABDF119D585A001CE037 /* sip-csta.c in Sources */,
 				B13FABE1119D585A001CE037 /* sip-sec-gssapi.c in Sources */,
 				B13FABE5119D585A001CE037 /* sip-sec-ntlm.c in Sources */,
@@ -753,7 +747,6 @@
 				B13FABF3119D585A001CE037 /* sipe-conf.c in Sources */,
 				B13FABF6119D585A001CE037 /* sipe-core.c in Sources */,
 				B13FABF8119D585A001CE037 /* sipe-dialog.c in Sources */,
-				B13FABFB119D585A001CE037 /* sipe-domino.c in Sources */,
 				B13FABFD119D585A001CE037 /* sipe-ews.c in Sources */,
 				B13FABFE119D585A001CE037 /* sipe-ews-autodiscover.c in Sources */,
 				B13FABFF119D585A001CE037 /* sipe-ft.c in Sources */,
@@ -772,7 +765,6 @@
 				1CF260FD12C2DFA00045B6CC /* purple-im.c in Sources */,
 				1CF260FF12C2DFA00045B6CC /* purple-notify.c in Sources */,
 				1CF2610012C2DFA00045B6CC /* purple-user.c in Sources */,
-				1CF2611412C2E1AA0045B6CC /* sdpmsg.c in Sources */,
 				1CF2611812C2E1AA0045B6CC /* sipe-groupchat.c in Sources */,
 				1CF2611912C2E1AA0045B6CC /* sipe-incoming.c in Sources */,
 				1CF2611B12C2E1AA0045B6CC /* sipe-ucs.c in Sources */,
@@ -788,11 +780,9 @@
 				1CE49FF314A17F4D00663393 /* sip-soap.c in Sources */,
 				1CE49FF414A17F4D00663393 /* sipe-notify.c in Sources */,
 				1CE49FF514A17F4D00663393 /* sipe-webticket.c in Sources */,
-				1CE4A00614A17FD100663393 /* sip-sec-ntlm-tests.c in Sources */,
 				1CE4A00714A17FD100663393 /* sip-sec-digest.c in Sources */,
 				1CE4A00814A17FD100663393 /* sip-sec-tls-dsk.c in Sources */,
 				1CE4A00A14A17FD100663393 /* sipe-certificate.c in Sources */,
-				1CE4A00C14A17FD100663393 /* sipe-tls-tester.c in Sources */,
 				1CE4A00D14A17FD100663393 /* sipe-tls.c in Sources */,
 				1CE4A01E14A180E100663393 /* purple-search.c in Sources */,
 				1CE4A01F14A180E100663393 /* purple-status.c in Sources */,
