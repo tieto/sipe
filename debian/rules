@@ -1,5 +1,7 @@
 #!/usr/bin/make -f
 
+include /usr/share/dpkg/pkg-info.mk
+
 DEB_CONFIGURE_EXTRA_FLAGS := --libdir=/usr/lib --enable-purple --disable-telepathy --enable-openssl=no
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
@@ -36,9 +38,8 @@ override_dh_auto_clean:
 		missing test-driver
 	find -type f -name Makefile.in\* -delete
 
-VERSION=$(shell dpkg-parsechangelog -S Version | cut -d- -f1)
 get-orig-source:
-	uscan --force-download --download-version $(VERSION) \
+	uscan --force-download --download-version $(DEB_VERSION_UPSTREAM) \
 		--rename --destdir=$(CURDIR) \
 		--repack --compression xz
 
