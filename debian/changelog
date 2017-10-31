@@ -13,6 +13,7 @@ pidgin-sipe (1.23.0-1) UNRELEASED; urgency=medium
         - drop support for gstreamer-0.10
   * Fix changelog trailing whitespace.
   * Replace dpkg-parsechangelog by including pkg-info.mk in d/rules.
+  * Bump Standards-Version to 4.1.1 (no changes required).
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 31 Oct 2017 07:49:08 +0100
 
