@@ -1,3 +1,19 @@
+pidgin-sipe (1.23.0-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+        - Feature #101: Mac OS X 10.13 OpenSSL support
+        - Feature #100: Extend libpurple D-Bus interface
+        - Feature #99: IPv6 addresses in SIP & SDP messages
+        - Feature #96: Support for OS X 10.11+ SDK
+        - don't load buddy photos from unknown sites by default
+        - add support for GMime 3.0 API
+        - raise BR glib-2.0 >= 2.18.0
+        - raise BR purple >= 2.7.0
+        - drop support for GMime 2.4
+        - drop support for gstreamer-0.10
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 31 Oct 2017 07:49:08 +0100
+
 pidgin-sipe (1.22.1-1) unstable; urgency=medium
 
   * New upstream release (Closes: #853612).
