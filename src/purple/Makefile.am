@@ -42,9 +42,10 @@ endif
 AM_CFLAGS = $(st)
 
 libsipe_backend_la_CFLAGS = \
-        $(DEBUG_CFLAGS) \
-        $(QUALITY_CFLAGS) \
-        $(GLIB_CFLAGS) \
+	$(DEBUG_CFLAGS) \
+	$(QUALITY_CFLAGS) \
+	$(GLIB_CFLAGS) \
+	$(DBUS_CFLAGS) \
 	$(PURPLE_CFLAGS) \
 	-I$(srcdir)/../api
 
@@ -64,10 +65,11 @@ libsipe_la_LIBADD = \
 	../core/libsipe_core_crypto.la \
 	../core/libsipe_core_libxml2.la \
 	libsipe_backend.la \
-        $(LIBXML2_LIBS) \
+	$(DBUS_LIBS) \
+	$(LIBXML2_LIBS) \
 	$(NSS_LIBS) \
 	$(OPENSSL_LIBS) \
-        $(GLIB_LIBS) \
+	$(GLIB_LIBS) \
 	$(PURPLE_LIBS)
 
 if SIPE_OS_WIN32
@@ -97,6 +99,13 @@ tests_LDADD     = \
 	$(OPENSSL_LIBS) \
 	$(PURPLE_LIBS)
 endif
+endif
+
+if SIPE_DBUS
+libsipe_backend_la_SOURCES += \
+	purple-dbus.c \
+	purple-dbus.h \
+	purple-dbus-bindings.c
 endif
 
 if SIPE_MIME_GMIME

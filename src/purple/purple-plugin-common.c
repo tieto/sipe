@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,9 +36,12 @@
 #include "request.h"
 #include "version.h"
 
-/* Backward compatibility when compiling against 2.4.x API */
-#if !PURPLE_VERSION_CHECK(2,5,0) && !PURPLE_VERSION_CHECK(3,0,0)
-#define PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY 0x0100
+#ifdef HAVE_DBUS
+#include "purple-dbus.h"
+#endif
+
+#if !(PURPLE_VERSION_CHECK(2,7,0) || PURPLE_VERSION_CHECK(3,0,0))
+#error purple >= 2.7.0 is required to build SIPE
 #endif
 
 #if PURPLE_VERSION_CHECK(3,0,0)
@@ -46,6 +49,7 @@
 #define SIPE_PURPLE_ACTION_TO_CONNECTION              action->connection
 #else
 #include "blist.h"
+#define g_source_remove(t)                            purple_timeout_remove(t)
 #define PURPLE_CONNECTION_FLAG_ALLOW_CUSTOM_SMILEY    PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY
 #define PURPLE_CONNECTION_FLAG_FORMATTING_WBFO        PURPLE_CONNECTION_FORMATTING_WBFO
 #define PURPLE_CONNECTION_FLAG_HTML                   PURPLE_CONNECTION_HTML
@@ -363,6 +367,12 @@ static gboolean get_dont_publish_flag(PurpleAccount *account)
 	return(purple_account_get_bool(account, "dont-publish", FALSE));
 }
 
+static gboolean get_allow_web_photo_flag(PurpleAccount *account)
+{
+	/* default is to not allow insecure download of buddy icons from web */
+	return purple_account_get_bool(account, "allow-web-photo", FALSE);
+}
+
 static void connect_to_core(PurpleConnection *gc,
 			    PurpleAccount *account,
 			    const gchar *password)
@@ -407,6 +417,9 @@ static void connect_to_core(PurpleConnection *gc,
 	SIPE_CORE_FLAG_UNSET(DONT_PUBLISH);
 	if (get_dont_publish_flag(account))
 		SIPE_CORE_FLAG_SET(DONT_PUBLISH);
+	SIPE_CORE_FLAG_UNSET(ALLOW_WEB_PHOTO);
+	if (get_allow_web_photo_flag(account))
+		SIPE_CORE_FLAG_SET(ALLOW_WEB_PHOTO);
 
 	purple_connection_set_protocol_data(gc, sipe_public);
 	purple_connection_set_flags(gc,
@@ -521,7 +534,7 @@ void sipe_purple_close(PurpleConnection *gc)
 		sipe_purple_chat_destroy_rejoin(purple_private);
 
 		if (purple_private->deferred_status_timeout)
-			purple_timeout_remove(purple_private->deferred_status_timeout);
+			g_source_remove(purple_private->deferred_status_timeout);
 		g_free(purple_private->deferred_status_note);
 
 		g_free(purple_private);
@@ -602,7 +615,6 @@ void sipe_purple_group_remove(PurpleConnection *gc, PurpleGroup *group)
 			       purple_group_get_name(group));
 }
 
-#if PURPLE_VERSION_CHECK(2,5,0) || PURPLE_VERSION_CHECK(3,0,0)
 GHashTable *
 sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 {
@@ -612,7 +624,6 @@ sipe_purple_get_account_text_table(SIPE_UNUSED_PARAMETER PurpleAccount *account)
 	return table;
 }
 
-#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 #ifdef HAVE_VV
 
 static void
@@ -638,17 +649,24 @@ PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *
 	       | PURPLE_MEDIA_CAPS_MODIFY_SESSION;
 }
 #endif
-#endif
-#endif
 
 /* PurplePluginInfo function calls & data structure */
 gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
+#ifdef HAVE_DBUS
+	if (purple_dbus_get_init_error() == NULL) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_plugin_load: registering D-Bus bindings");
+		purple_dbus_register_bindings(plugin, sipe_purple_dbus_bindings);
+	}
+#endif
+
 #ifdef HAVE_VV
-	struct sigaction action;
-	memset(&action, 0, sizeof (action));
-	action.sa_handler = sipe_purple_sigusr1_handler;
-	sigaction(SIGUSR1, &action, NULL);
+	{
+		struct sigaction action;
+		memset(&action, 0, sizeof (action));
+		action.sa_handler = sipe_purple_sigusr1_handler;
+		sigaction(SIGUSR1, &action, NULL);
+	}
 #endif
 
 	sipe_purple_activity_init();
@@ -787,32 +805,41 @@ static void sipe_purple_show_join_conference(PurpleProtocolAction *action)
 			      gc);
 }
 
-static void sipe_purple_republish_calendar(PurpleProtocolAction *action)
+void sipe_purple_republish_calendar(PurpleAccount *account)
 {
-	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
-	PurpleAccount *account = purple_connection_get_account(gc);
-
+	struct sipe_core_public *sipe_public = PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC;
 	if (get_dont_publish_flag(account)) {
-		sipe_backend_notify_error(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+		sipe_backend_notify_error(sipe_public,
 					  _("Publishing of calendar information has been disabled"),
 					  NULL);
 	} else {
-		sipe_core_update_calendar(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+		sipe_core_update_calendar(sipe_public);
 	}
 }
 
-static void sipe_purple_reset_status(PurpleProtocolAction *action)
+static void sipe_purple_republish_calendar_action(PurpleProtocolAction *action)
 {
 	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
 	PurpleAccount *account = purple_connection_get_account(gc);
+	sipe_purple_republish_calendar(account);
+}
 
+void sipe_purple_reset_status(PurpleAccount *account)
+{
 	if (get_dont_publish_flag(account)) {
-		sipe_backend_notify_error(PURPLE_GC_TO_SIPE_CORE_PUBLIC,
+		sipe_backend_notify_error(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC,
 					  _("Publishing of calendar information has been disabled"),
 					  NULL);
 	} else {
-		sipe_core_reset_status(PURPLE_GC_TO_SIPE_CORE_PUBLIC);
+		sipe_core_reset_status(PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC);
 	}
+}
+
+static void sipe_purple_reset_status_action(PurpleProtocolAction *action)
+{
+	PurpleConnection *gc = SIPE_PURPLE_ACTION_TO_CONNECTION;
+	PurpleAccount *account = purple_connection_get_account(gc);
+	sipe_purple_reset_status(account);
 }
 
 GList *sipe_purple_actions()
@@ -837,10 +864,10 @@ GList *sipe_purple_actions()
 	act = purple_protocol_action_new(_("Join scheduled conference..."), sipe_purple_show_join_conference);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_protocol_action_new(_("Republish Calendar"), sipe_purple_republish_calendar);
+	act = purple_protocol_action_new(_("Republish Calendar"), sipe_purple_republish_calendar_action);
 	menu = g_list_prepend(menu, act);
 
-	act = purple_protocol_action_new(_("Reset status"), sipe_purple_reset_status);
+	act = purple_protocol_action_new(_("Reset status"), sipe_purple_reset_status_action);
 	menu = g_list_prepend(menu, act);
 
 	return g_list_reverse(menu);
@@ -905,6 +932,9 @@ GList * sipe_purple_account_options()
 	 *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
 	 */
 	option = purple_account_option_bool_new(_("Don't publish my calendar information"), "dont-publish", FALSE);
+	options = g_list_append(options, option);
+
+	option = purple_account_option_bool_new(_("Show profile pictures from web\n(potentially dangerous)"), "allow-web-photo", FALSE);
 	options = g_list_append(options, option);
 
 	option = purple_account_option_string_new(_("Email services URL\n(leave empty for auto-discovery)"), "email_url", "");

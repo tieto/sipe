@@ -5,6 +5,7 @@
 #
 #     RedHat family (CentOS, Fedora, RHEL, ScientificLinux)
 #     SUSE family (openSUSE, SLED, SLES)
+#     Mageia
 #     Windows (mingw32, mingw64)
 #
 
@@ -79,25 +80,15 @@
 
 %define has_pidgin 1
 
-%if 0%{?suse_version}
-%define nss_develname mozilla-nss-devel
-# SLES11 defines suse_version = 1110
-%if 0%{?suse_version} > 1110
+%if 0%{?mageia}
 %define has_appdata 1
-%define has_libnice 1
+%define has_gstreamer 1
+%endif
+
+%if 0%{?suse_version}
+%define has_appdata 1
 %define has_gstreamer 1
 %define build_telepathy 1
-%define nice_gstreamer gstreamer-0_10-libnice
-# Leap 42.1 or SLES12
-%if 0%{?suse_version} >= 1315
-%define has_gstreamer 0
-%define has_gstreamer1 1
-%define has_farstream 1
-%undefine nice_gstreamer
-%endif
-%endif
-%else
-%define nss_develname nss-devel
 %endif
 
 %if 0%{?suse_version} || 0%{?sles_version}
@@ -106,35 +97,28 @@
 %define pkg_group Applications/Communications
 %endif
 
+# workaround for Fedora Rawhide
+%if 0%{?fedora_version}
 %if 0%{?fedora}
-%define has_libnice 1
-%define has_gstreamer 1
-%define build_telepathy 1
-%define build_ktp 1
-%if 0%{?fedora} >= 20
-%define has_farstream 1
-%define nice_gstreamer libnice-gstreamer
-%if 0%{?fedora} >= 21
-%define has_appdata 1
-%define has_gssntlmssp 1
-%if 0%{?fedora} >= 22
-%define has_gstreamer 0
-%define has_gstreamer1 1
-%undefine nice_gstreamer
-%endif
-%endif
+%else
+%define fedora %{?fedora_version}
 %endif
 %endif
 
-%if 0%{?centos_version} || 0%{?scientificlinux_version}
-%define rhel_base_version %{?centos_version}%{?scientificlinux_version}
-%if %{rhel_base_version} >= 600
+%if 0%{?fedora}
+%define has_appdata 1
+%define has_gssntlmssp 1
 %define has_gstreamer 1
-%define has_libnice 1
+%define build_telepathy 1
+%define build_ktp 1
+%endif
+
+%if 0%{?centos_version} || 0%{?scientificlinux_version}
+%define has_krb5devel 1
+%define rhel_base_version %{?centos_version}%{?scientificlinux_version}
 %if %{rhel_base_version} >= 700
 # pidgin has been removed, but libpurple still exists
 %define has_pidgin 0
-%endif
 %endif
 %endif
 
@@ -148,7 +132,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.22.1
+Version:        1.23.0
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -164,15 +148,17 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-build
 BuildArch:      noarch
 #!BuildIgnore:   post-build-checks
 
+BuildRequires:  libtool
+BuildRequires:  intltool
 BuildRequires:  %{mingw_prefix}filesystem >= 23
 BuildRequires:  %{mingw_prefix}cross-gcc
 BuildRequires:  %{mingw_prefix}cross-binutils
 BuildRequires:  %{mingw_prefix}gettext-runtime
 BuildRequires:  %{mingw_prefix}cross-pkg-config
-BuildRequires:  %{mingw_prefix}glib2-devel >= 2.12.0
+BuildRequires:  %{mingw_prefix}glib2-devel >= 2.18.0
 BuildRequires:  %{mingw_prefix}libxml2-devel
 BuildRequires:  %{mingw_prefix}mozilla-nss-devel
-BuildRequires:  %{mingw_prefix}libpurple-devel >= 2.4.0
+BuildRequires:  %{mingw_prefix}libpurple-devel >= 2.7.0
 BuildRequires:  %{mingw_prefix}cross-nsis
 
 # For directory ownership
@@ -185,40 +171,44 @@ BuildRequires:  %{mingw_prefix}pidgin
 #
 # Standard Linux build setup
 #
-BuildRequires:  libpurple-devel >= 2.4.0
-BuildRequires:  libxml2-devel
-BuildRequires:  %{nss_develname}
-BuildRequires:  gettext-devel
-# The following two are required to enable Voice & Video features
-%if 0%{?has_libnice:1}
-BuildRequires:  libnice-devel
-%if 0%{?nice_gstreamer:1}
-# Dependency required when gstreamer support is split into two packages
-Requires:       %{nice_gstreamer}
-%endif
+BuildRequires:  libtool
+BuildRequires:  intltool
+BuildRequires:  pkgconfig(dbus-1)
+BuildRequires:  pkgconfig(glib-2.0) >= 2.18.0
+BuildRequires:  pkgconfig(gmodule-2.0) >= 2.18.0
+BuildRequires:  pkgconfig(libxml-2.0)
+BuildRequires:  pkgconfig(nss)
+BuildRequires:  pkgconfig(purple) >= 2.7.0
+%if 0%{?mageia}
+# It seems linking against -lpurple is severely broken on Mageia...
+BuildRequires:  pkgconfig(libgadu)
 %endif
 %if 0%{?has_gstreamer:1}
-BuildRequires:  pkgconfig(gstreamer-0.10)
-%endif
-%if 0%{?has_gstreamer1:1}
-BuildRequires:  pkgconfig(gstreamer-1.0)
-%endif
-%if 0%{?has_farstream:1}
 BuildRequires:  pkgconfig(farstream-0.2)
 BuildRequires:  pkgconfig(gio-2.0)
+BuildRequires:  pkgconfig(gstreamer-1.0)
+BuildRequires:  pkgconfig(gstreamer-rtp-1.0)
+BuildRequires:  pkgconfig(nice) >= 0.1.0
 %endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
-BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
 BuildRequires:  gmime-devel
-BuildRequires:  glib2-devel >= 2.28.0
+BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
+BuildRequires:  pkgconfig(glib-2.0) >= 2.32.0
+BuildRequires:  pkgconfig(gobject-2.0)
+BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
 %endif
 
 # Configurable components
 # Use "--without kerberos" to disable krb5
 %if !0%{?_without_kerberos:1}
+%if 0%{?has_krb5devel:1}
 BuildRequires:  krb5-devel
-%if 0%{?has_gssntlmssp}
+%else
+BuildRequires:  pkgconfig(krb5)
+%endif
+%if 0%{?has_gssntlmssp:1}
 BuildRequires:  gssntlmssp-devel >= 0.5.0
 Requires:       gssntlmssp >= 0.5.0
 %endif
@@ -237,9 +227,6 @@ BuildRequires:  empathy
 %endif
 
 Requires:       %{purple_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
-BuildRequires:  libtool
-BuildRequires:  intltool
-BuildRequires:  glib2-devel >= 2.12.0
 
 
 %description
@@ -409,6 +396,16 @@ autoreconf --verbose --install --force
 #
 # Standard Linux build
 #
+# Special case handling for Mageia
+%if 0%{?mageia}
+%configure2_5x \
+    --with-krb5 \
+    --disable-telepathy
+%make_build
+%make_build check
+
+# All other Linuxes
+%else
 %configure \
 %if !0%{?_without_kerberos:1}
     --with-krb5 \
@@ -421,6 +418,7 @@ autoreconf --verbose --install --force
 %endif
 make %{?_smp_mflags}
 make %{?_smp_mflags} check
+%endif
 
 # End Windows cross-compilation/Linux build setup
 %endif
@@ -463,16 +461,12 @@ rm -f %{buildroot}/pidgin-sipe.nsi
 #
 # Standard Linux install
 #
-%makeinstall
+%make_install
 
 # End Windows cross-compilation/Linux build setup
 %endif
 
 find %{buildroot} -type f -name "*.la" -delete -print
-# SLES11 defines suse_version = 1110
-%if 0%{?suse_version} && 0%{?suse_version} < 1120
-rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin/protocols/scalable
-%endif
 # Pidgin doesn't have 24 or 32 pixel icons
 rm -f \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
@@ -554,10 +548,7 @@ rm -rf %{buildroot}
 %{_datadir}/appdata/%{name}.metainfo.xml
 %endif
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
-# SLES11 defines suse_version = 1110
-%if !0%{?suse_version} || 0%{?suse_version} >= 1120
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
-%endif
 %endif
 %endif
 
@@ -570,6 +561,15 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Oct 28 2017 J. D. User <jduser@noreply.com> 1.23.0
+- update to 1.23.0
+- raise BR glib-2.0 >= 2.18.0
+- raise BR purple >= 2.7.0
+
+* Fri Aug 11 2017 J. D. User <jduser@noreply.com> 1.22.1-*git*
+- add BR dbus-1
+- fix incorrect BR gstreamer-0.10 when gstreamer-1.0 is selected
+
 * Sun Jun 11 2017 J. D. User <jduser@noreply.com> 1.22.1
 - update to 1.22.1
 

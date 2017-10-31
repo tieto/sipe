@@ -55,17 +55,15 @@ done >checksums.txt
 for d in *.dsc; do cat checksums.txt >>${d}; done
 rm checksums.txt
 
-# All current platforms currently support telepathy - use only default .dsc
-cp pidgin-sipe-telepathy.dsc pidgin-sipe.dsc
-# Overwrite those .dsc's that have support for gstreamer1.0
+# Newer platforms have support for gstreamer1.0 - use only default .dsc
+cp pidgin-sipe-gstreamer1.dsc pidgin-sipe.dsc
+# All other platforms at least support telepathy - override those
 for os in \
-    Debian_9.0 \
-    xUbuntu_15.10 \
-    xUbuntu_16.04 \
-    xUbuntu_16.10 \
-    xUbuntu_17.04; \
+    Debian_7.0 \
+    Debian_8.0 \
+    xUbuntu_14.04; \
 do \
-    cp pidgin-sipe-gstreamer1.dsc pidgin-sipe-${os}.dsc; \
+    cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
 done
 
 # Update SHA-2 256 checksum in Arch Linux PKGBUILD

@@ -1,6 +1,6 @@
 #
 # Example SPEC file to generate a RPM for pidgin-sipe.
-# It should work out-of-the-box on Fedora 10+ or RHEL5+.
+# It should work out-of-the-box for any current Fedora or RHEL release.
 #
 %if 0%{?_with_git:1}
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20160405git4fedafa
+%define git       20171022gitfe34eaec
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -25,7 +25,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.22.1
+Version:        1.23.0
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source0:        %{name}-%{git}.tar.bz2
@@ -39,11 +39,12 @@ Group:          %{pkg_group}
 License:        GPLv2+
 URL:            http://sipe.sourceforge.net/
 
-BuildRequires:  pkgconfig(glib-2.0) >= 2.12.0
-BuildRequires:  pkgconfig(gmodule-2.0) >= 2.12.0
+BuildRequires:  pkgconfig(dbus-1)
+BuildRequires:  pkgconfig(glib-2.0) >= 2.18.0
+BuildRequires:  pkgconfig(gmodule-2.0) >= 2.18.0
 BuildRequires:  pkgconfig(libxml-2.0)
 BuildRequires:  pkgconfig(nss)
-BuildRequires:  pkgconfig(purple) >= 2.4.0
+BuildRequires:  pkgconfig(purple) >= 2.7.0
 %if 0%{?_with_git:1}
 BuildRequires:  autoconf
 BuildRequires:  automake
@@ -56,32 +57,25 @@ BuildRequires:  libtool
 BuildRequires:  pkgconfig(purple) >= 2.8.0
 BuildRequires:  pkgconfig(farstream-0.2)
 BuildRequires:  pkgconfig(gio-2.0)
-BuildRequires:  pkgconfig(nice) >= 0.1.0
-%if 0%{?fedora} >= 22
 BuildRequires:  pkgconfig(gstreamer-1.0)
-%else
-%if 0%{?fedora} >= 20
-# Dependency required when gstreamer support is split into two packages
-%define         requires_libnice_gstreamer 1
-%endif
-BuildRequires:  pkgconfig(gstreamer-0.10)
-%endif
+BuildRequires:  pkgconfig(gstreamer-rtp-1.0)
+BuildRequires:  pkgconfig(nice) >= 0.1.0
 %endif
 # Use "--without telepathy" to disable telepathy
 %if !0%{?_without_telepathy:1}
-BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
-BuildRequires:  pkgconfig(glib-2.0) >= 2.28.0
-BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
-BuildRequires:  pkgconfig(gobject-2.0)
-BuildRequires:  pkgconfig(dbus-glib-1)
 BuildRequires:  gmime-devel
+BuildRequires:  pkgconfig(dbus-glib-1)
+BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
+BuildRequires:  pkgconfig(glib-2.0) >= 2.32.0
+BuildRequires:  pkgconfig(gobject-2.0)
+BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
 %endif
 
 # Configurable components
 # Use "--without kerberos" to disable krb5
 %if !0%{?_without_kerberos:1}
-BuildRequires:  krb5-devel
-%if 0%{?fedora} >= 21
+BuildRequires:  pkgconfig(krb5)
+%if 0%{?fedora} || 0%{?rhel} >= 7
 BuildRequires:  gssntlmssp-devel >= 0.5.0
 %define         requires_gssntlmssp 1
 %endif
@@ -113,9 +107,6 @@ Group:          %{pkg_group}
 License:        GPLv2+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
-%if 0%{?requires_libnice_gstreamer}
-Requires:       libnice-gstreamer
-%endif
 %if 0%{?requires_gssntlmssp}
 Requires:       gssntlmssp >= 0.5.0
 %endif
@@ -181,10 +172,6 @@ Group:          %{pkg_group}
 License:        GPLv2+
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
-%if 0%{?requires_libnice_gstreamer}
-# @TODO: remove comment when telepathy plugin supports Voice & Video features
-#Requires:       libnice-gstreamer
-%endif
 %if 0%{?requires_gssntlmssp}
 Requires:       gssntlmssp >= 0.5.0
 %endif
@@ -242,17 +229,20 @@ This package provides common files for the SIPE protocol plugins:
     --disable-telepathy
 %endif
 make %{?_smp_mflags}
-make %{?_smp_mflags} check
 
 
 %install
-%makeinstall
+%make_install
 find %{buildroot} -type f -name "*.la" -delete -print
 # Pidgin doesn't have 24 or 32 pixel icons
 rm -f \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/32/sipe.png
 %find_lang %{name}
+
+
+%check
+make %{?_smp_mflags} check
 
 
 %clean
@@ -298,6 +288,14 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sat Oct 28 2017 J. D. User <jduser@noreply.com> 1.23.0
+- update to 1.23.0
+- raise BR glib-2.0 >= 2.18.0
+- raise BR purple >= 2.7.0
+
+* Fri Aug 11 2017 J. D. User <jduser@noreply.com> 1.22.1-*git*
+- add BR dbus-1
+
 * Sun Jun 11 2017 J. D. User <jduser@noreply.com> 1.22.1
 - update to 1.22.1
 

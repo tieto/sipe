@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,14 @@
 
 #include "account.h"
 #include "savedstatuses.h"
+
+#include "version.h"
+#if !PURPLE_VERSION_CHECK(3,0,0)
+#include "eventloop.h"
+#define g_timeout_add_seconds(t, f, d) purple_timeout_add_seconds(t, f, d)
+#define g_source_remove(t)             purple_timeout_remove(t)
+#endif
+
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
@@ -183,16 +191,16 @@ void sipe_purple_set_status(PurpleAccount *account,
 
 		} else {
 			if (purple_private->deferred_status_timeout)
-				purple_timeout_remove(purple_private->deferred_status_timeout);
+				g_source_remove(purple_private->deferred_status_timeout);
 			g_free(purple_private->deferred_status_note);
 
 			SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_set_status[CB]: defer status update");
 
 			purple_private->deferred_status_note     = g_strdup(note);
 			purple_private->deferred_status_activity = activity;
-			purple_private->deferred_status_timeout  = purple_timeout_add_seconds(1,
-											      sipe_purple_status_timeout,
-											      purple_private);
+			purple_private->deferred_status_timeout  = g_timeout_add_seconds(1,
+											 sipe_purple_status_timeout,
+											 purple_private);
 		}
 
 		/* reset flags */
@@ -216,7 +224,7 @@ void sipe_purple_set_idle(PurpleConnection *gc,
 		if (!purple_private->user_is_not_idle) {
 			/* timeout not expired -> state changed by machine */
 			if (purple_private->deferred_status_timeout)
-				purple_timeout_remove(purple_private->deferred_status_timeout);
+				g_source_remove(purple_private->deferred_status_timeout);
 			sipe_purple_status_deferred_update(purple_private, FALSE);
 		}
 	}

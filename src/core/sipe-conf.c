@@ -202,7 +202,7 @@ sipe_conf_supports_mcu_type(struct sipe_core_private *sipe_private,
 			    const gchar *type)
 {
 	return g_slist_find_custom(sipe_private->conf_mcu_types, type,
-				   sipe_strcompare) != NULL;
+				   (GCompareFunc)g_strcmp0) != NULL;
 }
 
 /**
@@ -385,16 +385,22 @@ static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 			 * If present, domainOwnerJoinLauncherUrl redirects to
 			 * a page from where we still may extract the focus URI.
 			 */
-			gchar *launcher_url;
-			static const gchar launcher_url_prefix[] =
-					"var domainOwnerJoinLauncherUrl = \"";
+			gchar *launcher_url = NULL;
+			static const gchar *launcher_url_prefix[] = {
+				"var domainOwnerJoinLauncherUrl = \"",
+				"sb-data-domainOwnerJoinLauncherUrl=\"",
+				NULL
+			};
+			const gchar **p;
 
 			SIPE_DEBUG_INFO("sipe_conf_lync_url_cb: no focus URI "
 					"found from URL '%s'", uri);
 
-			launcher_url = extract_uri_from_html(body,
-							     launcher_url_prefix,
-							     sizeof (launcher_url_prefix) - 1);
+			for (p = launcher_url_prefix; !launcher_url && *p; ++p) {
+				launcher_url = extract_uri_from_html(body,
+								     *p,
+								     strlen(*p));
+			}
 
 			if (launcher_url &&
 			    sipe_conf_check_for_lync_url(sipe_private, launcher_url)) {
@@ -1614,8 +1620,6 @@ static gchar *
 access_numbers_info(struct sipe_core_public *sipe_public)
 {
 	GString *result = g_string_new("");
-
-#if GLIB_CHECK_VERSION(2,16,0)
 	GList *keys = g_hash_table_get_keys(SIPE_CORE_PRIVATE->access_numbers);
 	keys = g_list_sort(keys, (GCompareFunc)g_strcmp0);
 
@@ -1629,9 +1633,6 @@ access_numbers_info(struct sipe_core_public *sipe_public)
 		g_string_append(result, value);
 		g_string_append(result, "<br/>");
 	}
-#else
-	(void)sipe_public; /* keep compiler happy */
-#endif
 
 	return g_string_free(result, FALSE);
 }
