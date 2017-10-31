@@ -144,5 +144,5 @@ TESTS = $(check_PROGRAMS)
 install-exec-local:
 	rm -f $(DESTDIR)$(libdir)/pidgin/libsipe.so
 
-pidginmetainfofiledir   = $(datadir)/appdata
+pidginmetainfofiledir   = $(datadir)/metainfo
 pidginmetainfofile_DATA = pidgin-sipe.metainfo.xml
