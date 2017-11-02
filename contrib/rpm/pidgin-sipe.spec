@@ -282,12 +282,15 @@ rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root,-)
-%{_datadir}/appdata/%{name}.metainfo.xml
+%{_datadir}/metainfo/%{name}.metainfo.xml
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 
 
 %changelog
+* Sun Nov 05 2017 J. D. User <jduser@noreply.com> 1.23.0-*git*
+- add support for new AppStream metadata file location
+
 * Sat Oct 28 2017 J. D. User <jduser@noreply.com> 1.23.0
 - update to 1.23.0
 - raise BR glib-2.0 >= 2.18.0

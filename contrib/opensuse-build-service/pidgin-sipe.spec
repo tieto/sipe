@@ -82,11 +82,13 @@
 
 %if 0%{?mageia}
 %define has_appdata 1
+%define has_appdata_legacy 1
 %define has_gstreamer 1
 %endif
 
 %if 0%{?suse_version}
 %define has_appdata 1
+%define has_appdata_legacy 1
 %define has_gstreamer 1
 %define build_telepathy 1
 %endif
@@ -107,6 +109,9 @@
 
 %if 0%{?fedora}
 %define has_appdata 1
+%if %{fedora} <= 26
+%define has_appdata_legacy 1
+%endif
 %define has_gssntlmssp 1
 %define has_gstreamer 1
 %define build_telepathy 1
@@ -471,9 +476,13 @@ find %{buildroot} -type f -name "*.la" -delete -print
 rm -f \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/32/sipe.png
-%if !0%{?has_appdata:1}
+%if 0%{?has_appdata:1}
+%if 0%{?has_appdata_legacy:1}
+mv %{buildroot}/%{_datadir}/metainfo %{buildroot}/%{_datadir}/appdata/
+%endif
+%else
 # We don't have AppStream, so we can't package metadata file at all
-rm -r %{buildroot}/%{_datadir}/appdata
+rm -r %{buildroot}/%{_datadir}/metainfo
 %endif
 %if !%{has_pidgin}
 # We don't have Pidgin, so we can't package icons at all
@@ -538,14 +547,18 @@ rm -rf %{buildroot}
 %doc AUTHORS COPYING
 %if 0%{?mingw_prefix:1}
 %if 0%{?has_appdata:1}
-%{mingw_datadir}/appdata/pidgin-sipe.metainfo.xml
+%{mingw_datadir}/metainfo/pidgin-sipe.metainfo.xml
 %endif
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 %else
 %if %{has_pidgin}
 %if 0%{?has_appdata:1}
+%if 0%{?has_appdata_legacy:1}
 %{_datadir}/appdata/%{name}.metainfo.xml
+%else
+%{_datadir}/metainfo/%{name}.metainfo.xml
+%endif
 %endif
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
@@ -561,6 +574,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Nov 05 2017 J. D. User <jduser@noreply.com> 1.23.0-*git*
+- add support for new AppStream metadata file location
+
 * Sat Oct 28 2017 J. D. User <jduser@noreply.com> 1.23.0
 - update to 1.23.0
 - raise BR glib-2.0 >= 2.18.0
