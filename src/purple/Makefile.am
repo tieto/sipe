@@ -144,5 +144,13 @@ TESTS = $(check_PROGRAMS)
 install-exec-local:
 	rm -f $(DESTDIR)$(libdir)/pidgin/libsipe.so
 
+if SIPE_WITH_APPSTREAM
 pidginmetainfofiledir   = $(datadir)/metainfo
 pidginmetainfofile_DATA = pidgin-sipe.metainfo.xml
+
+check: validate-metainfo
+
+.PHONY: validate-metainfo
+validate-metainfo: $(pidginmetainfofile_DATA)
+	appstream-validate $< || appstreamcli validate $<
+endif
