@@ -81,19 +81,21 @@
 %define has_pidgin 1
 
 %if 0%{?mageia}
-%define has_appdata 1
-%define has_appdata_legacy 1
+%define has_appstream 1
+%define has_appstream_legacy 1
 %define has_gstreamer 1
 %endif
 
 %if 0%{?suse_version}
-%define has_appdata 1
-%define has_appdata_legacy 1
+%if 0%{?is_opensuse}
+%define has_appstream 1
+%define has_appstream_legacy 1
+%endif
 %define has_gstreamer 1
 %define build_telepathy 1
 %endif
 
-%if 0%{?suse_version} || 0%{?sles_version}
+%if 0%{?suse_version}
 %define pkg_group Productivity/Networking/Instant Messenger
 %else
 %define pkg_group Applications/Communications
@@ -108,9 +110,9 @@
 %endif
 
 %if 0%{?fedora}
-%define has_appdata 1
+%define has_appstream 1
 %if %{fedora} <= 26
-%define has_appdata_legacy 1
+%define has_appstream_legacy 1
 %endif
 %define has_gssntlmssp 1
 %define has_gstreamer 1
@@ -187,6 +189,13 @@ BuildRequires:  pkgconfig(purple) >= 2.7.0
 %if 0%{?mageia}
 # It seems linking against -lpurple is severely broken on Mageia...
 BuildRequires:  pkgconfig(libgadu)
+%endif
+%if 0%{?has_appstream:1}
+%if 0%{?suse_version}
+BuildRequires:  AppStream
+%else
+BuildRequires:  appstream
+%endif
 %endif
 %if 0%{?has_gstreamer:1}
 BuildRequires:  pkgconfig(farstream-0.2)
@@ -412,6 +421,9 @@ autoreconf --verbose --install --force
 # All other Linuxes
 %else
 %configure \
+%if !0%{?has_appstream:1}
+    --without-appstream \
+%endif
 %if !0%{?_without_kerberos:1}
     --with-krb5 \
 %endif
@@ -476,13 +488,8 @@ find %{buildroot} -type f -name "*.la" -delete -print
 rm -f \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/24/sipe.png \
    %{buildroot}%{_datadir}/pixmaps/pidgin/protocols/32/sipe.png
-%if 0%{?has_appdata:1}
-%if 0%{?has_appdata_legacy:1}
-mv %{buildroot}/%{_datadir}/metainfo %{buildroot}/%{_datadir}/appdata/
-%endif
-%else
-# We don't have AppStream, so we can't package metadata file at all
-rm -r %{buildroot}/%{_datadir}/metainfo
+%if 0%{?has_appstream_legacy:1}
+mv %{buildroot}/%{_datadir}/metainfo %{buildroot}/%{_datadir}/appdata
 %endif
 %if !%{has_pidgin}
 # We don't have Pidgin, so we can't package icons at all
@@ -546,15 +553,15 @@ rm -rf %{buildroot}
 %defattr(-,root,root,-)
 %doc AUTHORS COPYING
 %if 0%{?mingw_prefix:1}
-%if 0%{?has_appdata:1}
+%if 0%{?has_appstream:1}
 %{mingw_datadir}/metainfo/pidgin-sipe.metainfo.xml
 %endif
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 %else
 %if %{has_pidgin}
-%if 0%{?has_appdata:1}
-%if 0%{?has_appdata_legacy:1}
+%if 0%{?has_appstream:1}
+%if 0%{?has_appstream_legacy:1}
 %{_datadir}/appdata/%{name}.metainfo.xml
 %else
 %{_datadir}/metainfo/%{name}.metainfo.xml
@@ -574,6 +581,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Nov 06 2017 J. D. User <jduser@noreply.com> 1.23.0-*git*
+- add BR appstream
+
 * Sun Nov 05 2017 J. D. User <jduser@noreply.com> 1.23.0-*git*
 - add support for new AppStream metadata file location
 

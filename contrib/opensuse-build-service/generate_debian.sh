@@ -59,11 +59,16 @@ rm checksums.txt
 cp pidgin-sipe-gstreamer1.dsc pidgin-sipe.dsc
 # All other platforms at least support telepathy - override those
 for os in \
-    Debian_7.0 \
-    Debian_8.0 \
-    xUbuntu_14.04; \
+    Debian_8.0; \
 do \
     cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
+done
+# Platforms without appstream
+for os in \
+    Debian_7.0 \
+    xUbuntu_14.04; \
+do \
+    cp pidgin-sipe-no-appstream.dsc pidgin-sipe-${os}.dsc; \
 done
 
 # Update SHA-2 256 checksum in Arch Linux PKGBUILD
