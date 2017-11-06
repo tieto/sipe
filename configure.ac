@@ -158,6 +158,14 @@ PKG_CHECK_MODULES(VALGRIND, [valgrind],
 	[AC_DEFINE(HAVE_VALGRIND, 1, [Define to 1 if you have the valgrind headers])],
 	[AC_MSG_RESULT(no)])
 
+dnl build option: with AppStream support
+AC_ARG_WITH(appstream,
+	[AC_HELP_STRING([--with-appstream],
+		[install AppStream XML file @<:@default=yes@:>@])],
+	[AS_IF([test "x$withval" = xno], [with_appstream=no])],
+	[with_appstream=yes])
+AM_CONDITIONAL(SIPE_WITH_APPSTREAM, [test "x$with_appstream" != xno])
+
 dnl build option: with voice & video support (for all backends)
 AC_ARG_WITH(vv,
 	[AC_HELP_STRING([--with-vv],
