@@ -152,5 +152,7 @@ check: validate-metainfo
 
 .PHONY: validate-metainfo
 validate-metainfo: $(pidginmetainfofile_DATA)
-	appstream-validate $< || appstreamcli validate $<
+	appstreamcli validate --pedantic --nonet $< || \
+	appstreamcli validate --pedantic         $< || \
+	appstream-validate                       $<
 endif
