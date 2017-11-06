@@ -49,6 +49,7 @@ BuildRequires:  pkgconfig(purple) >= 2.7.0
 BuildRequires:  autoconf
 BuildRequires:  automake
 %endif
+BuildRequires:  appstream
 BuildRequires:  gettext
 BuildRequires:  intltool
 BuildRequires:  libtool
@@ -288,6 +289,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Mon Nov 06 2017 J. D. User <jduser@noreply.com> 1.23.0-*git*
+- add BR appstream
+
 * Sun Nov 05 2017 J. D. User <jduser@noreply.com> 1.23.0-*git*
 - add support for new AppStream metadata file location
 
