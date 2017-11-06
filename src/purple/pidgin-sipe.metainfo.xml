@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component type="addon">
-  <id>pidgin-sipe</id>
+  <id>net.sourceforge.sipe.purple</id>
   <extends>pidgin.desktop</extends>
   <name>SIPE</name>
   <summary>Pidgin protocol plugin to connect to MS Office Communicator</summary>
