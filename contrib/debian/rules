@@ -3,12 +3,18 @@
 include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/debhelper.mk
 
+HAVE_APPSTREAM        := $(strip $(shell (/usr/bin/appstream-validate >/dev/null --version || /usr/bin/appstreamcli >/dev/null --version) && echo yes))
+HAVE_APPSTREAM_LEGACY := $(strip $(shell . /etc/os-release; echo $${ID}-$${VERSION_ID} | grep -q '^debian-8$$' && echo yes))
+
 DEB_CONFIGURE_EXTRA_FLAGS := --enable-purple
 # detect if package telepathy-glib is available
 ifneq ($(shell pkg-config --exists telepathy-glib && echo FOUND),)
 DEB_CONFIGURE_EXTRA_FLAGS += --enable-telepathy
 else
 DEB_CONFIGURE_EXTRA_FLAGS += --disable-telepathy
+endif
+ifeq ($(HAVE_APPSTREAM),)
+DEB_CONFIGURE_EXTRA_FLAGS += --without-appstream
 endif
 
 # run tests
@@ -32,12 +38,8 @@ binary-post-install/pidgin-sipe::
 	rm -r debian/pidgin-sipe/usr/share/pixmaps/pidgin/protocols/24
 	rm -r debian/pidgin-sipe/usr/share/pixmaps/pidgin/protocols/32
 	rm debian/pidgin-sipe/usr/lib/purple-2/libsipe.la
-
-	. /etc/os-release \
-	# remove dot in Ubuntu version for easy numeric comparison \
-	VERSION_ID=$$(echo $${VERSION_ID:-9999} | tr -d '.'); \
-	if [ "$$ID" = "debian" -a $$VERSION_ID -le 8 ] || [ "$$ID" = "ubuntu" -a $$VERSION_ID -le 1404 ]; then \
-		mv debian/pidgin-sipe/usr/share/metainfo debian/pidgin-sipe/usr/share/appdata; \
-	fi
+ifeq ($(HAVE_APPSTREAM)-$(HAVE_APPSTREAM_LEGACY),yes-yes)
+	mv debian/pidgin-sipe/usr/share/metainfo debian/pidgin-sipe/usr/share/appdata
+endif
 
 .PHONY: update-debian-control
