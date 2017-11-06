@@ -4,8 +4,27 @@
   <extends>pidgin.desktop</extends>
   <name>SIPE</name>
   <summary>Pidgin protocol plugin to connect to MS Office Communicator</summary>
+  <description>
+    <p>
+      SIPE is a third-party plugin for the Pidgin/Adium/Miranda/Telepathy
+      multi-protocol instant messaging clients/frameworks. It implements the
+      extended version of SIP/SIMPLE used by various products:
+    </p>
+    <ul>
+      <li>Skype for Business</li>
+      <li>Microsoft Office 365</li>
+      <li>Microsoft Business Productivity Online Suite (BPOS)</li>
+      <li>Microsoft Lync Server</li>
+      <li>Microsoft Office Communications Server (OCS 2007/2007 R2)</li>
+      <li>Microsoft Live Communications Server (LCS 2003/2005)</li>
+    </ul>
+    <p>
+      With this plugin you should be able to replace your Microsoft Office
+      Communicator client with Pidgin/Adium/Miranda/Telepathy.
+    </p>
+  </description>
   <url type="homepage">http://sipe.sourceforge.net/</url>
-  <url type="bugtracker">http://sourceforge.net/p/sipe/bugs/</url>
+  <url type="bugtracker">https://sourceforge.net/p/sipe/bugs/</url>
   <metadata_license>GFDL-1.3</metadata_license>
   <project_license>GPL-2.0+</project_license>
 </component>
