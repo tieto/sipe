@@ -8,7 +8,7 @@
 //
 
 #import <AdiumLibpurple/CBPurpleAccount.h>
-#import <ESDebugAILog.h>
+#import <Adium/ESDebugAILog.h>
 #import "ESSIPEAccountViewController.h"
 
 #include "prpl.h"
@@ -41,6 +41,7 @@
              textField_emailLogin,       KEY_SIPE_EMAIL_LOGIN,
              textField_emailPassword,    KEY_SIPE_EMAIL_PASSWORD,
              checkbox_dontPublish,       KEY_SIPE_DONT_PUBLISH,
+             checkbox_allowWebPhoto,     KEY_SIPE_ALLOW_WEB_PHOTO,
              nil
              ];
     }

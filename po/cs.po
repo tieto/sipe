@@ -12,7 +12,7 @@ msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2017-01-23 20:32+0000\n"
+"PO-Revision-Date: 2017-10-10 08:06+0000\n"
 "Last-Translator: Jakub Adam <jakub.adam@ktknet.cz>\n"
 "Language-Team: Czech (http://www.transifex.com/stefanb/pidgin-sipe/language/cs/)\n"
 "MIME-Version: 1.0\n"
@@ -21,57 +21,57 @@ msgstr ""
 "Language: cs\n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
 
-#: ../src/core/sip-transport.c:240
+#: ../src/core/sip-transport.c:244
 msgid "Failed to authenticate to server"
 msgstr "Nepodařilo se ověřit přihlašovací údaje na serveru"
 
-#: ../src/core/sip-transport.c:298
+#: ../src/core/sip-transport.c:302
 #, c-format
 msgid "Can't request certificate from %s"
 msgstr "Selhal požadavek na certifikát od %s"
 
-#: ../src/core/sip-transport.c:308
+#: ../src/core/sip-transport.c:312
 msgid "No URI for certificate provisioning service provided"
 msgstr "Nebylo zadáno URI služby poskytující certifikáty"
 
-#: ../src/core/sip-transport.c:1285
+#: ../src/core/sip-transport.c:1300
 msgid "Authentication failed"
 msgstr "Nepodařilo se ověřit přihlašovací údaje na serveru"
 
-#: ../src/core/sip-transport.c:1342
+#: ../src/core/sip-transport.c:1357
 msgid "Incompatible authentication scheme chosen"
 msgstr "Zvoleno nekompatibilní autentizační schéma"
 
-#: ../src/core/sip-transport.c:1359 ../src/core/sipe-notify.c:1149
+#: ../src/core/sip-transport.c:1374 ../src/core/sipe-notify.c:1159
 #, c-format
 msgid "You have been rejected by the server: %s"
 msgstr "Následující server odmítl připojení: %s"
 
-#: ../src/core/sip-transport.c:1360 ../src/core/sip-transport.c:1376
-#: ../src/core/sip-transport.c:1400 ../src/core/sip-transport.c:1424
-#: ../src/core/sipe-conf.c:265 ../src/core/sipe-notify.c:1149
+#: ../src/core/sip-transport.c:1375 ../src/core/sip-transport.c:1391
+#: ../src/core/sip-transport.c:1415 ../src/core/sip-transport.c:1439
+#: ../src/core/sipe-conf.c:265 ../src/core/sipe-notify.c:1159
 msgid "no reason given"
 msgstr "bez udání důvodu"
 
-#: ../src/core/sip-transport.c:1375
+#: ../src/core/sip-transport.c:1390
 #, c-format
 msgid "Not found: %s. Please contact your Administrator"
 msgstr "Uživatel %s nenalezen. Prosím kontaktujte svého administrátora"
 
-#: ../src/core/sip-transport.c:1377
+#: ../src/core/sip-transport.c:1392
 msgid "SIP is either not enabled for the destination URI or it does not exist"
 msgstr "SIP není povolen pro cílové URI nebo neexistuje"
 
-#: ../src/core/sip-transport.c:1400 ../src/core/sip-transport.c:1424
+#: ../src/core/sip-transport.c:1415 ../src/core/sip-transport.c:1439
 #, c-format
 msgid "Service unavailable: %s"
 msgstr "Služba není dostupná: %s"
 
-#: ../src/core/sip-transport.c:1775
+#: ../src/core/sip-transport.c:1791
 msgid "Corrupted message received"
 msgstr "Přijatá zpráva je poškozená"
 
-#: ../src/core/sip-transport.c:1799
+#: ../src/core/sip-transport.c:1815
 msgid "Invalid message signature received"
 msgstr "Přijatý podpis zprávy je neplatný"
 
@@ -80,11 +80,11 @@ msgstr "Přijatý podpis zprávy je neplatný"
 msgid "%s wants to start presenting"
 msgstr "%s chce spustit prezentaci"
 
-#: ../src/core/sipe-appshare.c:462 ../src/core/sipe-conf.c:1086
+#: ../src/core/sipe-appshare.c:462 ../src/core/sipe-conf.c:1092
 msgid "Accept"
 msgstr "Přijmout"
 
-#: ../src/core/sipe-appshare.c:463 ../src/core/sipe-conf.c:1087
+#: ../src/core/sipe-appshare.c:463 ../src/core/sipe-conf.c:1093
 msgid "Decline"
 msgstr "Odmítnout"
 
@@ -100,7 +100,7 @@ msgstr "Nastavený klient vzdálené plochy není podporován."
 msgid "Couldn't connect application sharing"
 msgstr "Nepodařilo se připojit ke vzdálené ploše"
 
-#: ../src/core/sipe-buddy.c:541 ../src/core/sipe-buddy.c:2301
+#: ../src/core/sipe-buddy.c:541 ../src/core/sipe-buddy.c:2332
 msgid "Mobile"
 msgstr "Mobilní telefon"
 
@@ -128,7 +128,7 @@ msgstr "Poznámka \"mimo kancelář\""
 msgid "Note"
 msgstr "Poznámka"
 
-#: ../src/core/sipe-buddy.c:851 ../src/core/sipe-buddy.c:2346
+#: ../src/core/sipe-buddy.c:851 ../src/core/sipe-buddy.c:2377
 #: ../src/purple/purple-buddy.c:633
 msgid "Access level"
 msgstr "Úroveň přístupu"
@@ -164,42 +164,42 @@ msgstr "Vyhledání kontaktu selhalo"
 msgid "Invalid contact search query"
 msgstr "Chybný vyhledávací dotaz"
 
-#: ../src/core/sipe-buddy.c:2238
+#: ../src/core/sipe-buddy.c:2269
 #, c-format
 msgid "Make leader of '%s'"
 msgstr "Učinit vedoucím '%s'"
 
-#: ../src/core/sipe-buddy.c:2251
+#: ../src/core/sipe-buddy.c:2282
 #, c-format
 msgid "Remove from '%s'"
 msgstr "Odstranit z '%s'"
 
-#: ../src/core/sipe-buddy.c:2265
+#: ../src/core/sipe-buddy.c:2296
 #, c-format
 msgid "Invite to '%s'"
 msgstr "Pozvat do '%s'"
 
-#: ../src/core/sipe-buddy.c:2281
+#: ../src/core/sipe-buddy.c:2312
 msgid "New chat"
 msgstr "Nový chat"
 
-#: ../src/core/sipe-buddy.c:2294
+#: ../src/core/sipe-buddy.c:2325
 msgid "Work"
 msgstr "Telefon do práce"
 
-#: ../src/core/sipe-buddy.c:2309
+#: ../src/core/sipe-buddy.c:2340
 msgid "Home"
 msgstr "Domů"
 
-#: ../src/core/sipe-buddy.c:2317
+#: ../src/core/sipe-buddy.c:2348
 msgid "Other"
 msgstr "Jiný telefon"
 
-#: ../src/core/sipe-buddy.c:2325
+#: ../src/core/sipe-buddy.c:2356
 msgid "Custom1"
 msgstr "Vlastní1"
 
-#: ../src/core/sipe-buddy.c:2335
+#: ../src/core/sipe-buddy.c:2366
 msgid "Send email..."
 msgstr "Odeslat e-mail..."
 
@@ -269,17 +269,17 @@ msgid "Web ticket request to %s failed"
 msgstr "Požadavek na Web ticket od %s selhal"
 
 #. Generate next ID
-#: ../src/core/sipe-chat.c:246
+#: ../src/core/sipe-chat.c:251
 #, c-format
 msgid "Chat #%d"
 msgstr "Chat #%d"
 
-#: ../src/core/sipe-conf.c:264 ../src/core/sipe-conf.c:412
-#: ../src/core/sipe-conf.c:446 ../src/core/sipe-conf.c:498
+#: ../src/core/sipe-conf.c:264 ../src/core/sipe-conf.c:418
+#: ../src/core/sipe-conf.c:452 ../src/core/sipe-conf.c:504
 msgid "Failed to join the conference"
 msgstr "Nepodařilo se připojit ke konferenci"
 
-#: ../src/core/sipe-conf.c:408
+#: ../src/core/sipe-conf.c:414
 #, c-format
 msgid ""
 "Can't find a conference URI on this page:\n"
@@ -287,124 +287,124 @@ msgid ""
 "%s"
 msgstr "Nezdařilo se nalézt URI konference na této stránce:\n\n%s"
 
-#: ../src/core/sipe-conf.c:443
+#: ../src/core/sipe-conf.c:449
 #, c-format
 msgid "\"%s\" is not a valid conference URI"
 msgstr "\"%s\" není platná adresa konference"
 
-#: ../src/core/sipe-conf.c:499
+#: ../src/core/sipe-conf.c:505
 msgid "Incomplete conference information provided"
 msgstr "Zadány neúplné údaje o konferenci"
 
-#: ../src/core/sipe-conf.c:1106
+#: ../src/core/sipe-conf.c:1112
 msgid ""
 "\n"
 "\n"
 "As this client was not compiled with voice call support, if you accept, you will be able to contact the other participants only via IM session."
 msgstr "\n\nProtože tento klient nebyl přeložen se zapnutou podporou audiohovoru, pokud se připojíte, budete moci ostatní účastníky kontaktovat pouze pomocí textových zpráv."
 
-#: ../src/core/sipe-conf.c:1111
+#: ../src/core/sipe-conf.c:1117
 #, c-format
 msgid "wants to invite you to a conference call%s"
 msgstr "vás chce přizvat ke konferenčnímu hovoru%s"
 
-#: ../src/core/sipe-conf.c:1459
+#: ../src/core/sipe-conf.c:1465
 msgid ""
 "This conference is no longer locked. Additional participants can now join."
 msgstr "Tato konference již není uzamčená. Mohou se připojovat další účastníci."
 
-#: ../src/core/sipe-conf.c:1463
+#: ../src/core/sipe-conf.c:1469
 msgid ""
 "This conference is locked. Nobody else can join the conference while it is "
 "locked."
 msgstr "Tato konference je uzamčená. Dokud tomu tak je, nikdo další se do ní nemůže připojit."
 
-#: ../src/core/sipe-conf.c:1496
+#: ../src/core/sipe-conf.c:1502
 msgid "You have been disconnected from this conference."
 msgstr "Byl jste od této konference odpojen."
 
-#: ../src/core/sipe-conf.c:1656
+#: ../src/core/sipe-conf.c:1662
 msgid "Dial-in info"
 msgstr "Údaje pro připojení telefonem"
 
-#: ../src/core/sipe-conf.c:1657
+#: ../src/core/sipe-conf.c:1663
 msgid "Number"
 msgstr "Telefonní číslo"
 
-#: ../src/core/sipe-conf.c:1659
+#: ../src/core/sipe-conf.c:1665
 msgid "Conference ID"
 msgstr "ID konference"
 
-#: ../src/core/sipe-conf.c:1661
+#: ../src/core/sipe-conf.c:1667
 msgid "Meeting link"
 msgstr "URL konference"
 
-#: ../src/core/sipe-conf.c:1663
+#: ../src/core/sipe-conf.c:1669
 msgid "Organizer"
 msgstr "Organizátor"
 
-#: ../src/core/sipe-conf.c:1665
+#: ../src/core/sipe-conf.c:1671
 msgid "Alternative dial-in numbers"
 msgstr "Alternativní telefonní čísla"
 
 #. The next 13 texts make up the SIPE about note text
 #. About note, part 1/13: introduction
-#: ../src/core/sipe-core.c:221
+#: ../src/core/sipe-core.c:228
 msgid ""
 "A third-party plugin implementing extended version of SIP/SIMPLE used by "
 "various products"
 msgstr "Plugin třetí strany poskytující rozšířenou verzi SIP/SIMPLE, používanou v různých produktech."
 
 #. About note, part 2/13: home page URL (label)
-#: ../src/core/sipe-core.c:223
+#: ../src/core/sipe-core.c:230
 msgid "Home Page"
 msgstr "Domovská stránka"
 
 #. About note, part 3/13: support forum URL (label)
-#: ../src/core/sipe-core.c:225
+#: ../src/core/sipe-core.c:232
 msgid "Support"
 msgstr "Uživatelská podpora"
 
 #. About note, part 4/13: support forum name (hyperlink text)
-#: ../src/core/sipe-core.c:227
+#: ../src/core/sipe-core.c:234
 msgid "Help Forum"
 msgstr "Diskuzní forum s pomocí"
 
 #. About note, part 5/13: bug tracker URL (label)
-#: ../src/core/sipe-core.c:229
+#: ../src/core/sipe-core.c:236
 msgid "Report Problems"
 msgstr "Nahlásit problémy"
 
 #. About note, part 6/13: bug tracker URL (hyperlink text)
-#: ../src/core/sipe-core.c:231
+#: ../src/core/sipe-core.c:238
 msgid "Bug Tracker"
 msgstr "Sledování nahlášených chyb"
 
 #. About note, part 7/13: translation service URL (label)
-#: ../src/core/sipe-core.c:233
+#: ../src/core/sipe-core.c:240
 msgid "Translations"
 msgstr "Překlady"
 
 #. About note, part 8/13: license type (label)
-#: ../src/core/sipe-core.c:235
+#: ../src/core/sipe-core.c:242
 msgid "License"
 msgstr "Licence"
 
 #. About note, part 9/13: (REMOVED)
 #. About note, part 10/13: translation request, text before Transifex.com URL
 #. append a space if text is not empty
-#: ../src/core/sipe-core.c:239
+#: ../src/core/sipe-core.c:246
 msgid "Please help us to translate SIPE to your native language here at "
 msgstr "Prosím pomozte přeložit SIPE do vašeho mateřského jazyka"
 
 #. About note, part 11/13: translation request, text after Transifex.com URL
 #. start with a space if text is not empty
-#: ../src/core/sipe-core.c:242
+#: ../src/core/sipe-core.c:249
 msgid " using convenient web interface"
 msgstr "použitím pohodlného webového rozhraní"
 
 #. About note, part 12/13: author list (header)
-#: ../src/core/sipe-core.c:244
+#: ../src/core/sipe-core.c:251
 msgid "Authors"
 msgstr "Autoři"
 
@@ -412,38 +412,38 @@ msgstr "Autoři"
 #. PLEASE NOTE: do *NOT* simply translate the english original
 #. but write something similar to the following sentence:
 #. "Localization for <language name> (<language code>): <name>"
-#: ../src/core/sipe-core.c:249
+#: ../src/core/sipe-core.c:256
 msgid "Original texts in English (en): SIPE developers"
 msgstr "Překlad do češtiny (cs): psilo a Jakub Adam"
 
-#: ../src/core/sipe-core.c:273
+#: ../src/core/sipe-core.c:280
 msgid "SIP Exchange user name contains invalid characters"
 msgstr "Uživatelské jméno pro SIP Exchange obsahuje neplatné znaky"
 
-#: ../src/core/sipe-core.c:281 ../src/purple/purple-buddy.c:485
+#: ../src/core/sipe-core.c:288 ../src/purple/purple-buddy.c:485
 #: ../src/telepathy/telepathy-protocol.c:89
-#: ../src/telepathy/telepathy-protocol.c:191
+#: ../src/telepathy/telepathy-protocol.c:197
 #, c-format
 msgid ""
 "User name should be a valid SIP URI\n"
 "Example: user@company.com"
 msgstr "Uživatelské jméno musí být platné SIP URI\nNapříklad: uzivatel@spolecnost.cz"
 
-#: ../src/core/sipe-core.c:288
+#: ../src/core/sipe-core.c:295
 msgid "Password is required when Single Sign-On is not enabled"
 msgstr "Pokud není povoleno jednotné přihlašování (Single Sign-On), je nutné zadat heslo"
 
-#: ../src/core/sipe-core.c:298
+#: ../src/core/sipe-core.c:305
 msgid ""
 "Email address should be valid if provided\n"
 "Example: user@company.com"
 msgstr "E-mailová adresa musí mít správný formát nebo zůstat nevyplněná\nNapříklad: uzivatel@spolecnost.cz"
 
-#: ../src/core/sipe-core.c:307
+#: ../src/core/sipe-core.c:314
 msgid "SIP Exchange user name contains whitespace"
 msgstr "Uživatelské jméno služby SIP Exchange obsahuje mezery"
 
-#: ../src/core/sipe-core.c:321
+#: ../src/core/sipe-core.c:328
 msgid ""
 "Email services URL should be valid if provided\n"
 "Example: https://exchange.corp.com/EWS/Exchange.asmx\n"
@@ -475,8 +475,8 @@ msgid "Could not create listen socket"
 msgstr "Soket pro naslouchání nelze vytvořit"
 
 #: ../src/core/sipe-ft-lync.c:762 ../src/core/sipe-media.c:1328
-#: ../src/core/sipe-media.c:1339 ../src/core/sipe-media.c:1417
-#: ../src/core/sipe-media.c:1923
+#: ../src/core/sipe-media.c:1339 ../src/core/sipe-media.c:1418
+#: ../src/core/sipe-media.c:1935
 msgid "Error occurred"
 msgstr "Došlo k chybě"
 
@@ -514,8 +514,8 @@ msgstr "Selhala autentizace při přenosu souboru"
 msgid "Out of memory"
 msgstr "Nedostatek paměti"
 
-#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1163
-#: ../src/core/sipe-notify.c:1197 ../src/core/sipe-notify.c:1301
+#: ../src/core/sipe-group.c:168 ../src/core/sipe-notify.c:1173
+#: ../src/core/sipe-notify.c:1207 ../src/core/sipe-notify.c:1311
 #: ../src/purple/purple-search.c:128
 msgid "Other Contacts"
 msgstr "Ostatní kontakty"
@@ -553,31 +553,31 @@ msgstr "Chyba při připojování k místnosti"
 msgid "Failed to invite %s"
 msgstr "Pozvat uživatele %s se nezdařilo"
 
-#: ../src/core/sipe-incoming.c:754
+#: ../src/core/sipe-incoming.c:756
 #, c-format
 msgid "Received a message with unrecognized contents from %s"
 msgstr "Obdržena zpráva s nerozpoznaným obsahem od uživatele %s"
 
-#: ../src/core/sipe-media.c:869 ../src/core/sipe-media.c:1483
-#: ../src/core/sipe-media.c:1493 ../src/core/sipe-media.c:1904
-#: ../src/core/sipe-media.c:1924
+#: ../src/core/sipe-media.c:868 ../src/core/sipe-media.c:1486
+#: ../src/core/sipe-media.c:1496 ../src/core/sipe-media.c:1913
+#: ../src/core/sipe-media.c:1936
 msgid "Unable to establish a call"
 msgstr "Hovor nelze spojit"
 
-#: ../src/core/sipe-media.c:870 ../src/core/sipe-media.c:1905
+#: ../src/core/sipe-media.c:869 ../src/core/sipe-media.c:1914
 msgid "Encryption settings of peer are incompatible with ours."
 msgstr "Nastavení šifrování na straně kontaktu není kompatibilní s naším"
 
-#: ../src/core/sipe-media.c:963
+#: ../src/core/sipe-media.c:962
 #, c-format
 msgid "User %s rejected call"
 msgstr "Uživatel %s hovor odmítl "
 
-#: ../src/core/sipe-media.c:964
+#: ../src/core/sipe-media.c:963
 msgid "Call rejected"
 msgstr "Hovor odmítnut"
 
-#: ../src/core/sipe-media.c:1329 ../src/core/sipe-media.c:1418
+#: ../src/core/sipe-media.c:1329 ../src/core/sipe-media.c:1419
 msgid "Error creating audio stream"
 msgstr "Chyba při vytváření audio proudu"
 
@@ -585,7 +585,7 @@ msgstr "Chyba při vytváření audio proudu"
 msgid "Error creating video stream"
 msgstr "Chyba při vytváření video proudu"
 
-#: ../src/core/sipe-media.c:1384 ../src/purple/purple-chat.c:329
+#: ../src/core/sipe-media.c:1384 ../src/purple/purple-chat.c:336
 msgid "Join conference call"
 msgstr "Připojit ke konferenčnímu hovoru"
 
@@ -593,50 +593,50 @@ msgstr "Připojit ke konferenčnímu hovoru"
 msgid "Conference calls are not supported on this server."
 msgstr "Tento server nepodporuje konferenční hovory."
 
-#: ../src/core/sipe-media.c:1484
+#: ../src/core/sipe-media.c:1487
 msgid "Invalid phone number"
 msgstr "Chybné telefonní číslo"
 
-#: ../src/core/sipe-media.c:1494
+#: ../src/core/sipe-media.c:1497
 msgid "Audio Test Service is not available."
 msgstr "Služba zkušební hovor není k dispozici."
 
-#: ../src/core/sipe-media.c:1873
+#: ../src/core/sipe-media.c:1879
 msgid "User unavailable"
 msgstr "Uživatel nedostupný"
 
-#: ../src/core/sipe-media.c:1876
+#: ../src/core/sipe-media.c:1882
 #, c-format
 msgid "%s does not want to be disturbed"
 msgstr "%s si nepřeje být vyrušován"
 
-#: ../src/core/sipe-media.c:1878
+#: ../src/core/sipe-media.c:1884
 #, c-format
 msgid "User %s is not available"
 msgstr "Uživatel %s je nedostupný"
 
-#: ../src/core/sipe-media.c:1887
+#: ../src/core/sipe-media.c:1896
 msgid "Unsupported media type"
 msgstr "Nepodporovaný formát média"
 
-#: ../src/core/sipe-media.c:2246
+#: ../src/core/sipe-media.c:2258
 msgid "Media error"
 msgstr "Problém se spojením"
 
-#: ../src/core/sipe-media.c:2247
+#: ../src/core/sipe-media.c:2259
 msgid "Error while reading from stream"
 msgstr "Problém při čtení dat"
 
 #. reason = g_strdup(_("User logged out")); // [MS-OCER]
-#: ../src/core/sipe-notify.c:1141
+#: ../src/core/sipe-notify.c:1151
 msgid "you are already signed in at another location"
 msgstr "už jsi přihlášen(a) z jiného místa"
 
-#: ../src/core/sipe-notify.c:1143
+#: ../src/core/sipe-notify.c:1153
 msgid "user disabled"
 msgstr "uživatel je zakázán"
 
-#: ../src/core/sipe-notify.c:1145
+#: ../src/core/sipe-notify.c:1155
 msgid "user moved"
 msgstr "uživatel přesunut"
 
@@ -674,36 +674,36 @@ msgid "Unknown"
 msgstr "Neznámý"
 
 #. Translators: remove (clear) previously assigned access level
-#: ../src/core/sipe-ocs2007.c:2570
+#: ../src/core/sipe-ocs2007.c:2589
 msgid "Unspecify"
 msgstr "Odebrat nastavení"
 
-#: ../src/core/sipe-ocs2007.c:2589
+#: ../src/core/sipe-ocs2007.c:2608
 msgid "People in my company"
 msgstr "Lidé v mé společnosti"
 
-#: ../src/core/sipe-ocs2007.c:2599
+#: ../src/core/sipe-ocs2007.c:2618
 msgid "People in domains connected with my company"
 msgstr "Lidé v doménách propojených s mou společností"
 
-#: ../src/core/sipe-ocs2007.c:2608
+#: ../src/core/sipe-ocs2007.c:2627
 msgid "People in public domains"
 msgstr "Lidé ve veřejných doménách"
 
-#: ../src/core/sipe-ocs2007.c:2618
+#: ../src/core/sipe-ocs2007.c:2637
 #, c-format
 msgid "People at %s"
 msgstr "Lidé v %s"
 
-#: ../src/core/sipe-ocs2007.c:2643
+#: ../src/core/sipe-ocs2007.c:2662
 msgid "Add new domain..."
 msgstr "Přidat další doménu..."
 
-#: ../src/core/sipe-ocs2007.c:2672
+#: ../src/core/sipe-ocs2007.c:2691
 msgid "Online help..."
 msgstr "Online nápověda..."
 
-#: ../src/core/sipe-ocs2007.c:2680
+#: ../src/core/sipe-ocs2007.c:2699
 msgid "Access groups"
 msgstr "Přístupové skupiny"
 
@@ -921,19 +921,19 @@ msgstr "Zrušit"
 msgid "Copy to"
 msgstr "Zkopírovat do"
 
-#: ../src/purple/purple-chat.c:310
+#: ../src/purple/purple-chat.c:313
 msgid "Lock"
 msgstr "Zamknout"
 
-#: ../src/purple/purple-chat.c:315
+#: ../src/purple/purple-chat.c:318
 msgid "Unlock"
 msgstr "Odemknout"
 
-#: ../src/purple/purple-chat.c:338
+#: ../src/purple/purple-chat.c:345
 msgid "Show presentation"
 msgstr "Zobrazit prezentaci"
 
-#: ../src/purple/purple-chat.c:345
+#: ../src/purple/purple-chat.c:352
 msgid "Meeting entry info"
 msgstr "Přístupové údaje"
 
@@ -968,65 +968,65 @@ msgstr "Téma konverzace: %s"
 
 #. Macro to reduce code repetition
 #. Translators: noun
-#: ../src/purple/purple-plugin-common.c:188
+#: ../src/purple/purple-plugin-common.c:193
 msgid "Message"
 msgstr "Zpráva"
 
-#: ../src/purple/purple-plugin-common.c:421
+#: ../src/purple/purple-plugin-common.c:435
 msgid "Connecting"
 msgstr "Připojování"
 
-#: ../src/purple/purple-plugin-common.c:451
+#: ../src/purple/purple-plugin-common.c:465
 msgid "Password required"
 msgstr "Je vyžadováno heslo"
 
-#: ../src/purple/purple-plugin-common.c:611
+#: ../src/purple/purple-plugin-common.c:625
 msgid "user@company.com"
 msgstr "uzivatel@spolecnost.cz"
 
-#: ../src/purple/purple-plugin-common.c:724
+#: ../src/purple/purple-plugin-common.c:747
 msgid "Phone number"
 msgstr "Telefonní číslo"
 
-#: ../src/purple/purple-plugin-common.c:728
-#: ../src/purple/purple-plugin-common.c:729
+#: ../src/purple/purple-plugin-common.c:751
+#: ../src/purple/purple-plugin-common.c:752
 msgid "Call a phone number"
 msgstr "Volat na telefonní číslo"
 
-#: ../src/purple/purple-plugin-common.c:732
+#: ../src/purple/purple-plugin-common.c:755
 msgid "_Call"
 msgstr "_Volat"
 
-#: ../src/purple/purple-plugin-common.c:733
-#: ../src/purple/purple-plugin-common.c:781 ../src/purple/purple-search.c:240
+#: ../src/purple/purple-plugin-common.c:756
+#: ../src/purple/purple-plugin-common.c:804 ../src/purple/purple-search.c:240
 msgid "_Cancel"
 msgstr "_Storno"
 
-#: ../src/purple/purple-plugin-common.c:760
+#: ../src/purple/purple-plugin-common.c:783
 msgid "Meeting location"
 msgstr "Adresa konference"
 
-#: ../src/purple/purple-plugin-common.c:762
+#: ../src/purple/purple-plugin-common.c:785
 msgid "Alternatively"
 msgstr "Nebo"
 
-#: ../src/purple/purple-plugin-common.c:764
+#: ../src/purple/purple-plugin-common.c:787
 msgid "Organizer email"
 msgstr "Email organizátora"
 
-#: ../src/purple/purple-plugin-common.c:766
+#: ../src/purple/purple-plugin-common.c:789
 msgid "Meeting ID"
 msgstr "ID konference"
 
-#: ../src/purple/purple-plugin-common.c:770
+#: ../src/purple/purple-plugin-common.c:793
 msgid "Join conference"
 msgstr "Připojit ke konferenci"
 
-#: ../src/purple/purple-plugin-common.c:771
+#: ../src/purple/purple-plugin-common.c:794
 msgid "Join scheduled conference"
 msgstr "Připojit k naplánované konferenci"
 
-#: ../src/purple/purple-plugin-common.c:772
+#: ../src/purple/purple-plugin-common.c:795
 msgid ""
 "Enter meeting location string you received in the invitation.\n"
 "\n"
@@ -1037,40 +1037,40 @@ msgid ""
 "https://meet.company.com/someone/abcdef1234"
 msgstr "Zadejte adresu konference, kterou jste obdrželi v pozvánce.\n\nPlatné adresy bývají ve tvaru:\nmeet:sip:uzivatel@spolecnost.cz;gruu;opaque=app:conf:focus:id:abcdef1234\nconf:sip:uzivatel@spolecnost.cz;gruu;opaque=app:conf:focus:id:abcdef1234\nnebo\nhttps://meet.spolecnost.cz/uzivatel/abcdef1234"
 
-#: ../src/purple/purple-plugin-common.c:780
+#: ../src/purple/purple-plugin-common.c:803
 msgid "_Join"
 msgstr "_Připojit"
 
-#: ../src/purple/purple-plugin-common.c:797
-#: ../src/purple/purple-plugin-common.c:811
+#: ../src/purple/purple-plugin-common.c:818
+#: ../src/purple/purple-plugin-common.c:836
 msgid "Publishing of calendar information has been disabled"
 msgstr "Zveřejňování informací z kalendáře bylo zakázáno"
 
-#: ../src/purple/purple-plugin-common.c:823
+#: ../src/purple/purple-plugin-common.c:855
 msgid "About SIPE plugin..."
 msgstr "O SIPE pluginu..."
 
-#: ../src/purple/purple-plugin-common.c:826
+#: ../src/purple/purple-plugin-common.c:858
 msgid "Contact search..."
 msgstr "Hledání kontaktů..."
 
-#: ../src/purple/purple-plugin-common.c:830
+#: ../src/purple/purple-plugin-common.c:862
 msgid "Call a phone number..."
 msgstr "Volat na telefonní číslo..."
 
-#: ../src/purple/purple-plugin-common.c:833
+#: ../src/purple/purple-plugin-common.c:865
 msgid "Test call"
 msgstr "Zkušební hovor"
 
-#: ../src/purple/purple-plugin-common.c:837
+#: ../src/purple/purple-plugin-common.c:869
 msgid "Join scheduled conference..."
 msgstr "Připojit k naplánované konferenci..."
 
-#: ../src/purple/purple-plugin-common.c:840
+#: ../src/purple/purple-plugin-common.c:872
 msgid "Republish Calendar"
 msgstr "Znovu zveřejnit kalendář"
 
-#: ../src/purple/purple-plugin-common.c:843
+#: ../src/purple/purple-plugin-common.c:875
 msgid "Reset status"
 msgstr "Obnovit stav"
 
@@ -1080,26 +1080,26 @@ msgstr "Obnovit stav"
 #. *
 #. *     api/sipe-backend.h
 #. *     purple-settings.c:setting_name[]
-#: ../src/purple/purple-plugin-common.c:861
+#: ../src/purple/purple-plugin-common.c:893
 msgid ""
 "Server[:Port]\n"
 "(leave empty for auto-discovery)"
 msgstr "Server[:Port]\n(pro automatické zjištění nevyplňujte)"
 
-#: ../src/purple/purple-plugin-common.c:864
+#: ../src/purple/purple-plugin-common.c:896
 msgid "Connection type"
 msgstr "Typ spojení"
 
-#: ../src/purple/purple-plugin-common.c:865
-#: ../src/purple/purple-plugin-common.c:877
+#: ../src/purple/purple-plugin-common.c:897
+#: ../src/purple/purple-plugin-common.c:909
 msgid "Auto"
 msgstr "Automaticky"
 
-#: ../src/purple/purple-plugin-common.c:866
+#: ../src/purple/purple-plugin-common.c:898
 msgid "SSL/TLS"
 msgstr "Protokol SSL/TLS"
 
-#: ../src/purple/purple-plugin-common.c:867
+#: ../src/purple/purple-plugin-common.c:899
 msgid "TCP"
 msgstr "Protokol TCP"
 
@@ -1107,23 +1107,23 @@ msgstr "Protokol TCP"
 #. may watch you)"), "doservice", TRUE);
 #. sipe_prpl_info.protocol_options =
 #. g_list_append(sipe_prpl_info.protocol_options, option);
-#: ../src/purple/purple-plugin-common.c:873
+#: ../src/purple/purple-plugin-common.c:905
 msgid "User Agent"
 msgstr "Uživatelský agent"
 
-#: ../src/purple/purple-plugin-common.c:876
+#: ../src/purple/purple-plugin-common.c:908
 msgid "Authentication scheme"
 msgstr "Ověřovací schéma"
 
-#: ../src/purple/purple-plugin-common.c:878
+#: ../src/purple/purple-plugin-common.c:910
 msgid "NTLM"
 msgstr "NTLM"
 
-#: ../src/purple/purple-plugin-common.c:880
+#: ../src/purple/purple-plugin-common.c:912
 msgid "Kerberos"
 msgstr "Kerberos"
 
-#: ../src/purple/purple-plugin-common.c:882
+#: ../src/purple/purple-plugin-common.c:914
 msgid "TLS-DSK"
 msgstr "TLS-DSK"
 
@@ -1139,23 +1139,29 @@ msgstr "TLS-DSK"
 #. *  - Windows, host joined to domain, SIPE with SSPI: NTLM
 #. *  - Windows, host joined to domain, SIPE with SSPI: Kerberos
 #. *  - SIPE with libkrb5, valid TGT in cache (kinit):  Kerberos
-#: ../src/purple/purple-plugin-common.c:900
+#: ../src/purple/purple-plugin-common.c:932
 msgid "Use Single Sign-On"
 msgstr "Použít Single Sign-On"
 
 #. * Example (Exchange): https://server.company.com/EWS/Exchange.asmx
 #. *  Example (Domino)  : https://[domino_server]/[mail_database_name].nsf
-#: ../src/purple/purple-plugin-common.c:907
+#: ../src/purple/purple-plugin-common.c:939
 msgid "Don't publish my calendar information"
 msgstr "Nezveřejňovat informace z mého kalendáře"
 
-#: ../src/purple/purple-plugin-common.c:910
+#: ../src/purple/purple-plugin-common.c:942
+msgid ""
+"Show profile pictures from web\n"
+"(potentially dangerous)"
+msgstr "Stahovat fotografie uživatelů z webu\n(potenciálně nebezpečné)"
+
+#: ../src/purple/purple-plugin-common.c:945
 msgid ""
 "Email services URL\n"
 "(leave empty for auto-discovery)"
 msgstr "URL e-mailové služby\n(pro automatické zjištění nevyplňujte)"
 
-#: ../src/purple/purple-plugin-common.c:913
+#: ../src/purple/purple-plugin-common.c:948
 msgid ""
 "Email address\n"
 "(if different from Username)"
@@ -1163,13 +1169,13 @@ msgstr "E-mailová adresa\n(liší-li se od SIP adresy)"
 
 #. * Example (Exchange): DOMAIN\user  or  user@company.com
 #. *  Example (Domino)  : email_address
-#: ../src/purple/purple-plugin-common.c:919
+#: ../src/purple/purple-plugin-common.c:954
 msgid ""
 "Email login\n"
 "(if different from Login)"
 msgstr "Uživatelské jméno pro e-mail\n(liší-li se od uživatelského jména)"
 
-#: ../src/purple/purple-plugin-common.c:922
+#: ../src/purple/purple-plugin-common.c:957
 msgid ""
 "Email password\n"
 "(if different from Password)"
@@ -1177,38 +1183,38 @@ msgstr "Heslo pro e-mail\n(liší-li se od hesla pro komunikátor)"
 
 #. * Example (federated domain): company.com      (i.e. ocschat@company.com)
 #. *  Example (non-default user): user@company.com
-#: ../src/purple/purple-plugin-common.c:929
+#: ../src/purple/purple-plugin-common.c:964
 msgid ""
 "Group Chat Proxy\n"
 "   company.com  or  user@company.com\n"
 "(leave empty to determine from Username)"
 msgstr "Proxy server pro skupinový chat\n spolecnost.com nebo uzivatel@spolecnost.com\n(nechte prázdné pro odvození z uživatelského jména)"
 
-#: ../src/purple/purple-plugin-common.c:933
+#: ../src/purple/purple-plugin-common.c:968
 msgid "Remote desktop client"
 msgstr "Klient vzdálené plochy"
 
-#: ../src/purple/purple-plugin-common.c:938
+#: ../src/purple/purple-plugin-common.c:973
 msgid "Media encryption"
 msgstr "Šifrování hovorů"
 
-#: ../src/purple/purple-plugin-common.c:939
+#: ../src/purple/purple-plugin-common.c:974
 msgid "Obey server policy"
 msgstr "Podle politiky serveru"
 
-#: ../src/purple/purple-plugin-common.c:940
+#: ../src/purple/purple-plugin-common.c:975
 msgid "Always"
 msgstr "Vždy"
 
-#: ../src/purple/purple-plugin-common.c:941
+#: ../src/purple/purple-plugin-common.c:976
 msgid "Optional"
 msgstr "Volitelně"
 
-#: ../src/purple/purple-plugin-common.c:942
+#: ../src/purple/purple-plugin-common.c:977
 msgid "Disabled"
 msgstr "Nikdy"
 
-#: ../src/purple/purple-plugin-common.c:952
+#: ../src/purple/purple-plugin-common.c:987
 msgid ""
 "Login\n"
 "   user  or  DOMAIN\\user  or\n"
@@ -1257,27 +1263,27 @@ msgstr "Zadejte informaci o osobě, kterou si přejete najít. Prázdná pole bu
 msgid "_Search"
 msgstr "_Hledat"
 
-#: ../src/purple/purple-transport.c:135
+#: ../src/purple/purple-transport.c:149
 msgid "Read error"
 msgstr "Chyba čtení"
 
-#: ../src/purple/purple-transport.c:139
-#: ../src/telepathy/telepathy-transport.c:95
+#: ../src/purple/purple-transport.c:153
+#: ../src/telepathy/telepathy-transport.c:96
 msgid "Server has disconnected"
 msgstr "Došlo k odpojení serveru."
 
-#: ../src/purple/purple-transport.c:201
+#: ../src/purple/purple-transport.c:215
 msgid "Could not connect"
 msgstr "Spojení nelze navázat"
 
-#: ../src/purple/purple-transport.c:271
+#: ../src/purple/purple-transport.c:285
 msgid "Could not create SSL context"
 msgstr "Kontext protokolu SSL se nepodařilo vytvořit."
 
-#: ../src/purple/purple-transport.c:293
+#: ../src/purple/purple-transport.c:307
 msgid "Could not create socket"
 msgstr "Nemohu vytvořit socket"
 
-#: ../src/purple/purple-transport.c:417
+#: ../src/purple/purple-transport.c:431
 msgid "Write error"
 msgstr "Chyba zápisu"

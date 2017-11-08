@@ -1,0 +1,26 @@
+From c11f787e69d0ba0c7dff3e7ab0442f8a503496ec Mon Sep 17 00:00:00 2001
+From: Jakub Adam <jakub.adam@ktknet.cz>
+Date: Tue, 31 Oct 2017 08:53:12 +0100
+Subject: [PATCH] metainfo: Move pidgin-sipe.metainfo.xml out of legacy
+ location
+
+AppStream XML files should now be placed in /usr/share/metainfo/:
+https://www.freedesktop.org/software/appstream/docs/chap-Quickstart.html
+---
+ src/purple/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/purple/Makefile.am b/src/purple/Makefile.am
+index 7d61ac28..a12ae592 100644
+--- a/src/purple/Makefile.am
++++ b/src/purple/Makefile.am
+@@ -151,5 +151,5 @@ TESTS = $(check_PROGRAMS)
+ install-exec-local:
+ 	rm -f $(DESTDIR)$(libdir)/pidgin/libsipe.so
+ 
+-pidginmetainfofiledir   = $(datadir)/appdata
++pidginmetainfofiledir   = $(datadir)/metainfo
+ pidginmetainfofile_DATA = pidgin-sipe.metainfo.xml
+-- 
+2.14.2
+

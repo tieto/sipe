@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -41,7 +41,12 @@
 
 #define SIPE_PURPLE_PROTOCOL_OPTIONS OPT_PROTO_CHAT_TOPIC | OPT_PROTO_PASSWORD_OPTIONAL
 
-#if !PURPLE_VERSION_CHECK(3,0,0)
+#if PURPLE_VERSION_CHECK(3,0,0)
+#include "conversationtypes.h" /* PurpleIMTypingState */
+#include "plugins.h"           /* PurplePlugin */
+#else
+#include "conversation.h"      /* PurpleTypingState */
+#include "plugin.h"            /* PurplePlugin */
 #define PurpleIMTypingState PurpleTypingState
 #define _PurpleProtocolAction _PurplePluginAction
 #endif
@@ -57,6 +62,7 @@ struct _PurpleConnection;
 struct _PurpleConversation;
 struct _PurpleGroup;
 struct _PurpleMessage;
+struct _PurpleNotifyUserInfo;
 struct _PurplePluginAction;
 struct _PurpleRoomlist;
 struct _PurpleStatus;
@@ -177,15 +183,9 @@ void capture_pipeline(const gchar *label);
 void sipe_purple_transport_close_all(struct sipe_backend_private *purple_private);
 
 /* Convenience macros */
-#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 #define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(account)))
 #define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(purple_buddy_get_account(buddy))))
 #define PURPLE_GC_TO_SIPE_CORE_PUBLIC      ((struct sipe_core_public *) purple_connection_get_protocol_data(gc))
-#else
-#define PURPLE_ACCOUNT_TO_SIPE_CORE_PUBLIC ((struct sipe_core_public *) purple_account_get_connection(account)->proto_data)
-#define PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC   ((struct sipe_core_public *) purple_account_get_connection(purple_buddy_get_account(buddy))->proto_data)
-#define PURPLE_GC_TO_SIPE_CORE_PUBLIC      ((struct sipe_core_public *) gc->proto_data)
-#endif
 
 /* Protocol common functions */
 
@@ -194,6 +194,9 @@ gboolean sipe_purple_plugin_unload(PurplePlugin *plugin);
 
 gpointer sipe_purple_user_split(void);
 GList *sipe_purple_account_options(void);
+
+void sipe_purple_republish_calendar(struct _PurpleAccount *account);
+void sipe_purple_reset_status(struct _PurpleAccount *account);
 
 GList *sipe_purple_actions(void);
 gchar *sipe_purple_status_text(struct _PurpleBuddy *buddy);
@@ -224,13 +227,11 @@ unsigned int sipe_purple_send_typing(struct _PurpleConnection *gc,
 void sipe_purple_add_permit(struct _PurpleConnection *gc, const char *name);
 void sipe_purple_add_deny(struct _PurpleConnection *gc, const char *name);
 
-#if PURPLE_VERSION_CHECK(2,6,0) || PURPLE_VERSION_CHECK(3,0,0)
 gboolean sipe_purple_initiate_media(struct _PurpleAccount *account,
 				    const char *who,
 				    PurpleMediaSessionType type);
 PurpleMediaCaps sipe_purple_get_media_caps(struct _PurpleAccount *account,
 					   const char *who);
-#endif
 
 /*
   Local Variables:

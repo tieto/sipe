@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -312,12 +312,7 @@ void sipe_utils_message_debug(const gchar *type,
 gboolean
 sipe_strequal(const gchar *left, const gchar *right)
 {
-#if GLIB_CHECK_VERSION(2,16,0)
 	return (g_strcmp0(left, right) == 0);
-#else
-	return ((left == NULL && right == NULL) ||
-	        (left != NULL && right != NULL && strcmp(left, right) == 0));
-#endif
 }
 
 gboolean
@@ -325,19 +320,6 @@ sipe_strcase_equal(const gchar *left, const gchar *right)
 {
 	return ((left == NULL && right == NULL) ||
 	        (left != NULL && right != NULL && g_ascii_strcasecmp(left, right) == 0));
-}
-
-gint sipe_strcompare(gconstpointer a, gconstpointer b)
-{
-#if GLIB_CHECK_VERSION(2,16,0)
-	return (g_strcmp0(a, b));
-#else
-	if (!a)
-		return -(a != b);
-	if (!b)
-		return a != b;
-	return strcmp(a, b);
-#endif
 }
 
 time_t
@@ -550,9 +532,17 @@ void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
 
 gboolean sipe_utils_ip_is_private(const char *ip)
 {
-	return g_str_has_prefix(ip, "10.")      ||
+	return /* IPv4 */
+	       g_str_has_prefix(ip, "10.")      ||
 	       g_str_has_prefix(ip, "172.16.")  ||
-	       g_str_has_prefix(ip, "192.168.");
+	       g_str_has_prefix(ip, "192.168.") ||
+	       /* IPV6 */
+	       g_str_has_prefix(ip, "fd");
+}
+
+const gchar *sipe_utils_ip_sdp_address_marker(const gchar *ip)
+{
+	return(ip && strchr(ip, ':') ? "IP6" : "IP4");
 }
 
 gchar *sipe_utils_presence_key(const gchar *uri)
@@ -569,34 +559,7 @@ sipe_utils_uri_unescape(const gchar *string)
 	if (!string)
 		return NULL;
 
-#if GLIB_CHECK_VERSION(2,16,0)
 	unescaped = g_uri_unescape_string(string, NULL);
-#else
-	// based on libpurple/util.c:purple_url_decode()
-	{
-		GString *buf = g_string_new(NULL);
-		size_t len = strlen(string);
-		char hex[3];
-
-		hex[2] = '\0';
-
-		while (len--) {
-			gchar c = *string++;
-
-			if ((len >= 2) && (c == '%')) {
-				strncpy(hex, string, 2);
-				c = strtol(hex, NULL, 16);
-
-				string += 2;
-				len -= 2;
-			}
-
-			g_string_append_c(buf, c);
-		}
-
-		unescaped = g_string_free(buf, FALSE);
-	}
-#endif
 	if (unescaped && !g_utf8_validate(unescaped, -1, (const gchar **)&tmp))
 		*tmp = '\0';
 

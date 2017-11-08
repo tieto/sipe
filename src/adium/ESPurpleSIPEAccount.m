@@ -9,11 +9,10 @@
 //  Copyright 2013 Michael Lamb/Harris Kauffman. All rights reserved.
 //
 
-#import <AISharedAdium.h>
-#import <AIAdium.h>
+#import <Adium/AISharedAdium.h>
 #import <Adium/AIStatus.h>
 #import <Adium/AIStatusControllerProtocol.h>
-#import <ESDebugAILog.h>
+#import <Adium/ESDebugAILog.h>
 #import <Adium/AIListContact.h>
 #import "AIContactController.h"
 
@@ -118,6 +117,7 @@
      @"dont-publish",                  KEY_SIPE_DONT_PUBLISH,
      @"authentication",                KEY_SIPE_AUTH_SCHEME,
      @"ssl_cdsa_beast_tls_workaround", KEY_SIPE_BEAST_DISABLE,
+     @"allow-web-photo",               KEY_SIPE_ALLOW_WEB_PHOTO,
      nil
      ];
 

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -280,24 +280,6 @@ gboolean sipe_strequal(const gchar *left, const gchar *right);
 gboolean sipe_strcase_equal(const gchar *left, const gchar *right);
 
 /**
- * Compares two strings
- *
- * Unlike strcmp(), this function will not crash if one or both of the
- * strings are @c NULL.
- *
- * Same as g_strcmp0 (defined only for >= 2.16) to maintain
- * our backward compatibility. The declaration is compatible to
- * @c GCompareFunc.
- *
- * @param a A string
- * @param b A string to compare with a
- *
- * @return negative value if a < b; zero if a = b; positive value if a > b.
- *
- */
-gint sipe_strcompare(gconstpointer a, gconstpointer b);
-
-/**
  * Parses a timestamp in ISO8601 format and returns a time_t.
  * Assumes UTC if no timezone specified
  *
@@ -445,6 +427,15 @@ void sipe_utils_shrink_buffer(struct sipe_transport_connection *conn,
  * @return @c TRUE if address is private
  */
 gboolean sipe_utils_ip_is_private(const char *ip);
+
+/**
+ * Get SDP address marker for IP address
+ *
+ * @param ip address
+ *
+ * @return address marker string for IP address
+ */
+const gchar *sipe_utils_ip_sdp_address_marker(const gchar *ip);
 
 /**
  * Generate presence key

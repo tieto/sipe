@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -42,6 +42,7 @@
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(purple_xfer_get_account(xfer))))
 #else
 #include "ft.h"
+#define g_timeout_add(t, f, d)                 purple_timeout_add(t, f, d)
 #define PurpleXferStatus                       PurpleXferStatusType
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_account_get_connection(xfer->account)->proto_data)
 #define PURPLE_XFER_TYPE_RECEIVE               PURPLE_XFER_RECEIVE
@@ -145,7 +146,7 @@ void
 sipe_backend_ft_set_completed(struct sipe_file_transfer *ft)
 {
 	purple_xfer_set_completed(FT_TO_PURPLE_XFER, TRUE);
-	purple_timeout_add(0, end_transfer_cb, FT_TO_PURPLE_XFER);
+	g_timeout_add(0, end_transfer_cb, FT_TO_PURPLE_XFER);
 }
 
 void sipe_backend_ft_cancel_local(struct sipe_file_transfer *ft)
