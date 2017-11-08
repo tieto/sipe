@@ -214,6 +214,23 @@ AM_CONDITIONAL(SIP_SEC_GSSAPI, [test "x$with_krb5" != xno])
 AC_SUBST(KRB5_CFLAGS)
 AC_SUBST(KRB5_LDFLAGS)
 
+dnl check for DBUS support
+AC_ARG_WITH([dbus],
+	[AC_HELP_STRING([--with-dbus],
+		[compile with D-BUS support @<:@default=check@:>@])],
+	[AS_IF([test "x$withval" = xyes], [with_dbus=check])],
+	[with_dbus=check])
+
+AS_IF([test "x$with_dbus" = xno], [], dnl disabled by user
+      [test "x$with_dbus" = xcheck],  dnl autodetect with pkg-config
+	[PKG_CHECK_MODULES(DBUS, [dbus-1],
+		[with_dbus=yes],
+		[with_dbus=no])
+	])
+AM_CONDITIONAL(SIPE_DBUS, [test "x$with_dbus" = xyes])
+AS_IF([test "x$with_dbus" = xyes],
+	[AC_DEFINE(HAVE_DBUS, 1, [Define if D-BUS should be used in sipe.])])
+
 AC_ARG_ENABLE(gssapi_only,
 	[AS_HELP_STRING([--enable-gssapi-only],
 			[disable all internal authentication code and only use
@@ -230,17 +247,16 @@ AS_IF([test "x$enable_gssapi_only" != xno],
 AM_CONDITIONAL(SIP_SEC_GSSAPI_ONLY, [test "x$enable_gssapi_only" != xno])
 
 dnl check for glib
-PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.12.0])
-PKG_CHECK_MODULES(GMODULE, [gmodule-2.0 >= 2.12.0])
+PKG_CHECK_MODULES(GLIB, [glib-2.0 >= 2.18.0])
+PKG_CHECK_MODULES(GMODULE, [gmodule-2.0 >= 2.18.0])
 
 dnl check for gmime
-dnl See also: https://bugzilla.gnome.org/show_bug.cgi?id=613653#c8
-PKG_CHECK_MODULES(GMIME, [gmime-2.6 >= 2.5.2],
+PKG_CHECK_MODULES(GMIME, [gmime-3.0 >= 3.0.0],
 	[ac_have_gmime=yes],
-	[PKG_CHECK_MODULES(GMIME, [gmime-2.4 >= 2.4.16],
+	[PKG_CHECK_MODULES(GMIME, [gmime-2.6 >= 2.6.0],
 		[ac_have_gmime=yes],
 		[ac_have_gmime=no])
-])
+	])
 AM_CONDITIONAL(SIPE_MIME_GMIME, [test "x$ac_have_gmime" = xyes])
 AS_IF([test "x$ac_have_gmime" = xyes],
 	[AC_DEFINE(HAVE_GMIME, 1, [Define if gmime should be used in sipe.])])
@@ -355,7 +371,7 @@ with_purple_vv=no
 AS_IF([test "x$enable_purple" != xno],
 	[PKG_CHECK_MODULES(PURPLE, [purple-3],
 		[purple_pkgconfig=purple-3],
-		[PKG_CHECK_MODULES(PURPLE, [purple >= 2.4.0],
+		[PKG_CHECK_MODULES(PURPLE, [purple >= 2.7.0],
 			[purple_pkgconfig=purple],
 			[enable_purple=no])])
 
@@ -399,24 +415,26 @@ AS_IF([test "x$enable_purple" != xno],
 						[gstreamer_pkgconfig=`$PKG_CONFIG --variable=gstreamer $purple_pkgconfig`
 						AS_IF([test "x$gstreamer_pkgconfig" == x],
 							[AS_IF([test "x$purple_pkgconfig" == xpurple-3],
-								[gstreamer_pkgconfig=1.0], [gstreamer_pkgconfig=0.10])])
-						gstreamer_pkgconfig="gstreamer-$gstreamer_pkgconfig gstreamer-rtp-$gstreamer_pkgconfig"
+								[gstreamer_pkgconfig=1.0])])
+						AS_IF([test "x$gstreamer_pkgconfig" == x1.0],
+							[gstreamer_pkgconfig="gstreamer-$gstreamer_pkgconfig gstreamer-rtp-$gstreamer_pkgconfig"
 
-						AC_MSG_NOTICE([using packages "$gstreamer_pkgconfig".])
-						PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
-							[PKG_CHECK_MODULES(FARSTREAM, [farstream-0.2],
-								[with_purple_vv=yes
+							AC_MSG_NOTICE([using packages "$gstreamer_pkgconfig".])
+							PKG_CHECK_MODULES(GSTREAMER, [$gstreamer_pkgconfig],
+								[PKG_CHECK_MODULES(FARSTREAM, [farstream-0.2],
+									[with_purple_vv=yes
 
-								 AC_COMPILE_IFELSE(
-									[AC_LANG_PROGRAM([[
+									 AC_COMPILE_IFELSE(
+									 	 [AC_LANG_PROGRAM([[
 #include <media.h>
-										]],
-										[[return (PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE);]]
+											]],
+											[[return (PURPLE_MEDIA_NETWORK_PROTOCOL_TCP_PASSIVE);]]
+										 )],
+										 [AC_DEFINE(HAVE_PURPLE_NEW_TCP_ENUMS, 1, [Define if libpurple has new TCP enums in media backend.])]
 									)],
-									[AC_DEFINE(HAVE_PURPLE_NEW_TCP_ENUMS, 1, [Define if libpurple has new TCP enums in media backend.])]
-								)],
-								[AC_MSG_NOTICE(Farstream required: disabling purple voice and video support)])],
-							[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
+									[AC_MSG_NOTICE(Farstream required: disabling purple voice and video support)])],
+								[AC_MSG_NOTICE(GStreamer required: disabling purple voice and video support)])],
+							[AC_MSG_NOTICE(your purple hasn't been compiled against GStreamer 1.0: disabling purple voice and video support)])],
 						[AC_MSG_NOTICE(libpurple >= 2.8.0 required: disabling purple voice and video support)])],
 					[AC_MSG_NOTICE(libnice required: disabling purple voice and video support)])
 				])

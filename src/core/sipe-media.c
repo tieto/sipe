@@ -196,9 +196,9 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 static gint
 candidate_sort_cb(struct sdpcandidate *c1, struct sdpcandidate *c2)
 {
-	int cmp = sipe_strcompare(c1->foundation, c2->foundation);
+	int cmp = g_strcmp0(c1->foundation, c2->foundation);
 	if (cmp == 0) {
-		cmp = sipe_strcompare(c1->username, c2->username);
+		cmp = g_strcmp0(c1->username, c2->username);
 		if (cmp == 0)
 			cmp = c1->component - c2->component;
 	}
@@ -1279,6 +1279,7 @@ static void
 append_2007_fallback_if_needed(struct sipe_media_call_private *call_private)
 {
 	struct sipe_core_private *sipe_private = call_private->sipe_private;
+	const gchar *marker = sip_transport_sdp_address_marker(sipe_private);
 	const gchar *ip = sip_transport_ip_address(sipe_private);
 	gchar *body;
 
@@ -1293,11 +1294,12 @@ append_2007_fallback_if_needed(struct sipe_media_call_private *call_private)
 			       "Content-Transfer-Encoding: 7bit\r\n"
 			       "Content-Disposition: session; handling=optional; ms-proxy-2007fallback\r\n"
 			       "\r\n"
-			       "o=- 0 0 IN IP4 %s\r\n"
+			       "o=- 0 0 IN %s %s\r\n"
 			       "s=session\r\n"
-			       "c=IN IP4 %s\r\n"
+			       "c=IN %s %s\r\n"
 			       "m=audio 0 RTP/AVP\r\n",
-			       ip, ip);
+			       marker, ip,
+			       marker, ip);
 	sipe_media_add_extra_invite_section(SIPE_MEDIA_CALL,
 					    "multipart/alternative", body);
 }
@@ -1469,6 +1471,8 @@ void sipe_core_media_phone_call(struct sipe_core_public *sipe_public,
 				const gchar *phone_number)
 {
 	g_return_if_fail(sipe_public);
+
+	SIPE_DEBUG_INFO("sipe_core_media_phone_call: %s", phone_number ? phone_number : "(null)");
 
 	if (phone_number_is_valid(phone_number)) {
 		gchar *phone_uri = g_strdup_printf("sip:%s@%s;user=phone",

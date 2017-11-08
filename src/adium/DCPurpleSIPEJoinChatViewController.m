@@ -10,10 +10,10 @@
 
 #import "DCPurpleSIPEJoinChatViewController.h"
 #import <Adium/AIChatControllerProtocol.h>
-#import "DCJoinChatWindowController.h"
+#import <Adium/DCJoinChatWindowController.h>
 #import <Adium/AIAccount.h>
-#import <ESDebugAILog.h>
-#import "CBPurpleAccount.h"
+#import <Adium/ESDebugAILog.h>
+#import <AdiumLibPurple/CBPurpleAccount.h>
 #import "roomlist.h"
 
 @implementation DCPurpleSIPEJoinChatViewController

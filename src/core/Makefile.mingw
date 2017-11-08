@@ -1,6 +1,6 @@
 ################################### tell Emacs this is a -*- makefile-gmake -*-
 #
-# Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #

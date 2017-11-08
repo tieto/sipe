@@ -4,11 +4,13 @@ Compiling SIPE plugin for Adium
 To compile the Adium plugin you will need Xcode and the source code from
 the following URLs:
 
-* Adium 1.5+ code: http://trac.adium.im/wiki/GettingNewestAdiumSource
-* SIPE code:       http://sourceforge.net/projects/sipe/files/sipe/
+- Adium 1.5+:      http://trac.adium.im/wiki/GettingNewestAdiumSource
+- OpenSSL 0.9.8za: https://www.openssl.org/source/old/0.9.x/openssl-0.9.8za.tar.gz
+- SIPE:            http://sourceforge.net/projects/sipe/files/sipe/
+
 
 1. Get Adium
--------------
+------------
 
 NOTE: you only have to do this step once. If you don't change the Adium
       source code, then you can reuse the results from this step in future
@@ -16,13 +18,32 @@ NOTE: you only have to do this step once. If you don't change the Adium
 
 Follow the instructions at their URL above.
 
-The directory needs to be called "adium" and at the same level as SIPE source
-code directory.
+The directory needs to be called "adium" and must be located at the same
+level as the SIPE source code directory.
 
-2. Build the SIPEAdiumPlugin Xcode project
+
+2. Get OpenSSL
+--------------
+
+NOTE: you only have to do this step once. If you don't change the OpenSSL
+      source code, then you can reuse the results from this step in future
+      SIPEAdiumPlugin builds.
+
+Execute the following commands in the Terminal application to download and
+unpack the source code:
+
+    $ cd my_working_directory
+    $ curl -o openssl-0.9.8za.tar.gz https://www.openssl.org/source/old/0.9.x/openssl-0.9.8za.tar.gz
+    $ tar -xf openssl-0.9.8za.tar.gz
+
+The directory needs to be called "openssl-0.9.8za" and must be located at
+the same level as the SIPE source code directory.
+
+
+3. Build the SIPEAdiumPlugin Xcode project
 ------------------------------------------
 
-In Xcode go to the Menu File -> Open..., browse to the locatio of your SIPE
+In Xcode go to the menu File -> Open..., browse to the location of your SIPE
 source tree, go into the src/adium directory, select SIPEAdiumPlugin.xcodeproj
 and press "Open".
 
@@ -33,22 +54,109 @@ NOTE: please always make sure that the correct scheme has been selected by
 Now you can just select Product -> Build and after a short while you should
 get a SIPEAdiumPlugin binary that you can install into your Adium application. 
 
-NOTE: Xcode 7.x and newer:
 
-* Xcode 6.4 no longer runs on macOS 10.12
-* SDKs for OS X 10.11 or newer no longer contain support for OpenSSL. See
+4. Generate & verify the release archive
+----------------------------------------
 
-      https://github.com/devernay/xcodelegacy
+The build copies the files into your Adium plugin directory. Use the following
+commands to generate the release archive:
 
-  how to extract & install SDKs for
+    $ cd ~/Library/Application\ Support/Adium\ 2.0/PlugIns
+    $ zip -r ~/SIPEAdiumPlugin.zip SIPEAdiumPlugin.AdiumLibpurplePlugin/
 
-    * OS X 10.9 & 10.10 from the Xcode 6.4 installation package
-    * OS X 10.11 from the Xcode 7.3.1 installation package
+You need to have a bash 4 to run the verification script, e.g. on a Linux box
 
-* Base SDK selection under "Build Settings" is no longer global. You have to
-  switch from "Combined" to "Levels" mode and change the Base SDK on all
-  levels. That includes the Adium sub-project too!
-* Disable "Implicitly Link Objective-C Runtime Support" under "Language -
-  Objective C" to avoid linker errors.
-* Ignore the errors "OCUnit is deprecated" by clicking on them and then
-  selecting "Not Now" in the dialog that pops up.
+    $ src/adium/check_release.sh ~/SIPEAdiumPlugin.zip
+
+
+5. Build SIPEAdiumPlugin for an older Max OS X release
+------------------------------------------------------
+
+If your Xcode does not have the SDK for the older Mac OS X release then please
+see
+
+    https://github.com/devernay/xcodelegacy
+
+how to extract & install SDKs for
+
+    - OS X 10.9 & 10.10 from the Xcode 6.4 installation package
+    - OS X 10.11 from the Xcode 7.3.1 installation package
+
+Installing all SDKs in one go seems to break Xcode builds, so please make sure
+to install each SDK separately with
+
+    $ sudo ./XcodeLegacy.sh -osxXXXX install
+
+Xcode no longer seems to apply project build settings top-down. To make
+changes please
+
+    - select the SIPEAdiumPlugin or Adium project
+    - select the "Build Settings" tab
+    - change from "Basic" to "All" (on the left)
+    - change from "Combined" to "Levels" (in the middle)
+    - find the line with the setting you want to change (use search field)
+    - select that line
+    - change the setting at the right-most(!) place in that line
+    - you will notice that all places to the left change automatically
+
+Settings to change
+
+    SDK to    |  Base SDK  | Implicitly Link Objective-C  | Other
+    build for |            | Runtime Support (Adium only) |
+   -----------|------------|------------------------------|-------------------
+     10.11    | OS X 10.11 |    <No change necessary>     |
+     10.10    | OS X 10.10 |    <No change necessary>     | Adium <= 1.5.10.3
+     10.9     | OS X 10.9  |            No                | Adium <= 1.5.10.3
+
+
+6. Alternative build approach
+-----------------------------
+
+The default build approach also builds Adium which is actually unnecessary to
+build the plugin successfully. All what is needed are the compiled frameworks
+from an Adium build. This section describes the modifications in the sections
+above to build the plugin without Adium.
+
+NOTE: this approach can't run the plugin, hence you won't be able to debug
+      it. To execute the plugin you will need to run Adium by hand, e.g. from
+      your normal Adium installation on the desktop.
+
+Section 1:
+
+    - after getting the Adium source code open Xcode and go to the menu
+      File -> Open...
+    - browse to the location of your Adium source tree, select Adium.xcodeproj
+      and press "Open"
+    - optional: go to the menu Product -> Clean, if you want to clean up the
+      artifacts from an earlier build to run a clean build from scratch
+    - go to the menu Product -> Build to run the Adium build
+    - after it is done go to the menu File -> Close Project
+
+As long as you don't change the Adium source you can re-use the output from
+this Adium build for all future plugin builds.
+
+Section 3:
+
+    - after opening the project select the Adium sub-project
+    - select "Delete" from the context menu
+    - press "Remove Reference" in the dialog
+    - go to the menu Product -> Build to run the plugin build
+
+This build is considerably faster and can help to speed up the development
+cycle.
+
+NOTE: do *NEVER* check-in the modified SIPEAdiumPlugin.xcodeproj directory
+      from this approach. All real changes to the build must be done using
+      the default build approach!
+
+To revert to the default build approach:
+
+    - go to the menu Product -> Clean to remove the build artifacts of the
+      plugin build
+    - go to the menu File -> Close Project to close the project
+    - execute the following git commands to revert the plugin source tree:
+
+      $ git clean -xfd
+      $ git checkout HEAD -- src/adium/SIPEAdiumPlugin.xcodeproj/
+
+Now you can perform the default build again as described in section 3.

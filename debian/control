@@ -5,10 +5,9 @@ Maintainer: Jakub Adam <jakub.adam@ktknet.cz>
 Homepage: http://sipe.sourceforge.net/
 Build-Depends: dpkg-dev (>= 1.16.1~), debhelper (>= 9), pkg-config,
  libglib2.0-dev (>= 2.12.0), libxml2-dev, libpurple-dev (>= 1:3.0.0~), libtool,
- intltool, libkrb5-dev, libnss3-dev, libnice-dev (>= 0.1.4),
- libfarstream-0.2-dev, libgstreamer-plugins-base1.0-dev, freerdp2-dev,
- libfreerdp-shadow-subsystem2-2
-Standards-Version: 3.9.8
+ intltool, libkrb5-dev, libnss3-dev, libnice-dev (>= 0.1.4), libfarstream-0.2-dev,
+ libgstreamer-plugins-base1.0-dev, freerdp2-dev, libfreerdp-shadow-subsystem2-2
+Standards-Version: 4.1.1
 Vcs-Git: https://anonscm.debian.org/git/collab-maint/pidgin-sipe.git
 Vcs-Browser: https://anonscm.debian.org/gitweb/?p=collab-maint/pidgin-sipe.git
 

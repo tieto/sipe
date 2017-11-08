@@ -26,6 +26,7 @@
     IBOutlet	NSButton		*checkBox_singleSignOn;
     IBOutlet	NSButton		*checkbox_dontPublish;
     IBOutlet	NSButton		*checkbox_beastDisable;
+    IBOutlet	NSButton		*checkbox_allowWebPhoto;
     
 	IBOutlet	NSPopUpButton	*popup_connectionType;
    	IBOutlet	NSPopUpButton	*popup_authenticationScheme;

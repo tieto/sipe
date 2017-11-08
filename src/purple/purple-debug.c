@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,9 +38,6 @@
 gboolean AIDebugLoggingIsEnabled(void);
 #define SIPE_PURPLE_DEBUG_IS_ENABLED AIDebugLoggingIsEnabled()
 #define SIPE_PURPLE_DEBUG_IS_UNSAFE  AIDebugLoggingIsEnabled()
-#elif !PURPLE_VERSION_CHECK(2,6,0) && !PURPLE_VERSION_CHECK(3,0,0)
-#define SIPE_PURPLE_DEBUG_IS_ENABLED purple_debug_is_enabled()
-#define SIPE_PURPLE_DEBUG_IS_UNSAFE  purple_debug_is_enabled()
 #else
 /*
  * The same problem happens when a client uses PurpleDebugUiOps->debug()
