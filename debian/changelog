@@ -1,4 +1,4 @@
-pidgin-sipe (1.23.0-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.23.0-1) unstable; urgency=medium
 
   * New upstream release.
         - Feature #101: Mac OS X 10.13 OpenSSL support
@@ -16,7 +16,7 @@ pidgin-sipe (1.23.0-1) UNRELEASED; urgency=medium
   * Bump Standards-Version to 4.1.1 (no changes required).
   * Fix appstream-metadata-in-legacy-location lintian warning.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 31 Oct 2017 07:49:08 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 31 Oct 2017 08:37:22 +0100
 
 pidgin-sipe (1.22.1-1) unstable; urgency=medium
 
