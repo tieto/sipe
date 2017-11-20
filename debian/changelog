@@ -1,4 +1,4 @@
-pidgin-sipe (1.23.0-2) UNRELEASED; urgency=medium
+pidgin-sipe (1.23.0-2) unstable; urgency=medium
 
   * Remove NSS_SSL_CBC_RANDOM_IV workaround (Closes: #882125).
         - Diversion of /usr/bin/pidgin clashes with Pidgin AppArmor profile,
@@ -7,7 +7,7 @@ pidgin-sipe (1.23.0-2) UNRELEASED; urgency=medium
           SSL bug so it's reasonably safe to drop it from pidgin-sipe package.
   * Update package description to mention Skype for Business.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 20 Nov 2017 07:34:40 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 20 Nov 2017 08:44:57 +0100
 
 pidgin-sipe (1.23.0-1) unstable; urgency=medium
 
