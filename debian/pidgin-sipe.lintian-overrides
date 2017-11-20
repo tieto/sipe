@@ -1,2 +1,0 @@
-# Diverted binary, has a manpage in 'pidgin' package
-binary-without-manpage usr/bin/pidgin
