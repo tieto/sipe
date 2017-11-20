@@ -16,14 +16,15 @@ Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: gstreamer1.0-libav, gstreamer1.0-x, remmina-plugin-rdp
-Description: Pidgin plugin for MS Office Communicator and MS Lync
+Description: Pidgin plugin for Skype for Business and Microsoft Lync
  A third-party plugin for the Pidgin multi-protocol instant messenger.
  It implements the extended version of SIP/SIMPLE used by various products:
  .
-     * Microsoft Lync Server 2010
+     * Microsoft Skype for Business
+     * Microsoft Lync
      * Microsoft Office Communications Server (OCS 2007/2007 R2 and newer)
      * Microsoft Live Communications Server (LCS 2003/2005)
      * Reuters Messaging
  .
- With this plugin you should be able to replace your Microsoft Office
- Communicator client with Pidgin.
+ With this plugin you should be able to replace your Lync/SfB client with
+ Pidgin.

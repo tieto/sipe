@@ -5,6 +5,7 @@ pidgin-sipe (1.23.0-2) UNRELEASED; urgency=medium
           which is now enabled by default in Debian. The workaround was
           introduced 5 years ago and Lync/SfB servers have since fixed the
           SSL bug so it's reasonably safe to drop it from pidgin-sipe package.
+  * Update package description to mention Skype for Business.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Mon, 20 Nov 2017 07:34:40 +0100
 
