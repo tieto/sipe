@@ -1934,6 +1934,7 @@ process_invite_call_response(struct sipe_core_private *sipe_private,
 				}
 				// Break intentionally omitted
 			}
+			/* FALLTHRU */
 			default:
 				title = _("Error occurred");
 				g_string_append(desc, _("Unable to establish a call"));
