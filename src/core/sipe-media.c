@@ -860,7 +860,7 @@ stream_connection_timeout_cb(struct sipe_core_private *sipe_private,
 	sipe_backend_notify_error(SIPE_CORE_PUBLIC,
 				  _("Couldn't create stream"),
 				  _("Connection timed out"));
-	sipe_backend_media_hangup(SIPE_MEDIA_CALL->backend_private, FALSE);
+	sipe_backend_media_hangup(SIPE_MEDIA_CALL->backend_private, TRUE);
 }
 
 static void
