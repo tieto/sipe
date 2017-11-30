@@ -73,6 +73,7 @@ struct sipe_media_call_private {
 
 	struct sdpmsg			*smsg;
 	GSList				*failed_media;
+	gchar 				*ringing_key;
 	gchar 				*timeout_key;
 };
 #define SIPE_MEDIA_CALL         ((struct sipe_media_call *) call_private)
@@ -106,6 +107,7 @@ struct sipe_media_stream_private {
 #define SIPE_MEDIA_STREAM_PRIVATE ((struct sipe_media_stream_private *) stream)
 
 #define SIPE_MEDIA_STREAM_CONNECTION_TIMEOUT_SECONDS 30
+#define SIPE_MEDIA_CALL_RINGING_TIMEOUT_SECONDS 60
 #define SIPE_MEDIA_CALL_TIMEOUT_SECONDS 120
 
 struct async_read_data {
@@ -118,6 +120,7 @@ static void stream_schedule_cancel_timeout(struct sipe_media_call *call,
 					   struct sipe_media_stream_private *stream_private);
 
 static void call_schedule_cancel_request_timeout(struct sipe_media_call *call);
+static void call_schedule_cancel_ringing_timeout(struct sipe_media_call *call);
 
 static void sipe_media_codec_list_free(GList *codecs)
 {
@@ -181,6 +184,7 @@ sipe_media_call_free(struct sipe_media_call_private *call_private)
 					    (GHRFunc) call_private_equals, call_private);
 
 		call_schedule_cancel_request_timeout(SIPE_MEDIA_CALL);
+		call_schedule_cancel_ringing_timeout(SIPE_MEDIA_CALL);
 
 		while (call_private->streams) {
 			sipe_media_stream_free(call_private->streams->data);
@@ -939,6 +943,42 @@ call_schedule_cancel_request_timeout(struct sipe_media_call *call)
 }
 
 
+static void
+call_ringing_timeout_cb(struct sipe_core_private *sipe_private,
+			    gpointer data)
+{
+	struct sipe_media_call_private *call_private = data;
+
+	sip_transport_response(sipe_private, call_private->invitation,
+				       408, "Request Timeout", NULL);
+	sipe_backend_media_hangup(SIPE_MEDIA_CALL->backend_private, FALSE);
+}
+
+static void
+call_schedule_ringing_timeout(struct sipe_media_call *call)
+{
+	SIPE_MEDIA_CALL_PRIVATE->ringing_key =
+		g_strdup_printf("<media-call-ringing><%s>", sipe_media_get_sip_dialog(call)->callid);
+
+	sipe_schedule_seconds(SIPE_MEDIA_CALL_PRIVATE->sipe_private,
+			      SIPE_MEDIA_CALL_PRIVATE->ringing_key,
+			      SIPE_MEDIA_CALL_PRIVATE,
+			      SIPE_MEDIA_CALL_RINGING_TIMEOUT_SECONDS,
+			      call_ringing_timeout_cb,
+			      NULL);
+}
+
+static void
+call_schedule_cancel_ringing_timeout(struct sipe_media_call *call)
+{
+	if (SIPE_MEDIA_CALL_PRIVATE->ringing_key) {
+		sipe_schedule_cancel(SIPE_MEDIA_CALL_PRIVATE->sipe_private,
+				     SIPE_MEDIA_CALL_PRIVATE->ringing_key);
+		g_free(SIPE_MEDIA_CALL_PRIVATE->ringing_key);
+	}
+	SIPE_MEDIA_CALL_PRIVATE->ringing_key = NULL;
+}
+
 // Sends an invite response when the call is accepted and local candidates were
 // prepared, otherwise does nothing. If error response is sent, call_private is
 // disposed before function returns.
@@ -969,6 +1009,7 @@ maybe_send_first_invite_response(struct sipe_media_call_private *call_private)
 	} else {
 		send_response_with_session_description(call_private, 200, "OK");
 		stream_schedule_timeout(SIPE_MEDIA_CALL);
+		call_schedule_cancel_ringing_timeout(SIPE_MEDIA_CALL);
 		sipmsg_free(call_private->invitation);
 		call_private->invitation = NULL;
 	}
@@ -1768,6 +1809,7 @@ process_incoming_invite_call_parsed_sdp(struct sipe_core_private *sipe_private,
 		call_private->smsg = smsg;
 		sip_transport_response(sipe_private, call_private->invitation,
 				       180, "Ringing", NULL);
+		call_schedule_ringing_timeout(SIPE_MEDIA_CALL);
 		// Processing continues in stream_initialized_cb
 	} else {
 		apply_remote_message(call_private, smsg);
