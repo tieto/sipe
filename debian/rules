@@ -16,11 +16,10 @@ override_dh_auto_configure:
 override_dh_auto_install:
 	dh_auto_install
 
-	dh_install debian/extra/pidgin usr/bin
-	dh_install debian/extra/pidgin-sipe etc/default
+	find debian/pidgin-sipe -name *.la -delete
 
 override_dh_strip:
-	dh_strip --dbg-package=pidgin-sipe-dbg
+	dh_strip --dbgsym-migration='pidgin-sipe-dbg (<< 1.21.0-1~)'
 
 override_dh_installdocs:
 	dh_installdocs --link-doc=pidgin-sipe
