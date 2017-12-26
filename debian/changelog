@@ -2,6 +2,7 @@ pidgin-sipe (1.23.0-3) UNRELEASED; urgency=medium
 
   * Make postinst script insensitive to locale (Closes: #885331).
         - Fixes package upgrade on systems with non-English locale.
+  * Bump Standards-Version to 4.1.2 (no changes required).
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 26 Dec 2017 19:47:19 +0100
 
