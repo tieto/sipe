@@ -1517,8 +1517,10 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 
 	/* transport can be NULL during connection setup */
 	if (transport) {
-		SIPE_LOG_INFO("sip_transport_disconnect: dropping connection '%s:%u'",
-			      transport->server_name, transport->server_port);
+		SIPE_LOG_INFO("sip_transport_disconnect: dropping connection '%s:%u'(%p)",
+			      transport->server_name,
+			      transport->server_port,
+			      transport->connection);
 
 		sipe_backend_transport_disconnect(transport->connection);
 
@@ -1853,8 +1855,8 @@ static void sip_transport_connected(struct sipe_transport_connection *conn)
 	struct sip_transport *transport = sipe_private->transport;
 	gchar *self_sip_uri = sip_uri_self(sipe_private);
 
-	SIPE_LOG_INFO("sip_transport_connected: %s:%u",
-		      transport->server_name, transport->server_port);
+	SIPE_LOG_INFO("sip_transport_connected: %s:%u(%p)",
+		      transport->server_name, transport->server_port, conn);
 
 	while (sipe_private->lync_autodiscover_servers)
 		sipe_private->lync_autodiscover_servers =
