@@ -16,6 +16,7 @@ GetOptions(\%Options,
 	   "callid",
 	   "from",
 	   "method",
+	   "transport",
 	   "filter",
 	   "help|h|?")
   or pod2usage(2);
@@ -29,26 +30,30 @@ pod2usage(-verbose => 2) if $Options{help};
 my %callid;
 my %from;
 my %method;
-sub AddMessage($$$@)
+my %transport;
+sub AddMessage($$$$@)
 {
-  my($direction, $type, $time, @message) = @_;
+  my($direction, $type, $transport, $time, @message) = @_;
 
-  # Only handle SIP for now...
-  return unless $type eq "SIP";
+  # extract additional information from SIP messages
+  if ($type eq "SIP") {
+    my($index, $callid, $from, $method);
+    foreach my $line (@message) {
+      next if $index++ < 1;
+      last if $line =~ /^\s+$/;
 
-  my($index, $callid, $from, $method);
-  foreach my $line (@message) {
-    next if $index++ < 1;
-    last if $line =~ /^\s+$/;
-
-    next unless my($keyword, $value) = $line =~ /^([^:]+):\s+(.+)/;
-    $callid   = $value                     if $keyword =~ /^call-id$/i;
-    ($from)   = $value =~ /^<sip:([^;>]+)/ if $keyword =~ /^from$/i;
-    ($method) = $value =~ /^\d+\s+(\S+)/   if $keyword =~ /^cseq$/i;
+      next unless my($keyword, $value) = $line =~ /^([^:]+):\s+(.+)/;
+      $callid   = $value                     if $keyword =~ /^call-id$/i;
+      ($from)   = $value =~ /^<sip:([^;>]+)/ if $keyword =~ /^from$/i;
+      ($method) = $value =~ /^\d+\s+(\S+)/   if $keyword =~ /^cseq$/i;
+    }
+    push(@{$callid{$callid}},     \@message) if $Options{callid} && defined $callid;
+    push(@{$from{lc($from)}},     \@message) if $Options{from}   && defined $from;
+    push(@{$method{uc($method)}}, \@message) if $Options{method} && defined $method;
   }
-  push(@{$callid{$callid}},     \@message) if $Options{callid} && defined $callid;
-  push(@{$from{lc($from)}},     \@message) if $Options{from}   && defined $from;
-  push(@{$method{uc($method)}}, \@message) if $Options{method} && defined $method;
+
+  # information available for all message types
+  push(@{$transport{$transport}}, \@message) if $Options{transport};
 }
 
 sub DumpMessages()
@@ -74,6 +79,13 @@ sub DumpMessages()
       close($fh);
     }
   }
+  foreach my $transport (keys %transport) {
+    if (open(my $fh, ">",
+	     File::Spec->catfile($Options{directory}, "transport-${transport}.txt"))) {
+      print $fh @{$_} foreach (@{$transport{$transport}});
+      close($fh);
+    }
+  }
 }
 
 ###############################################################################
@@ -88,22 +100,22 @@ my $counter;
 while (<>) {
 
   # Start of message?
-  if (my ($direction, $type, $time) =
-      /^MESSAGE START\s+([<>]+)\s+(\S+)\s+-\s+(.+)/) {
+  if (my ($direction, $type, $transport, $time) =
+      /^MESSAGE START\s+([<>]+)\s+([^(]+)\((0x[\da-f]+)\)\s+-\s+(.+)/) {
     push(@message,
 	 "------------- NEXT MESSAGE: " .
 	 (($direction =~ /^>/) ? "outgoing" : "incoming") .
-	 " $type at $time\n");
+	 " $type($transport) at $time\n");
 
   # End of message?
-  } elsif (($direction, $type, $time) =
-	   /^MESSAGE END\s+([<>]+)\s+(\S+)\s+-\s+(.+)/) {
+  } elsif (($direction, $type, $transport, $time) =
+	   /^MESSAGE END\s+([<>]+)\s+([^(]+)\((0x[\da-f]+)\)\s+-\s+(.+)/) {
 
     if ($Options{filter}) {
       print @message;
     } else {
       print STDERR "." if (++$counter % 10 == 0);
-      AddMessage($direction, $type, $time, @message);
+      AddMessage($direction, $type, $transport, $time, @message);
     }
 
     # Done with the current message
@@ -133,7 +145,7 @@ parse_log.pl - parse pidgin-sipe debug log
 
 =head1 SYNOPSIS
 
-[perl} parse_log.pl --help|-h|-? 
+[perl} parse_log.pl --help|-h|-?
 
 [perl} parse_log.pl --filter
                     [file ...]
@@ -142,6 +154,7 @@ parse_log.pl - parse pidgin-sipe debug log
                     [--callid]
                     [--from]
                     [--method]
+                    [--transport]
                     [file ...]
 
 =head1 OPTIONS
@@ -175,6 +188,10 @@ Print a brief help message and exits.
 =item B<--method>
 
 Dump all SIP messages with the same method to the same file.
+
+=item B<--transport>
+
+Dump all messages from one transport to the same file.
 
 =back
 
