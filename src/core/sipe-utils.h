@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -238,12 +238,14 @@ is_empty(const char *st);
 /**
  * Message debugging
  *
- * @param type    message type description (SIP or HTTP).
- * @param header  message header
- * @param body    message body or NULL
- * @param sending TRUE if outgoing message
+ * @param transport the transport connection
+ * @param type      message type description (SIP or HTTP).
+ * @param header    message header
+ * @param body      message body or NULL
+ * @param sending   TRUE if outgoing message
  */
-void sipe_utils_message_debug(const gchar *type,
+void sipe_utils_message_debug(struct sipe_transport_connection *conn,
+			      const gchar *type,
 			      const gchar *header,
 			      const gchar *body,
 			      gboolean sending);

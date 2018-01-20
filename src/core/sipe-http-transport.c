@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -340,7 +340,8 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 					p[0] = '\0';
 
 					msg->body = dummy;
-					sipe_utils_message_debug("HTTP",
+					sipe_utils_message_debug(connection,
+								 "HTTP",
 								 connection->buffer,
 								 msg->body,
 								 FALSE);
@@ -380,7 +381,8 @@ static void sipe_http_transport_input(struct sipe_transport_connection *connecti
 				dummy[msg->bodylen] = '\0';
 				msg->body = dummy;
 				current += msg->bodylen;
-				sipe_utils_message_debug("HTTP",
+				sipe_utils_message_debug(connection,
+							 "HTTP",
 							 connection->buffer,
 							 msg->body,
 							 FALSE);
@@ -520,7 +522,7 @@ void sipe_http_transport_send(struct sipe_http_connection_public *conn_public,
 
 	g_string_append_printf(message, "\r\n%s", body ? body : "");
 
-	sipe_utils_message_debug("HTTP", message->str, NULL, TRUE);
+	sipe_utils_message_debug(conn->connection, "HTTP", message->str, NULL, TRUE);
 	sipe_backend_transport_message(conn->connection, message->str);
 	g_string_free(message, TRUE);
 

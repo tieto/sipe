@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -570,7 +570,7 @@ static const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_priv
 static void send_sip_message(struct sip_transport *transport,
 			     const gchar *string)
 {
-	sipe_utils_message_debug("SIP", string, NULL, TRUE);
+	sipe_utils_message_debug(transport->connection, "SIP", string, NULL, TRUE);
 	transport->last_message = time(NULL);
 	sipe_backend_transport_message(transport->connection, string);
 }
@@ -1767,7 +1767,8 @@ static void sip_transport_input(struct sipe_transport_connection *conn)
 			dummy[msg->bodylen] = '\0';
 			msg->body = dummy;
 			cur += msg->bodylen;
-			sipe_utils_message_debug("SIP",
+			sipe_utils_message_debug(conn,
+						 "SIP",
 						 conn->buffer,
 						 msg->body,
 						 FALSE);

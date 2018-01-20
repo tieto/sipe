@@ -277,7 +277,8 @@ is_empty(const char *st)
 	return FALSE;
 }
 
-void sipe_utils_message_debug(const gchar *type,
+void sipe_utils_message_debug(struct sipe_transport_connection *conn,
+			      const gchar *type,
 			      const gchar *header,
 			      const gchar *body,
 			      gboolean sending)
@@ -295,7 +296,7 @@ void sipe_utils_message_debug(const gchar *type,
 
 		g_get_current_time(&currtime);
 		time_str = g_time_val_to_iso8601(&currtime);
-		g_string_append_printf(str, "\nMESSAGE START %s %s - %s\n", marker, type, time_str);
+		g_string_append_printf(str, "\nMESSAGE START %s %s(%p) - %s\n", marker, type, conn, time_str);
 		g_string_append(str, tmp = sipe_utils_str_replace(header, "\r\n", "\n"));
 		g_free(tmp);
 		g_string_append(str, "\n");
@@ -304,11 +305,11 @@ void sipe_utils_message_debug(const gchar *type,
 			g_free(tmp);
 			g_string_append(str, "\n");
 		}
-		g_string_append_printf(str, "MESSAGE END %s %s - %s", marker, type, time_str);
+		g_string_append_printf(str, "MESSAGE END %s %s(%p) - %s", marker, type, conn, time_str);
 		g_free(time_str);
 	} else {
 		/* normal debugging - just show the important stuff */
-		g_string_append_printf(str, "MESSAGE %s %s", marker, type);
+		g_string_append_printf(str, "MESSAGE %s %s(%p)", marker, type, conn);
 	}
 
 	SIPE_DEBUG_INFO_NOFORMAT(str->str);
