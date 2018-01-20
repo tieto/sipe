@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
  *
  *    $ G_MESSAGES_DEBUG="all" SIPE_PERSIST=1 \
  *      SIPE_DEBUG=[space separated keyword list \
- *      [SIPE_TIMING=1] [SIPE_LOGFILE="..."] \
+ *      [SIPE_UNSAFE_DEBUG=1] [SIPE_TIMING=1] [SIPE_LOGFILE="..."] \
  *      telepathy-sipe
  *
  * G_MESSAGES_DEBUG=all: make debug & informational messages visible
@@ -41,8 +41,13 @@
  *    sipe       - enable only sipe messages
  *    "sipe ..." - enable sipe and some telepathy-glib messages
  *
+ * SIPE_UNSAFE_DEBUG=1 : enable unsafe debugging output, i.e. include the
+ *                       content of protocol messages which may reveal
+ *                       secret information, like passwords.
+ *                       [usually required to be able to debug issues]
+ *
  * SIPE_TIMING=1       : enable time stamps
- *                       [recommeded for any usable log file]
+ *                       [recommended for any usable log file]
  *
  * SIPE_LOGFILE="..."  : redirect output to this file
  *                       [prepend file name with "+" to enable append mode]
@@ -63,7 +68,8 @@
 #define SIPE_TELEPATHY_DEBUG 1
 
 static TpDebugSender *debug;
-static guint          flags = 0;
+static guint          flags  = 0;
+static gboolean       unsafe = FALSE;
 
 void sipe_telepathy_debug_init(void)
 {
@@ -87,6 +93,10 @@ void sipe_telepathy_debug_init(void)
 	/* sipe & telepathy-glib debugging flags */
 	if (env_flags) flags |= g_parse_debug_string(env_flags, keys, 1);
 	tp_debug_set_flags(env_flags);
+
+	/* enable unsafe debug output */
+	if (g_getenv("SIPE_UNSAFE_DEBUG"))
+		unsafe = TRUE;
 
 	/* add time stamps to debug output */
 	if (g_getenv("SIPE_TIMING"))
@@ -141,7 +151,7 @@ void sipe_backend_debug(sipe_debug_level level,
 
 gboolean sipe_backend_debug_enabled(void)
 {
-	return(flags & SIPE_TELEPATHY_DEBUG);
+	return((flags & SIPE_TELEPATHY_DEBUG) && unsafe);
 }
 
 /*
