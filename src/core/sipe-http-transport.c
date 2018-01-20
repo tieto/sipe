@@ -85,8 +85,8 @@ static void sipe_http_transport_free(gpointer data)
 {
 	struct sipe_http_connection *conn = data;
 
-	SIPE_DEBUG_INFO("sipe_http_transport_free: destroying connection '%s'",
-			conn->host_port);
+	SIPE_DEBUG_INFO("sipe_http_transport_free: destroying connection '%s'(%p)",
+			conn->host_port, conn->connection);
 
 	if (conn->connection)
 		sipe_backend_transport_disconnect(conn->connection);
@@ -107,8 +107,9 @@ static void sipe_http_transport_drop(struct sipe_http *http,
 				     struct sipe_http_connection *conn,
 				     const gchar *message)
 {
-	SIPE_LOG_INFO("sipe_http_transport_drop: dropping connection '%s': %s",
+	SIPE_LOG_INFO("sipe_http_transport_drop: dropping connection '%s'(%p): %s",
 		      conn->host_port,
+		      conn->connection,
 		      message ? message : "REASON UNKNOWN");
 
 #if GLIB_CHECK_VERSION(2,30,0)
@@ -246,7 +247,8 @@ static void sipe_http_transport_connected(struct sipe_transport_connection *conn
 	struct sipe_http *http = sipe_private->http;
 	time_t current_time = time(NULL);
 
-	SIPE_LOG_INFO("sipe_http_transport_connected: %s", conn->host_port);
+	SIPE_LOG_INFO("sipe_http_transport_connected: %s(%p)",
+		      conn->host_port, connection);
 	conn->public.connected = TRUE;
 
 	/* add active connection to timeout queue */
