@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -282,13 +282,15 @@ void sipe_utils_message_debug(const gchar *type,
 			      const gchar *body,
 			      gboolean sending)
 {
+	GString *str       = g_string_new("");
+	const char *marker = sending ?
+		">>>>>>>>>>" :
+		"<<<<<<<<<<";
+
 	if (sipe_backend_debug_enabled()) {
-		GString *str         = g_string_new("");
+		/* unsafe debugging enabled - include message contents */
 		GTimeVal currtime;
 		gchar *time_str;
-		const char *marker   = sending ?
-			">>>>>>>>>>" :
-			"<<<<<<<<<<";
 		gchar *tmp;
 
 		g_get_current_time(&currtime);
@@ -304,9 +306,13 @@ void sipe_utils_message_debug(const gchar *type,
 		}
 		g_string_append_printf(str, "MESSAGE END %s %s - %s", marker, type, time_str);
 		g_free(time_str);
-		SIPE_DEBUG_INFO_NOFORMAT(str->str);
-		g_string_free(str, TRUE);
+	} else {
+		/* normal debugging - just show the important stuff */
+		g_string_append_printf(str, "MESSAGE %s %s", marker, type);
 	}
+
+	SIPE_DEBUG_INFO_NOFORMAT(str->str);
+	g_string_free(str, TRUE);
 }
 
 gboolean
