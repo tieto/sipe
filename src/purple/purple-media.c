@@ -1463,6 +1463,31 @@ sipe_backend_get_local_candidates(struct sipe_media_call *media,
 			purple_media_get_local_candidates(media->backend_private->m,
 							  stream->id,
 							  media->with);
+	GList *it;
+
+	SIPE_DEBUG_INFO_NOFORMAT("purple_media_get_local_candidates() returned:");
+	for (it = candidates; it; it = it->next) {
+		PurpleMediaCandidate *c = it->data;
+		gchar *foundation = purple_media_candidate_get_foundation(c);
+		gchar *ip = purple_media_candidate_get_ip(c);
+		gchar *base_ip = purple_media_candidate_get_base_ip(c);
+
+		SIPE_DEBUG_INFO("  %s %d %d %d %s %d %d %s %d",
+				foundation ? foundation : "(null)",
+				purple_media_candidate_get_component_id(c),
+				purple_media_candidate_get_protocol(c),
+				purple_media_candidate_get_priority(c),
+				ip ? ip : "(null)",
+				purple_media_candidate_get_port(c),
+				purple_media_candidate_get_candidate_type(c),
+				base_ip ? base_ip : "(null)",
+				purple_media_candidate_get_base_port(c));
+
+		g_free(foundation);
+		g_free(ip);
+		g_free(base_ip);
+	}
+
 	candidates = duplicate_tcp_candidates(candidates);
 
 	/*
