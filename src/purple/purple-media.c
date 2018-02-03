@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1417,6 +1417,60 @@ sipe_backend_candidate_get_protocol(struct sipe_backend_candidate *candidate)
 	return purple_network_protocol_to_sipe(proto);
 }
 
+/*
+ * libnice can return a candidate list with duplicates. It is currently
+ * unknown if this is a bug in libnice or a configuration error in Skype
+ * for Business setups.
+ *
+ * While this is not a bug in SIPE, by removing these duplicates we make
+ * sure that SIPE doesn't generate incorrect SDP messages.
+ */
+static GList *
+filter_duplicate_candidates(GList *candidates)
+{
+	GHashTable *seen   = g_hash_table_new_full(g_str_hash, g_str_equal,
+						   g_free, NULL);
+	GList      *result = NULL;
+	GList      *it;
+
+	for (it = candidates; it; it = it->next) {
+		PurpleMediaCandidate *c = it->data;
+		gchar *foundation = purple_media_candidate_get_foundation(c);
+		gchar *ip         = purple_media_candidate_get_ip(c);
+		gchar *base_ip    = purple_media_candidate_get_base_ip(c);
+		gchar *id = g_strdup_printf("%s %d %d %d %s %d %d %s %d",
+			foundation ? foundation : "-",
+			purple_media_candidate_get_component_id(c),
+			purple_media_candidate_get_protocol(c),
+			purple_media_candidate_get_priority(c),
+			ip ? ip : "-",
+			purple_media_candidate_get_port(c),
+			purple_media_candidate_get_candidate_type(c),
+			base_ip ? base_ip : "-",
+			purple_media_candidate_get_base_port(c)
+		);
+
+		g_free(base_ip);
+		g_free(ip);
+		g_free(foundation);
+
+		if (g_hash_table_lookup(seen, id)) {
+			SIPE_DEBUG_INFO("filter_duplicate_candidates: dropping '%s'",
+					id);
+			g_free(id);
+			g_object_unref(c);
+		} else {
+			g_hash_table_insert(seen, id, GUINT_TO_POINTER(TRUE));
+			result = g_list_append(result, c);
+		}
+	}
+
+	g_hash_table_destroy(seen);
+	g_list_free(candidates);
+
+	return result;
+}
+
 static void
 remove_lone_candidate_cb(SIPE_UNUSED_PARAMETER gpointer key,
 			 gpointer value,
@@ -1463,31 +1517,7 @@ sipe_backend_get_local_candidates(struct sipe_media_call *media,
 			purple_media_get_local_candidates(media->backend_private->m,
 							  stream->id,
 							  media->with);
-	GList *it;
-
-	SIPE_DEBUG_INFO_NOFORMAT("purple_media_get_local_candidates() returned:");
-	for (it = candidates; it; it = it->next) {
-		PurpleMediaCandidate *c = it->data;
-		gchar *foundation = purple_media_candidate_get_foundation(c);
-		gchar *ip = purple_media_candidate_get_ip(c);
-		gchar *base_ip = purple_media_candidate_get_base_ip(c);
-
-		SIPE_DEBUG_INFO("  %s %d %d %d %s %d %d %s %d",
-				foundation ? foundation : "(null)",
-				purple_media_candidate_get_component_id(c),
-				purple_media_candidate_get_protocol(c),
-				purple_media_candidate_get_priority(c),
-				ip ? ip : "(null)",
-				purple_media_candidate_get_port(c),
-				purple_media_candidate_get_candidate_type(c),
-				base_ip ? base_ip : "(null)",
-				purple_media_candidate_get_base_port(c));
-
-		g_free(foundation);
-		g_free(ip);
-		g_free(base_ip);
-	}
-
+	candidates = filter_duplicate_candidates(candidates);
 	candidates = duplicate_tcp_candidates(candidates);
 
 	/*
