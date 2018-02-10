@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -202,6 +202,35 @@ static void transport_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnect
 	}
 }
 
+/*
+ * Replacement for purple_network_get_port_from_fd() which
+ * is broken on Windows for IPv6 and always returns 0.
+ */
+static guint transport_port_from_fd(int fd)
+{
+	/*
+	 * NOTE: getsockname() on Windows seems to be picky about the buffer
+	 *       location. Use an allocated buffer instead of one on the stack,
+	 */
+	struct sockaddr_storage *addr = g_new(struct sockaddr_storage, 1);
+	socklen_t                addrlen = sizeof(struct sockaddr_storage);
+	guint                    port = 0; /* default on error */
+
+	if ((getsockname(fd,
+			 (struct sockaddr *) addr,
+			 &addrlen) == 0)           &&
+	    ((addr->ss_family == AF_INET) ||
+	     (addr->ss_family == AF_INET6))) {
+		port = (addr->ss_family == AF_INET) ?
+		       (((struct sockaddr_in *)  addr)->sin_port) :
+		       (((struct sockaddr_in6 *) addr)->sin6_port);
+		SIPE_DEBUG_INFO("transport_port_from_fd: %d", port);
+	}
+	g_free(addr);
+
+	return(port);
+}
+
 static void transport_common_connected(struct sipe_transport_purple *transport,
 				       int fd)
 {
@@ -218,7 +247,8 @@ static void transport_common_connected(struct sipe_transport_purple *transport,
 		}
 
 		transport->socket = fd;
-		transport->public.client_port = purple_network_get_port_from_fd(fd);
+		/* transport->public.client_port = purple_network_get_port_from_fd(fd); */
+		transport->public.client_port = transport_port_from_fd(fd);
 
 		if (transport->gsc) {
 			purple_ssl_input_add(transport->gsc, transport_ssl_input, transport);
@@ -376,26 +406,30 @@ gchar *sipe_backend_transport_ip_address(struct sipe_transport_connection *conn)
 	 *
 	 * Use our own implementation instead. The user will no longer be able
 	 * to override the local IP address via the libpurple settings.
+	 *
+	 * NOTE: getsockname() on Windows seems to be picky about the buffer
+	 *       location. Use an allocated buffer instead of one on the stack,
 	 */
-	struct sockaddr_storage addr;
-	socklen_t               addrlen = sizeof(addr);
-	gchar                   buf[INET6_ADDRSTRLEN]; /* OK for IPv4 too  */
-	const gchar            *ipstr = "0.0.0.0";     /* default on error */
+	struct sockaddr_storage *addr = g_new(struct sockaddr_storage, 1);
+	socklen_t                addrlen = sizeof(struct sockaddr_storage);
+	gchar                    buf[INET6_ADDRSTRLEN]; /* OK for IPv4 too  */
+	const gchar             *ipstr = "0.0.0.0";     /* default on error */
 
 	if ((getsockname(PURPLE_TRANSPORT->socket,
-			 (struct sockaddr *) &addr,
-			 &addrlen) == 0)            &&
-	    ((addr.ss_family == AF_INET) ||
-	     (addr.ss_family == AF_INET6))          &&
-	    (inet_ntop(addr.ss_family,
-		       (addr.ss_family == AF_INET) ?
-		       (void *) &(((struct sockaddr_in *)  &addr)->sin_addr) :
-		       (void *) &(((struct sockaddr_in6 *) &addr)->sin6_addr),
+			 (struct sockaddr *) addr,
+			 &addrlen) == 0)             &&
+	    ((addr->ss_family == AF_INET) ||
+	     (addr->ss_family == AF_INET6))          &&
+	    (inet_ntop(addr->ss_family,
+		       (addr->ss_family == AF_INET) ?
+		       (void *) &(((struct sockaddr_in *)  addr)->sin_addr) :
+		       (void *) &(((struct sockaddr_in6 *) addr)->sin6_addr),
 		       buf,
 		       sizeof(buf)) != NULL)) {
 		ipstr = buf;
 		SIPE_DEBUG_INFO("sipe_backend_transport_ip_address: %s", ipstr);
 	}
+	g_free(addr);
 
 	return(g_strdup(ipstr));
 }
