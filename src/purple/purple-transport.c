@@ -221,9 +221,9 @@ static guint transport_port_from_fd(int fd)
 			 &addrlen) == 0)           &&
 	    ((addr->ss_family == AF_INET) ||
 	     (addr->ss_family == AF_INET6))) {
-		port = (addr->ss_family == AF_INET) ?
-		       (((struct sockaddr_in *)  addr)->sin_port) :
-		       (((struct sockaddr_in6 *) addr)->sin6_port);
+		port = ntohs((addr->ss_family == AF_INET) ?
+			     (((struct sockaddr_in *)  addr)->sin_port) :
+			     (((struct sockaddr_in6 *) addr)->sin6_port));
 		SIPE_DEBUG_INFO("transport_port_from_fd: %d", port);
 	}
 	g_free(addr);
