@@ -247,10 +247,6 @@ rm -f \
 make %{?_smp_mflags} check
 
 
-%clean
-rm -rf %{buildroot}
-
-
 %files -n %{purple_plugin}
 %defattr(-,root,root,-)
 %doc AUTHORS ChangeLog COPYING NEWS README TODO
@@ -290,6 +286,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Feb 18 2018 J. D. User <jduser@noreply.com> 1.23.0-*git*
+- remove obsolete clean section
+
 * Sun Feb 18 2018 J. D. User <jduser@noreply.com> 1.23.0-*git*
 - change source URL to https://
 

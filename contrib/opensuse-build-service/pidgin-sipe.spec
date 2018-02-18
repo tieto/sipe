@@ -504,10 +504,6 @@ rm -r %{buildroot}%{_datadir}/telepathy
 %find_lang pidgin-sipe
 
 
-%clean
-rm -rf %{buildroot}
-
-
 %if 0%{?build_telepathy:1}
 %files -n %{purple_plugin}
 %else
@@ -582,6 +578,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Feb 18 2018 J. D. User <jduser@noreply.com> 1.23.0-*git*
+- remove obsolete clean section
+
 * Sun Feb 18 2018 J. D. User <jduser@noreply.com> 1.23.0-*git*
 - add BR gcc
 
