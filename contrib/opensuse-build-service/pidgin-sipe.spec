@@ -178,6 +178,7 @@ BuildRequires:  %{mingw_prefix}pidgin
 #
 # Standard Linux build setup
 #
+BuildRequires:  gcc
 BuildRequires:  libtool
 BuildRequires:  intltool
 BuildRequires:  pkgconfig(dbus-1)
@@ -581,6 +582,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Feb 18 2018 J. D. User <jduser@noreply.com> 1.23.0-*git*
+- add BR gcc
+
 * Mon Nov 06 2017 J. D. User <jduser@noreply.com> 1.23.0-*git*
 - add BR appstream
 

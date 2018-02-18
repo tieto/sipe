@@ -50,6 +50,7 @@ BuildRequires:  autoconf
 BuildRequires:  automake
 %endif
 BuildRequires:  appstream
+BuildRequires:  gcc
 BuildRequires:  gettext
 BuildRequires:  intltool
 BuildRequires:  libtool
@@ -289,6 +290,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Feb 18 2018 J. D. User <jduser@noreply.com> 1.23.0-*git*
+- add BR gcc
+
 * Mon Nov 06 2017 J. D. User <jduser@noreply.com> 1.23.0-*git*
 - add BR appstream
 
