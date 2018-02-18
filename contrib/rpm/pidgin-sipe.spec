@@ -33,7 +33,7 @@ Source0:        %{name}-%{git}.tar.bz2
 Epoch:          1
 %else
 Release:        1%{?dist}
-Source0:        http://downloads.sourceforge.net/project/sipe/sipe/%{name}-%{version}/%{name}-%{version}.tar.bz2
+Source0:        https://downloads.sourceforge.net/project/sipe/sipe/%{name}-%{version}/%{name}-%{version}.tar.bz2
 %endif
 Group:          %{pkg_group}
 License:        GPLv2+
@@ -290,6 +290,9 @@ rm -rf %{buildroot}
 
 
 %changelog
+* Sun Feb 18 2018 J. D. User <jduser@noreply.com> 1.23.0-*git*
+- change source URL to https://
+
 * Sun Feb 18 2018 J. D. User <jduser@noreply.com> 1.23.0-*git*
 - add BR gcc
 
