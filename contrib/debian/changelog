@@ -1,3 +1,14 @@
+pidgin-sipe (1.23.1-1) unstable; urgency=low
+
+  * New upstream version 1.23.1 "Bug Fixes I" (2018-02-25)
+	- Fixed #338: Incorrect port 0 for IPv6 socket on Windows (Stefan Becker)
+	- Fixed #337: Duplicate candidates in SDP (Jakub Adam, Stefan Becker)
+	- Fixed #336: Lync autodiscover does not follow user redirect (Stefan Becker)
+	- media: unconditionally ignore multichannel codecs (Jakub Adam)
+	- updated translations: Turkish (tr)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sun, 25 Feb 2018 15:05:00 +0200
+
 pidgin-sipe (1.23.0-1) unstable; urgency=low
 
   * New upstream version 1.23.0 "D-Bus, IPv6, OS X 10.11+" (2017-10-28)

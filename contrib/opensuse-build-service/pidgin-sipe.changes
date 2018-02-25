@@ -1,4 +1,14 @@
 -------------------------------------------------------------------
+Sun Feb 25 13:05:00 UTC 2018 - chemobejk@gmail.com
+
+- Update to version 1.23.1 "Bug Fixes I" (2018-02-25)
+     - Fixed #338: Incorrect port 0 for IPv6 socket on Windows (Stefan Becker)
+     - Fixed #337: Duplicate candidates in SDP (Jakub Adam, Stefan Becker)
+     - Fixed #336: Lync autodiscover does not follow user redirect (Stefan Becker)
+     - media: unconditionally ignore multichannel codecs (Jakub Adam)
+     - updated translations: Turkish (tr)
+
+-------------------------------------------------------------------
 Sat Oct 28 15:18:00 UTC 2017 - chemobejk@gmail.com
 
 - Update to version 1.23.0 "D-Bus, IPv6, OS X 10.11+" (2017-10-??)
