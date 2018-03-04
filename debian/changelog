@@ -1,3 +1,14 @@
+pidgin-sipe (1.23.1-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+        - Fixed #338: Incorrect port 0 for IPv6 socket on Windows
+        - Fixed #337: Duplicate candidates in SDP
+        - Fixed #336: Lync autodiscover does not follow user redirect
+        - media: unconditionally ignore multichannel codecs
+        - updated translations: Turkish (tr)
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 04 Mar 2018 20:08:50 +0100
+
 pidgin-sipe (1.23.0-3) unstable; urgency=medium
 
   * Make postinst script insensitive to locale (Closes: #885331).
