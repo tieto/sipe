@@ -102,6 +102,7 @@ AS_IF([test "x$enable_quality_check" = xyes],
 			"-Wextra" \
 			"-Waggregate-return" \
 			"-Wcast-align" \
+			"-Wcast-function-type" \
 			"-Wdeclaration-after-statement" \
 			"-Wdeprecated-declarations" \
 			"-Wduplicate-decl-specifier" \

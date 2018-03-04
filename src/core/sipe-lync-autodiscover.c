@@ -151,9 +151,8 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 	sipe_xml *xml = sipe_xml_parse(body, strlen(body));
 	const sipe_xml *node;
 	gboolean next = TRUE;
-	const gchar *access_location;
 
-	/* Root: resources exposed by this server */
+	/* Root/Link: resources exposed by this server */
 	for (node = sipe_xml_child(xml, "Root/Link");
 	     node;
 	     node = sipe_xml_twin(node)) {
@@ -187,48 +186,72 @@ static void sipe_lync_autodiscover_parse(struct sipe_core_private *sipe_private,
 		}
 	}
 
-	access_location = sipe_xml_attribute(xml, "AccessLocation");
+	/* User/Link: topology information of the user’s home server */
+	for (node = sipe_xml_child(xml, "User/Link");
+	     node;
+	     node = sipe_xml_twin(node)) {
+		const gchar *token = sipe_xml_attribute(node, "token");
+		const gchar *uri = sipe_xml_attribute(node, "href");
 
-	/* User: topology information of the user’s home server */
-	if ((node = sipe_xml_child(xml, "User")) != NULL) {
-		gpointer id = request->id;
-
-		/* Active request? */
-		if (id) {
-			GSList *servers;
-
-			/* List is reversed, i.e. internal will be tried first */
-			servers = g_slist_prepend(NULL, NULL);
-
-			if (!access_location ||
-			    sipe_strcase_equal(access_location, "external")) {
-				servers = sipe_lync_autodiscover_add(servers,
-								     node,
-								     "SipClientExternalAccess");
-			}
-
-			if (!access_location ||
-			    sipe_strcase_equal(access_location, "internal")) {
-				servers = sipe_lync_autodiscover_add(servers,
-								     node,
-								     "SipClientInternalAccess");
-			}
-
-			/* Callback takes ownership of servers list */
-			(*request->cb)(sipe_private, servers, request->cb_data);
-
-			/* We're done with requests for this callback */
-			FOR_ALL_REQUESTS_WITH_SAME_ID( \
-				lar->cb = NULL;        \
-				lar->id = NULL         \
-			);
-
+		if (token && uri) {
+			/* Redirect? */
+			if (sipe_strcase_equal(token, "Redirect")) {
+				SIPE_DEBUG_INFO("sipe_lync_autodiscover_parse: redirect to %s",
+						uri);
+				lync_request(sipe_private, request, uri, NULL);
+				next = FALSE;
+				break;
+			} else
+				SIPE_DEBUG_INFO("sipe_lync_autodiscover_parse: unknown token %s",
+						token);
 		}
+	}
 
-		/* Request completed */
-		next = FALSE;
-		sipe_lync_autodiscover_request_free(sipe_private, request);
-		/* request is invalid */
+	/* if nothing else matched */
+	if (next) {
+		const gchar *access_location = sipe_xml_attribute(xml, "AccessLocation");
+
+		/* User: topology information of the user’s home server */
+		if ((node = sipe_xml_child(xml, "User")) != NULL) {
+			gpointer id = request->id;
+
+			/* Active request? */
+			if (id) {
+				GSList *servers;
+
+				/* List is reversed, i.e. internal will be tried first */
+				servers = g_slist_prepend(NULL, NULL);
+
+				if (!access_location ||
+				    sipe_strcase_equal(access_location, "external")) {
+					servers = sipe_lync_autodiscover_add(servers,
+									     node,
+									     "SipClientExternalAccess");
+				}
+
+				if (!access_location ||
+				    sipe_strcase_equal(access_location, "internal")) {
+					servers = sipe_lync_autodiscover_add(servers,
+									     node,
+									     "SipClientInternalAccess");
+				}
+
+				/* Callback takes ownership of servers list */
+				(*request->cb)(sipe_private, servers, request->cb_data);
+
+				/* We're done with requests for this callback */
+				FOR_ALL_REQUESTS_WITH_SAME_ID( \
+					lar->cb = NULL;        \
+					lar->id = NULL         \
+					);
+
+			}
+
+			/* Request completed */
+			next = FALSE;
+			sipe_lync_autodiscover_request_free(sipe_private, request);
+			/* request is invalid */
+		}
 	}
 
 	sipe_xml_free(xml);

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1169,7 +1169,6 @@ sipe_backend_set_remote_codecs(struct sipe_media_call *media,
 {
 	gboolean result;
 
-#if !GST_CHECK_VERSION(1, 6, 0)
 	/* Lync offers multichannel audio as a codec with the same encoding name
 	 * as the mono variant, but a different payload type and an extra
 	 * encoding parameter:
@@ -1177,13 +1176,8 @@ sipe_backend_set_remote_codecs(struct sipe_media_call *media,
 	 *  a=rtpmap:117 G722/8000/2
 	 *  a=rtpmap:9 G722/8000
 	 *
-	 * This causes trouble with GStreamer RTP payloaders prior 1.6 that
-	 * supported only default payload types (9 in the case of G722). Let's
-	 * ignore the multichannel codecs when used GStreamer version isn't
-	 * recent enough so as to avoid not-negotiated caps errors when they are
-	 * chosen for transmission.
-	 *
-	 * https://cgit.freedesktop.org/gstreamer/gst-plugins-good/commit/?id=5a17572119e4164c93f2ea90fa64e1c179b6e3c5
+	 * Since avenc_g722 from gst-libav can encode only one audio channel, ignore
+	 * multichannel codecs we were offered by the remote host.
 	 */
 	GList *tmp = NULL;
 	PurpleMediaSessionType type;
@@ -1201,15 +1195,10 @@ sipe_backend_set_remote_codecs(struct sipe_media_call *media,
 		tmp = g_list_append(tmp, codec);
 	}
 
-	codecs = tmp;
-#endif
-
 	result = purple_media_set_remote_codecs(media->backend_private->m,
 						stream->id, media->with,
-						codecs);
-#if !GST_CHECK_VERSION(1, 6, 0)
+						tmp);
 	g_list_free(tmp);
-#endif
 
 	return result;
 }
@@ -1417,6 +1406,60 @@ sipe_backend_candidate_get_protocol(struct sipe_backend_candidate *candidate)
 	return purple_network_protocol_to_sipe(proto);
 }
 
+/*
+ * libnice can return a candidate list with duplicates. It is currently
+ * unknown if this is a bug in libnice or a configuration error in Skype
+ * for Business setups.
+ *
+ * While this is not a bug in SIPE, by removing these duplicates we make
+ * sure that SIPE doesn't generate incorrect SDP messages.
+ */
+static GList *
+filter_duplicate_candidates(GList *candidates)
+{
+	GHashTable *seen   = g_hash_table_new_full(g_str_hash, g_str_equal,
+						   g_free, NULL);
+	GList      *result = NULL;
+	GList      *it;
+
+	for (it = candidates; it; it = it->next) {
+		PurpleMediaCandidate *c = it->data;
+		gchar *foundation = purple_media_candidate_get_foundation(c);
+		gchar *ip         = purple_media_candidate_get_ip(c);
+		gchar *base_ip    = purple_media_candidate_get_base_ip(c);
+		gchar *id = g_strdup_printf("%s %d %d %d %s %d %d %s %d",
+			foundation ? foundation : "-",
+			purple_media_candidate_get_component_id(c),
+			purple_media_candidate_get_protocol(c),
+			purple_media_candidate_get_priority(c),
+			ip ? ip : "-",
+			purple_media_candidate_get_port(c),
+			purple_media_candidate_get_candidate_type(c),
+			base_ip ? base_ip : "-",
+			purple_media_candidate_get_base_port(c)
+		);
+
+		g_free(base_ip);
+		g_free(ip);
+		g_free(foundation);
+
+		if (g_hash_table_lookup(seen, id)) {
+			SIPE_DEBUG_INFO("filter_duplicate_candidates: dropping '%s'",
+					id);
+			g_free(id);
+			g_object_unref(c);
+		} else {
+			g_hash_table_insert(seen, id, GUINT_TO_POINTER(TRUE));
+			result = g_list_append(result, c);
+		}
+	}
+
+	g_hash_table_destroy(seen);
+	g_list_free(candidates);
+
+	return result;
+}
+
 static void
 remove_lone_candidate_cb(SIPE_UNUSED_PARAMETER gpointer key,
 			 gpointer value,
@@ -1463,6 +1506,7 @@ sipe_backend_get_local_candidates(struct sipe_media_call *media,
 			purple_media_get_local_candidates(media->backend_private->m,
 							  stream->id,
 							  media->with);
+	candidates = filter_duplicate_candidates(candidates);
 	candidates = duplicate_tcp_candidates(candidates);
 
 	/*
