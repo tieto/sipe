@@ -10,6 +10,7 @@ pidgin-sipe (1.23.1-1) UNRELEASED; urgency=medium
         - Fixes an API violation that can cause false negative request failures
           (cherry picked from upstream).
   * Bump debhelper compat to level 11.
+  * Update copyright years.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 04 Mar 2018 20:08:50 +0100
 
