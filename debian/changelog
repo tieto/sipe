@@ -13,6 +13,7 @@ pidgin-sipe (1.23.1-1) UNRELEASED; urgency=medium
   * Update copyright years.
   * Use secure d/copyright format URI.
   * Bump Standards-Version to 4.1.3 (no changes required).
+  * Move package VCS repository to salsa.debian.org.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 04 Mar 2018 20:08:50 +0100
 
