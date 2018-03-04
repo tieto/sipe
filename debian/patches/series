@@ -1,2 +1,3 @@
 cflags-remove-Wundef.patch
 metainfo-Move-pidgin-sipe.metainfo.xml-out-of-legacy.patch
+Add-missing-_ready-call-for-HTTP-requests.patch
