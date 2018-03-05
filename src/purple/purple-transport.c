@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -85,6 +85,8 @@ struct sipe_transport_purple {
 	int socket;
 
 	gboolean is_valid;
+
+	gchar ip_address[INET6_ADDRSTRLEN]; /* OK for IPv4 too  */
 };
 
 #define PURPLE_TRANSPORT ((struct sipe_transport_purple *) conn)
@@ -202,6 +204,72 @@ static void transport_ssl_connect_failure(SIPE_UNUSED_PARAMETER PurpleSslConnect
 	}
 }
 
+static void transport_get_socket_info(struct sipe_transport_purple *transport)
+{
+	/*
+	 * NOTE: getsockname() on Windows seems to be picky about the buffer
+	 *       location. Use an allocated buffer instead of one on the stack,
+	 */
+	union socket_info {
+		struct sockaddr         sa;     /* to avoid casts */
+		struct sockaddr_in      sa_in;  /* IPv4 variant   */
+		struct sockaddr_in6     sa_in6; /* IPv6 variant   */
+		struct sockaddr_storage unused; /* for alignment  */
+	} *si = g_new(union socket_info, 1);
+	socklen_t si_len = sizeof(*si);
+	const void *addr;
+	guint port;
+
+	/*
+	 * libpurple only returns IPv4 addresses
+	 *
+	 *    purple_network_get_my_ip(transport->socket);
+	 *
+	 * libpurple returns port 0 on Windows for IPv6 sockets
+	 *
+	 *    purple_network_get_port_from_fd(transport->socket);
+	 *
+	 * Replace them with our own code.
+	 */
+	if (getsockname(transport->socket, &si->sa, &si_len) < 0) {
+		SIPE_DEBUG_ERROR("transport_get_socket_info: %s (%d)",
+				 strerror(errno), errno);
+
+		/* make sure socket address family is initialized */
+		si->sa.sa_family = AF_UNSPEC;
+	}
+
+	switch (si->sa.sa_family) {
+		case AF_INET:
+			port = si->sa_in.sin_port;
+			addr = &si->sa_in.sin_addr;
+			break;
+		case AF_INET6:
+			port = si->sa_in6.sin6_port;
+			addr = &si->sa_in6.sin6_addr;
+			break;
+		default:
+			port = htons(0); /* error fallback */
+			addr = NULL;
+			break;
+	}
+
+	transport->public.client_port = ntohs(port);
+	if ((addr == NULL) ||
+	    (inet_ntop(si->sa.sa_family, addr,
+		       transport->ip_address,
+		       sizeof(transport->ip_address)) == NULL)) {
+		/* error fallback */
+		strcpy(transport->ip_address, "0.0.0.0");
+	}
+	g_free(si);
+
+	SIPE_DEBUG_INFO("transport_get_socket_info: %s:%d(%p)",
+			transport->ip_address,
+			transport->public.client_port,
+			transport);
+}
+
 static void transport_common_connected(struct sipe_transport_purple *transport,
 				       int fd)
 {
@@ -218,7 +286,7 @@ static void transport_common_connected(struct sipe_transport_purple *transport,
 		}
 
 		transport->socket = fd;
-		transport->public.client_port = purple_network_get_port_from_fd(fd);
+		transport_get_socket_info(transport);
 
 		if (transport->gsc) {
 			purple_ssl_input_add(transport->gsc, transport_ssl_input, transport);
@@ -369,35 +437,7 @@ void sipe_backend_transport_disconnect(struct sipe_transport_connection *conn)
 
 gchar *sipe_backend_transport_ip_address(struct sipe_transport_connection *conn)
 {
-	/*
-	 * libpurple code only returns IPv4 addresses
-	 *
-	 *  return(g_strdup(purple_network_get_my_ip(PURPLE_TRANSPORT->socket)));
-	 *
-	 * Use our own implementation instead. The user will no longer be able
-	 * to override the local IP address via the libpurple settings.
-	 */
-	struct sockaddr_storage addr;
-	socklen_t               addrlen = sizeof(addr);
-	gchar                   buf[INET6_ADDRSTRLEN]; /* OK for IPv4 too  */
-	const gchar            *ipstr = "0.0.0.0";     /* default on error */
-
-	if ((getsockname(PURPLE_TRANSPORT->socket,
-			 (struct sockaddr *) &addr,
-			 &addrlen) == 0)            &&
-	    ((addr.ss_family == AF_INET) ||
-	     (addr.ss_family == AF_INET6))          &&
-	    (inet_ntop(addr.ss_family,
-		       (addr.ss_family == AF_INET) ?
-		       (void *) &(((struct sockaddr_in *)  &addr)->sin_addr) :
-		       (void *) &(((struct sockaddr_in6 *) &addr)->sin6_addr),
-		       buf,
-		       sizeof(buf)) != NULL)) {
-		ipstr = buf;
-		SIPE_DEBUG_INFO("sipe_backend_transport_ip_address: %s", ipstr);
-	}
-
-	return(g_strdup(ipstr));
+	return(g_strdup(PURPLE_TRANSPORT->ip_address));
 }
 
 void sipe_purple_transport_close_all(struct sipe_backend_private *purple_private)

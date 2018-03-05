@@ -1,3 +1,30 @@
+pidgin-sipe (1.23.1-1) UNRELEASED; urgency=medium
+
+  * New upstream release.
+        - Fixed #338: Incorrect port 0 for IPv6 socket on Windows
+        - Fixed #337: Duplicate candidates in SDP
+        - Fixed #336: Lync autodiscover does not follow user redirect
+        - media: unconditionally ignore multichannel codecs
+        - updated translations: Turkish (tr)
+  * Add missing _ready() calls for HTTP requests.
+        - Fixes an API violation that can cause false negative request failures
+          (cherry picked from upstream).
+  * Bump debhelper compat to level 11.
+  * Update copyright years.
+  * Use secure d/copyright format URI.
+  * Bump Standards-Version to 4.1.3 (no changes required).
+  * Move package VCS repository to salsa.debian.org.
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 04 Mar 2018 20:08:50 +0100
+
+pidgin-sipe (1.23.0-3) unstable; urgency=medium
+
+  * Make postinst script insensitive to locale (Closes: #885331).
+        - Fixes package upgrade on systems with non-English locale.
+  * Bump Standards-Version to 4.1.2 (no changes required).
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Tue, 26 Dec 2017 19:58:25 +0100
+
 pidgin-sipe (1.23.0-2) unstable; urgency=medium
 
   * Remove NSS_SSL_CBC_RANDOM_IV workaround (Closes: #882125).

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -34,6 +34,7 @@
 
 #include "sipe-backend.h"
 #include "sipe-buddy.h"
+#include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-core-private.h"
 #include "sipe-cal.h"
@@ -1060,6 +1061,12 @@ sipe_cal_get_description(struct sipe_buddy *buddy)
 #define UPDATE_CALENDAR_INTERVAL (15*60) /* 15 min, default granularity for Exchange */
 #define UPDATE_CALENDAR_OFFSET       30  /* 30 seconds before next interval starts */
 
+static void sipe_cal_update_cb(struct sipe_core_private *sipe_private,
+			       SIPE_UNUSED_PARAMETER gpointer data)
+{
+	sipe_core_update_calendar(SIPE_CORE_PUBLIC);
+}
+
 void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 {
 	time_t now, offset;
@@ -1089,7 +1096,7 @@ void sipe_core_update_calendar(struct sipe_core_public *sipe_public)
 			      "<+update-calendar>",
 			      NULL,
 			      offset - UPDATE_CALENDAR_OFFSET,
-			      (sipe_schedule_action)sipe_core_update_calendar,
+			      sipe_cal_update_cb,
 			      NULL);
 
 	SIPE_DEBUG_INFO_NOFORMAT("sipe_core_update_calendar: finished.");
@@ -1119,7 +1126,7 @@ void sipe_cal_delayed_calendar_update(struct sipe_core_private *sipe_private)
 				      "<+update-calendar>",
 				      NULL,
 				      UPDATE_CALENDAR_DELAY,
-				      (sipe_schedule_action) sipe_core_update_calendar,
+				      sipe_cal_update_cb,
 				      NULL);
 }
 

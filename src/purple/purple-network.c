@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -89,17 +89,34 @@ client_connected_cb(struct sipe_backend_listendata *ldata, gint listenfd,
 static void
 backend_listen_cb(int listenfd, struct sipe_backend_listendata *ldata)
 {
-	struct sockaddr_in addr;
-	socklen_t socklen = sizeof (addr);
-
 	ldata->listenfd = -1;
 	ldata->listener = NULL;
 	ldata->listenfd = listenfd;
 
-	/* ignore error code */
-	(void) getsockname(listenfd, (struct sockaddr*)&addr, &socklen);
-	if (ldata->listen_cb)
-		ldata->listen_cb(ntohs(addr.sin_port), ldata->data);
+	if (ldata->listen_cb) {
+		/*
+		 * NOTE: getsockname() on Windows seems to be picky about the
+		 *       buffer location. Use an allocated buffer instead of
+		 *       one on the stack,
+		 */
+		union socket_info {
+			struct sockaddr         sa;     /* to avoid casts */
+			struct sockaddr_in      sa_in;  /* IPv4 variant   */
+			struct sockaddr_in6     sa_in6; /* IPv6 variant   */
+			struct sockaddr_storage unused; /* for alignment  */
+		} *si = g_new(union socket_info, 1);
+		socklen_t si_len = sizeof(*si);
+		guint port = htons(0); /* error fallback */
+
+		if (getsockname(listenfd, &si->sa, &si_len) == 0) {
+			port = (si->sa.sa_family == AF_INET)  ? si->sa_in.sin_port :
+			       (si->sa.sa_family == AF_INET6) ? si->sa_in6.sin6_port :
+			       port;
+		}
+		g_free(si);
+
+		ldata->listen_cb(ntohs(port), ldata->data);
+	}
 
 	ldata->watcher = purple_input_add(listenfd, PURPLE_INPUT_READ,
 					  (PurpleInputFunction)client_connected_cb,
