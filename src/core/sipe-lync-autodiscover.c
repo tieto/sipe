@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2016-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2016-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -106,6 +106,9 @@ static void lync_request(struct sipe_core_private *sipe_private,
 						 headers ? headers : LYNC_AUTODISCOVER_ACCEPT_HEADER,
 						 sipe_lync_autodiscover_cb,
 						 request);
+
+	if (request->request)
+		sipe_http_request_ready(request->request);
 }
 
 static GSList *sipe_lync_autodiscover_add(GSList *servers,

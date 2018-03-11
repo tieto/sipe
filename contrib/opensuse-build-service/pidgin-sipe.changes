@@ -1,5 +1,11 @@
 -------------------------------------------------------------------
-Sun Feb 25 13:05:00 UTC 2017 - chemobejk@gmail.com
+Sat Mar 10 15:54:29 UTC 2018 - chemobejk@gmail.com
+
+- Update to version 1.23.2 "Bug Fixes II" (2018-03-10)
+    - fix some HTTP requests that were not sent (Jakub Adam, Stefan Becker)
+
+-------------------------------------------------------------------
+Sun Feb 25 13:05:00 UTC 2018 - chemobejk@gmail.com
 
 - Update to version 1.23.1 "Bug Fixes I" (2018-02-25)
      - Fixed #338: Incorrect port 0 for IPv6 socket on Windows (Stefan Becker)
