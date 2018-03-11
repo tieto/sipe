@@ -15,7 +15,8 @@ Package: pidgin-sipe
 Section: net
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: gstreamer1.0-libav, gstreamer1.0-x, remmina-plugin-rdp
+Recommends: gstreamer1.0-libav, gstreamer1.0-x, gstreamer1.0-plugins-ugly,
+ remmina-plugin-rdp
 Description: Pidgin plugin for Skype for Business and Microsoft Lync
  A third-party plugin for the Pidgin multi-protocol instant messenger.
  It implements the extended version of SIP/SIMPLE used by various products:

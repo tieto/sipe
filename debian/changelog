@@ -12,6 +12,8 @@ pidgin-sipe (1.23.2-1) UNRELEASED; urgency=medium
   * Use secure d/copyright format URI.
   * Bump Standards-Version to 4.1.3 (no changes required).
   * Move package VCS repository to salsa.debian.org.
+  * Recommend gstreamer1.0-plugins-ugly
+        - installs x264enc GStreamer plugin.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 11 Mar 2018 12:12:15 +0100
 
