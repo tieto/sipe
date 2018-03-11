@@ -6,9 +6,7 @@ pidgin-sipe (1.23.2-1) UNRELEASED; urgency=medium
         - Fixed #336: Lync autodiscover does not follow user redirect
         - media: unconditionally ignore multichannel codecs
         - updated translations: Turkish (tr)
-  * Add missing _ready() calls for HTTP requests.
-        - Fixes an API violation that can cause false negative request failures
-          (cherry picked from upstream).
+        - fix some HTTP requests that were not sent
   * Bump debhelper compat to level 11.
   * Update copyright years.
   * Use secure d/copyright format URI.
