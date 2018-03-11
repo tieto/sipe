@@ -430,17 +430,25 @@ static void sipe_conf_lync_url_cb(struct sipe_core_private *sipe_private,
 static gboolean sipe_conf_check_for_lync_url(struct sipe_core_private *sipe_private,
 					     gchar *uri)
 {
+	struct sipe_http_request *request;
+
 	if (!(g_str_has_prefix(uri, "https://") ||
 	      g_str_has_prefix(uri, "http://")))
 		return(FALSE);
 
 	/* URL points to a HTML page with the conference focus URI */
-	return(sipe_http_request_get(sipe_private,
-				     uri,
-				     NULL,
-				     sipe_conf_lync_url_cb,
-				     uri)
-	       != NULL);
+	request = sipe_http_request_get(sipe_private,
+					uri,
+					NULL,
+					sipe_conf_lync_url_cb,
+					uri);
+
+	if (request) {
+		sipe_http_request_ready(request);
+		return(TRUE);
+	}
+
+	return(FALSE);
 }
 
 static void sipe_conf_uri_error(struct sipe_core_private *sipe_private,

@@ -1,3 +1,10 @@
+pidgin-sipe (1.23.2-1) unstable; urgency=low
+
+  * New upstream version 1.23.2 "Bug Fixes II" (2018-03-10)
+	- fix some HTTP requests that were not sent (Jakub Adam, Stefan Becker)
+
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 10 Mar 2018 17:52:35 +0200
+
 pidgin-sipe (1.23.1-1) unstable; urgency=low
 
   * New upstream version 1.23.1 "Bug Fixes I" (2018-02-25)
