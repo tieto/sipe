@@ -1,4 +1,4 @@
-pidgin-sipe (1.23.2-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.23.2-1) unstable; urgency=medium
 
   * New upstream release.
         - Fixed #338: Incorrect port 0 for IPv6 socket on Windows
@@ -15,7 +15,7 @@ pidgin-sipe (1.23.2-1) UNRELEASED; urgency=medium
   * Recommend gstreamer1.0-plugins-ugly
         - installs x264enc GStreamer plugin.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 11 Mar 2018 12:12:15 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 11 Mar 2018 12:43:23 +0100
 
 pidgin-sipe (1.23.0-3) unstable; urgency=medium
 
