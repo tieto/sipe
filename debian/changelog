@@ -1,4 +1,4 @@
-pidgin-sipe (1.23.1-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.23.2-1) UNRELEASED; urgency=medium
 
   * New upstream release.
         - Fixed #338: Incorrect port 0 for IPv6 socket on Windows
@@ -6,16 +6,16 @@ pidgin-sipe (1.23.1-1) UNRELEASED; urgency=medium
         - Fixed #336: Lync autodiscover does not follow user redirect
         - media: unconditionally ignore multichannel codecs
         - updated translations: Turkish (tr)
-  * Add missing _ready() calls for HTTP requests.
-        - Fixes an API violation that can cause false negative request failures
-          (cherry picked from upstream).
+        - fix some HTTP requests that were not sent
   * Bump debhelper compat to level 11.
   * Update copyright years.
   * Use secure d/copyright format URI.
   * Bump Standards-Version to 4.1.3 (no changes required).
   * Move package VCS repository to salsa.debian.org.
+  * Recommend gstreamer1.0-plugins-ugly
+        - installs x264enc GStreamer plugin.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 04 Mar 2018 20:08:50 +0100
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Sun, 11 Mar 2018 12:12:15 +0100
 
 pidgin-sipe (1.23.0-3) unstable; urgency=medium
 

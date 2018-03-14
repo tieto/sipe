@@ -3,7 +3,7 @@
 *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -522,12 +522,28 @@ void sipe_http_request_shutdown(struct sipe_http_connection_public *conn_public,
 {
 	if (conn_public->pending_requests) {
 		GSList *entry = conn_public->pending_requests;
+		guint status = abort ?
+			SIPE_HTTP_STATUS_ABORTED :
+			SIPE_HTTP_STATUS_FAILED;
+		gboolean warn = conn_public->connected && !abort;
 		while (entry) {
+			struct sipe_http_request *req = entry->data;
+
+			if (warn) {
+				SIPE_DEBUG_ERROR("sipe_http_request_shutdown: pending request at shutdown: could indicate missing _ready() call on request. Debugging information:\n"
+						 "Host:   %s\n"
+						 "Port:   %d\n"
+						 "Path:   %s\n"
+						 "Method: %s\n",
+						 conn_public->host,
+						 conn_public->port,
+						 req->path,
+						 req->body ? "POST" : "GET");
+			}
+
 			sipe_http_request_free(conn_public->sipe_private,
-					       entry->data,
-					       abort ?
-					       SIPE_HTTP_STATUS_ABORTED :
-					       SIPE_HTTP_STATUS_FAILED);
+					       req,
+					       status);
 			entry = entry->next;
 		}
 		g_slist_free(conn_public->pending_requests);

@@ -2,7 +2,7 @@
 
 include /usr/share/dpkg/pkg-info.mk
 
-DEB_CONFIGURE_EXTRA_FLAGS := --libdir=/usr/lib --enable-purple --disable-telepathy --enable-openssl=no
+DEB_CONFIGURE_EXTRA_FLAGS := --libdir=/usr/lib --enable-purple=3 --disable-telepathy --enable-openssl=no
 
 export DEB_BUILD_MAINT_OPTIONS = hardening=+all
 
