@@ -1,6 +1,2 @@
-version 1.23.1 "Bug Fixes I" (2018-02-25)
-	- Fixed #338: Incorrect port 0 for IPv6 socket on Windows (Stefan Becker)
-	- Fixed #337: Duplicate candidates in SDP (Jakub Adam, Stefan Becker)
-	- Fixed #336: Lync autodiscover does not follow user redirect (Stefan Becker)
-	- media: unconditionally ignore multichannel codecs (Jakub Adam)
-	- updated translations: Turkish (tr)
+version 1.23.2 "Bug Fixes II" (2018-03-10)
+	- fix some HTTP requests that were not sent (Jakub Adam, Stefan Becker)
