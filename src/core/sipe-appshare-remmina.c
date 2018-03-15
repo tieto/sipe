@@ -81,6 +81,7 @@ remmina_launch(struct sipe_rdp_client *client, GSocketAddress *listen_address,
 				      "scale=1\n"
 				      "aspectscale=1\n"
 				      "viewmode=1\n"
+				      "colordepth=0\n"
 				      "disableautoreconnect=1\n",
 				      alias ? alias : stream->call->with,
 				      address_string,
