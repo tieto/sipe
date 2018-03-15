@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -269,7 +269,7 @@ static void channel_manager_iface_init(gpointer g_iface,
 SipeTLSManager *sipe_telepathy_tls_new(TpBaseConnection *connection)
 {
 	SipeTLSManager *self = g_object_new(SIPE_TYPE_TLS_MANAGER, NULL);
-	self->connection = g_object_ref(connection);
+	self->connection = g_object_ref(G_OBJECT(connection));
 	return(self);
 }
 
