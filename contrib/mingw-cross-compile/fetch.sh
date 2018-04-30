@@ -11,7 +11,7 @@
 # Check these page for latest MinGW/Pidgin URLs if you get fetch errors!
 #
 # update Pidgin version here
-export PIDGIN_VERSION=2.12.0
+export PIDGIN_VERSION=2.13.0
 
 # must be absolute path
 export PIDGIN_DEV_ROOT=$(pwd -P)/build-${PIDGIN_VERSION}
@@ -30,7 +30,7 @@ mkdir -p ${MINGW_DIR}
 
 echo 1>&2 fetching mingw...
 cd ${SOURCES_DIR}
-#wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/binutils/binutils-2.23.1/binutils-2.23.1-1-mingw32-bin.tar.lzma
+#wget -nv https://sourceforge.net/projects/mingw/files/MinGW/Base/binutils/binutils-2.24/binutils-2.24-1-mingw32-bin.tar.xz
 wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/mingwrt/mingwrt-3.20/mingwrt-3.20-2-mingw32-dev.tar.lzma
 wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/mingwrt/mingwrt-3.20/mingwrt-3.20-2-mingw32-dll.tar.lzma
 wget -nv http://sourceforge.net/projects/mingw/files/MinGW/Base/w32api/w32api-3.17/w32api-3.17-2-mingw32-dev.tar.lzma
