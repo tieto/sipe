@@ -106,7 +106,7 @@ struct sipe_media_stream_private {
 #define SIPE_MEDIA_STREAM         ((struct sipe_media_stream *) stream_private)
 #define SIPE_MEDIA_STREAM_PRIVATE ((struct sipe_media_stream_private *) stream)
 
-#define SIPE_MEDIA_STREAM_CONNECTION_TIMEOUT_SECONDS 30
+#define SIPE_MEDIA_STREAM_CONNECTION_TIMEOUT_SECONDS 120
 #define SIPE_MEDIA_CALL_RINGING_TIMEOUT_SECONDS 60
 #define SIPE_MEDIA_CALL_TIMEOUT_SECONDS 120
 
