@@ -715,7 +715,7 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 		if (stream) {
 			sipe_backend_media_stream_end(SIPE_MEDIA_CALL, stream);
 		}
-		return TRUE;
+		return FALSE;
 	}
 
 	if (!stream)
