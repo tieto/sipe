@@ -865,10 +865,9 @@ static gchar *sipe_publish_get_category_state_calendar(struct sipe_core_private 
 	/* key is <category><instance><container> */
 	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
 	gchar *key_3 = g_strdup_printf("<%s><%u><%u>", "state", instance, 3);
-	struct sipe_publication *publication_2 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_2);
-	struct sipe_publication *publication_3 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_3);
+	gpointer state = g_hash_table_lookup(sipe_private->our_publications, "state");
+	struct sipe_publication *publication_2 = state ? g_hash_table_lookup(state, key_2) : NULL;
+	struct sipe_publication *publication_3 = state ? g_hash_table_lookup(state, key_3) : NULL;
 
 	g_free(key_2);
 	g_free(key_3);
@@ -980,12 +979,10 @@ static gchar *sipe_publish_get_category_note(struct sipe_core_private *sipe_priv
 	gchar *key_note_300 = g_strdup_printf("<%s><%u><%u>", "note", instance, 300);
 	gchar *key_note_400 = g_strdup_printf("<%s><%u><%u>", "note", instance, 400);
 
-	struct sipe_publication *publication_note_200 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "note"), key_note_200);
-	struct sipe_publication *publication_note_300 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "note"), key_note_300);
-	struct sipe_publication *publication_note_400 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "note"), key_note_400);
+	gpointer notes = g_hash_table_lookup(sipe_private->our_publications, "note");
+	struct sipe_publication *publication_note_200 = notes ? g_hash_table_lookup(notes, key_note_200) : NULL;
+	struct sipe_publication *publication_note_300 = notes ? g_hash_table_lookup(notes, key_note_300) : NULL;
+	struct sipe_publication *publication_note_400 = notes ? g_hash_table_lookup(notes, key_note_400) : NULL;
 
 	char *tmp = note ? sipe_backend_markup_strip_html(note) : NULL;
 	char *n1 = tmp ? g_markup_escape_text(tmp, -1) : NULL;
@@ -1136,18 +1133,13 @@ static gchar *sipe_publish_get_category_cal_working_hours(struct sipe_core_priva
 	gchar *key_cal_400   = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 400);
 	gchar *key_cal_32000 = g_strdup_printf("<%s><%u><%u>", "calendarData", 0, 32000);
 
-	struct sipe_publication *publication_cal_1 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_1);
-	struct sipe_publication *publication_cal_100 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_100);
-	struct sipe_publication *publication_cal_200 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_200);
-	struct sipe_publication *publication_cal_300 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_300);
-	struct sipe_publication *publication_cal_400 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_400);
-	struct sipe_publication *publication_cal_32000 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_32000);
+	gpointer tmp = g_hash_table_lookup(sipe_private->our_publications, "calendarData");
+	struct sipe_publication *publication_cal_1 = tmp ? g_hash_table_lookup(tmp, key_cal_1) : NULL;
+	struct sipe_publication *publication_cal_100 = tmp ? g_hash_table_lookup(tmp, key_cal_100) : NULL;
+	struct sipe_publication *publication_cal_200 = tmp ? g_hash_table_lookup(tmp, key_cal_200) : NULL;
+	struct sipe_publication *publication_cal_300 = tmp ? g_hash_table_lookup(tmp, key_cal_300) : NULL;
+	struct sipe_publication *publication_cal_400 = tmp ? g_hash_table_lookup(tmp, key_cal_400) : NULL;
+	struct sipe_publication *publication_cal_32000 = tmp ? g_hash_table_lookup(tmp, key_cal_32000) : NULL;
 
 	const char *n1 = cal ? cal->working_hours_xml_str : NULL;
 	const char *n2 = publication_cal_300 ? publication_cal_300->working_hours_xml_str : NULL;
@@ -1272,18 +1264,13 @@ static gchar *sipe_publish_get_category_cal_free_busy(struct sipe_core_private *
 	gchar *key_cal_400   = g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 400);
 	gchar *key_cal_32000 = g_strdup_printf("<%s><%u><%u>", "calendarData", cal_data_instance, 32000);
 
-	struct sipe_publication *publication_cal_1 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_1);
-	struct sipe_publication *publication_cal_100 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_100);
-	struct sipe_publication *publication_cal_200 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_200);
-	struct sipe_publication *publication_cal_300 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_300);
-	struct sipe_publication *publication_cal_400 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_400);
-	struct sipe_publication *publication_cal_32000 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "calendarData"), key_cal_32000);
+	gpointer tmp = g_hash_table_lookup(sipe_private->our_publications, "calendarData");
+	struct sipe_publication *publication_cal_1 = tmp ? g_hash_table_lookup(tmp, key_cal_1) : NULL;
+	struct sipe_publication *publication_cal_100 = tmp ? g_hash_table_lookup(tmp, key_cal_100) : NULL;
+	struct sipe_publication *publication_cal_200 = tmp ? g_hash_table_lookup(tmp, key_cal_200) : NULL;
+	struct sipe_publication *publication_cal_300 = tmp ? g_hash_table_lookup(tmp, key_cal_300) : NULL;
+	struct sipe_publication *publication_cal_400 = tmp ? g_hash_table_lookup(tmp, key_cal_400) : NULL;
+	struct sipe_publication *publication_cal_32000 = tmp ? g_hash_table_lookup(tmp, key_cal_32000) : NULL;
 
 	g_free(key_cal_1);
 	g_free(key_cal_100);
@@ -1484,10 +1471,9 @@ static gchar *sipe_publish_get_category_state(struct sipe_core_private *sipe_pri
 	/* key is <category><instance><container> */
 	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
 	gchar *key_3 = g_strdup_printf("<%s><%u><%u>", "state", instance, 3);
-	struct sipe_publication *publication_2 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_2);
-	struct sipe_publication *publication_3 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_3);
+	gpointer state = g_hash_table_lookup(sipe_private->our_publications, "state");
+	struct sipe_publication *publication_2 = state ? g_hash_table_lookup(state, key_2) : NULL;
+	struct sipe_publication *publication_3 = state ? g_hash_table_lookup(state, key_3) : NULL;
 
 	g_free(key_2);
 	g_free(key_3);
@@ -1834,10 +1820,9 @@ void sipe_ocs2007_phone_state_publish(struct sipe_core_private *sipe_private)
 	/* key is <category><instance><container> */
 	gchar *key_2 = g_strdup_printf("<%s><%u><%u>", "state", instance, 2);
 	gchar *key_3 = g_strdup_printf("<%s><%u><%u>", "state", instance, 3);
-	struct sipe_publication *publication_2 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_2);
-	struct sipe_publication *publication_3 =
-		g_hash_table_lookup(g_hash_table_lookup(sipe_private->our_publications, "state"), key_3);
+	gpointer state = g_hash_table_lookup(sipe_private->our_publications, "state");
+	struct sipe_publication *publication_2 = state ? g_hash_table_lookup(state, key_2) : NULL;
+	struct sipe_publication *publication_3 = state ? g_hash_table_lookup(state, key_3) : NULL;
 	g_free(key_2);
 	g_free(key_3);
 
