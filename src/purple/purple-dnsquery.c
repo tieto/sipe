@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,6 +24,9 @@
 
 #include "version.h"
 
+#if PURPLE_VERSION_CHECK(2,8,0)
+#include "account.h"
+#endif
 #if PURPLE_VERSION_CHECK(3,0,0)
 #include "protocols.h"
 #include <gio/gio.h>

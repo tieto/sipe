@@ -58,7 +58,9 @@
 /* wrappers for write() & friends for socket handling */
 #include "win32/win32dep.h"
 #else
+#include <sys/types.h>
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #endif
 
