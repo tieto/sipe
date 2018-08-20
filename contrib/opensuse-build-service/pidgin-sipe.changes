@@ -1,4 +1,13 @@
 -------------------------------------------------------------------
+Mon Aug 20 14:47:00 UTC 2018 - chemobejk@gmail.com
+
+- Update to version 1.23.3 "Bug Fixes III" (2018-08-20)
+    - appshare: fix black screen with Remmina v1.2.0-rcgit.27 (Jakub Adam)
+    - various minor fixes (Jakub Adam, Michael Olbrich)
+    - fix compilation errors with libpurple 2.14.0 & GCC 8.0 (Jakub Adam, Stefan Becker)
+    - mingw: update fetch script to Pidgin 2.13.0 (Stefan Becker)
+
+-------------------------------------------------------------------
 Sat Mar 10 15:54:29 UTC 2018 - chemobejk@gmail.com
 
 - Update to version 1.23.2 "Bug Fixes II" (2018-03-10)
