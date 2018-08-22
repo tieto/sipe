@@ -7,6 +7,9 @@ pidgin-sipe (1.23.3-1) UNRELEASED; urgency=medium
         - mingw: update fetch script to Pidgin 2.13.0
   * Bump Standards-Version to 4.2.0
         - Migrate get-orig-source to uscan
+  * Remove --dbgsym-migration from d/rules
+        - The migration command has been included in Debian stretch.
+          Fixes debug-symbol-migration-possibly-complete lintian warning.
 
  -- Jakub Adam <jakub.adam@ktknet.cz>  Wed, 22 Aug 2018 15:24:13 +0200
 
