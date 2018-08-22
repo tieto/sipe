@@ -1,6 +1,6 @@
 pidgin-sipe (1.23.3-1) UNRELEASED; urgency=medium
 
-  * New upstream release.
+  * New upstream release (Closes: #825203).
         - appshare: fix black screen with Remmina v1.2.0-rcgit.27
         - various minor fixes
         - fix compilation errors with libpurple 2.14.0 & GCC 8.0
