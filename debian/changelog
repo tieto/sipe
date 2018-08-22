@@ -1,4 +1,4 @@
-pidgin-sipe (1.23.3-1) UNRELEASED; urgency=medium
+pidgin-sipe (1.23.3-1) unstable; urgency=medium
 
   * New upstream release (Closes: #825203).
         - appshare: fix black screen with Remmina v1.2.0-rcgit.27
@@ -11,7 +11,7 @@ pidgin-sipe (1.23.3-1) UNRELEASED; urgency=medium
         - The migration command has been included in Debian stretch.
           Fixes debug-symbol-migration-possibly-complete lintian warning.
 
- -- Jakub Adam <jakub.adam@ktknet.cz>  Wed, 22 Aug 2018 15:24:13 +0200
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Wed, 22 Aug 2018 18:27:43 +0200
 
 pidgin-sipe (1.23.2-1) unstable; urgency=medium
 
