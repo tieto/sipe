@@ -159,6 +159,9 @@ static PurplePluginProtocolInfo sipe_prpl_info =
 	NULL,					/* add_buddy_with_invite */
 	NULL,					/* add_buddies_with_invite */
 #endif
+#if PURPLE_VERSION_CHECK(2,14,0)
+	NULL,					/* get_cb_alias */
+#endif
 };
 #ifdef __GNUC__
 #if ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 6)) || (__GNUC__ >= 5)

@@ -315,29 +315,30 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleBuddy *buddy = NULL;
-	PurpleStatus *status = NULL;
 	gchar *tmp = NULL;
 
 	buddy = purple_blist_find_buddy(purple_private->account, who);
-	if (buddy)
-		status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
 
-	if (status)
+	if (buddy) {
+		const PurpleStatusType *status_type =
+			purple_status_type_find_with_id(
+				purple_account_get_status_types(purple_private->account),
+				sipe_purple_activity_to_token(activity));
 		tmp = sipe_core_buddy_status(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
 					     purple_buddy_get_name(buddy),
-					     sipe_purple_token_to_activity(purple_status_get_id(status)),
-					     purple_status_get_name(status));
+					     activity,
+					     purple_status_type_get_name(status_type));
+	}
 
-	if (tmp) {
-		purple_protocol_got_user_status(purple_private->account, who,
-						sipe_purple_activity_to_token(activity),
-						SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
-						NULL);
-		g_free(tmp);
-	} else
-		purple_protocol_got_user_status(purple_private->account, who,
-						sipe_purple_activity_to_token(activity),
-						NULL);
+	/* make sure to clear status message when there is none */
+	if (!tmp)
+		tmp = g_strdup("");
+
+	purple_protocol_got_user_status(purple_private->account, who,
+					sipe_purple_activity_to_token(activity),
+					SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
+					NULL);
+	g_free(tmp);
 }
 
 gboolean sipe_backend_uses_photo(void)
