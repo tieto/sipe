@@ -715,7 +715,7 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 		if (stream) {
 			sipe_backend_media_stream_end(SIPE_MEDIA_CALL, stream);
 		}
-		return TRUE;
+		return FALSE;
 	}
 
 	if (!stream)
@@ -1006,7 +1006,7 @@ error_cb(struct sipe_media_call *call, gchar *message)
 	sipe_backend_notify_error(SIPE_CORE_PUBLIC, title, message);
 	g_free(title);
 
-	if (!initiator && !accepted) {
+	if (!initiator && !accepted && call_private->invitation) {
 		sip_transport_response(sipe_private,
 				       call_private->invitation,
 				       488, "Not Acceptable Here", NULL);
