@@ -1,3 +1,18 @@
+pidgin-sipe (1.23.3-1) unstable; urgency=medium
+
+  * New upstream release (Closes: #825203).
+        - appshare: fix black screen with Remmina v1.2.0-rcgit.27
+        - various minor fixes
+        - fix compilation errors with libpurple 2.14.0 & GCC 8.0
+        - mingw: update fetch script to Pidgin 2.13.0
+  * Bump Standards-Version to 4.2.0
+        - Migrate get-orig-source to uscan
+  * Remove --dbgsym-migration from d/rules
+        - The migration command has been included in Debian stretch.
+          Fixes debug-symbol-migration-possibly-complete lintian warning.
+
+ -- Jakub Adam <jakub.adam@ktknet.cz>  Wed, 22 Aug 2018 18:27:43 +0200
+
 pidgin-sipe (1.23.2-1) unstable; urgency=medium
 
   * New upstream release.

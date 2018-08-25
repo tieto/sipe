@@ -830,7 +830,6 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 	GParameter *params = g_new0(GParameter, 6);
 	guint params_cnt = 0;
 	gchar *transmitter;
-	GValue *relay_info = NULL;
 #ifdef HAVE_XDATA
 	PurpleMediaAppDataCallbacks callbacks = {
 			stream_readable_cb, stream_writable_cb
@@ -866,7 +865,6 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 			params[params_cnt].name = "relay-info";
 			g_value_init(&params[params_cnt].value, G_TYPE_PTR_ARRAY);
 			g_value_set_boxed(&params[params_cnt].value, media_relays);
-			relay_info = &params[params_cnt].value;
 			++params_cnt;
 		}
 
@@ -919,10 +917,6 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 	} else {
 		sipe_backend_media_stream_free(backend_stream);
 		backend_stream = NULL;
-	}
-
-	if (relay_info) {
-		g_value_unset(relay_info);
 	}
 
 	g_free(params);
