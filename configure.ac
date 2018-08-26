@@ -375,6 +375,7 @@ AC_ARG_ENABLE([purple],
 	[],
 	[enable_purple=yes])
 ac_have_appshare=no
+ac_have_appshare_server=no
 ac_have_xdata=no
 with_purple_vv=no
 AS_IF([test "x$enable_purple" != xno],
@@ -471,7 +472,12 @@ AS_IF([test "x$enable_purple" != xno],
 				  ac_have_xdata=yes
 
 				  dnl gio-2.0 is mandatory for application sharing support
-				  PKG_CHECK_MODULES(GIO, [gio-2.0], [ac_have_appshare=yes])
+				  PKG_CHECK_MODULES(GIO, [gio-2.0],
+				   [ac_have_appshare=yes
+
+				    dnl freerdp-shadow2 is mandatory for appshare server support
+				    PKG_CHECK_MODULES(FREERDP_SHADOW, [freerdp-shadow2], [ac_have_appshare_server=yes])
+				   ])
 				 ]
 			 )
 			],
@@ -535,6 +541,11 @@ dnl enable appshare support
 AM_CONDITIONAL(SIPE_HAVE_APPSHARE, [test "x$ac_have_appshare" == xyes])
 AS_IF([test "x$ac_have_appshare" == xyes],
 	[AC_DEFINE(HAVE_APPSHARE, 1, [Define to 1 if we have appshare support.])])
+
+dnl RDP server for sharing local desktop
+AM_CONDITIONAL(SIPE_HAVE_APPSHARE_SERVER, [test "x$ac_have_appshare_server" = xyes])
+AS_IF([test "x$ac_have_appshare_server" == xyes],
+	[AC_DEFINE(HAVE_APPSHARE_SERVER, 1, [Define if appshare server is enabled.])])
 
 dnl telepathy code parts rely on interfaces that require GValueArray. This
 dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there
