@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -534,6 +534,15 @@ sipe_core_ft_create_outgoing(struct sipe_core_public *sipe_public,
 void sipe_core_appshare_connect_conference(struct sipe_core_public *sipe_public,
 					   struct sipe_chat_session *chat_session,
 					   gboolean user_must_accept);
+
+/**
+ * Starts presenting user's desktop
+ *
+ * @param sipe_public (in) SIPE core data.
+ * @param with (in) SIP URI of the contact to share the desktop with.
+ */
+void sipe_core_appshare_share_desktop(struct sipe_core_public *sipe_public,
+				      const gchar *with);
 
 /* group chat */
 gboolean sipe_core_groupchat_query_rooms(struct sipe_core_public *sipe_public);
