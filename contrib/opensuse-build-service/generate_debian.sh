@@ -55,19 +55,29 @@ done >checksums.txt
 for d in *.dsc; do cat checksums.txt >>${d}; done
 rm checksums.txt
 
-# Newer platforms have support for gstreamer1.0 - use only default .dsc
-cp pidgin-sipe-gstreamer1.dsc pidgin-sipe.dsc
+# Newer platforms have support for freerdp2 - use only default .dsc
+cp pidgin-sipe-freerdp2.dsc pidgin-sipe.dsc
+# All other platforms at least support for gstreamer1.0 - override those
+for os in \
+    Debian_9.0 \
+    xUbuntu_16.04 \
+    xUbuntu_16.10 \
+    xUbuntu_17.04 \
+    xUbuntu_17.10 \
+; do \
+    cp pidgin-sipe-gstreamer1.dsc pidgin-sipe-${os}.dsc; \
+done
 # All other platforms at least support telepathy - override those
 for os in \
-    Debian_8.0; \
-do \
+    Debian_8.0 \
+; do \
     cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
 done
 # Platforms without appstream
 for os in \
     Debian_7.0 \
-    xUbuntu_14.04; \
-do \
+    xUbuntu_14.04 \
+; do \
     cp pidgin-sipe-no-appstream.dsc pidgin-sipe-${os}.dsc; \
 done
 

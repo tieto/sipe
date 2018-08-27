@@ -90,6 +90,9 @@
 %if 0%{?is_opensuse}
 %define has_appstream 1
 %define has_appstream_legacy 1
+%if 0%{?suse_version} >= 1500
+%define has_freerdp 1
+%endif
 %endif
 %define has_gstreamer 1
 %define build_telepathy 1
@@ -113,6 +116,9 @@
 %define has_appstream 1
 %if %{fedora} <= 26
 %define has_appstream_legacy 1
+%endif
+%if %{fedora} > 25
+%define has_freerdp 1
 %endif
 %define has_gssntlmssp 1
 %define has_gstreamer 1
@@ -204,6 +210,10 @@ BuildRequires:  pkgconfig(gio-2.0)
 BuildRequires:  pkgconfig(gstreamer-1.0)
 BuildRequires:  pkgconfig(gstreamer-rtp-1.0)
 BuildRequires:  pkgconfig(nice) >= 0.1.0
+# Requirements for appshare server
+%if 0%{?has_freerdp:1}
+BuildRequires:  pkgconfig(freerdp-shadow2)
+%endif
 %endif
 # Requirements for telepathy backend
 %if 0%{?build_telepathy:1}
@@ -578,6 +588,9 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %changelog
+* Mon Aug 27 2018 J. D. User <jduser@noreply.com> 1.23.3-*git*
+- add BR freerdp-shadow2
+
 * Mon Aug 20 2018 J. D. User <jduser@noreply.com> 1.23.3
 - update to 1.23.3
 

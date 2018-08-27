@@ -10,7 +10,7 @@
 #
 # Run "./git-snapshot.sh ." in your local repository.
 # Then update the following line from the generated archive name
-%define git       20171022gitfe34eaec
+%define git       20180827git1297745c
 # Increment when you generate several RPMs on the same day...
 %define gitcount  0
 #------------------------------- BUILD FROM GIT -------------------------------
@@ -58,6 +58,7 @@ BuildRequires:  libtool
 %if !0%{?_without_vv:1}
 BuildRequires:  pkgconfig(purple) >= 2.8.0
 BuildRequires:  pkgconfig(farstream-0.2)
+BuildRequires:  pkgconfig(freerdp-shadow2)
 BuildRequires:  pkgconfig(gio-2.0)
 BuildRequires:  pkgconfig(gstreamer-1.0)
 BuildRequires:  pkgconfig(gstreamer-rtp-1.0)
@@ -286,6 +287,9 @@ make %{?_smp_mflags} check
 
 
 %changelog
+* Mon Aug 27 2018 J. D. User <jduser@noreply.com> 1.23.3-*git*
+- add BR freerdp-shadow2
+
 * Mon Aug 20 2018 J. D. User <jduser@noreply.com> 1.23.3
 - update to 1.23.3
 
