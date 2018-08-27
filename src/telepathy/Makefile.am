@@ -47,3 +47,8 @@ telepathy_sipe_LDADD = \
 	$(GIO_LIBS) \
 	$(GOBJECT_LIBS) \
 	$(GLIB_LIBS)
+
+if SIPE_HAVE_APPSHARE_SERVER
+telepathy_sipe_LDADD += \
+	$(FREERDP_SHADOW_LIBS)
+endif
