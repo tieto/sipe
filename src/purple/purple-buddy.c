@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -665,18 +665,14 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 			      gc);
 }
 
-#ifdef HAVE_APPSHARE_SERVER
-static void sipe_purple_buddy_share_desktop_cb(PurpleBuddy *buddy,
-					       SIPE_UNUSED_PARAMETER gpointer parameter)
-{
-	sipe_core_appshare_share_desktop(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
-					 purple_buddy_get_name(buddy));
-}
-#else
 static void sipe_purple_buddy_share_desktop_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy,
 					       SIPE_UNUSED_PARAMETER gpointer parameter)
-{}
-#endif // HAVE_APPSHARE_SERVER
+{
+#ifdef HAVE_APPSHARE_SERVER
+	sipe_core_appshare_share_desktop(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
+					 purple_buddy_get_name(buddy));
+#endif
+}
 
 typedef void (*buddy_menu_callback)(PurpleBuddy *buddy,
 				    gpointer parameter);
