@@ -78,8 +78,6 @@
 %define ktp_files        ktp-accounts-kcm-sipe
 
 
-%define has_pidgin 1
-
 %if 0%{?mageia}
 %define has_appstream 1
 %define has_appstream_legacy 1
@@ -130,8 +128,7 @@
 %define has_krb5devel 1
 %define rhel_base_version %{?centos_version}%{?scientificlinux_version}
 %if %{rhel_base_version} >= 700
-# pidgin has been removed, but libpurple still exists
-%define has_pidgin 0
+%define has_gstreamer 1
 %endif
 %endif
 
@@ -240,10 +237,8 @@ Requires:       gssntlmssp >= 0.5.0
 %endif
 
 # For directory ownership
-%if %{has_pidgin}
 BuildRequires:  pidgin
 Requires:       pidgin
-%endif
 %if 0%{?build_telepathy:1}
 BuildRequires:  empathy
 %endif
@@ -502,10 +497,6 @@ rm -f \
 %if 0%{?has_appstream_legacy:1}
 mv %{buildroot}/%{_datadir}/metainfo %{buildroot}/%{_datadir}/appdata
 %endif
-%if !%{has_pidgin}
-# We don't have Pidgin, so we can't package icons at all
-rm -r %{buildroot}/%{_datadir}/pixmaps/pidgin
-%endif
 %if 0%{?build_telepathy:1}
 %if !0%{?build_ktp:1}
 rm -r %{buildroot}%{_datadir}/telepathy
@@ -566,7 +557,6 @@ rm -r %{buildroot}%{_datadir}/telepathy
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{mingw_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
 %else
-%if %{has_pidgin}
 %if 0%{?has_appstream:1}
 %if 0%{?has_appstream_legacy:1}
 %{_datadir}/appdata/%{name}.metainfo.xml
@@ -576,7 +566,6 @@ rm -r %{buildroot}%{_datadir}/telepathy
 %endif
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.png
 %{_datadir}/pixmaps/pidgin/protocols/*/sipe.svg
-%endif
 %endif
 
 
@@ -588,6 +577,9 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %changelog
+* Sat Sep 01 2018 J. D. User <jduser@noreply.com> 1.23.3-*git*
+- update support for CentOS & Scientific Linux 7
+
 * Mon Aug 27 2018 J. D. User <jduser@noreply.com> 1.23.3-*git*
 - add BR freerdp-shadow2
 
