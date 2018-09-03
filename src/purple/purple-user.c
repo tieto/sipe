@@ -20,7 +20,9 @@
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
  */
 
-#include "sipe-nls.h"
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <glib.h>
 
@@ -38,6 +40,7 @@
 
 #include "sipe-backend.h"
 #include "sipe-core.h"
+#include "sipe-nls.h"
 
 #define SIPE_TYPING_RECV_TIMEOUT 6
 
