@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,14 +24,9 @@
 #include <stdio.h>
 #include <glib.h>
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-backend.h"
-#include "sipe-nls.h"
 
 #include "newpluginapi.h"
 #include "m_protosvc.h"
