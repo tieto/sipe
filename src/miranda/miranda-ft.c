@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -42,7 +42,6 @@
 #include "sipe-common.h"
 #include "sipe-backend.h"
 #include "sipe-core.h"
-#include "sipe-nls.h"
 #include "miranda-private.h"
 
 #define FT_SIPE_DEBUG_INFO(fmt, ...)        sipe_backend_debug(SIPE_DEBUG_LEVEL_INFO,    "[FT:%08x] %s: " fmt, ft, __func__, __VA_ARGS__)
