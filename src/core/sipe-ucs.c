@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -30,6 +30,10 @@
  * FindPeople operation
  *  <http://msdn.microsoft.com/en-us/library/office/jj191039.aspx>
  */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 
 #include <string.h>
 
