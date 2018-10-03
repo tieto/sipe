@@ -104,7 +104,6 @@ struct sip_transport {
 
 	gchar *server_name;
 	guint  server_port;
-	gchar *server_version;
 
 	gchar *epid;
 	                             /* local IP address of transport socket   */
@@ -997,7 +996,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 				gchar *gruu = NULL;
 				gchar *uuid;
 				gchar *timeout;
-				const gchar *server_hdr = sipmsg_find_header(msg, "Server");
 
 				if (!transport->reregister_set) {
 					/* Schedule re-register 30 seconds before expiration */
@@ -1006,10 +1004,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 					sip_transport_set_reregister(sipe_private,
 								     expires);
 					transport->reregister_set = TRUE;
-				}
-
-				if (server_hdr && !transport->server_version) {
-					transport->server_version = g_strdup(server_hdr);
 				}
 
 				auth_hdr = sipmsg_find_auth_header(msg,
@@ -1459,7 +1453,6 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 		sipe_auth_free(&transport->proxy);
 
 		g_free(transport->server_name);
-		g_free(transport->server_version);
 		g_free(transport->uri_address);
 		g_free(transport->ip_address);
 		g_free(transport->epid);
