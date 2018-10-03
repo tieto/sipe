@@ -112,8 +112,6 @@ struct sip_transport {
 	gchar *uri_address;   	     /* URI X.X.X.X (IPv4), [X:X:...:X] (IPv6) */
 	const gchar *sdp_marker;     /* SDP address marker: "IP4" or "IP6"     */
 
-	gchar *user_agent;
-
 	GSList *transactions;
 
 	struct sip_auth registrar;
@@ -496,71 +494,6 @@ static void sign_outgoing_message(struct sipe_core_private *sipe_private,
 	}
 }
 
-static const gchar *sip_transport_user_agent(struct sipe_core_private *sipe_private)
-{
-	struct sip_transport *transport = sipe_private->transport;
-
-	if (!transport->user_agent) {
-		const gchar *useragent = sipe_backend_setting(SIPE_CORE_PUBLIC,
-							      SIPE_SETTING_USER_AGENT);
-		if (is_empty(useragent)) {
-/*@TODO: better approach to define _user_ OS, it's version and host architecture */
-/* ref: lzodefs.h */
-#if defined(__linux__) || defined(__linux) || defined(__LINUX__)
-  #define SIPE_TARGET_PLATFORM "linux"
-#elif defined(__NetBSD__) ||defined( __OpenBSD__) || defined(__FreeBSD__)
-  #define SIPE_TARGET_PLATFORM "bsd"
-#elif defined(__APPLE__) || defined(__MACOS__)
-  #define SIPE_TARGET_PLATFORM "macosx"
-#elif defined(_AIX) || defined(__AIX__) || defined(__aix__)
-  #define SIPE_TARGET_PLATFORM "aix"
-#elif defined(__solaris__) || defined(__sun)
-  #define SIPE_TARGET_PLATFORM "sun"
-#elif defined(_WIN32)
-  #define SIPE_TARGET_PLATFORM "win"
-#elif defined(__CYGWIN__)
-  #define SIPE_TARGET_PLATFORM "cygwin"
-#elif defined(__hpux__)
-  #define SIPE_TARGET_PLATFORM "hpux"
-#elif defined(__sgi__)
-  #define SIPE_TARGET_PLATFORM "irix"
-#else
-  #define SIPE_TARGET_PLATFORM "unknown"
-#endif
-
-#if defined(__amd64__) || defined(__x86_64__) || defined(_M_AMD64)
-  #define SIPE_TARGET_ARCH "x86_64"
-#elif defined(__386__) || defined(__i386__) || defined(__i386) || defined(_M_IX86) || defined(_M_I386)
-  #define SIPE_TARGET_ARCH "i386"
-#elif defined(__ppc64__)
-  #define SIPE_TARGET_ARCH "ppc64"
-#elif defined(__powerpc__) || defined(__powerpc) || defined(__ppc__) || defined(__PPC__) || defined(_M_PPC) || defined(_ARCH_PPC) || defined(_ARCH_PWR)
-  #define SIPE_TARGET_ARCH "ppc"
-#elif defined(__hppa__) || defined(__hppa)
-  #define SIPE_TARGET_ARCH "hppa"
-#elif defined(__mips__) || defined(__mips) || defined(_MIPS_ARCH) || defined(_M_MRX000)
-  #define SIPE_TARGET_ARCH "mips"
-#elif defined(__s390__) || defined(__s390) || defined(__s390x__) || defined(__s390x)
-  #define SIPE_TARGET_ARCH "s390"
-#elif defined(__sparc__) || defined(__sparc) || defined(__sparcv8)
-  #define SIPE_TARGET_ARCH "sparc"
-#elif defined(__arm__)
-  #define SIPE_TARGET_ARCH "arm"
-#else
-  #define SIPE_TARGET_ARCH "other"
-#endif
-			gchar *backend = sipe_backend_version();
-			transport->user_agent = g_strdup_printf("%s Sipe/" PACKAGE_VERSION " (" SIPE_TARGET_PLATFORM "-" SIPE_TARGET_ARCH "; %s)",
-								backend,
-								transport->server_version ? transport->server_version : "");
-			g_free(backend);
-		} else {
-			transport->user_agent = g_strdup(useragent);
-		}
-	}
-	return(transport->user_agent);
-}
-
 /*
  * NOTE: Do *NOT* call sipe_backend_transport_message(...) directly!
  *
@@ -634,7 +567,7 @@ void sip_transport_response(struct sipe_core_private *sipe_private,
 		sipmsg_add_header(msg, "Content-Length", "0");
 	}
 
-	sipmsg_add_header(msg, "User-Agent", sip_transport_user_agent(sipe_private));
+	sipmsg_add_header(msg, "User-Agent", sipe_core_user_agent(sipe_private));
 
 	msg->response = code;
 
@@ -794,7 +727,7 @@ struct transaction *sip_transport_request_timeout(struct sipe_core_private *sipe
 			theirepid ? theirepid : "",
 			cseq,
 			method,
-			sip_transport_user_agent(sipe_private),
+			sipe_core_user_agent(sipe_private),
 			callid,
 			route,
 			addheaders ? addheaders : "",
@@ -1077,8 +1010,6 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 
 				if (server_hdr && !transport->server_version) {
 					transport->server_version = g_strdup(server_hdr);
-					g_free(transport->user_agent);
-					transport->user_agent = NULL;
 				}
 
 				auth_hdr = sipmsg_find_auth_header(msg,
@@ -1532,7 +1463,6 @@ void sip_transport_disconnect(struct sipe_core_private *sipe_private)
 		g_free(transport->uri_address);
 		g_free(transport->ip_address);
 		g_free(transport->epid);
-		g_free(transport->user_agent);
 
 		while (transport->transactions)
 			transactions_remove(sipe_private,

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -56,6 +56,7 @@ struct sipe_core_private {
 	GSList *lync_autodiscover_servers;           /* Lync autodiscover */
 	const struct sip_service_data *service_data; /* autodiscovery SRV records */
 	const struct sip_address_data *address_data; /* autodiscovery A records */
+	gchar *user_agent;
 	guint transport_type;
 	guint authentication_type;
 
@@ -245,6 +246,7 @@ void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
 void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private);
 void sipe_core_email_authentication(struct sipe_core_private *sipe_private,
 				    struct sipe_http_request *request);
+const gchar *sipe_core_user_agent(struct sipe_core_private *sipe_private);
 
 /*
   Local Variables:
