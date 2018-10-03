@@ -130,11 +130,12 @@ static void sipe_http_request_send(struct sipe_http_connection_public *conn_publ
 
 	header = g_strdup_printf("%s /%s HTTP/1.1\r\n"
 				 "Host: %s\r\n"
-				 "User-Agent: Sipe/" PACKAGE_VERSION "\r\n"
+				 "User-Agent: %s\r\n"
 				 "%s%s%s%s",
 				 content ? "POST" : "GET",
 				 req->path,
 				 conn_public->host,
+				 sipe_core_user_agent(conn_public->sipe_private),
 				 conn_public->cached_authorization ? conn_public->cached_authorization :
 				 req->authorization ? req->authorization : "",
 				 req->headers ? req->headers : "",
