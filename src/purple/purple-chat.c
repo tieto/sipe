@@ -260,13 +260,26 @@ static void sipe_purple_chat_menu_lock_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat
 
 #ifdef HAVE_VV
 
-static void sipe_purple_chat_menu_join_call_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
-					       PurpleConversation *conv)
+static void
+join_conference_call(PurpleConversation *conv, gboolean with_video)
 {
 	struct sipe_core_public *sipe_public = PURPLE_CONV_TO_SIPE_CORE_PUBLIC;
 	struct sipe_chat_session *chat_session = sipe_purple_chat_get_session(conv);
-	SIPE_DEBUG_INFO("sipe_purple_chat_join_call_cb: %p %p", conv, chat_session);
-	sipe_core_media_connect_conference(sipe_public, chat_session);
+	sipe_core_media_connect_conference(sipe_public, chat_session, with_video);
+}
+
+static void sipe_purple_chat_menu_join_call_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
+					       PurpleConversation *conv)
+{
+	SIPE_DEBUG_INFO("sipe_purple_chat_join_call_cb: %p", conv);
+	join_conference_call(conv, FALSE);
+}
+
+static void sipe_purple_chat_menu_join_video_call_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
+						     PurpleConversation *conv)
+{
+	SIPE_DEBUG_INFO("sipe_purple_chat_join_video_call_cb: %p", conv);
+	join_conference_call(conv, TRUE);
 }
 
 #ifdef HAVE_APPSHARE
@@ -352,12 +365,15 @@ sipe_purple_chat_menu(PurpleChat *chat)
 		case SIPE_CHAT_TYPE_MULTIPARTY:
 #ifdef HAVE_VV
 			if (!sipe_core_media_get_call(PURPLE_CONV_TO_SIPE_CORE_PUBLIC)) {
-				act = NULL;
+				act = purple_action_menu_new(_("Join conference video call"),
+							     PURPLE_CALLBACK(sipe_purple_chat_menu_join_video_call_cb),
+							     conv, NULL);
+				menu = g_list_prepend(menu, act);
+
 				act = purple_action_menu_new(_("Join conference call"),
 							     PURPLE_CALLBACK(sipe_purple_chat_menu_join_call_cb),
 							     conv, NULL);
-				if (act)
-					menu = g_list_prepend(menu, act);
+				menu = g_list_prepend(menu, act);
 			}
 #ifdef HAVE_APPSHARE
 			role = sipe_core_conf_get_appshare_role(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,

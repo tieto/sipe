@@ -281,7 +281,8 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 #ifdef HAVE_VV
 			if (session->is_call)
 				sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
-								   session->chat_session);
+								   session->chat_session,
+								   FALSE);
 #endif
 		}
 		sipe_xml_free(xn_response);
@@ -1198,7 +1199,8 @@ call_accept_cb(struct sipe_core_private *sipe_private, struct conf_accept_ctx *c
 
 	if (session) {
 		sipe_core_media_connect_conference(SIPE_CORE_PUBLIC,
-						   session->chat_session);
+						   session->chat_session,
+						   FALSE);
 	}
 }
 

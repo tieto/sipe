@@ -1579,7 +1579,8 @@ conference_audio_muted_cb(struct sipe_media_stream *stream, gboolean is_muted)
 }
 
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
-					struct sipe_chat_session *chat_session)
+					struct sipe_chat_session *chat_session,
+					gboolean with_video)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_media_call_private *call_private;
@@ -1617,6 +1618,8 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 	call_private->conference_session = session;
 	SIPE_MEDIA_CALL->call_reject_cb = av_call_reject_cb;
 
+	g_free(av_uri);
+
 	stream = sipe_media_stream_add(SIPE_MEDIA_CALL, "audio",
 				       SIPE_MEDIA_AUDIO,
 				       call_private->ice_version,
@@ -1627,11 +1630,23 @@ void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
 					  _("Error creating audio stream"));
 
 		sipe_media_hangup(call_private);
+		return;
 	}
 
 	stream->mute_cb = conference_audio_muted_cb;
 
-	g_free(av_uri);
+	if (with_video) {
+		stream = sipe_media_stream_add(SIPE_MEDIA_CALL, "video",
+					       SIPE_MEDIA_VIDEO,
+					       call_private->ice_version,
+					       TRUE, VIDEO_SSRC_COUNT);
+		if (!stream) {
+			sipe_backend_notify_error(sipe_public,
+						  _("Error occurred"),
+						  _("Error creating video stream"));
+			sipe_media_hangup(call_private);
+		}
+	}
 
 	// Processing continues in stream_initialized_cb
 }
