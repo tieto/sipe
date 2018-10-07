@@ -854,6 +854,10 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 						 backend_candidates);
 	sipe_media_candidate_list_free(backend_candidates);
 
+	if (sipe_strequal(stream->id, "video") && call_private->conference_session) {
+		stream->media_source_id = call_private->conference_session->video_media_source_id;
+	}
+
 	SIPE_MEDIA_STREAM_PRIVATE->remote_candidates_and_codecs_set = TRUE;
 
 	return TRUE;
@@ -1422,6 +1426,8 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 			ssrc_range_allocate(&SIPE_MEDIA_CALL_PRIVATE->ssrc_ranges,
 					    ssrc_count);
 	}
+
+	SIPE_MEDIA_STREAM->media_source_id = SIPE_MSRTP_VSR_SOURCE_ANY;
 
 	SIPE_MEDIA_STREAM->backend_private =
 			sipe_backend_media_add_stream(SIPE_MEDIA_STREAM,

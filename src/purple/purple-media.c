@@ -598,12 +598,14 @@ on_sending_rtcp_cb(SIPE_UNUSED_PARAMETER GObject *rtpsession,
 	if (sipe_strequal(send_codec->encoding_name, "H264")) {
 		GstRTCPBuffer rtcp_buffer = GST_RTCP_BUFFER_INIT;
 		guint32 ssrc;
+		struct sipe_media_stream *stream;
 
 		g_object_get(fssession, "ssrc", &ssrc, NULL);
+		stream = g_object_get_data(G_OBJECT(fssession), "sipe-media-stream");
 
 		gst_rtcp_buffer_map(buffer, GST_MAP_READWRITE, &rtcp_buffer);
 		was_changed = write_ms_h264_video_source_request(&rtcp_buffer,
-				ssrc, send_codec->id, SIPE_MSRTP_VSR_SOURCE_ANY);
+				ssrc, send_codec->id, stream->media_source_id);
 		gst_rtcp_buffer_unmap(&rtcp_buffer);
 	}
 
@@ -783,6 +785,10 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 			g_object_set(fssession, "ssrc",
 				     stream->ssrc_range->begin, NULL);
 		}
+
+		g_object_set_data(G_OBJECT(fssession),
+				  "sipe-media-stream",
+				  stream);
 
 		g_object_get(fssession, "media-type", &media_type, NULL);
 
