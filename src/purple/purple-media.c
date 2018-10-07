@@ -554,7 +554,7 @@ stream_writable_cb(SIPE_UNUSED_PARAMETER PurpleMediaManager *manager,
 
 static gboolean
 write_ms_h264_video_source_request(GstRTCPBuffer *buffer, guint32 ssrc,
-                                   guint8 payload_type)
+                                   guint8 payload_type, guint32 media_source_id)
 {
 	GstRTCPPacket packet;
 	guint8 *fci_data;
@@ -565,7 +565,7 @@ write_ms_h264_video_source_request(GstRTCPBuffer *buffer, guint32 ssrc,
 
 	gst_rtcp_packet_fb_set_type(&packet, GST_RTCP_PSFB_TYPE_AFB);
 	gst_rtcp_packet_fb_set_sender_ssrc(&packet, ssrc);
-	gst_rtcp_packet_fb_set_media_ssrc(&packet, SIPE_MSRTP_VSR_SOURCE_ANY);
+	gst_rtcp_packet_fb_set_media_ssrc(&packet, media_source_id);
 
 	if (!gst_rtcp_packet_fb_set_fci_length(&packet,
 					       SIPE_MSRTP_VSR_FCI_WORDLEN)) {
@@ -575,7 +575,8 @@ write_ms_h264_video_source_request(GstRTCPBuffer *buffer, guint32 ssrc,
 
 	fci_data = gst_rtcp_packet_fb_get_fci(&packet);
 
-	sipe_core_msrtp_write_video_source_request(fci_data, payload_type);
+	sipe_core_msrtp_write_video_source_request(fci_data, payload_type,
+						   media_source_id);
 
 	return TRUE;
 }
@@ -602,7 +603,7 @@ on_sending_rtcp_cb(SIPE_UNUSED_PARAMETER GObject *rtpsession,
 
 		gst_rtcp_buffer_map(buffer, GST_MAP_READWRITE, &rtcp_buffer);
 		was_changed = write_ms_h264_video_source_request(&rtcp_buffer,
-				ssrc, send_codec->id);
+				ssrc, send_codec->id, SIPE_MSRTP_VSR_SOURCE_ANY);
 		gst_rtcp_buffer_unmap(&rtcp_buffer);
 	}
 

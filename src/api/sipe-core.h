@@ -683,9 +683,11 @@ void sipe_core_status_set(struct sipe_core_public *sipe_public,
  *               of @c buffer MUST be at least @c SIPE_MSRTP_VSR_HEADER_LEN +
  *               @c SIPE_MSRTP_VSR_ENTRY_LEN.
  * @param payload_type (in) payload ID of the codec negotiated with the peer.
+ * @param media_source_id (in) ID of the video stream to request.
  */
 void sipe_core_msrtp_write_video_source_request(guint8 *buffer,
-						guint8 payload_type);
+						guint8 payload_type,
+						guint32 media_source_id);
 
 /**
  * Fills @buffer with customized Payload Content Scalability Information packet
