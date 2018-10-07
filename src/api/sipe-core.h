@@ -499,9 +499,11 @@ sipe_core_media_stream_end(struct sipe_media_stream *stream);
  *
  * @param sipe_public (in) SIPE core data.
  * @param chat_session (in) chat session structure
+ * @param with_video (in) TRUE if a video call should be created.
  */
 void sipe_core_media_connect_conference(struct sipe_core_public *sipe_public,
-					struct sipe_chat_session *chat_session);
+					struct sipe_chat_session *chat_session,
+					gboolean with_video);
 
 /**
  * Retrieves the media call in progress
