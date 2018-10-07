@@ -70,6 +70,7 @@ struct sip_session {
 	GHashTable *conf_unconfirmed_messages;
 	gchar *audio_video_entity;
 	guint audio_media_id;
+	guint video_media_source_id;
 
 	/*
 	 * Media call related fields

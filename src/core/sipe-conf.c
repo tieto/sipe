@@ -1161,35 +1161,32 @@ process_conference_av_endpoint(const sipe_xml *endpoint,
 			       struct sip_session *session)
 {
 	const sipe_xml *media;
-	const gchar *new_entity;
 
-	if (!sipe_strequal(user_uri, self_uri)) {
-		/* We are interested only in our own endpoint data. */
-		return;
+	if (sipe_strequal(user_uri, self_uri)) {
+		const gchar *new_entity = sipe_xml_attribute(endpoint, "entity");
+
+		if (!sipe_strequal(session->audio_video_entity, new_entity)) {
+			g_free(session->audio_video_entity);
+			session->audio_video_entity = g_strdup(new_entity);
+		}
 	}
-
-	new_entity = sipe_xml_attribute(endpoint, "entity");
-	if (!sipe_strequal(session->audio_video_entity, new_entity)) {
-		g_free(session->audio_video_entity);
-		session->audio_video_entity = g_strdup(new_entity);
-	}
-
-	session->audio_media_id = 0;
 
 	media = sipe_xml_child(endpoint, "media");
 	for (; media; media = sipe_xml_twin(media)) {
 		gchar *type = sipe_xml_data(sipe_xml_child(media, "type"));
 
-		if (sipe_strequal(type, "audio")) {
-			session->audio_media_id =
-					sipe_xml_int_attribute(media, "id", 0);
+		if (sipe_strequal(type, "audio") && sipe_strequal(user_uri, self_uri)) {
+			session->audio_media_id = sipe_xml_int_attribute(media, "id", 0);
+		} else if (sipe_strequal(type, "video") && session->video_media_source_id == 0) {
+			const sipe_xml *child = sipe_xml_child(media, "media-source-id");
+			const gchar *data = sipe_xml_data(child);
+
+			if (data) {
+				session->video_media_source_id = atoi(data);
+			}
 		}
 
 		g_free(type);
-
-		if (session->audio_media_id != 0) {
-			break;
-		}
 	}
 }
 
