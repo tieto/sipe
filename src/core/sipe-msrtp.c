@@ -104,7 +104,8 @@ enum
 
 void
 sipe_core_msrtp_write_video_source_request(guint8 *buffer,
-					   guint8 payload_type)
+					   guint8 payload_type,
+					   guint32 media_source_id)
 {
 	static guint8 bit_rate_histogram[] = {
 		0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
@@ -123,7 +124,7 @@ sipe_core_msrtp_write_video_source_request(guint8 *buffer,
 	SIPE_WRITE_UINT16_BE(buffer, SIPE_MSRTP_VSR_HEADER_LEN +
 			     SIPE_MSRTP_VSR_ENTRY_LEN);
 	// Requested Media Source ID
-	SIPE_WRITE_UINT32_BE(buffer, SIPE_MSRTP_VSR_SOURCE_ANY);
+	SIPE_WRITE_UINT32_BE(buffer, media_source_id);
 	SIPE_WRITE_UINT16_BE(buffer, 1); // Request Id
 	SIPE_WRITE_UINT16_BE(buffer, 0); // Reserve1
 	SIPE_WRITE_UINT8(buffer, 0); // Version
