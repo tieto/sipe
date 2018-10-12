@@ -665,16 +665,14 @@ static void sipe_purple_buddy_add_new_domain_cb(PurpleBuddy *buddy,
 			      gc);
 }
 
+#ifdef HAVE_APPSHARE_SERVER
 static void sipe_purple_buddy_share_desktop_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy,
 					       SIPE_UNUSED_PARAMETER gpointer parameter)
 {
-#ifdef HAVE_APPSHARE_SERVER
 	sipe_core_appshare_share_desktop(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
 					 purple_buddy_get_name(buddy));
-#endif
 }
 
-#ifdef HAVE_APPSHARE_SERVER
 static void sipe_purple_buddy_give_desktop_control_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy,
 						      gpointer parameter)
 {
@@ -689,8 +687,7 @@ static void sipe_purple_buddy_take_desktop_control_cb(SIPE_UNUSED_PARAMETER Purp
 
 #else
 static void sipe_purple_buddy_share_desktop_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy,
-					       SIPE_UNUSED_PARAMETER gpointer parameter)
-{}
+					       SIPE_UNUSED_PARAMETER gpointer parameter) {}
 static void sipe_purple_buddy_give_desktop_control_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy,
 						      SIPE_UNUSED_PARAMETER gpointer parameter) {}
 static void sipe_purple_buddy_take_desktop_control_cb(SIPE_UNUSED_PARAMETER PurpleBuddy *buddy,
