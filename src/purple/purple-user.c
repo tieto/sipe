@@ -39,6 +39,7 @@
 #endif
 
 #include "sipe-backend.h"
+#include "sipe-common.h"
 #include "sipe-core.h"
 #include "sipe-nls.h"
 
@@ -60,9 +61,14 @@ void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public
 	purple_serv_got_typing_stopped(purple_private->gc, from);
 }
 
-static void ask_cb(gpointer key, int choice)
+static void accept_cb(gpointer key, SIPE_UNUSED_PARAMETER int choice)
 {
-	sipe_core_user_ask_cb(key, choice == 1);
+	sipe_core_user_ask_cb(key, TRUE);
+}
+
+static void decline_cb(gpointer key, SIPE_UNUSED_PARAMETER int choice)
+{
+	sipe_core_user_ask_cb(key, FALSE);
 }
 
 void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
@@ -80,9 +86,9 @@ void sipe_backend_user_ask(struct sipe_core_public *sipe_public,
 #else
 			      purple_private->account, NULL, NULL,
 #endif
-			      key, 2,
-			      accept_label, (PurpleRequestActionCb) ask_cb,
-			      decline_label, (PurpleRequestActionCb) ask_cb);
+			      key, decline_label ? 2 : 1,
+			      accept_label, (PurpleRequestActionCb) accept_cb,
+			      decline_label, (PurpleRequestActionCb) decline_cb);
 }
 
 void sipe_backend_user_close_ask(gpointer key)

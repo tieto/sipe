@@ -685,7 +685,8 @@ void sipe_backend_user_feedback_typing_stop(struct sipe_core_public *sipe_public
  * @param sipe_public   The handle representing the protocol instance
  * @param message       Text of the query to be shown to user
  * @param accept_label  Label to be displayed on UI control that accepts query
- * @param decline_label Label to be displayed on UI control that declines query
+ * @param decline_label Label to be displayed on UI control that declines query.
+ *                      When @c NULL, the control will not be shown.
  * @param key           Opaque handle uniquely identifying the query. Backend
  *                      should store it for the case SIPE core requests the
  *                      query to be closed prematurely.
