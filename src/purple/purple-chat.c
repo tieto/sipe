@@ -285,6 +285,7 @@ sipe_purple_chat_menu_show_presentation_cb(SIPE_UNUSED_PARAMETER PurpleChat *cha
 					      FALSE);
 }
 
+#ifdef HAVE_APPSHARE_SERVER
 static void
 sipe_purple_chat_menu_share_desktop_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
 				       PurpleConversation *conv)
@@ -292,6 +293,7 @@ sipe_purple_chat_menu_share_desktop_cb(SIPE_UNUSED_PARAMETER PurpleChat *chat,
 	sipe_core_conf_share_desktop(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
 				     sipe_purple_chat_get_session(conv));
 }
+#endif
 #endif
 #endif // HAVE_VV
 
@@ -363,12 +365,14 @@ sipe_purple_chat_menu(PurpleChat *chat)
 							     conv, NULL);
 				menu = g_list_prepend(menu, act);
 			}
+#ifdef HAVE_APPSHARE_SERVER
 			if (role != SIPE_APPSHARE_ROLE_PRESENTER) {
 				act = purple_menu_action_new(_("Share my desktop"),
 							     PURPLE_CALLBACK(sipe_purple_chat_menu_share_desktop_cb),
 							     conv, NULL);
 				menu = g_list_prepend(menu, act);
 			}
+#endif
 #endif
 #endif // HAVE_VV
 			act = purple_menu_action_new(_("Meeting entry info"),
