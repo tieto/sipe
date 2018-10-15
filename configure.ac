@@ -475,8 +475,8 @@ AS_IF([test "x$enable_purple" != xno],
 				  PKG_CHECK_MODULES(GIO, [gio-2.0],
 					[ac_have_appshare=yes
 
-					 dnl freerdp-shadow2 is mandatory for appshare server support
-					 PKG_CHECK_MODULES(FREERDP_SHADOW, [freerdp-shadow2],
+					 dnl freerdp-shadow2 & winpr2 is mandatory for appshare server support
+					 PKG_CHECK_MODULES(FREERDP_SHADOW, [freerdp-shadow2 winpr2],
 						[ac_have_appshare_server=yes],
 						[ac_have_appshare_server=no])
 				   ])
