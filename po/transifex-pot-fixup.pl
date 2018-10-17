@@ -33,24 +33,24 @@ my $date;
 # Must be 19 lines (same as header created by intltool-update)
 my @lines = ( <<"END_OF_HEADER"
 # (English) English User Interface strings for pidgin-sipe.
-# Copyright (C) 2008-2011 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2008-2018 SIPE Project <http://sipe.sourceforge.net/>
 # This file is distributed under the same license as the pidgin-sipe package.
-# 
-# 
-# 
+#
+#
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\\n"
 "PO-Revision-Date: $date\\n"
-"Last-Translator: stefanb <chemobejk\@gmail.com>\\n"
-"Language-Team: English <LL\@li.org>\\n"
+"Last-Translator: Stefan Becker <chemobejk\@gmail.com>\\n"
+"Language-Team: English (http://www.transifex.com/stefanb/pidgin-sipe/language/en/)\\n"
 "MIME-Version: 1.0\\n"
 "Content-Type: text/plain; charset=UTF-8\\n"
 "Content-Transfer-Encoding: 8bit\\n"
 "Language: en\\n"
-"Plural-Forms: nplurals=2; plural=(n != 1)\\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\\n"
 END_OF_HEADER
 	    );
 
