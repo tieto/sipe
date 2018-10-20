@@ -18,11 +18,15 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- *
- *
- * NOTE: config.h must be included before sipe-nls.h, otherwise ENABLE_NLS
- *       might be left undefined incorrectly!
  */
+
+/*
+ * config.h must be included for correct definition of ENABLE_NLS.
+ * PACKAGE_NAME is always defined when config.h has been included.
+ */
+#if defined(HAVE_CONFIG_H) && !defined(PACKAGE_NAME)
+#error you must include "config.h" before "sipe-nls.h"
+#endif
 
 #ifdef ENABLE_NLS
 #include <glib/gi18n.h>
