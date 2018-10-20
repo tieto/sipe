@@ -25,7 +25,7 @@
 
 Name:           pidgin-sipe
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.23.3
+Version:        1.24.0
 %if 0%{?_with_git:1}
 Release:        %{gitcount}.%{git}%{?dist}
 Source0:        %{name}-%{git}.tar.bz2
@@ -287,6 +287,9 @@ make %{?_smp_mflags} check
 
 
 %changelog
+* DDD MMM DD 2018 J. D. User <jduser@noreply.com> 1.24.0
+- update to 1.24.0
+
 * Mon Aug 27 2018 J. D. User <jduser@noreply.com> 1.23.3-*git*
 - add BR freerdp-shadow2
 

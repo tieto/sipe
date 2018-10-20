@@ -1,5 +1,9 @@
-version 1.23.3 "Bug Fixes III" (2018-08-20)
-	- appshare: fix black screen with Remmina v1.2.0-rcgit.27 (Jakub Adam)
-	- various minor fixes (Jakub Adam, Michael Olbrich)
-	- fix compilation errors with libpurple 2.14.0 & GCC 8.0 (Jakub Adam, Stefan Becker)
-	- mingw: update fetch script to Pidgin 2.13.0 (Stefan Becker)
+version 1.24.0 "Application Sharing II" (2018-??-??)
+	- Feature #104: Use user agent also for HTTP (Stefan Becker)
+	- Feature #6: Application Sharing Server (Jakub Adam)
+	  * requires freerdp-shadow2
+	- Fixed #343: Build fails on FreeBSD
+	- add timeout handling for media streams (Alaoui Youness)
+	- update AppStream handling (Jakub Adam, Stefan Becker)
+	- fix missing localisation in some code modules (Stefan Becker)
+	- debug log improvements (Stefan Becker)
