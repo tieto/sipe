@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Piotr Drąg <piotrdrag@gmail.com>, 2011-2013,2015-2017
+# Piotr Drąg <piotrdrag@gmail.com>, 2011-2013,2015-2018
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2018-10-18 16:09+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2018-10-18 18:22+0000\n"
+"Last-Translator: Piotr Drąg <piotrdrag@gmail.com>\n"
 "Language-Team: Polish (http://www.transifex.com/stefanb/pidgin-sipe/language/pl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -103,36 +103,36 @@ msgstr "Nie można połączyć udostępniania aplikacji"
 
 #: ../src/core/sipe-appshare.c:753
 msgid "Could not create RDP server."
-msgstr ""
+msgstr "Nie można utworzyć serwera RDP."
 
 #: ../src/core/sipe-appshare.c:770
 msgid "Could not initialize RDP server."
-msgstr ""
+msgstr "Nie można zainicjować serwera RDP."
 
 #: ../src/core/sipe-appshare.c:772
 msgid "Could not start RDP server."
-msgstr ""
+msgstr "Nie można uruchomić serwera RDP."
 
 #: ../src/core/sipe-appshare.c:863
 #, c-format
 msgid "Sharing desktop with %s"
-msgstr ""
+msgstr "Udostępnianie pulpitu użytkownikowi %s"
 
 #: ../src/core/sipe-appshare.c:867
 msgid "Stop presenting"
-msgstr ""
+msgstr "Zatrzymaj prezentację"
 
 #: ../src/core/sipe-appshare.c:902
 msgid "Couldn't initialize application sharing"
-msgstr ""
+msgstr "Nie można zainicjować udostępniania aplikacji"
 
 #: ../src/core/sipe-appshare.c:960
 msgid "Whole desktop"
-msgstr ""
+msgstr "Cały pulpit"
 
 #: ../src/core/sipe-appshare.c:973
 msgid "Monitor to share"
-msgstr ""
+msgstr "Udostępniany monitor"
 
 #: ../src/core/sipe-buddy.c:543 ../src/core/sipe-buddy.c:2334
 msgid "Mobile"
@@ -240,15 +240,15 @@ msgstr "Wyślij wiadomość e-mail…"
 
 #: ../src/core/sipe-buddy.c:2385
 msgid "Take desktop control"
-msgstr ""
+msgstr "Przejmij sterowanie pulpitem"
 
 #: ../src/core/sipe-buddy.c:2390
 msgid "Give desktop control"
-msgstr ""
+msgstr "Oddaj sterowanie pulpitem"
 
 #: ../src/core/sipe-buddy.c:2396 ../src/purple/purple-chat.c:370
 msgid "Share my desktop"
-msgstr ""
+msgstr "Udostępnij pulpit"
 
 #: ../src/core/sipe-cal.c:907
 msgid "Free"
@@ -607,19 +607,19 @@ msgstr "Odebrano wiadomość z nierozpoznaną zawartością od %s"
 
 #: ../src/core/sipe-media.c:870
 msgid "Couldn't create stream"
-msgstr ""
+msgstr "Nie można utworzyć strumienia"
 
 #: ../src/core/sipe-media.c:871
 msgid "Connection timed out"
-msgstr ""
+msgstr "Połączenie przekroczyło czas oczekiwania"
 
 #: ../src/core/sipe-media.c:915
 msgid "Request timed out"
-msgstr ""
+msgstr "Żądanie przekroczyło czas oczekiwania"
 
 #: ../src/core/sipe-media.c:916
 msgid "Call could not be answered"
-msgstr ""
+msgstr "Nie można odebrać rozmowy"
 
 #: ../src/core/sipe-media.c:1007 ../src/core/sipe-media.c:1644
 #: ../src/core/sipe-media.c:1654 ../src/core/sipe-media.c:2074
@@ -824,7 +824,7 @@ msgstr "Przeszkadzać tylko w pilnych przypadkach"
 #. SIPE_ACTIVITY_IN_PRES
 #: ../src/core/sipe-status.c:70
 msgid "Presenting"
-msgstr ""
+msgstr "Trwa prezentacja"
 
 #: ../src/core/sipe-subscriptions.c:193
 msgid "Presence subscription failed!"
@@ -1358,4 +1358,4 @@ msgstr "Błąd zapisu"
 
 #: ../src/purple/purple-user.c:140
 msgid "OK"
-msgstr ""
+msgstr "OK"

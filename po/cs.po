@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Jakub Adam <jakub.adam@ktknet.cz>, 2011-2013,2015-2017
+# Jakub Adam <jakub.adam@ktknet.cz>, 2011-2013,2015-2018
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2018-10-18 16:09+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2018-10-20 16:38+0000\n"
+"Last-Translator: Jakub Adam <jakub.adam@ktknet.cz>\n"
 "Language-Team: Czech (http://www.transifex.com/stefanb/pidgin-sipe/language/cs/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -103,36 +103,36 @@ msgstr "Nepodařilo se připojit ke vzdálené ploše"
 
 #: ../src/core/sipe-appshare.c:753
 msgid "Could not create RDP server."
-msgstr ""
+msgstr "Nelze vytvořit RDP server."
 
 #: ../src/core/sipe-appshare.c:770
 msgid "Could not initialize RDP server."
-msgstr ""
+msgstr "Nelze nastavit parametry RDP serveru."
 
 #: ../src/core/sipe-appshare.c:772
 msgid "Could not start RDP server."
-msgstr ""
+msgstr "Nelze spustit RDP server."
 
 #: ../src/core/sipe-appshare.c:863
 #, c-format
 msgid "Sharing desktop with %s"
-msgstr ""
+msgstr "Sdílím plochu s: %s"
 
 #: ../src/core/sipe-appshare.c:867
 msgid "Stop presenting"
-msgstr ""
+msgstr "Ukončit prezentaci"
 
 #: ../src/core/sipe-appshare.c:902
 msgid "Couldn't initialize application sharing"
-msgstr ""
+msgstr "Nelze zahájit sdílení plochy"
 
 #: ../src/core/sipe-appshare.c:960
 msgid "Whole desktop"
-msgstr ""
+msgstr "Celá plocha"
 
 #: ../src/core/sipe-appshare.c:973
 msgid "Monitor to share"
-msgstr ""
+msgstr "Monitor k nasdílení"
 
 #: ../src/core/sipe-buddy.c:543 ../src/core/sipe-buddy.c:2334
 msgid "Mobile"
@@ -240,15 +240,15 @@ msgstr "Odeslat e-mail..."
 
 #: ../src/core/sipe-buddy.c:2385
 msgid "Take desktop control"
-msgstr ""
+msgstr "Odebrat kontrolu nad plochou"
 
 #: ../src/core/sipe-buddy.c:2390
 msgid "Give desktop control"
-msgstr ""
+msgstr "Předat kontrolu nad plochou"
 
 #: ../src/core/sipe-buddy.c:2396 ../src/purple/purple-chat.c:370
 msgid "Share my desktop"
-msgstr ""
+msgstr "Sdílet plochu"
 
 #: ../src/core/sipe-cal.c:907
 msgid "Free"
@@ -607,19 +607,19 @@ msgstr "Obdržena zpráva s nerozpoznaným obsahem od uživatele %s"
 
 #: ../src/core/sipe-media.c:870
 msgid "Couldn't create stream"
-msgstr ""
+msgstr "Nelze vytvořit datový proud"
 
 #: ../src/core/sipe-media.c:871
 msgid "Connection timed out"
-msgstr ""
+msgstr "Spojení se nezdařilo navázat v daném čase"
 
 #: ../src/core/sipe-media.c:915
 msgid "Request timed out"
-msgstr ""
+msgstr "Požadavek nebyl zpracován v daném čase"
 
 #: ../src/core/sipe-media.c:916
 msgid "Call could not be answered"
-msgstr ""
+msgstr "Volaný uživatel neodpovídá"
 
 #: ../src/core/sipe-media.c:1007 ../src/core/sipe-media.c:1644
 #: ../src/core/sipe-media.c:1654 ../src/core/sipe-media.c:2074
@@ -824,7 +824,7 @@ msgstr "Pouze urgentní záležitosti"
 #. SIPE_ACTIVITY_IN_PRES
 #: ../src/core/sipe-status.c:70
 msgid "Presenting"
-msgstr ""
+msgstr "Prezentuji"
 
 #: ../src/core/sipe-subscriptions.c:193
 msgid "Presence subscription failed!"
@@ -1358,4 +1358,4 @@ msgstr "Chyba zápisu"
 
 #: ../src/purple/purple-user.c:140
 msgid "OK"
-msgstr ""
+msgstr "OK"
