@@ -1,7 +1,7 @@
 -------------------------------------------------------------------
-Sat Oct 20 17:35:00 UTC 2018 - chemobejk@gmail.com
+Sat Nov 10 15:40:00 UTC 2018 - chemobejk@gmail.com
 
-- Update to version 1.24.0 "Application Sharing II" (2018-??-??)
+- Update to version 1.24.0 "Application Sharing II" (2018-11-10)
     - Feature #104: Use user agent also for HTTP (Stefan Becker)
     - Feature #6: Application Sharing Server (Jakub Adam)
       * requires freerdp-shadow2
@@ -39,7 +39,7 @@ Sun Feb 25 13:05:00 UTC 2018 - chemobejk@gmail.com
 -------------------------------------------------------------------
 Sat Oct 28 15:18:00 UTC 2017 - chemobejk@gmail.com
 
-- Update to version 1.23.0 "D-Bus, IPv6, OS X 10.11+" (2017-10-??)
+- Update to version 1.23.0 "D-Bus, IPv6, OS X 10.11+" (2017-10-28)
     - Feature #101: Mac OS X 10.13 OpenSSL support (Stefan Becker)
     - Feature #100: Extend libpurple D-Bus interface (Stefan Becker)
     - Feature #99: IPv6 addresses in SIP & SDP messages (Stefan Becker)

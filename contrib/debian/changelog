@@ -1,6 +1,6 @@
 pidgin-sipe (1.24.0-1) unstable; urgency=low
 
-  * New version 1.24.0 "Application Sharing II" (2018-??-??)
+  * New version 1.24.0 "Application Sharing II" (2018-11-10)
 	- Feature #104: Use user agent also for HTTP (Stefan Becker)
 	- Feature #6: Application Sharing Server (Jakub Adam)
 	  * requires freerdp-shadow2
@@ -10,7 +10,7 @@ pidgin-sipe (1.24.0-1) unstable; urgency=low
 	- fix missing localisation in some code modules (Stefan Becker)
 	- debug log improvements (Stefan Becker)
 
- -- Stefan Becker <chemobejk@gmail.com>  Sat, 20 Oct 2018 20:34:00 +0300
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 10 Nov 2018 17:38:00 +0200
 
 pidgin-sipe (1.23.3-1) unstable; urgency=low
 

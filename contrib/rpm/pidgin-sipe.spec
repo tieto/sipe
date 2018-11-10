@@ -287,7 +287,7 @@ make %{?_smp_mflags} check
 
 
 %changelog
-* DDD MMM DD 2018 J. D. User <jduser@noreply.com> 1.24.0
+* Sat Nov 10 2018 J. D. User <jduser@noreply.com> 1.24.0
 - update to 1.24.0
 
 * Mon Aug 27 2018 J. D. User <jduser@noreply.com> 1.23.3-*git*
