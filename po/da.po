@@ -5,15 +5,15 @@
 # 
 # 
 # Translators:
-# Joe Hansen <joedalton2@yahoo.dk>, 2013,2015-2017
+# Joe Hansen <joedalton2@yahoo.dk>, 2013,2015-2018
 # Stefan Becker <chemobejk@gmail.com>, 2011
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2018-10-18 16:09+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2018-11-08 07:32+0000\n"
+"Last-Translator: Joe Hansen <joedalton2@yahoo.dk>\n"
 "Language-Team: Danish (http://www.transifex.com/stefanb/pidgin-sipe/language/da/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -103,36 +103,36 @@ msgstr "Kunne ikke forbinde programdeling"
 
 #: ../src/core/sipe-appshare.c:753
 msgid "Could not create RDP server."
-msgstr ""
+msgstr "Kunne ikke oprette RDP-server."
 
 #: ../src/core/sipe-appshare.c:770
 msgid "Could not initialize RDP server."
-msgstr ""
+msgstr "Kunne ikke initialisere RDP-server."
 
 #: ../src/core/sipe-appshare.c:772
 msgid "Could not start RDP server."
-msgstr ""
+msgstr "Kunne ikke starte RDP-server."
 
 #: ../src/core/sipe-appshare.c:863
 #, c-format
 msgid "Sharing desktop with %s"
-msgstr ""
+msgstr "Deler skrivebord med %s"
 
 #: ../src/core/sipe-appshare.c:867
 msgid "Stop presenting"
-msgstr ""
+msgstr "Stop præsentation"
 
 #: ../src/core/sipe-appshare.c:902
 msgid "Couldn't initialize application sharing"
-msgstr ""
+msgstr "Kunne ikke initialisere programdeling"
 
 #: ../src/core/sipe-appshare.c:960
 msgid "Whole desktop"
-msgstr ""
+msgstr "Hele skrivebordet"
 
 #: ../src/core/sipe-appshare.c:973
 msgid "Monitor to share"
-msgstr ""
+msgstr "Skærm at dele"
 
 #: ../src/core/sipe-buddy.c:543 ../src/core/sipe-buddy.c:2334
 msgid "Mobile"
@@ -238,15 +238,15 @@ msgstr "Send e-post ..."
 
 #: ../src/core/sipe-buddy.c:2385
 msgid "Take desktop control"
-msgstr ""
+msgstr "Overtag skrivebordskontrol"
 
 #: ../src/core/sipe-buddy.c:2390
 msgid "Give desktop control"
-msgstr ""
+msgstr "Giv skrivebordskontrol"
 
 #: ../src/core/sipe-buddy.c:2396 ../src/purple/purple-chat.c:370
 msgid "Share my desktop"
-msgstr ""
+msgstr "Del mit skrivebord"
 
 #: ../src/core/sipe-cal.c:907
 msgid "Free"
@@ -605,19 +605,19 @@ msgstr "Modtog en besked med ukendt indhold fra %s"
 
 #: ../src/core/sipe-media.c:870
 msgid "Couldn't create stream"
-msgstr ""
+msgstr "Kunne ikke oprette strøm"
 
 #: ../src/core/sipe-media.c:871
 msgid "Connection timed out"
-msgstr ""
+msgstr "Forbindelse fik tidsudløb"
 
 #: ../src/core/sipe-media.c:915
 msgid "Request timed out"
-msgstr ""
+msgstr "Forespørgsel fik tidsudløb"
 
 #: ../src/core/sipe-media.c:916
 msgid "Call could not be answered"
-msgstr ""
+msgstr "Opkald kunne ikke besvares"
 
 #: ../src/core/sipe-media.c:1007 ../src/core/sipe-media.c:1644
 #: ../src/core/sipe-media.c:1654 ../src/core/sipe-media.c:2074
@@ -822,7 +822,7 @@ msgstr "Kun vigtige afbrydelser"
 #. SIPE_ACTIVITY_IN_PRES
 #: ../src/core/sipe-status.c:70
 msgid "Presenting"
-msgstr ""
+msgstr "Præsenterer"
 
 #: ../src/core/sipe-subscriptions.c:193
 msgid "Presence subscription failed!"
@@ -1356,4 +1356,4 @@ msgstr "Skrivefejl"
 
 #: ../src/purple/purple-user.c:140
 msgid "OK"
-msgstr ""
+msgstr "O.k."
