@@ -705,33 +705,7 @@ sipe_appshare_get_role(struct sipe_media_call *call)
 static void
 set_shared_display_area(rdpShadowServer *server, guint monitor_id)
 {
-	if (monitor_id == 0) {
-		MONITOR_DEF monitors[16];
-		int monitor_count;
-		int i;
-		UINT16 maxWidth = 0;
-		UINT16 maxHeight = 0;
-
-		monitor_count = shadow_enum_monitors(monitors, 16);
-		for (i = 0; i != monitor_count; ++i) {
-			MONITOR_DEF *m = &monitors[i];
-			if (m->right > maxWidth) {
-				maxWidth = m->right;
-			}
-			if (m->bottom >  maxHeight) {
-				maxHeight = m->bottom;
-			}
-		}
-
-		server->subRect.top = 0;
-		server->subRect.left = 0;
-		server->subRect.right = maxWidth;
-		server->subRect.bottom = maxHeight;
-		server->shareSubRect = TRUE;
-	} else {
-		// Index 0 is reserved for "whole desktop" choice.
-		server->selectedMonitor = monitor_id - 1;
-	}
+	server->selectedMonitor = monitor_id;
 }
 
 static void
@@ -951,13 +925,11 @@ present_monitor_choice(struct sipe_core_public *sipe_public, const gchar *who)
 	monitor_count = shadow_enum_monitors(monitors, 16);
 
 	if (monitor_count == 1) {
-		// Don't show choice dialog, share whole desktop right away.
+		// Skip the choice, use the first (only) display right away.
 		monitor_selected_cb(SIPE_CORE_PRIVATE, g_strdup(who), 0);
 	} else {
 		GSList *choices = NULL;
 		int i;
-
-		choices = g_slist_append(choices, g_strdup(_("Whole desktop")));
 
 		for (i = 0; i != monitor_count; ++i) {
 			MONITOR_DEF *mon = &monitors[i];
