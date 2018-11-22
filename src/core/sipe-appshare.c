@@ -702,10 +702,42 @@ sipe_appshare_get_role(struct sipe_media_call *call)
 }
 
 #ifdef HAVE_APPSHARE_SERVER
+
+/* Limit shared screen size to 2160p. Screen updates of larger monitors might
+ * not fit into MultifragMaxRequestSize. */
+#define APPSHARE_MAX_SCREEN_WIDTH 3840
+#define APPSHARE_MAX_SCREEN_HEIGHT 2160
+
 static void
 set_shared_display_area(rdpShadowServer *server, guint monitor_id)
 {
+	MONITOR_DEF monitors[16];
+	MONITOR_DEF *monitor;
+	UINT32 monitor_count;
+
+	monitor_count = shadow_enum_monitors(monitors, 16);
+
+	if (monitor_id >= monitor_count) {
+		server->selectedMonitor = 0;
+		return;
+	}
+
 	server->selectedMonitor = monitor_id;
+
+	monitor = &monitors[monitor_id];
+	if ((monitor->right - monitor->left) > APPSHARE_MAX_SCREEN_WIDTH ||
+	    (monitor->bottom - monitor->top) > APPSHARE_MAX_SCREEN_HEIGHT) {
+		server->subRect.top = 0;
+		server->subRect.left = 0;
+		server->subRect.right = MIN(monitor->right - monitor->left,
+					    APPSHARE_MAX_SCREEN_WIDTH);
+		server->subRect.bottom = MIN(monitor->bottom - monitor->top,
+					     APPSHARE_MAX_SCREEN_HEIGHT);
+		server->shareSubRect = TRUE;
+
+		SIPE_DEBUG_INFO("Cropping the shared screen to %dx%d",
+				server->subRect.right, server->subRect.bottom);
+	}
 }
 
 static void
