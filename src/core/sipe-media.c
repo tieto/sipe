@@ -431,6 +431,7 @@ static GList *
 get_local_codecs(struct sipe_media_call_private *call_private,
 		 struct sipe_media_stream_private *stream_private)
 {
+	struct sipe_core_private *sipe_private = call_private->sipe_private;
 	gboolean is_conference = g_strstr_len(SIPE_MEDIA_CALL->with,
 					      strlen(SIPE_MEDIA_CALL->with),
 					      "app:conf:audio-video:") != NULL;
@@ -446,12 +447,12 @@ get_local_codecs(struct sipe_media_call_private *call_private,
 		     * long, Communicator rejects such SDP message and does not
 		     * support the codec anyway. */
 		    sipe_strequal(name,"THEORA") ||
-		    /* For some yet unknown reason, A/V conferencing server
-		     * does not accept SIPE audio encoded with SIREN. We are
-		     * still able to decode incoming SIREN from server and with
-		     * MSOC client, bidirectional call using the codec works.
-		     * Until resolved, resort to PCMA or PCMU in conferences. */
-		    (is_conference && sipe_strequal(name,"SIREN"))) {
+		    /* For an unknown reason, MS Lync A/V conferencing server
+		     * does not accept SIPE audio encoded with SIREN. Disable
+		     * the codec when SIPE is connected to a server version
+		     * prior Skype for Business. */
+		    (!SIPE_CORE_PRIVATE_FLAG_IS(SFB) && is_conference &&
+		     sipe_strequal(name,"SIREN"))) {
 			GList *tmp;
 			sipe_backend_codec_free(codec);
 			tmp = i->next;
