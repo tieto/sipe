@@ -1246,33 +1246,12 @@ sipe_backend_get_local_codecs(struct sipe_media_call *media,
 	GList *codecs = purple_media_get_codecs(media->backend_private->m,
 						stream->id);
 	GList *i = codecs;
-	gboolean is_conference = (g_strstr_len(media->with, strlen(media->with),
-					       "app:conf:audio-video:") != NULL);
 
-	/*
-	 * Do not announce Theora. Its optional parameters are too long,
-	 * Communicator rejects such SDP message and does not support the codec
-	 * anyway.
-	 *
-	 * For some yet unknown reason, A/V conferencing server does not accept
-	 * voice stream sent by SIPE when SIREN codec is in use. Nevertheless,
-	 * we are able to decode incoming SIREN from server and with MSOC
-	 * client, bidirectional call using the codec works. Until resolved,
-	 * do not try to negotiate SIREN usage when conferencing. PCMA or PCMU
-	 * seems to work properly in this scenario.
-	 */
 	while (i) {
 		PurpleMediaCodec *codec = i->data;
 		gchar *encoding_name = purple_media_codec_get_encoding_name(codec);
 
-		if (sipe_strequal(encoding_name,"THEORA") ||
-		    (is_conference && sipe_strequal(encoding_name,"SIREN"))) {
-			GList *tmp;
-			g_object_unref(codec);
-			tmp = i->next;
-			codecs = g_list_delete_link(codecs, i);
-			i = tmp;
-		} else if (sipe_strequal(encoding_name, "H264")) {
+		if (sipe_strequal(encoding_name, "H264")) {
 			/*
 			 * Sanitize H264 codec:
 			 * - the encoding name must be "X-H264UC"

@@ -427,13 +427,50 @@ get_encryption_policy(struct sipe_core_private *sipe_private)
 	return result;
 }
 
+static GList *
+get_local_codecs(struct sipe_media_call_private *call_private,
+		 struct sipe_media_stream_private *stream_private)
+{
+	gboolean is_conference = g_strstr_len(SIPE_MEDIA_CALL->with,
+					      strlen(SIPE_MEDIA_CALL->with),
+					      "app:conf:audio-video:") != NULL;
+	GList *codecs = sipe_backend_get_local_codecs(SIPE_MEDIA_CALL,
+						      SIPE_MEDIA_STREAM);
+	GList *i;
+
+	for (i = codecs; i; i = i->next) {
+		struct sipe_backend_codec *codec = i->data;
+		char *name = sipe_backend_codec_get_name(codec);
+
+		if (/* Do not announce Theora. Its optional parameters are too
+		     * long, Communicator rejects such SDP message and does not
+		     * support the codec anyway. */
+		    sipe_strequal(name,"THEORA") ||
+		    /* For some yet unknown reason, A/V conferencing server
+		     * does not accept SIPE audio encoded with SIREN. We are
+		     * still able to decode incoming SIREN from server and with
+		     * MSOC client, bidirectional call using the codec works.
+		     * Until resolved, resort to PCMA or PCMU in conferences. */
+		    (is_conference && sipe_strequal(name,"SIREN"))) {
+			GList *tmp;
+			sipe_backend_codec_free(codec);
+			tmp = i->next;
+			codecs = g_list_delete_link(codecs, i);
+			i = tmp;
+		}
+
+		g_free(name);
+	}
+
+	return codecs;
+}
+
 static struct sdpmedia *
 media_stream_to_sdpmedia(struct sipe_media_call_private *call_private,
 			 struct sipe_media_stream_private *stream_private)
 {
 	struct sdpmedia *sdpmedia = g_new0(struct sdpmedia, 1);
-	GList *codecs = sipe_backend_get_local_codecs(SIPE_MEDIA_CALL,
-						      SIPE_MEDIA_STREAM);
+	GList *codecs = get_local_codecs(call_private, stream_private);
 	SipeEncryptionPolicy encryption_policy =
 			get_encryption_policy(call_private->sipe_private);
 	guint rtcp_port = 0;
