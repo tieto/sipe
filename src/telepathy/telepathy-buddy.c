@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -873,7 +873,8 @@ void sipe_backend_buddy_remove(struct sipe_core_public *sipe_public,
 
 void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   const gchar *uri,
-				   guint activity)
+				   guint activity,
+	                           SIPE_UNUSED_PARAMETER time_t last_active)
 {
 	struct sipe_backend_private *telepathy_private = sipe_public->backend_private;
 	SipeContactList *contact_list                  = telepathy_private->contact_list;
