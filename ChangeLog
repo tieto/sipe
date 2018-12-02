@@ -1,3 +1,6 @@
+version 1.25.0 "???" (????-??-??)
+	- Feature #107: Provide idle start time for a buddy (Stefan Becker)
+
 version 1.24.0 "Application Sharing II" (2018-11-10)
 	- Feature #104: Use user agent also for HTTP (Stefan Becker)
 	- Feature #6: Application Sharing Server (Jakub Adam)
