@@ -768,7 +768,7 @@ void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 	 * then set/preserve it.
 	 */
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		sipe_backend_buddy_set_status(sipe_public, uri, activity);
+		sipe_backend_buddy_set_status(sipe_public, uri, activity, 0);
 	} else {
 		sipe_ocs2005_apply_calendar_status(sipe_private,
 						   sbuddy,

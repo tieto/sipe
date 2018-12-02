@@ -977,9 +977,19 @@ void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
 					   const gchar *who,
 					   gboolean blocked);
 
+/**
+ * Set the buddy status
+ *
+ * @param sipe_public The handle representing the protocol instance making the call
+ * @param who The name of the user whose status should be updated
+ * @param activity New activity
+ * @param last_active Seconds since epoch when user entered idle state.
+ *        May be @c 0 if unknown.
+ */
 void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   const gchar *who,
-				   guint activity);
+				   guint activity,
+	                           time_t last_active);
 
 /**
  * Checks whether backend has a capability to use buddy photos. If this function
