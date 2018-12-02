@@ -306,7 +306,8 @@ void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
 	sipe_core_buddy_got_status(sipe_public,
 				   who,
 				   sipe_backend_buddy_get_status(sipe_public,
-								 who));
+								 who),
+				   0);
 }
 
 void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
