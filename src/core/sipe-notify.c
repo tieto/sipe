@@ -604,6 +604,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 	gboolean do_update_status = FALSE;
 	gboolean has_note_cleaned = FALSE;
 	gboolean has_free_busy_cleaned = FALSE;
+	time_t last_active = 0;
 
 	xn_categories = sipe_xml_parse(data, len);
 	uri = sipe_xml_attribute(xn_categories, "uri"); /* with 'sip:' prefix */
@@ -807,6 +808,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 			const sipe_xml *xn_meeting_subject;
 			const sipe_xml *xn_meeting_location;
 			const gchar *legacy_activity;
+			const gchar *last_active_attr;
 
 			xn_node = sipe_xml_child(xn_category, "state");
 			if (!xn_node) continue;
@@ -887,6 +889,12 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 				sbuddy->activity = g_strdup(legacy_activity);
 			}
 
+			/* lastActive */
+			last_active_attr = sipe_xml_attribute(xn_node, "lastActive");
+			if (last_active_attr) {
+				last_active = sipe_utils_str_to_time(last_active_attr);
+			}
+
 			do_update_status = TRUE;
 		}
 		/* calendarData */
@@ -949,7 +957,10 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 								 uri);
 		}
 
-		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, activity, 0);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC,
+					   uri,
+					   activity,
+					   last_active);
 	}
 
 	sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC, uri);
