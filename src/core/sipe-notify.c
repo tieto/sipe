@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2018 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -577,8 +577,10 @@ static void process_incoming_notify_msrtc(struct sipe_core_private *sipe_private
 	g_free(activity);
 
 	SIPE_DEBUG_INFO("process_incoming_notify_msrtc: status(%s)", status_id);
-	sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
-				   sipe_status_token_to_activity(status_id));
+	sipe_core_buddy_got_status(SIPE_CORE_PUBLIC,
+				   uri,
+				   sipe_status_token_to_activity(status_id),
+				   0);
 
 	if (!SIPE_CORE_PRIVATE_FLAG_IS(OCS2007) && sipe_strcase_equal(self_uri, uri)) {
 		sipe_ocs2005_user_info_has_updated(sipe_private, xn_userinfo);
@@ -947,7 +949,7 @@ static void process_incoming_notify_rlmi(struct sipe_core_private *sipe_private,
 								 uri);
 		}
 
-		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, activity);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri, activity, 0);
 	}
 
 	sipe_backend_buddy_refresh_properties(SIPE_CORE_PUBLIC, uri);
@@ -977,11 +979,15 @@ static void sipe_buddy_status_from_activity(struct sipe_core_private *sipe_priva
 		}
 
 		SIPE_DEBUG_INFO("sipe_buddy_status_from_activity: status_id(%s)", status_id);
-		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
-					   sipe_status_token_to_activity(status_id));
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC,
+					   uri,
+					   sipe_status_token_to_activity(status_id),
+			                   0);
 	} else {
-		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC, uri,
-					   SIPE_ACTIVITY_OFFLINE);
+		sipe_core_buddy_got_status(SIPE_CORE_PUBLIC,
+					   uri,
+					   SIPE_ACTIVITY_OFFLINE,
+					   0);
 	}
 }
 

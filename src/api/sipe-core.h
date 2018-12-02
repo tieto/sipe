@@ -247,9 +247,19 @@ gchar *sipe_core_buddy_status(struct sipe_core_public *sipe_public,
 			      guint activity,
 			      const gchar *status_text);
 
+/**
+ * Received new status for buddy.
+ *
+ * @param sipe_public Sipe core public data structure.
+ * @param uri         SIP URI of the buddy
+ * @param activity    Activity value for buddy
+ * @param last_active Seconds since epoch when buddy entered idle state
+ *                    May be @c 0 if unknown or buddy is not idle.
+ */
 void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 				const gchar *uri,
-				guint activity);
+				guint activity,
+	                        time_t last_active);
 
 /**
  * Trigger generation of buddy information label/text pairs

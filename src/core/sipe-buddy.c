@@ -756,7 +756,8 @@ void sipe_core_buddy_remove(struct sipe_core_public *sipe_public,
 
 void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 				const gchar *uri,
-				guint activity)
+				guint activity,
+	                        time_t last_active)
 {
 	struct sipe_core_private *sipe_private = SIPE_CORE_PRIVATE;
 	struct sipe_buddy *sbuddy = sipe_buddy_find_by_uri(sipe_private,
@@ -768,7 +769,10 @@ void sipe_core_buddy_got_status(struct sipe_core_public *sipe_public,
 	 * then set/preserve it.
 	 */
 	if (SIPE_CORE_PRIVATE_FLAG_IS(OCS2007)) {
-		sipe_backend_buddy_set_status(sipe_public, uri, activity, 0);
+		sipe_backend_buddy_set_status(sipe_public,
+					      uri,
+					      activity,
+			                      last_active);
 	} else {
 		sipe_ocs2005_apply_calendar_status(sipe_private,
 						   sbuddy,
