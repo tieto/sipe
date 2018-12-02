@@ -311,7 +311,8 @@ void sipe_backend_buddy_set_blocked_status(struct sipe_core_public *sipe_public,
 
 void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 				   const gchar *who,
-				   guint activity)
+				   guint activity,
+	                           time_t last_active)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleBuddy *buddy = NULL;
@@ -353,8 +354,8 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 			(activity == SIPE_ACTIVITY_BRB)      ||
 			(activity == SIPE_ACTIVITY_LUNCH);
 
-		/* @TODO: provide idle_time */
-		purple_presence_set_idle(presence, is_idle, 0);
+		purple_presence_set_idle(presence, is_idle,
+					 is_idle ? last_active : 0);
 	}
 }
 
