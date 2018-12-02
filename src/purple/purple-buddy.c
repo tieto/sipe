@@ -339,6 +339,23 @@ void sipe_backend_buddy_set_status(struct sipe_core_public *sipe_public,
 					SIPE_PURPLE_STATUS_ATTR_ID_MESSAGE, tmp,
 					NULL);
 	g_free(tmp);
+
+	/*
+	 * One of the idiosyncrasies in the libpurple API: it is not
+	 * enough to set the buddy status to one of the idle ones.
+	 * You also must make another call to set an idle flag!
+	 */
+	if (buddy) {
+		PurplePresence *presence = purple_buddy_get_presence(buddy);
+		gboolean is_idle =
+			(activity == SIPE_ACTIVITY_INACTIVE) ||
+			(activity == SIPE_ACTIVITY_AWAY)     ||
+			(activity == SIPE_ACTIVITY_BRB)      ||
+			(activity == SIPE_ACTIVITY_LUNCH);
+
+		/* @TODO: provide idle_time */
+		purple_presence_set_idle(presence, is_idle, 0);
+	}
 }
 
 gboolean sipe_backend_uses_photo(void)
