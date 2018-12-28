@@ -29,7 +29,27 @@
 #include <glib.h>
 
 #include "sipe-common.h"
+#include "sipe-backend.h"
 #include "sipe-rtf.h"
+
+void sipe_backend_debug_literal(sipe_debug_level level,
+				const gchar *msg)
+{
+	printf("DEBUG %d: %s", level, msg);
+}
+void sipe_backend_debug(sipe_debug_level level,
+			const gchar *format,
+			...)
+{
+	va_list args;
+	gchar *msg;
+	va_start(args, format);
+	msg = g_strdup_vprintf(format, args);
+	va_end(args);
+
+	sipe_backend_debug_literal(level, msg);
+	g_free(msg);
+}
 
 static const struct test_data {
   const gchar *input;
