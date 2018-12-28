@@ -46,6 +46,7 @@
 %{
 #include <glib.h>
 
+#include "sipe-common.h"
 #include "sipe-rtf.h"
 
 #define YYSTYPE void // @TODO
@@ -56,7 +57,27 @@
      /* @TODO */
 %%
 
-gchar *sipe_rtf_to_html(const gchar *rtf) {
+/* memory allocation for flex code */
+void *sipe_rtf_lexer_alloc(yy_size_t size,
+			   SIPE_UNUSED_PARAMETER yyscan_t yyscanner)
+{
+	return g_malloc(size);
+}
+
+void *sipe_rtf_lexer_realloc(void *ptr, yy_size_t size,
+			     SIPE_UNUSED_PARAMETER yyscan_t yyscanner)
+{
+	return g_realloc(ptr, size);
+}
+
+void sipe_rtf_lexer_free(void *ptr,
+			 SIPE_UNUSED_PARAMETER yyscan_t yyscanner)
+{
+	g_free(ptr);
+}
+
+gchar *sipe_rtf_to_html(const gchar *rtf)
+{
         // @TODO
 	(void)rtf;
 	return g_strdup("");
