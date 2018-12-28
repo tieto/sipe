@@ -347,10 +347,30 @@ static gboolean sipe_rtf_parser(yyscan_t scanner,
 
 gchar *sipe_rtf_to_html(const gchar *rtf)
 {
-        // @TODO
-	(void)rtf;
-	(void)sipe_rtf_parser;
-	return g_strdup("");
+	struct parser_state state = {
+		g_string_new(""), /* text                  */
+		1,                /* unicode_ignore_length */
+		0,                /* ignore                */
+		{},               /* lval                  */
+	};
+	yyscan_t scanner;
+
+	if (!sipe_rtf_lexer_lex_init(&scanner)) {
+		YY_BUFFER_STATE buf = sipe_rtf_lexer__scan_string(rtf,
+								  scanner);
+		sipe_rtf_lexer_set_extra(&state, scanner);
+
+		if (sipe_rtf_parser(scanner, &state)) {
+			SIPE_DEBUG_ERROR("sipe_rtf_to_html: unable to process the following RTF text\n%s",
+					 rtf);
+		}
+
+		sipe_rtf_lexer__delete_buffer(buf, scanner);
+	} else {
+		SIPE_DEBUG_ERROR_NOFORMAT("sipe_rtf_to_html: can't initialize lexer");
+	}
+
+	return g_string_free(state.text, FALSE);
 }
 
 /*
