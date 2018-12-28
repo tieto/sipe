@@ -234,6 +234,13 @@ endif
 
 check_PROGRAMS =
 
+check_PROGRAMS += sipe_rtf_tests
+sipe_rtf_tests_SOURCES = sipe-rtf-tests.c
+sipe_rtf_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
+sipe_rtf_tests_LDADD = \
+	libsipe_core_la-sipe-rtf.lo \
+	$(GLIB_LIBS)
+
 check_PROGRAMS += sipe_xml_tests
 sipe_xml_tests_SOURCES = sipe-xml-tests.c
 sipe_xml_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
