@@ -1,5 +1,7 @@
 version 1.25.0 "???" (????-??-??)
 	- Feature #107: Provide idle start time for a buddy (Stefan Becker)
+	- Feature #77: RTF support (incoming) (Stefan Becker)
+	  * the code only extracts plain text from incoming RTF
 
 version 1.24.0 "Application Sharing II" (2018-11-10)
 	- Feature #104: Use user agent also for HTTP (Stefan Becker)
