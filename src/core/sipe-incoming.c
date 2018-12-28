@@ -614,7 +614,9 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 			{
 				dont_delay = TRUE;
 			}
-			else if (g_str_has_prefix(ms_text_format, "text/plain") || g_str_has_prefix(ms_text_format, "text/html"))
+			else if (g_str_has_prefix(ms_text_format, "text/plain") ||
+				 g_str_has_prefix(ms_text_format, "text/html")  ||
+				 g_str_has_prefix(ms_text_format, "text/rtf"))
 			{
 				/* please do not optimize logic inside as this code may be re-enabled for other cases */
 				gchar *html = get_html_message(ms_text_format, NULL);
@@ -663,10 +665,11 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 	SIPE_DEBUG_INFO("got message from %s: %s", from, msg->body);
 
 	contenttype = sipmsg_find_header(msg, "Content-Type");
-	if (g_str_has_prefix(contenttype, "text/plain")
-	    || g_str_has_prefix(contenttype, "text/html")
-	    || g_str_has_prefix(contenttype, "multipart/related")
-	    || g_str_has_prefix(contenttype, "multipart/alternative"))
+	if (g_str_has_prefix(contenttype, "text/plain")            ||
+	    g_str_has_prefix(contenttype, "text/html")             ||
+	    g_str_has_prefix(contenttype, "text/rtf")              ||
+	    g_str_has_prefix(contenttype, "multipart/related")     ||
+	    g_str_has_prefix(contenttype, "multipart/alternative"))
 	{
 		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 		gchar *html = get_html_message(contenttype, msg->body);
