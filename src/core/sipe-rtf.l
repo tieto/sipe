@@ -47,6 +47,7 @@
 #include <glib.h>
 
 #include "sipe-common.h"
+#include "sipe-backend.h"
 #include "sipe-rtf.h"
 
 /*
@@ -87,7 +88,7 @@ DIGIT  [0-9]
 HEX    [0-9a-fA-F]
 LETTER [a-zA-Z]
 
-%x keyword
+%x RTF_KEYWORD
 
 %%
                       /* stuff that we simply throw away   */
@@ -104,7 +105,7 @@ LETTER [a-zA-Z]
 \\"{"                 { sipe_rtf_add_char(yyextra, '{');  }
 \\"}"                 { sipe_rtf_add_char(yyextra, '}');  }
 \\\'{HEX}{2}          { /* 2 digit hex to 8-bit character  */
-	                unsigned int c;
+                        unsigned int c;
                         sscanf(yytext + 2, "%x", &c);
                         sipe_rtf_add_char(yyextra, c);
                       }
@@ -118,29 +119,31 @@ LETTER [a-zA-Z]
 
                       /* stuff passed to parser for further processing */
 \\{LETTER}+           {
-                        BEGIN(keyword);
+                        BEGIN(RTF_KEYWORD);
                         g_strlcpy(yylval->keyword_buffer,
                                   yytext + 1,
                                   SIPE_RTF_LEXER_KEYWORD_SIZE);
                         return(KEYWORD);
                       }
-<keyword>{DIGIT}+     {
+<RTF_KEYWORD>{DIGIT}+     {
                         sscanf(yytext, "%d", &yylval->number);
                         return(KEYWORD_PARAMETER);
                       }
-<keyword>(;|[^0-9][^;\\]*;|[ ])? {
+<RTF_KEYWORD>(;|[^0-9][^;\\]*;|[ ])? {
                         /* reset <keyword start condition and throw away */
                         BEGIN(INITIAL);
-			return(KEYWORD_END);
+                        return(KEYWORD_END);
                       }
-<keyword>.|\n         { /* reset <keyword> start condition */
+<RTF_KEYWORD>.|\n     { /* reset <RTF_KEYWORD> start condition */
                         BEGIN(INITIAL);
                         yyless(0);
-			return(KEYWORD_END);
+                        return(KEYWORD_END);
                       }
 
                       /* indicate anything else as error to parser */
-<INITIAL,keyword>.|\n { return(LEXER_ERROR); }
+<INITIAL,RTF_KEYWORD>.|\n {
+                        return(LEXER_ERROR);
+                      }
 %%
 
 /* memory allocation for flex code */
@@ -194,10 +197,159 @@ static void sipe_rtf_add_unichar(struct parser_state *state, gunichar c)
   g_string_append_unichar(state->text, c);
 }
 
+static void sipe_rtf_parse_keyword(struct parser_state *state,
+				   const gchar *keyword) {
+	if (strcmp(keyword, "par") == 0) {
+		sipe_rtf_add_text(state, "<br/>");
+	}
+}
+
+static void sipe_rtf_parse_keyword_parameter(struct parser_state *state,
+					     const gchar *keyword,
+					     unsigned int parameter) {
+	if (strcmp(keyword, "uc") == 0) {
+		state->unicode_ignore_length = parameter;
+	}
+}
+
+/****************************************************************************
+ *
+ * RTF parser
+ *
+ * based on Bison parser
+ *
+ * %output  "sipe-rtf-parser.c"
+ * %defines "sipe-rtf-parser.h"
+ *
+ * %define api.pure   full
+ * %define api.prefix {sipe_rtf_parser_}
+ *
+ * %param       {yyscan_t scanner}
+ * %parse-param {struct parser_state *state}
+ *
+ * %{
+ * #include ...
+ * %}
+ *
+ * %union {
+ *   gchar keyword_buffer[SIPE_RTF_LEXER_KEYWORD_SIZE];
+ *   guint number;
+ * }
+ *
+ * %token <keyword_buffer> KEYWORD
+ * %token <number>         KEYWORD_PARAMETER
+ * %token                  KEYWORD_END
+ * %token                  LEXER_ERROR
+ *
+ * %%
+ * sequence:
+ *           %empty
+ * 	| sequence KEYWORD KEYWORD_PARAMETER KEYWORD_END {
+ * 	    const char   *keyword   = $2;
+ * 	    unsigned int  parameter = $3;
+ * 	    sipe_rtf_parse_keyword_parameter(state, keyword, parameter);
+ *         }
+ * 	| sequence KEYWORD KEYWORD_END {
+ * 	    const char   *keyword   = $2;
+ * 	    sipe_rtf_parse_keyword(state, keyword);
+ *         }
+ *         | sequence LEXER_ERROR {
+ * 	    yyerror(scanner, state, "lexer error");
+ * 	    YYERROR;
+ *         }
+ *         ;
+ * %%
+ */
+static void sipe_rtf_parser_error(const gchar *msg)
+{
+	SIPE_DEBUG_ERROR("sipe_rtf_parser_error: %s", msg);
+}
+
+static int sipe_rtf_parser_get_token(yyscan_t scanner,
+				     struct parser_state *state,
+				     gboolean required)
+{
+	int token = sipe_rtf_lexer_lex(&state->lval, scanner);
+
+	if (required && (token < 1)) {
+		sipe_rtf_parser_error("unexpected end of RTF");
+		return -1;
+	}
+
+	return token;
+}
+
+static gboolean sipe_rtf_parser(yyscan_t scanner,
+				struct parser_state *state)
+{
+	struct parser_lval_type *lval = &state->lval;
+	int token;
+
+	/* read tokens from parser until it returns EOF */
+	while (TRUE) {
+		if ((token = sipe_rtf_parser_get_token(scanner,
+						       state,
+						       FALSE)) < 0)
+			return TRUE;
+
+		switch (token) {
+		case 0: /* parse succeeded */
+			return FALSE;
+			break;
+
+		case KEYWORD:
+			{
+				const gchar *keyword = lval->keyword_buffer;
+
+				if ((token = sipe_rtf_parser_get_token(scanner,
+								       state,
+								       TRUE)) < 0)
+					return TRUE;
+
+				switch (token) {
+				case KEYWORD_END:
+					sipe_rtf_parse_keyword(state, keyword);
+					break;
+
+				case KEYWORD_PARAMETER:
+					{
+						guint parameter = lval->number;
+
+						if ((token = sipe_rtf_parser_get_token(scanner,
+										       state,
+										       TRUE)) < 0) {
+							return TRUE;
+						} else if (token == KEYWORD_END) {
+							sipe_rtf_parse_keyword_parameter(state,
+											 keyword,
+											 parameter);
+						} else {
+							sipe_rtf_parser_error("unexpected token");
+							return TRUE;
+						}
+					}
+					break;
+
+				default:
+					sipe_rtf_parser_error("broken keyword");
+					return TRUE;
+					break;
+				}
+			}
+			break;
+
+		default:
+			sipe_rtf_parser_error("unexpected token");
+			return TRUE;
+		}
+	}
+}
+
 gchar *sipe_rtf_to_html(const gchar *rtf)
 {
         // @TODO
 	(void)rtf;
+	(void)sipe_rtf_parser;
 	return g_strdup("");
 }
 
