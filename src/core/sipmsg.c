@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
@@ -32,6 +32,7 @@
 #include "sipmsg.h"
 #include "sipe-backend.h"
 #include "sipe-mime.h"
+#include "sipe-rtf.h"
 #include "sipe-utils.h"
 
 struct sipmsg *sipmsg_parse_msg(const gchar *msg) {
@@ -565,8 +566,9 @@ static void get_html_message_mime_cb(gpointer user_data,
 	if (!data->preferred) {
 		gboolean copy = FALSE;
 
-		/* preferred format */
-		if (g_str_has_prefix(type, "text/html")) {
+		/* preferred formats */
+		if (g_str_has_prefix(type, "text/html") ||
+		    g_str_has_prefix(type, "text/rtf")) {
 			copy = TRUE;
 			data->preferred = TRUE;
 
@@ -640,6 +642,10 @@ gchar *get_html_message(const gchar *ms_text_format_in, const gchar *body_in)
 				*d++ = c;
 		*d = c;
 
+	} else if (g_str_has_prefix(ms_text_format, "text/rtf")) {
+		char *tmp = res;
+		res = sipe_rtf_to_html(res);
+		g_free(tmp);
 	} else {
 		char *tmp = res;
 		res = g_markup_escape_text(res, -1); // as this is not html
