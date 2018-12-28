@@ -286,6 +286,7 @@ packages
 
 	autoconf
 	automake
+	flex
 
 Now you should be able to regenerate the files with
 

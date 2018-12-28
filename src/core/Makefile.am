@@ -76,6 +76,8 @@ libsipe_core_la_SOURCES = \
 	sipe-ocs2005.c \
 	sipe-ocs2007.h \
 	sipe-ocs2007.c \
+	sipe-rtf.h \
+	sipe-rtf.l \
 	sipe-schedule.h \
 	sipe-schedule.c \
 	sipe-session.h \

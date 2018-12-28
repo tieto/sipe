@@ -48,6 +48,7 @@ BuildRequires:  pkgconfig(purple) >= 2.7.0
 %if 0%{?_with_git:1}
 BuildRequires:  autoconf
 BuildRequires:  automake
+BuildRequires:  flex
 %endif
 BuildRequires:  appstream
 BuildRequires:  gcc
@@ -287,6 +288,9 @@ make %{?_smp_mflags} check
 
 
 %changelog
+* Fri Dec 28 2018 J. D. User <jduser@noreply.com> 1.24.0-*git*
+- add BR flex for git builds
+
 * Sat Nov 10 2018 J. D. User <jduser@noreply.com> 1.24.0
 - update to 1.24.0
 

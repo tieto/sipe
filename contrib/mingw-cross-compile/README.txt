@@ -34,6 +34,7 @@ you'll need additional tools installed, at least:
 
    autoconf
    automake
+   flex
 
 If you want to build the NSIS installer package then you'll need to install:
 

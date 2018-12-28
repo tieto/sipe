@@ -37,6 +37,7 @@ src/adium/adium-frameworks
 src/adium/SIPEAdiumPlugin.xcodeproj/project.pbxproj-e
 src/adium/SIPEAdiumPlugin.xcodeproj/project.xcworkspace/
 src/adium/SIPEAdiumPlugin.xcodeproj/xcuserdata/
+src/core/sipe-rtf.c
 src/core/*_tests
 src/core/sipe_ntlm_analyzer
 src/core/sipe_tls_analyzer
@@ -48,6 +49,7 @@ src/telepathy/data/org.freedesktop.Telepathy.ConnectionManager.sipe.service
 stamp-h1
 siplcs.vcxproj.user
 test-driver
+ylwrap
 *.trs
 *.DS_Store
 adium/SIPEAdiumPlugin.xcodeproj/project.xcworkspace/*

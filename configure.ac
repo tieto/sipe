@@ -42,6 +42,7 @@ AS_IF([test "x${PACKAGE_URL}" = x],
 dnl set programming language
 AC_LANG(C)
 AM_PROG_CC_C_O
+AM_PROG_LEX
 AC_HEADER_STDC
 
 dnl setup shared library generation
