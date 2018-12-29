@@ -1,6 +1,6 @@
 ################################### tell Emacs this is a -*- makefile-gmake -*-
 #
-# Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
+# Copyright (C) 2011-2018 SIPE Project <http://sipe.sourceforge.net/>
 #
 # Makefile.mingw
 #
@@ -97,6 +97,7 @@ CLEAN_C_SRC =		sip-soap.c \
 			sipe-notify.c \
 			sipe-ocs2005.c \
 			sipe-ocs2007.c \
+			sipe-rtf.c \
 			sipe-schedule.c \
 			sipe-session.c \
 			sipe-status.c \
