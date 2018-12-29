@@ -115,10 +115,11 @@ static const struct test_data {
 int main(SIPE_UNUSED_PARAMETER int argc,
 	 SIPE_UNUSED_PARAMETER char *argv[])
 {
-	guint succeeded = 0;
-	guint failed    = 0;
+	guint succeeded           = 0;
+	guint failed              = 0;
+	const struct test_data *t = tests;
 
-	for (const struct test_data *t = tests; t->input; t++) {
+	for (; t->input; t++) {
 		char *html = sipe_rtf_to_html(t->input);
 
 		if (strcmp(html, t->expected) == 0) {
