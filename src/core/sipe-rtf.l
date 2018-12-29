@@ -347,13 +347,13 @@ static gboolean sipe_rtf_parser(yyscan_t scanner,
 
 gchar *sipe_rtf_to_html(const gchar *rtf)
 {
-	struct parser_state state = {
-		g_string_new(""), /* text                  */
-		1,                /* unicode_ignore_length */
-		0,                /* ignore                */
-		{},               /* lval                  */
-	};
+	struct parser_state state;
 	yyscan_t scanner;
+
+	/* initialize state */
+	state.text                  = g_string_new("");
+	state.unicode_ignore_length = 1;
+	state.ignore                = 0;
 
 	if (!sipe_rtf_lexer_lex_init(&scanner)) {
 		YY_BUFFER_STATE buf = sipe_rtf_lexer__scan_string(rtf,
