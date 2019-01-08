@@ -423,10 +423,10 @@ AS_IF([test "x$enable_purple" != xno],
 					[PKG_CHECK_MODULES(_SIPE_MEDIA_RECHECK_PLEASE_IGNORE, [$purple_pkgconfig >= 2.8.0],
 						dnl check purple pkgconfig for gstreamer version
 						[gstreamer_pkgconfig=`$PKG_CONFIG --variable=gstreamer $purple_pkgconfig`
-						AS_IF([test "x$gstreamer_pkgconfig" == x],
-							[AS_IF([test "x$purple_pkgconfig" == xpurple-3],
+						AS_IF([test "x$gstreamer_pkgconfig" = x],
+							[AS_IF([test "x$purple_pkgconfig" = xpurple-3],
 								[gstreamer_pkgconfig=1.0])])
-						AS_IF([test "x$gstreamer_pkgconfig" == x1.0],
+						AS_IF([test "x$gstreamer_pkgconfig" = x1.0],
 							[gstreamer_pkgconfig="gstreamer-$gstreamer_pkgconfig gstreamer-rtp-$gstreamer_pkgconfig"
 
 							AC_MSG_NOTICE([using packages "$gstreamer_pkgconfig".])
@@ -535,18 +535,18 @@ AS_IF([test "x$with_purple_vv" != xno],
 AM_CONDITIONAL(SIPE_WITH_VV, [test "x$with_purple_vv" != xno])
 
 dnl raw data RTP streams enable Lync file transfer
-AM_CONDITIONAL(SIPE_HAVE_XDATA, [test "x$ac_have_xdata" == xyes])
-AS_IF([test "x$ac_have_xdata" == xyes],
+AM_CONDITIONAL(SIPE_HAVE_XDATA, [test "x$ac_have_xdata" = xyes])
+AS_IF([test "x$ac_have_xdata" = xyes],
 	[AC_DEFINE(HAVE_XDATA, 1, [Define if we have raw data RTP in media backend.])])
 
 dnl enable appshare support
-AM_CONDITIONAL(SIPE_HAVE_APPSHARE, [test "x$ac_have_appshare" == xyes])
-AS_IF([test "x$ac_have_appshare" == xyes],
+AM_CONDITIONAL(SIPE_HAVE_APPSHARE, [test "x$ac_have_appshare" = xyes])
+AS_IF([test "x$ac_have_appshare" = xyes],
 	[AC_DEFINE(HAVE_APPSHARE, 1, [Define to 1 if we have appshare support.])])
 
 dnl RDP server for sharing local desktop
 AM_CONDITIONAL(SIPE_HAVE_APPSHARE_SERVER, [test "x$ac_have_appshare_server" = xyes])
-AS_IF([test "x$ac_have_appshare_server" == xyes],
+AS_IF([test "x$ac_have_appshare_server" = xyes],
 	[AC_DEFINE(HAVE_APPSHARE_SERVER, 1, [Define if appshare server is enabled.])])
 
 dnl telepathy code parts rely on interfaces that require GValueArray. This
