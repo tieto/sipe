@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -139,7 +139,7 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 					struct sipmsg *msg,
 					struct transaction *trans)
 {
-	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
+	gchar *with = sipmsg_parse_to_address(msg);
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 	gchar *key;
@@ -440,7 +440,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 			 SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	gboolean ret = TRUE;
-	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
+	gchar *with = sipmsg_parse_to_address(msg);
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	struct sip_session *session = sipe_session_find_chat_or_im(sipe_private, callid, with);
 	struct sip_dialog *dialog;
@@ -535,7 +535,7 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 			struct sipmsg *msg,
 			SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	gchar *with = parse_from(sipmsg_find_header(msg, "To"));
+	gchar *with = sipmsg_parse_to_address(msg);
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	struct sip_session *session = sipe_session_find_chat_or_im(sipe_private, callid, with);
 	gchar *key;

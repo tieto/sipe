@@ -521,7 +521,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	session->callid = g_strdup(callid);
 
 	if (is_multiparty && end_points) {
-		gchar *to = parse_from(sipmsg_find_header(msg, "To"));
+		gchar *to = sipmsg_parse_to_address(msg);
 		GSList *entry = end_points;
 		while (entry) {
 			struct sipendpoint *end_point = entry->data;

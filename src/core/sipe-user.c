@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -106,7 +106,7 @@ static gboolean process_info_typing_response(struct sipe_core_private *sipe_priv
 	if (msg->response == 408 || /* Request timeout */
 	    msg->response == 480 || /* Temporarily Unavailable */
 	    msg->response == 481) { /* Call/Transaction Does Not Exist */
-		gchar *with = parse_from(sipmsg_find_header(msg, "To"));
+		gchar *with = sipmsg_parse_to_address(msg);
 		struct sip_session *session = sipe_session_find_im(sipe_private, with);
 		struct sip_dialog *dialog = sipe_dialog_find(session, with);
 		if (dialog)

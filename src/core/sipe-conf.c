@@ -232,7 +232,7 @@ process_invite_conf_focus_response(struct sipe_core_private *sipe_private,
 				   SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	struct sip_session *session = NULL;
-	char *focus_uri = parse_from(sipmsg_find_header(msg, "To"));
+	char *focus_uri = sipmsg_parse_to_address(msg);
 
 	session = sipe_session_find_conference(sipe_private, focus_uri);
 
@@ -749,7 +749,7 @@ process_invite_conf_response(struct sipe_core_private *sipe_private,
 
 	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
 	dialog->cseq = sipmsg_parse_cseq(msg);
-	dialog->with = parse_from(sipmsg_find_header(msg, "To"));
+	dialog->with = sipmsg_parse_to_address(msg);
 	sipe_dialog_parse(dialog, msg, TRUE);
 
 	if (msg->response >= 200) {

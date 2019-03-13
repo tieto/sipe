@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -166,7 +166,7 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 	}
 
 	if (event) {
-		gchar *with = parse_from(sipmsg_find_header(msg, "To"));
+		gchar *with = sipmsg_parse_to_address(msg);
 		const gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
 		gboolean terminated = subscription_state && strstr(subscription_state, "terminated");
 		gchar *key = sipe_subscription_key(event, with);
@@ -911,7 +911,7 @@ static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
 		if (timeout > 240) timeout -= 120;
 
 		if (sipe_strcase_equal(event, "presence")) {
-			gchar *who = parse_from(sipmsg_find_header(msg, "To"));
+			gchar *who = sipmsg_parse_to_address(msg);
 
 			if (SIPE_CORE_PRIVATE_FLAG_IS(BATCHED_SUPPORT)) {
 				sipe_process_presence_timeout(sipe_private, msg, who, timeout);
