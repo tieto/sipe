@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2014-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2014-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -598,9 +598,7 @@ process_incoming_invite_appshare(struct sipe_core_private *sipe_private,
 	appshare = initialize_appshare(stream);
 
 	if (appshare) {
-		gchar *from;
-
-		from = parse_from(sipmsg_find_header(msg, "From"));
+		gchar *from = sipmsg_parse_from_address(msg);
 		appshare->ask_ctx = ask_accept_applicationsharing(sipe_private, from,
 								  accept_cb,
 								  decline_cb,

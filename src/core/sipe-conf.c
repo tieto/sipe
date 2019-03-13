@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -1527,7 +1527,7 @@ void
 sipe_process_imdn(struct sipe_core_private *sipe_private,
 		  struct sipmsg *msg)
 {
-	gchar *with = parse_from(sipmsg_find_header(msg, "From"));
+	gchar *with = sipmsg_parse_from_address(msg);
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	static struct sip_session *session;
 	sipe_xml *xn_imdn;

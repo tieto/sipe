@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -57,7 +57,7 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 			  struct sipmsg *msg)
 {
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+	gchar *from = sipmsg_parse_from_address(msg);
 	struct sip_session *session;
 	struct sip_dialog *dialog;
 
@@ -168,7 +168,7 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 	}
 #endif
 
-	from = parse_from(sipmsg_find_header(msg, "From"));
+	from = sipmsg_parse_from_address(msg);
 	session = sipe_session_find_chat_or_im(sipe_private, callid, from);
 	if (!session) {
 		g_free(from);
@@ -512,7 +512,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 
 	/* IM session */
-	from = parse_from(sipmsg_find_header(msg, "From"));
+	from = sipmsg_parse_from_address(msg);
 	if (!session)
 		session = sipe_session_find_or_add_im(sipe_private, from);
 
@@ -658,7 +658,7 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 	const gchar *contenttype;
 	gboolean found = FALSE;
 
-	from = parse_from(sipmsg_find_header(msg, "From"));
+	from = sipmsg_parse_from_address(msg);
 
 	if (!from) return;
 
@@ -803,7 +803,7 @@ void process_incoming_refer(struct sipe_core_private *sipe_private,
 {
 	gchar *self = sip_uri_self(sipe_private);
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
-	gchar *from = parse_from(sipmsg_find_header(msg, "From"));
+	gchar *from = sipmsg_parse_from_address(msg);
 	gchar *refer_to = parse_from(sipmsg_find_header(msg, "Refer-to"));
 	gchar *referred_by = g_strdup(sipmsg_find_header(msg, "Referred-By"));
 	struct sip_session *session;

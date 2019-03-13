@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1766,7 +1766,7 @@ process_incoming_invite_call_parsed_sdp(struct sipe_core_private *sipe_private,
 	}
 
 	if (!call_private) {
-		gchar *with = parse_from(sipmsg_find_header(msg, "From"));
+		gchar *with = sipmsg_parse_from_address(msg);
 		SipeMediaCallFlags flags = 0;
 
 		if (strstr(msg->body, "m=data") ||
