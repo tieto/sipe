@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2014 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005, Thomas Butter <butter@uni-mannheim.de>
  *
@@ -148,3 +148,17 @@ gchar *sipmsg_get_ms_diagnostics_public_reason(struct sipmsg *msg);
  * @return warning code or -1 if warning header is not present in message.
  */
 int sipmsg_parse_warning(struct sipmsg *msg, gchar **reason);
+
+/**
+ * Parse addresses out of SIP message headers
+ *
+ * @param msg (in)  SIP message
+ * @param name (in) header name
+ *
+ * @return address or @c NULL if header not found or parse failure.
+ *         Must be @c g_free()'d after use.
+ */
+gchar *sipmsg_parse_from_address(struct sipmsg *msg);
+gchar *sipmsg_parse_to_address(struct sipmsg *msg);
+gchar *sipmsg_parse_address_from_header(struct sipmsg *msg,
+					const gchar *name);

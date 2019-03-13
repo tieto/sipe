@@ -131,6 +131,45 @@ static void assert_equal(const char *expected, const gchar *got)
 }
 
 static void msg_tests(void) {
+	/* Address parsing */
+	{
+		const gchar *responses[] = {
+			"SIP/2.0 200 OK\r\n"
+			"From: \"J.D. User\" <sip:foo.bar@company.com>;something else\r\n"
+			"To: \"Test Recipient\" <SIP:test@recipient.com>\r\n"
+			"X-Some-Header: <SiP:joe.header@test.com>\r\n"
+			"Content-Length: 0\r\n"
+			"\r\n",
+			"SIP/2.0 200 OK\r\n"
+			"From: sip:foo.bar@company.com;something else\r\n"
+			"To: SIP:test@recipient.com\r\n"
+			"X-Some-Header: SiP:joe.header@test.com\r\n"
+			"Content-Length: 0\r\n"
+			"\r\n",
+			NULL
+		};
+		const gchar **resp;
+
+		for (resp = responses; *resp; resp++) {
+			struct sipmsg *msg = sipmsg_parse_msg(*resp);
+			gchar *address;
+
+			address = sipmsg_parse_from_address(msg);
+			assert_equal("sip:foo.bar@company.com", address);
+			g_free(address);
+
+			address = sipmsg_parse_to_address(msg);
+			assert_equal("SIP:test@recipient.com", address);
+			g_free(address);
+
+			address = sipmsg_parse_address_from_header(msg, "x-some-header");
+			assert_equal("SiP:joe.header@test.com", address);
+			g_free(address);
+
+			sipmsg_free(msg);
+		}
+	}
+
 	/* P-Asserted-Identity parsing */
 	{
 		const struct {

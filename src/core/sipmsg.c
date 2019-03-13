@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  * Copyright (C) 2005 Thomas Butter <butter@uni-mannheim.de>
  *
@@ -719,6 +719,19 @@ sipmsg_parse_warning(struct sipmsg *msg, gchar **reason)
 	}
 
 	return code;
+}
+
+gchar *sipmsg_parse_address_from_header(struct sipmsg *msg,
+					const gchar *name) {
+	return(parse_from(sipmsg_find_header(msg, name)));
+}
+
+gchar *sipmsg_parse_from_address(struct sipmsg *msg) {
+	return(sipmsg_parse_address_from_header(msg, "From"));
+}
+
+gchar *sipmsg_parse_to_address(struct sipmsg *msg) {
+	return(sipmsg_parse_address_from_header(msg, "To"));
 }
 
 
