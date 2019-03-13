@@ -131,6 +131,48 @@ static void assert_equal(const char *expected, const gchar *got)
 }
 
 static void msg_tests(void) {
+	/* P-Asserted-Identity parsing */
+	{
+		const struct {
+			const gchar *header;
+			const gchar *sip_uri;
+			const gchar *tel_uri;
+		} testcases[] = {
+			{
+				"\"Cullen Jennings\" <sip:fluffy@cisco.com>",
+				"sip:fluffy@cisco.com",
+				NULL
+			},
+			{
+				"tel:+14085264000",
+				NULL,
+				"tel:+14085264000"
+			},
+			{
+				"\"Lunch, Lucas\" <sip:llucas@cisco.com>,<tel:+420123456;ext=88463>",
+				"sip:llucas@cisco.com",
+				"tel:+420123456;ext=88463"
+			},
+			{
+				NULL
+			},
+		}, *testcase;
+
+		for (testcase = testcases; testcase->header; testcase++) {
+			gchar *sip_uri = NULL;
+			gchar *tel_uri = NULL;
+
+			sipmsg_parse_p_asserted_identity(testcase->header,
+							 &sip_uri,
+							 &tel_uri);
+			assert_equal(testcase->sip_uri, sip_uri);
+			assert_equal(testcase->tel_uri, tel_uri);
+
+			g_free(tel_uri);
+			g_free(sip_uri);
+		}
+	}
+
 	/* Test Authentication Algorithm's v4 Signature String */
 	{
 		const gchar *response =
