@@ -193,6 +193,8 @@ static void msg_tests(void) {
 				"tel:+420123456;ext=88463"
 			},
 			{
+				NULL,
+				NULL,
 				NULL
 			},
 		}, *testcase;
