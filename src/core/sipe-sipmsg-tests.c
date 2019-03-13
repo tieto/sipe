@@ -248,6 +248,36 @@ static void msg_tests(void) {
 		sipmsg_breakdown_free(&msgbd);
 	}
 
+	/* Test parsing of address fields where URIs wrapped in "<...>" */
+	{
+		const gchar *response =
+			"SIP/2.0 180 Ringing\r\n"
+			"Authentication-Info: NTLM rspauth=\"010000003EA8D688BA51D5CD64000000\", srand=\"1B6D47A1\", snum=\"11\", opaque=\"357E6F72\", qop=\"auth\", targetname=\"bar\", realm=\"foo\"\r\n"
+			"From: sip:sender@company.com;tag=2420628112;epid=54392f1bbf01\r\n"
+			"To: sip:recipient@company.com;tag=7aee15546a;epid=3102EB8BD1\r\n"
+			"CSeq: 1 INVITE\r\n"
+			"Call-ID: 41CEg82ECa0AC8i3DD7mE673t9CF4b19DAxF780x\r\n"
+			"Content-Length: 0\r\n"
+			"P-Asserted-Identity: <SIP:recipient@company.com>\r\n"
+			"\r\n";
+		const gchar *response_sig = "<NTLM><1B6D47A1><11><foo><bar><41CEg82ECa0AC8i3DD7mE673t9CF4b19DAxF780x><1><INVITE><sip:sender@company.com><2420628112><sip:recipient@company.com><7aee15546a><SIP:recipient@company.com><><><180>";
+		struct sipmsg_breakdown msgbd;
+		gchar *msg_str;
+
+		msgbd.msg = sipmsg_parse_msg(response);
+		sipmsg_breakdown_parse(&msgbd,
+				       "foo",
+				       "bar",
+				       NULL);
+		msg_str = sipmsg_breakdown_get_string(4, &msgbd);
+
+		assert_equal(response_sig, msg_str);
+
+		g_free(msg_str);
+		sipmsg_free(msgbd.msg);
+		sipmsg_breakdown_free(&msgbd);
+	}
+
 	/* UUID tests - begin tests from MS-SIPRE */
 	{
 		const char *testEpid     = "01010101";

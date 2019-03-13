@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2013 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -28,6 +28,7 @@
 #include "sipmsg.h"
 #include "sipe-backend.h"
 #include "sipe-sign.h"
+#include "sipe-utils.h"
 
 static gchar * const empty_string = "";
 
@@ -68,13 +69,17 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 
 	hdr = sipmsg_find_header(msg->msg, "From");
 	if (NULL != hdr) {
-		msg->from_url = sipmsg_find_part_of_header(hdr, "<", ">", empty_string);
+		gchar *address = parse_from(hdr);
+		if (address)
+			msg->from_url = address;
 		msg->from_tag = sipmsg_find_part_of_header(hdr, ";tag=", ";", empty_string);
 	}
 
 	hdr = sipmsg_find_header(msg->msg, "To");
 	if (NULL != hdr) {
-		msg->to_url = sipmsg_find_part_of_header(hdr, "<", ">", empty_string);
+		gchar *address = parse_from(hdr);
+		if (address)
+			msg->to_url = address;
 		msg->to_tag = sipmsg_find_part_of_header(hdr, ";tag=", ";", empty_string);
 	}
 
