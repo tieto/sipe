@@ -221,7 +221,7 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 	dialog->outgoing_invite = NULL;
 	dialog->is_established = TRUE;
 
-	referred_by = parse_from(sipmsg_find_header(request_msg, "Referred-By"));
+	referred_by = sipmsg_parse_address_from_header(request_msg, "Referred-By");
 	if (referred_by) {
 		sipe_refer_notify(sipe_private, session, referred_by, 200, "OK");
 		g_free(referred_by);

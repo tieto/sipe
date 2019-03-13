@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1153,7 +1153,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			break;
 		case 301:
 			{
-				gchar *redirect = parse_from(sipmsg_find_header(msg, "Contact"));
+				gchar *redirect = sipmsg_parse_address_from_header(msg, "Contact");
 
 				SIPE_LOG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully (with redirect)");
 

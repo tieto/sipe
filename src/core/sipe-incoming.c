@@ -679,7 +679,7 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 									   from);
 		if (session && session->chat_session) {
 			if (session->chat_session->type == SIPE_CHAT_TYPE_CONFERENCE) { /* a conference */
-				gchar *tmp = parse_from(sipmsg_find_header(msg, "Ms-Sender"));
+				gchar *tmp = sipmsg_parse_address_from_header(msg, "Ms-Sender");
 				gchar *sender = parse_from(tmp);
 				g_free(tmp);
 				sipe_backend_chat_message(SIPE_CORE_PUBLIC,
@@ -804,7 +804,7 @@ void process_incoming_refer(struct sipe_core_private *sipe_private,
 	gchar *self = sip_uri_self(sipe_private);
 	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
 	gchar *from = sipmsg_parse_from_address(msg);
-	gchar *refer_to = parse_from(sipmsg_find_header(msg, "Refer-to"));
+	gchar *refer_to = sipmsg_parse_address_from_header(msg, "Refer-to");
 	gchar *referred_by = g_strdup(sipmsg_find_header(msg, "Referred-By"));
 	struct sip_session *session;
 	struct sip_dialog *dialog;
