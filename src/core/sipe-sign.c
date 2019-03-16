@@ -62,7 +62,7 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 
 	msg->call_id = sipmsg_find_call_id_header(msg->msg);
 
-	hdr = sipmsg_find_header(msg->msg, "CSeq");
+	hdr = sipmsg_find_cseq_header(msg->msg);
 	if (NULL != hdr) {
 		msg->cseq = sipmsg_find_part_of_header(hdr, NULL, " ", empty_string);
 	}

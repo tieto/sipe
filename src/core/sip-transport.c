@@ -617,7 +617,7 @@ static struct transaction *transactions_find(struct sip_transport *transport,
 {
 	GSList *transactions = transport->transactions;
 	const gchar *call_id = sipmsg_find_call_id_header(msg);
-	const gchar *cseq = sipmsg_find_header(msg, "CSeq");
+	const gchar *cseq = sipmsg_find_cseq_header(msg);
 	gchar *key;
 
 	if (!call_id || !cseq) {

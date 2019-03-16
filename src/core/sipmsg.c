@@ -109,7 +109,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 	}
 	if(msg->response) {
 		const gchar *tmp;
-		tmp = sipmsg_find_header(msg, "CSeq");
+		tmp = sipmsg_find_cseq_header(msg);
 		if(!tmp) {
 			/* SHOULD NOT HAPPEN */
 			msg->method = 0;
@@ -340,7 +340,7 @@ int sipmsg_parse_cseq(struct sipmsg *msg)
 {
 	int res = -1;
 	gchar **items;
-	items = g_strsplit(sipmsg_find_header(msg, "CSeq"), " ", 1);
+	items = g_strsplit(sipmsg_find_cseq_header(msg), " ", 1);
 	if (items[0]) {
 		res = atoi(items[0]);
 	}

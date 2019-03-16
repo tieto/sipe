@@ -421,7 +421,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	/* Application sharing */
 	if (sipe_strcase_equal(content_type, "application/sdp") && msg->body &&
 	    strstr(msg->body, "m=applicationsharing") &&
-	    sipe_strequal(sipmsg_find_header(msg, "CSeq"), "1 INVITE")) {
+	    sipe_strequal(sipmsg_find_cseq_header(msg), "1 INVITE")) {
 #ifdef HAVE_APPSHARE
 		process_incoming_invite_appshare(sipe_private, msg);
 #else
