@@ -150,6 +150,21 @@ gchar *sipmsg_get_ms_diagnostics_public_reason(struct sipmsg *msg);
 int sipmsg_parse_warning(struct sipmsg *msg, gchar **reason);
 
 /**
+ * Helpers to find some common headers in SIP message
+ *
+ * @param msg (in) SIP message
+ *
+ * @return header text or NULL if header is not present message.
+ */
+const gchar *sipmsg_find_call_id_header(const struct sipmsg *msg);
+const gchar *sipmsg_find_content_type_header(const struct sipmsg *msg);
+const gchar *sipmsg_find_cseq_header(const struct sipmsg *msg);
+const gchar *sipmsg_find_event_header(const struct sipmsg *msg);
+const gchar *sipmsg_find_expires_header(const struct sipmsg *msg);
+const gchar *sipmsg_find_from_header(const struct sipmsg *msg);
+const gchar *sipmsg_find_to_header(const struct sipmsg *msg);
+
+/**
  * Parse addresses out of SIP message headers
  *
  * @param msg (in)  SIP message

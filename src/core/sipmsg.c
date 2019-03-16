@@ -721,6 +721,34 @@ sipmsg_parse_warning(struct sipmsg *msg, gchar **reason)
 	return code;
 }
 
+const gchar *sipmsg_find_call_id_header(const struct sipmsg *msg) {
+	return(sipmsg_find_header(msg, "Call-ID"));
+}
+
+const gchar *sipmsg_find_content_type_header(const struct sipmsg *msg) {
+	return(sipmsg_find_header(msg, "Content-Type"));
+}
+
+const gchar *sipmsg_find_cseq_header(const struct sipmsg *msg) {
+	return(sipmsg_find_header(msg, "CSeq"));
+}
+
+const gchar *sipmsg_find_event_header(const struct sipmsg *msg) {
+	return(sipmsg_find_header(msg, "Event"));
+}
+
+const gchar *sipmsg_find_expires_header(const struct sipmsg *msg) {
+	return(sipmsg_find_header(msg, "Expires"));
+}
+
+const gchar *sipmsg_find_from_header(const struct sipmsg *msg) {
+	return(sipmsg_find_header(msg, "From"));
+}
+
+const gchar *sipmsg_find_to_header(const struct sipmsg *msg) {
+	return(sipmsg_find_header(msg, "To"));
+}
+
 gchar *sipmsg_parse_address_from_header(const struct sipmsg *msg,
 					const gchar *name) {
 	return(parse_from(sipmsg_find_header(msg, name)));
