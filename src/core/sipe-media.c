@@ -1171,7 +1171,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 
 	if (msg) {
 		sipmsg_update_to_header_tag(msg);
-		dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+		dialog->callid = g_strdup(sipmsg_find_call_id_header(msg));
 		sipe_dialog_parse(dialog, msg, FALSE);
 	} else {
 		dialog->callid = gencallid();
@@ -1655,7 +1655,7 @@ sipe_media_from_sipmsg(struct sipe_core_private *sipe_private,
 		       struct sipmsg *msg)
 {
 	return g_hash_table_lookup(sipe_private->media_calls,
-				   sipmsg_find_header(msg, "Call-ID"));
+				   sipmsg_find_call_id_header(msg));
 }
 
 static void

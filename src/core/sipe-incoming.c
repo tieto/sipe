@@ -56,7 +56,7 @@
 void process_incoming_bye(struct sipe_core_private *sipe_private,
 			  struct sipmsg *msg)
 {
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_call_id_header(msg);
 	gchar *from = sipmsg_parse_from_address(msg);
 	struct sip_session *session;
 	struct sip_dialog *dialog;
@@ -124,7 +124,7 @@ void process_incoming_bye(struct sipe_core_private *sipe_private,
 void process_incoming_cancel(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_call_id_header(msg);
 
 #ifdef HAVE_VV
 	struct sipe_media_call_private *call_private =
@@ -143,7 +143,7 @@ void process_incoming_info(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg)
 {
 	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_call_id_header(msg);
 	gchar *from;
 	struct sip_session *session;
 
@@ -377,7 +377,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	gboolean was_multiparty = TRUE;
 	gboolean just_joined = FALSE;
 	gchar *from;
-	const gchar *callid         = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid         = sipmsg_find_call_id_header(msg);
 	const gchar *roster_manager = sipmsg_find_header(msg, "Roster-Manager");
 	const gchar *end_points_hdr = sipmsg_find_header(msg, "EndPoints");
 	const gchar *trig_invite    = sipmsg_find_header(msg, "TriggeredInvite");
@@ -661,7 +661,7 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 	    g_str_has_prefix(contenttype, "multipart/related")     ||
 	    g_str_has_prefix(contenttype, "multipart/alternative"))
 	{
-		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		const gchar *callid = sipmsg_find_call_id_header(msg);
 		gchar *html = get_html_message(contenttype, msg->body);
 
 		struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
@@ -729,7 +729,7 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 		sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 		found = TRUE;
 	} else if (g_str_has_prefix(contenttype, "text/x-msmsgsinvite")) {
-		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		const gchar *callid = sipmsg_find_call_id_header(msg);
 		struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
 									   callid,
 									   from);
@@ -748,7 +748,7 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 		}
 	}
 	if (!found) {
-		const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+		const gchar *callid = sipmsg_find_call_id_header(msg);
 		struct sip_session *session = sipe_session_find_chat_or_im(sipe_private,
 									   callid,
 									   from);
@@ -792,7 +792,7 @@ void process_incoming_refer(struct sipe_core_private *sipe_private,
 			    struct sipmsg *msg)
 {
 	gchar *self = sip_uri_self(sipe_private);
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_call_id_header(msg);
 	gchar *from = sipmsg_parse_from_address(msg);
 	gchar *refer_to = sipmsg_parse_address_from_header(msg, "Refer-to");
 	gchar *referred_by = g_strdup(sipmsg_find_header(msg, "Referred-By"));

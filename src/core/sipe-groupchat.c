@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -1068,7 +1068,7 @@ void process_incoming_info_groupchat(struct sipe_core_private *sipe_private,
 	const gchar *callid;
 	struct sip_dialog *dialog;
 
-	callid = sipmsg_find_header(msg, "Call-ID");
+	callid = sipmsg_find_call_id_header(msg);
 	dialog = sipe_dialog_find(session, session->with);
 	if (sipe_strequal(callid, dialog->callid)) {
 

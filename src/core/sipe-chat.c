@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -410,7 +410,7 @@ process_info_response(struct sipe_core_private *sipe_private,
 		      SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_call_id_header(msg);
 	struct sip_dialog *dialog;
 	struct sip_session *session;
 

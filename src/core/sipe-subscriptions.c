@@ -228,7 +228,7 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 						    subscription);
 				key = NULL; /* table takes ownership of key */
 
-				subscription->dialog.callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+				subscription->dialog.callid = g_strdup(sipmsg_find_call_id_header(msg));
 				subscription->dialog.cseq   = sipmsg_parse_cseq(msg);
 				subscription->dialog.with   = g_strdup(with);
 				subscription->event         = g_strdup(event);

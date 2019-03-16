@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2014-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2014-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -672,7 +672,7 @@ process_incoming_info_ft_lync(struct sipe_core_private *sipe_private,
 	sipe_xml *xml;
 
 	call = g_hash_table_lookup(sipe_private->media_calls,
-				   sipmsg_find_header(msg, "Call-ID"));
+				   sipmsg_find_call_id_header(msg));
 	if (!call) {
 		return;
 	}

@@ -747,7 +747,7 @@ process_invite_conf_response(struct sipe_core_private *sipe_private,
 {
 	struct sip_dialog *dialog = g_new0(struct sip_dialog, 1);
 
-	dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
+	dialog->callid = g_strdup(sipmsg_find_call_id_header(msg));
 	dialog->cseq = sipmsg_parse_cseq(msg);
 	dialog->with = sipmsg_parse_to_address(msg);
 	sipe_dialog_parse(dialog, msg, TRUE);
@@ -994,14 +994,14 @@ void
 sipe_conf_cancel_unaccepted(struct sipe_core_private *sipe_private,
 			    struct sipmsg *msg)
 {
-	const gchar *callid1 = msg ? sipmsg_find_header(msg, "Call-ID") : NULL;
+	const gchar *callid1 = msg ? sipmsg_find_call_id_header(msg) : NULL;
 	GSList *it = sipe_private->sessions_to_accept;
 	while (it) {
 		struct conf_accept_ctx *ctx = it->data;
 		const gchar *callid2 = NULL;
 
 		if (msg && ctx->msg)
-			callid2 = sipmsg_find_header(ctx->msg, "Call-ID");
+			callid2 = sipmsg_find_call_id_header(ctx->msg);
 
 		if (sipe_strequal(callid1, callid2)) {
 			GSList *tmp;
@@ -1520,7 +1520,7 @@ sipe_process_imdn(struct sipe_core_private *sipe_private,
 		  struct sipmsg *msg)
 {
 	gchar *with = sipmsg_parse_from_address(msg);
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_call_id_header(msg);
 	static struct sip_session *session;
 	sipe_xml *xn_imdn;
 	const sipe_xml *node;

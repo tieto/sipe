@@ -146,7 +146,7 @@ static gboolean process_invite_response(struct sipe_core_private *sipe_private,
 	struct queued_message *message;
 	struct sipmsg *request_msg = trans->msg;
 
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_call_id_header(msg);
 	gchar *referred_by;
 
 	session = sipe_session_find_chat_or_im(sipe_private, callid, with);
@@ -441,7 +441,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 {
 	gboolean ret = TRUE;
 	gchar *with = sipmsg_parse_to_address(msg);
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_call_id_header(msg);
 	struct sip_session *session = sipe_session_find_chat_or_im(sipe_private, callid, with);
 	struct sip_dialog *dialog;
 	gchar *key;
@@ -460,7 +460,7 @@ process_message_response(struct sipe_core_private *sipe_private,
 		return FALSE;
 	}
 
-	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), sipmsg_parse_cseq(msg), with);
+	key = get_unconfirmed_message_key(sipmsg_find_call_id_header(msg), sipmsg_parse_cseq(msg), with);
 	message = g_hash_table_lookup(session->unconfirmed_messages, key);
 
 	if (msg->response >= 400) {
@@ -536,7 +536,7 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 			SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
 	gchar *with = sipmsg_parse_to_address(msg);
-	const gchar *callid = sipmsg_find_header(msg, "Call-ID");
+	const gchar *callid = sipmsg_find_call_id_header(msg);
 	struct sip_session *session = sipe_session_find_chat_or_im(sipe_private, callid, with);
 	gchar *key;
 	gboolean found;
@@ -548,7 +548,7 @@ process_message_timeout(struct sipe_core_private *sipe_private,
 	}
 
 	/* Remove timed-out message from unconfirmed list */
-	key = get_unconfirmed_message_key(sipmsg_find_header(msg, "Call-ID"), sipmsg_parse_cseq(msg), with);
+	key = get_unconfirmed_message_key(sipmsg_find_call_id_header(msg), sipmsg_parse_cseq(msg), with);
 	found = remove_unconfirmed_message(session, key);
 	g_free(key);
 
