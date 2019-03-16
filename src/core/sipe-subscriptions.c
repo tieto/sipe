@@ -157,12 +157,12 @@ static gboolean process_subscribe_response(struct sipe_core_private *sipe_privat
 					   struct sipmsg *msg,
 					   struct transaction *trans)
 {
-	const gchar *event = sipmsg_find_header(msg, "Event");
+	const gchar *event = sipmsg_find_event_header(msg);
 
 	/* No Event header - error or 2005 Public IM Connectivity (PIC) */
 	if (!event) {
 		struct sipmsg *request_msg = trans->msg;
-		event = sipmsg_find_header(request_msg, "Event");
+		event = sipmsg_find_event_header(request_msg);
 	}
 
 	if (event) {

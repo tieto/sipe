@@ -1280,7 +1280,7 @@ sipe_process_conference(struct sipe_core_private *sipe_private,
 
 	if (msg->response != 0 && msg->response != 200) return;
 
-	if (msg->bodylen == 0 || msg->body == NULL || !sipe_strequal(sipmsg_find_header(msg, "Event"), "conference")) return;
+	if (msg->bodylen == 0 || msg->body == NULL || !sipe_strequal(sipmsg_find_event_header(msg), "conference")) return;
 
 	xn_conference_info = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!xn_conference_info) return;

@@ -1265,7 +1265,7 @@ static gboolean sipe_process_roaming_contacts(struct sipe_core_private *sipe_pri
 {
 	int len = msg->bodylen;
 
-	const gchar *tmp = sipmsg_find_header(msg, "Event");
+	const gchar *tmp = sipmsg_find_event_header(msg);
 	const sipe_xml *item;
 	sipe_xml *isc;
 	guint delta;
@@ -1582,7 +1582,7 @@ static void sipe_process_presence_wpending (struct sipe_core_private *sipe_priva
 	// Ensure it's either not a response (eg it's a BENOTIFY) or that it's a 200 OK response
 	if (msg->response != 0 && msg->response != 200) return;
 
-	if (msg->bodylen == 0 || msg->body == NULL || sipe_strequal(sipmsg_find_header(msg, "Event"), "msrtc.wpending")) return;
+	if (msg->bodylen == 0 || msg->body == NULL || sipe_strequal(sipmsg_find_event_header(msg), "msrtc.wpending")) return;
 
 	watchers = sipe_xml_parse(msg->body, msg->bodylen);
 	if (!watchers) return;
@@ -1621,7 +1621,7 @@ void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
 	const gchar *content_type = sipmsg_find_content_type_header(msg);
-	const gchar *event = sipmsg_find_header(msg, "Event");
+	const gchar *event = sipmsg_find_event_header(msg);
 	const gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
 
 	SIPE_DEBUG_INFO("process_incoming_notify: subscription_state: %s", subscription_state ? subscription_state : "");
