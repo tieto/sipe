@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1098,7 +1098,7 @@ static void sipe_presence_mime_cb(gpointer user_data, /* sipe_core_private */
 static void sipe_process_presence(struct sipe_core_private *sipe_private,
 				  struct sipmsg *msg)
 {
-	const char *ctype = sipmsg_find_header(msg, "Content-Type");
+	const char *ctype = sipmsg_find_content_type_header(msg);
 
 	SIPE_DEBUG_INFO("sipe_process_presence: Content-Type: %s", ctype ? ctype : "");
 
@@ -1144,7 +1144,7 @@ static void sipe_process_presence(struct sipe_core_private *sipe_private,
 static void sipe_process_registration_notify(struct sipe_core_private *sipe_private,
 					     struct sipmsg *msg)
 {
-	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	const gchar *contenttype = sipmsg_find_content_type_header(msg);
 	gchar *event = NULL;
 	gchar *reason = NULL;
 	gchar *warning;
@@ -1620,7 +1620,7 @@ static void sipe_process_presence_wpending (struct sipe_core_private *sipe_priva
 void process_incoming_notify(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
-	const gchar *content_type = sipmsg_find_header(msg, "Content-Type");
+	const gchar *content_type = sipmsg_find_content_type_header(msg);
 	const gchar *event = sipmsg_find_header(msg, "Event");
 	const gchar *subscription_state = sipmsg_find_header(msg, "subscription-state");
 

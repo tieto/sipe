@@ -91,7 +91,7 @@ struct sipmsg *sipmsg_parse_header(const gchar *header) {
 		if (tmp && sipe_strcase_equal(tmp, "chunked")) {
 			msg->bodylen = SIPMSG_BODYLEN_CHUNKED;
 		} else {
-			tmp = sipmsg_find_header(msg, "Content-Type");
+			tmp = sipmsg_find_content_type_header(msg);
 			if (tmp) {
 				/*
 				 * This is a fatal error situation: the message

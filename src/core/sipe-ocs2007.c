@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -1547,7 +1547,7 @@ static gboolean process_send_presence_category_publish_response(struct sipe_core
 								struct sipmsg *msg,
 								struct transaction *trans)
 {
-	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	const gchar *contenttype = sipmsg_find_content_type_header(msg);
 
 	if (msg->response == 200 && g_str_has_prefix(contenttype, "application/vnd-microsoft-roaming-self+xml")) {
 		sipe_ocs2007_process_roaming_self(sipe_private, msg);

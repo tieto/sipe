@@ -409,7 +409,7 @@ process_info_response(struct sipe_core_private *sipe_private,
 		      struct sipmsg *msg,
 		      SIPE_UNUSED_PARAMETER struct transaction *trans)
 {
-	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	const gchar *contenttype = sipmsg_find_content_type_header(msg);
 	const gchar *callid = sipmsg_find_call_id_header(msg);
 	struct sip_dialog *dialog;
 	struct sip_session *session;

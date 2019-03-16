@@ -142,7 +142,7 @@ void process_incoming_cancel(struct sipe_core_private *sipe_private,
 void process_incoming_info(struct sipe_core_private *sipe_private,
 			   struct sipmsg *msg)
 {
-	const gchar *contenttype = sipmsg_find_header(msg, "Content-Type");
+	const gchar *contenttype = sipmsg_find_content_type_header(msg);
 	const gchar *callid = sipmsg_find_call_id_header(msg);
 	gchar *from;
 	struct sip_session *session;
@@ -271,7 +271,7 @@ static void sipe_invite_mime_cb(gpointer user_data, const GSList *fields,
 	const gchar *type;
 	gchar *body_lcase;
 
-	if (g_str_has_prefix(sipmsg_find_header(msg, "Content-Type"),
+	if (g_str_has_prefix(sipmsg_find_content_type_header(msg),
 			     "application/sdp")) {
 		/* We have already found suitable alternative and set message's body
 		 * and Content-Type accordingly. */
@@ -381,7 +381,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	const gchar *roster_manager = sipmsg_find_header(msg, "Roster-Manager");
 	const gchar *end_points_hdr = sipmsg_find_header(msg, "EndPoints");
 	const gchar *trig_invite    = sipmsg_find_header(msg, "TriggeredInvite");
-	const gchar *content_type   = sipmsg_find_header(msg, "Content-Type");
+	const gchar *content_type   = sipmsg_find_content_type_header(msg);
 	const gchar *subject        = sipmsg_find_header(msg, "Subject");
 	GSList *end_points = NULL;
 	struct sip_session *session;
@@ -393,7 +393,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	if (g_str_has_prefix(content_type, "multipart/alternative")) {
 		sipe_mime_parts_foreach(content_type, msg->body, sipe_invite_mime_cb, msg);
 		/* Reload Content-Type to get type of the selected message part */
-		content_type = sipmsg_find_header(msg, "Content-Type");
+		content_type = sipmsg_find_content_type_header(msg);
 	}
 #endif
 
@@ -654,7 +654,7 @@ void process_incoming_message(struct sipe_core_private *sipe_private,
 
 	SIPE_DEBUG_INFO("got message from %s: %s", from, msg->body);
 
-	contenttype = sipmsg_find_header(msg, "Content-Type");
+	contenttype = sipmsg_find_content_type_header(msg);
 	if (g_str_has_prefix(contenttype, "text/plain")            ||
 	    g_str_has_prefix(contenttype, "text/html")             ||
 	    g_str_has_prefix(contenttype, "text/rtf")              ||

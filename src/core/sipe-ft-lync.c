@@ -463,7 +463,7 @@ process_incoming_invite_ft_lync(struct sipe_core_private *sipe_private,
 	struct sipe_media_stream *stream;
 
 	ft_private = g_new0(struct sipe_file_transfer_lync, 1);
-	sipe_mime_parts_foreach(sipmsg_find_header(msg, "Content-Type"),
+	sipe_mime_parts_foreach(sipmsg_find_content_type_header(msg),
 				msg->body, mime_mixed_cb, ft_private);
 
 	if (!ft_private->file_name || !ft_private->file_size || !ft_private->sdp) {

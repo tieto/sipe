@@ -463,7 +463,7 @@ static void sipe_process_presence_timeout(struct sipe_core_private *sipe_private
 					  const gchar *who,
 					  int timeout)
 {
-	const char *ctype = sipmsg_find_header(msg, "Content-Type");
+	const char *ctype = sipmsg_find_content_type_header(msg);
 	gchar *action_name = sipe_utils_presence_key(who);
 
 	SIPE_DEBUG_INFO("sipe_process_presence_timeout: Content-Type: %s", ctype ? ctype : "");
