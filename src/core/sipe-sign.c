@@ -98,7 +98,7 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 			msg->p_assertet_identity_tel_uri = tel_uri;
 	}
 
-	msg->expires = sipmsg_find_header(msg->msg, "Expires");
+	msg->expires = sipmsg_find_expires_header(msg->msg);
 }
 
 void

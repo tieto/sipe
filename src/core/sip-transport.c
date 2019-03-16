@@ -984,7 +984,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
         GSList *hdr = msg->headers;
         struct sipnameval *elem;
 
-	expires_header = sipmsg_find_header(msg, "Expires");
+	expires_header = sipmsg_find_expires_header(msg);
 	expires = expires_header != NULL ? strtol(expires_header, NULL, 10) : 0;
 	SIPE_DEBUG_INFO("process_register_response: got response to REGISTER; expires = %d", expires);
 

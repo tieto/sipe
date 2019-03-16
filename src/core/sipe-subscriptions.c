@@ -903,7 +903,7 @@ static void sipe_subscription_expiration(struct sipe_core_private *sipe_private,
 					 struct sipmsg *msg,
 					 const gchar *event)
 {
-	const gchar *expires_header = sipmsg_find_header(msg, "Expires");
+	const gchar *expires_header = sipmsg_find_expires_header(msg);
 	guint timeout = expires_header ? strtol(expires_header, NULL, 10) : 0;
 
 	if (timeout) {
