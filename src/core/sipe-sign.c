@@ -75,7 +75,7 @@ void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar 
 		msg->from_tag = sipmsg_find_part_of_header(hdr, ";tag=", ";", empty_string);
 	}
 
-	hdr = sipmsg_find_header(msg->msg, "To");
+	hdr = sipmsg_find_to_header(msg->msg);
 	if (NULL != hdr) {
 		gchar *address = parse_from(hdr);
 		if (address)
