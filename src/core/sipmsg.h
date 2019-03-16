@@ -158,9 +158,10 @@ int sipmsg_parse_warning(struct sipmsg *msg, gchar **reason);
  * @return address or @c NULL if header not found or parse failure.
  *         Must be @c g_free()'d after use.
  */
-gchar *sipmsg_parse_from_address(struct sipmsg *msg);
-gchar *sipmsg_parse_to_address(struct sipmsg *msg);
-gchar *sipmsg_parse_address_from_header(struct sipmsg *msg,
+gchar *sipmsg_parse_contact_address(const struct sipmsg *msg);
+gchar *sipmsg_parse_from_address(const struct sipmsg *msg);
+gchar *sipmsg_parse_to_address(const struct sipmsg *msg);
+gchar *sipmsg_parse_address_from_header(const struct sipmsg *msg,
 					const gchar *name);
 
 /**

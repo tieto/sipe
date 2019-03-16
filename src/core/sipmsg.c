@@ -721,16 +721,20 @@ sipmsg_parse_warning(struct sipmsg *msg, gchar **reason)
 	return code;
 }
 
-gchar *sipmsg_parse_address_from_header(struct sipmsg *msg,
+gchar *sipmsg_parse_address_from_header(const struct sipmsg *msg,
 					const gchar *name) {
 	return(parse_from(sipmsg_find_header(msg, name)));
 }
 
-gchar *sipmsg_parse_from_address(struct sipmsg *msg) {
+gchar *sipmsg_parse_contact_address(const struct sipmsg *msg) {
+	return(sipmsg_parse_address_from_header(msg, "Contact"));
+}
+
+gchar *sipmsg_parse_from_address(const struct sipmsg *msg) {
 	return(sipmsg_parse_address_from_header(msg, "From"));
 }
 
-gchar *sipmsg_parse_to_address(struct sipmsg *msg) {
+gchar *sipmsg_parse_to_address(const struct sipmsg *msg) {
 	return(sipmsg_parse_address_from_header(msg, "To"));
 }
 

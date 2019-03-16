@@ -1153,7 +1153,7 @@ static gboolean process_register_response(struct sipe_core_private *sipe_private
 			break;
 		case 301:
 			{
-				gchar *redirect = sipmsg_parse_address_from_header(msg, "Contact");
+				gchar *redirect = sipmsg_parse_contact_address(msg);
 
 				SIPE_LOG_INFO_NOFORMAT("process_register_response: authentication handshake completed successfully (with redirect)");
 
