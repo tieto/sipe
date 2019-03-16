@@ -734,6 +734,15 @@ gchar *sipmsg_parse_to_address(struct sipmsg *msg) {
 	return(sipmsg_parse_address_from_header(msg, "To"));
 }
 
+void sipmsg_update_to_header_tag(struct sipmsg *msg) {
+	const gchar *old = sipmsg_find_header(msg, "To");
+	gchar *tag       = gentag();
+	gchar *new       = g_strdup_printf("%s;tag=%s", old, tag);
+	g_free(tag);
+	sipmsg_remove_header_now(msg, "To");
+	sipmsg_add_header_now(msg, "To", new);
+	g_free(new);
+}
 
 
 //------------------------------------------------------------------------------------------

@@ -162,3 +162,10 @@ gchar *sipmsg_parse_from_address(struct sipmsg *msg);
 gchar *sipmsg_parse_to_address(struct sipmsg *msg);
 gchar *sipmsg_parse_address_from_header(struct sipmsg *msg,
 					const gchar *name);
+
+/**
+ * Generate and append new tag to the "To:" header in the message
+ *
+ * @param msg (in) SIP message
+ */
+void sipmsg_update_to_header_tag(struct sipmsg *msg);

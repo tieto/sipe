@@ -945,17 +945,9 @@ accept_incoming_invite_conf(struct sipe_core_private *sipe_private,
 			    struct sipmsg *msg)
 {
 	struct sip_session *session;
-	gchar *newTag = gentag();
-	const gchar *oldHeader = sipmsg_find_header(msg, "To");
-	gchar *newHeader;
-
-	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
-	g_free(newTag);
-	sipmsg_remove_header_now(msg, "To");
-	sipmsg_add_header_now(msg, "To", newHeader);
-	g_free(newHeader);
 
 	/* acknowledge invite */
+	sipmsg_update_to_header_tag(msg);
 	sip_transport_response(sipe_private, msg, 200, "OK", NULL);
 
 	/* add self to conf */

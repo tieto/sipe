@@ -373,9 +373,6 @@ void sipe_incoming_cancel_delayed_invite(struct sipe_core_private *sipe_private,
 void process_incoming_invite(struct sipe_core_private *sipe_private,
 			     struct sipmsg *msg)
 {
-	gchar *newTag;
-	const gchar *oldHeader;
-	gchar *newHeader;
 	gboolean is_multiparty = FALSE;
 	gboolean was_multiparty = TRUE;
 	gboolean just_joined = FALSE;
@@ -449,14 +446,7 @@ void process_incoming_invite(struct sipe_core_private *sipe_private,
 	}
 
 	// TODO There *must* be a better way to clean up the To header to add a tag...
-	SIPE_DEBUG_INFO_NOFORMAT("Adding a Tag to the To Header on Invite Request...");
-	oldHeader = sipmsg_find_header(msg, "To");
-	newTag = gentag();
-	newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
-	g_free(newTag);
-	sipmsg_remove_header_now(msg, "To");
-	sipmsg_add_header_now(msg, "To", newHeader);
-	g_free(newHeader);
+	sipmsg_update_to_header_tag(msg);
 
 	if (end_points_hdr) {
 		end_points = sipmsg_parse_endpoints_header(end_points_hdr);

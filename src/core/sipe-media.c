@@ -1170,17 +1170,7 @@ sipe_media_call_new(struct sipe_core_private *sipe_private, const gchar* with,
 	dialog->with = g_strdup(with);
 
 	if (msg) {
-		gchar *newTag = gentag();
-		const gchar *oldHeader;
-		gchar *newHeader;
-
-		oldHeader = sipmsg_find_header(msg, "To");
-		newHeader = g_strdup_printf("%s;tag=%s", oldHeader, newTag);
-		sipmsg_remove_header_now(msg, "To");
-		sipmsg_add_header_now(msg, "To", newHeader);
-		g_free(newTag);
-		g_free(newHeader);
-
+		sipmsg_update_to_header_tag(msg);
 		dialog->callid = g_strdup(sipmsg_find_header(msg, "Call-ID"));
 		sipe_dialog_parse(dialog, msg, FALSE);
 	} else {
