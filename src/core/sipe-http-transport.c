@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2013-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2013-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -107,7 +107,7 @@ static void sipe_http_transport_drop(struct sipe_http *http,
 				     struct sipe_http_connection *conn,
 				     const gchar *message)
 {
-	SIPE_LOG_INFO("sipe_http_transport_drop: dropping connection '%s'(%p): %s",
+	SIPE_LOG_INFO("sipe_http_transport_drop: '%s'(%p): %s",
 		      conn->host_port,
 		      conn->connection,
 		      message ? message : "REASON UNKNOWN");
@@ -247,7 +247,7 @@ static void sipe_http_transport_connected(struct sipe_transport_connection *conn
 	struct sipe_http *http = sipe_private->http;
 	time_t current_time = time(NULL);
 
-	SIPE_LOG_INFO("sipe_http_transport_connected: %s(%p)",
+	SIPE_LOG_INFO("sipe_http_transport_connected: '%s'(%p)",
 		      conn->host_port, connection);
 	conn->public.connected = TRUE;
 

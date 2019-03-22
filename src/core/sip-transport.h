@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -112,7 +112,7 @@ void sip_transport_update(struct sipe_core_private *sipe_private,
 /* Misc. SIP transport stuff */
 guint sip_transport_port(struct sipe_core_private *sipe_private);
 void sip_transport_deregister(struct sipe_core_private *sipe_private);
-void sip_transport_disconnect(struct sipe_core_private *sipe_private);
+void sip_transport_drop(struct sipe_core_private *sipe_private);
 void sip_transport_authentication_completed(struct sipe_core_private *sipe_private);
 
 int sip_transaction_cseq(struct transaction *trans);

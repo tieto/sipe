@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -395,7 +395,7 @@ void sipe_core_backend_initialized(struct sipe_core_private *sipe_private,
 void sipe_core_connection_cleanup(struct sipe_core_private *sipe_private)
 {
 	sipe_http_free(sipe_private);
-	sip_transport_disconnect(sipe_private);
+	sip_transport_drop(sipe_private);
 
 	sipe_schedule_cancel_all(sipe_private);
 
