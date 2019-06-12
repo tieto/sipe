@@ -125,8 +125,8 @@ maybe_signal_stream_initialized(struct sipe_media_call *call, gchar *sessionid)
 		if (stream &&
 		    sipe_backend_stream_initialized(call, stream) &&
 		    !stream->backend_private->initialized_cb_was_fired) {
-			call->stream_initialized_cb(call, stream);
 			stream->backend_private->initialized_cb_was_fired = TRUE;
+			call->stream_initialized_cb(call, stream);
 		}
 	}
 }
