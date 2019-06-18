@@ -879,6 +879,8 @@ stream_schedule_timeout(struct sipe_media_call *call)
 	for (i = SIPE_MEDIA_CALL_PRIVATE->streams; i; i = i->next) {
 		struct sipe_media_stream_private *stream_private = i->data;
 
+                if (stream_private->established)
+				continue;
 		stream_private->timeout_key =
 			g_strdup_printf("<media-stream-connect><%s><%s>",
 					sipe_media_get_sip_dialog(call)->callid,
