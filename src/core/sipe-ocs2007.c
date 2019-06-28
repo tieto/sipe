@@ -2310,6 +2310,9 @@ void sipe_ocs2007_process_roaming_self(struct sipe_core_private *sipe_private,
 			}
 
 			if (xn_activity) {
+				if (activity_token) {
+					g_free(activity_token);
+				}
 				activity_token = g_strdup(sipe_xml_attribute(xn_activity, "token"));
 			}
 		}

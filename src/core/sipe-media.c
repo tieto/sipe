@@ -153,6 +153,7 @@ sipe_media_stream_free(struct sipe_media_stream_private *stream_private)
 			call_private->ssrc_ranges =
 				g_slist_remove(call_private->ssrc_ranges,
 					       SIPE_MEDIA_STREAM->ssrc_range);
+			g_free(SIPE_MEDIA_STREAM->ssrc_range);
 		}
 	}
 
