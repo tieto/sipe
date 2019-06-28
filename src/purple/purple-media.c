@@ -827,7 +827,7 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 	struct sipe_backend_media_stream *backend_stream = NULL;
 	GstElement *pipe;
 	// Preallocate enough space for all potential parameters to fit.
-	GParameter *params = g_new0(GParameter, 6);
+	GParameter *params = g_new0(GParameter, 7);
 	guint params_cnt = 0;
 	gchar *transmitter;
 #ifdef HAVE_XDATA
@@ -879,6 +879,23 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 			g_value_set_boolean(&params[params_cnt].value, TRUE);
 			++params_cnt;
 		}
+
+		/* Don't use the globally defined stun server (it is used by
+		 * default in backend-fs2) because it generates srflx local
+		 * candidates that confuse SfB when they contribute to valid
+		 * pairs in controlled mode:
+		 *
+		 * ms-client-diagnostics: 21
+		 *   "Call failed to establish due to a media connectivity
+		 *   failure where one endpoint is of unknown type"
+		 *
+		 * These candidates will be discovered anyway during the
+		 * conncheck as prflx, and they will be accepted and nominated
+		 * by SfB when having this type. */
+		params[params_cnt].name = "stun-ip";
+		g_value_init(&params[params_cnt].value, G_TYPE_STRING);
+		g_value_set_string(&params[params_cnt].value, NULL);
+		++params_cnt;
 	} else {
 		// TODO: session naming here, Communicator needs audio/video
 		transmitter = "rawudp";
