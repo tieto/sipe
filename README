@@ -215,7 +215,6 @@ following packages
 	pkg-config
 	libglib2.0-dev
 	libxml2-dev
-	libgmime-2.4-dev  (optional)
 	libgmime-2.6-dev  (optional)
 
 	pkgconfig
