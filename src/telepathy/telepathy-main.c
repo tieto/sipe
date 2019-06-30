@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2012 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2012-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,6 +34,10 @@
 #include "sipe-core.h"
 
 #include "telepathy-private.h"
+
+#if TP_VERSION_MIN_REQUIRED < TP_VERSION_0_24
+#error telepathy-glib >= 0.24.0 is required to build SIPE
+#endif
 
 G_BEGIN_DECLS
 /*
