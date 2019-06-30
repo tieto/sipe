@@ -26,5 +26,6 @@
   <url type="homepage">http://sipe.sourceforge.net/</url>
   <url type="bugtracker">https://sourceforge.net/p/sipe/bugs/</url>
   <metadata_license>GFDL-1.3</metadata_license>
+  <!-- NOTE: appstream does not recognize SPDX 2.x+ "GPL-2.0-or-later" -->
   <project_license>GPL-2.0+</project_license>
 </component>
