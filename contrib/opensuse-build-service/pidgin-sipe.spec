@@ -151,7 +151,7 @@ Version:        1.24.0
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 URL:            http://sipe.sourceforge.net/
 
 BuildRoot:      %{_tmppath}/%{name}-%{version}-build
@@ -276,7 +276,7 @@ This package provides the icon set for Pidgin.
 %package -n %{purple_plugin}
 Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 Obsoletes:      purple-sipe
 %if 0%{?build_telepathy:1}
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
@@ -301,7 +301,7 @@ This package provides the protocol plugin for libpurple clients.
 %package -n %{empathy_files}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 Requires:       empathy
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
@@ -324,7 +324,7 @@ This package provides the icon set for Empathy.
 %package -n %{ktp_files}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{ktp_files}
@@ -345,7 +345,7 @@ This package provides the profile for KTP account manager.
 %package -n %{telepathy_plugin}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{telepathy_plugin}
@@ -365,7 +365,7 @@ This package provides the protocol support for Telepathy clients.
 %package -n %{common_files}
 Summary:        Common files for SIPE protocol plugins
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 BuildArch:      noarch
 
 %description -n %{common_files}
@@ -379,7 +379,7 @@ This package provides common files for the SIPE protocol plugins:
 %package -n %{nsis_package}
 Summary:        Windows Pidgin protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 
 %description -n %{nsis_package}
 A third-party plugin for the Pidgin multi-protocol instant messenger.

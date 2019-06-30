@@ -36,7 +36,7 @@ Release:        1%{?dist}
 Source0:        https://downloads.sourceforge.net/project/sipe/sipe/%{name}-%{version}/%{name}-%{version}.tar.bz2
 %endif
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 URL:            http://sipe.sourceforge.net/
 
 BuildRequires:  pkgconfig(dbus-1)
@@ -108,7 +108,7 @@ This package provides the icon set for Pidgin.
 %package -n %{purple_plugin}
 Summary:        Libpurple protocol plugin to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %if 0%{?requires_gssntlmssp}
@@ -133,7 +133,7 @@ This package provides the protocol plugin for libpurple clients.
 %package -n %{empathy_files}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{empathy_files}
@@ -153,7 +153,7 @@ This package provides the icon set for Empathy.
 %package -n %{ktp_files}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 Requires:       %{telepathy_plugin} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %description -n %{ktp_files}
@@ -173,7 +173,7 @@ This package provides the profile for KTP account manager.
 %package -n %{telepathy_plugin}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 Requires:       %{common_files} = %{?epoch:%{epoch}:}%{version}-%{release}
 
 %if 0%{?requires_gssntlmssp}
@@ -198,7 +198,7 @@ This package provides the protocol support for Telepathy clients.
 %package -n %{common_files}
 Summary:        Common files for SIPE protocol plugins
 Group:          %{pkg_group}
-License:        GPLv2+
+License:        GPL-2.0-or-later
 BuildArch:      noarch
 
 %description -n %{common_files}
