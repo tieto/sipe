@@ -214,7 +214,7 @@ gchar *sipe_core_about(void)
 		/* 3,4 */ "%s: <a href=\"http://sourceforge.net/p/sipe/discussion/688534/\">%s</a><br/>"
 		/* 5,6 */   "%s: <a href=\"" PACKAGE_BUGREPORT "\">%s</a><br/>"
 		/* 7 */   "%s: <a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.com</a><br/>"
-		/* 8 */   "%s: GPLv2+<br/>"
+		/* 8 */   "%s: GPL-2.0-or-later<br/>"
 		"<br/>"
 		/* 9 (REMOVED) */
 		/* 10,11 */ "%s<a href=\"" SIPE_TRANSLATIONS_URL "\">Transifex.com</a>%s.<br/>"
