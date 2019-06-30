@@ -90,6 +90,8 @@
 %define has_appstream_legacy 1
 %if 0%{?suse_version} >= 1500
 %define has_freerdp 1
+%else
+%define build_empathy 1
 %endif
 %endif
 %define has_gstreamer 1
@@ -112,6 +114,9 @@
 
 %if 0%{?fedora}
 %define has_appstream 1
+%if %{fedora} <= 29
+%define build_empathy 1
+%endif
 %if %{fedora} <= 26
 %define has_appstream_legacy 1
 %endif
@@ -240,7 +245,9 @@ Requires:       gssntlmssp >= 0.5.0
 BuildRequires:  pidgin
 Requires:       pidgin
 %if 0%{?build_telepathy:1}
+%if 0%{?build_empathy:1}
 BuildRequires:  empathy
+%endif
 %endif
 
 # End Windows cross-compilation/Linux build setup
@@ -290,6 +297,7 @@ This package provides the protocol plugin for libpurple clients.
 
 
 %if 0%{?build_telepathy:1}
+%if 0%{?build_empathy:1}
 %package -n %{empathy_files}
 Summary:        Telepathy connection manager to connect to MS Office Communicator
 Group:          %{pkg_group}
@@ -309,6 +317,7 @@ SIP/SIMPLE used by various products:
     * Microsoft Live Communications Server (LCS 2003/2005)
 
 This package provides the icon set for Empathy.
+%endif
 
 
 %if 0%{?build_ktp:1}
@@ -498,6 +507,9 @@ rm -f \
 mv %{buildroot}/%{_datadir}/metainfo %{buildroot}/%{_datadir}/appdata
 %endif
 %if 0%{?build_telepathy:1}
+%if !0%{?build_empathy:1}
+rm -r %{buildroot}%{_datadir}/empathy
+%endif
 %if !0%{?build_ktp:1}
 rm -r %{buildroot}%{_datadir}/telepathy
 %endif
@@ -521,10 +533,12 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %if 0%{?build_telepathy:1}
+%if 0%{?build_empathy:1}
 %files -n %{empathy_files}
 %defattr(-,root,root,-)
 %{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.png
 %{_datadir}/empathy/icons/hicolor/*/apps/im-sipe.svg
+%endif
 
 
 %if 0%{?build_ktp:1}
@@ -577,6 +591,9 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %changelog
+* Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
+- newer distros no longer package empathy
+
 * Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
 - raise BR telepathy-glib >= 0.24.0
 
