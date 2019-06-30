@@ -72,7 +72,7 @@ BuildRequires:  pkgconfig(dbus-glib-1)
 BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
 BuildRequires:  pkgconfig(glib-2.0) >= 2.32.0
 BuildRequires:  pkgconfig(gobject-2.0)
-BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
+BuildRequires:  pkgconfig(telepathy-glib) >= 0.24.0
 %endif
 
 # Configurable components
@@ -288,6 +288,9 @@ make %{?_smp_mflags} check
 
 
 %changelog
+* Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
+- raise BR telepathy-glib >= 0.24.0
+
 * Fri Dec 28 2018 J. D. User <jduser@noreply.com> 1.24.0-*git*
 - add BR flex for git builds
 

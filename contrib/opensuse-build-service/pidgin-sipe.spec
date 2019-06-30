@@ -219,7 +219,7 @@ BuildRequires:  pkgconfig(dbus-glib-1)
 BuildRequires:  pkgconfig(gio-2.0) >= 2.32.0
 BuildRequires:  pkgconfig(glib-2.0) >= 2.32.0
 BuildRequires:  pkgconfig(gobject-2.0)
-BuildRequires:  pkgconfig(telepathy-glib) >= 0.18.0
+BuildRequires:  pkgconfig(telepathy-glib) >= 0.24.0
 %endif
 
 # Configurable components
@@ -577,6 +577,9 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %changelog
+* Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
+- raise BR telepathy-glib >= 0.24.0
+
 * Sat Nov 10 2018 J. D. User <jduser@noreply.com> 1.24.0
 - update to 1.24.0
 
