@@ -73,13 +73,6 @@ for os in \
 ; do \
     cp pidgin-sipe-telepathy.dsc pidgin-sipe-${os}.dsc; \
 done
-# Platforms without appstream
-for os in \
-    Debian_7.0 \
-    xUbuntu_14.04 \
-; do \
-    cp pidgin-sipe-no-appstream.dsc pidgin-sipe-${os}.dsc; \
-done
 
 # Update SHA-2 256 checksum in Arch Linux PKGBUILD
 sed -i -e "s/@@SHA256SUM@@/$(sha256sum pidgin-sipe-${version}.tar.gz | cut -d' ' -f1)/" PKGBUILD
