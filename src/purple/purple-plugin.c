@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -47,6 +47,10 @@
 
 #define _PurpleMessageFlags PurpleMessageFlags
 #include "purple-private.h"
+
+#if !PURPLE_VERSION_CHECK(2,7,0)
+#error purple >= 2.7.0 is required to build SIPE
+#endif
 
 static int sipe_purple_send_im(PurpleConnection *gc,
 			       const char *who,

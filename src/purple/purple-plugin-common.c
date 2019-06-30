@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,10 +38,6 @@
 
 #ifdef HAVE_DBUS
 #include "purple-dbus.h"
-#endif
-
-#if !(PURPLE_VERSION_CHECK(2,7,0) || PURPLE_VERSION_CHECK(3,0,0))
-#error purple >= 2.7.0 is required to build SIPE
 #endif
 
 #if PURPLE_VERSION_CHECK(3,0,0)
