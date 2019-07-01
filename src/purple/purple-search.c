@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,6 +33,7 @@
 
 #include "version.h"
 #if PURPLE_VERSION_CHECK(3,0,0)
+#include "action.h"
 #include "conversations.h"
 #endif
 

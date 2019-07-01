@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -44,11 +44,17 @@
 #if PURPLE_VERSION_CHECK(3,0,0)
 #include "conversationtypes.h" /* PurpleIMTypingState */
 #include "plugins.h"           /* PurplePlugin */
+
+/* Forward declarations */
+struct _PurpleProtocolAction;
 #else
 #include "conversation.h"      /* PurpleTypingState */
 #include "plugin.h"            /* PurplePlugin */
 #define PurpleIMTypingState PurpleTypingState
 #define _PurpleProtocolAction _PurplePluginAction
+
+/* Forward declarations */
+struct _PurplePluginAction;
 #endif
 
 /* Forward declarations */
@@ -63,7 +69,6 @@ struct _PurpleConversation;
 struct _PurpleGroup;
 struct _PurpleMessage;
 struct _PurpleNotifyUserInfo;
-struct _PurplePluginAction;
 struct _PurpleRoomlist;
 struct _PurpleStatus;
 struct _PurpleXfer;

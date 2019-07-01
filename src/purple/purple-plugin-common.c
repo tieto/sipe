@@ -37,6 +37,7 @@
 #include "version.h"
 
 #if PURPLE_VERSION_CHECK(3,0,0)
+#include "action.h"
 #define PURPLE_TYPE_STRING G_TYPE_STRING
 #define SIPE_PURPLE_ACTION_TO_CONNECTION              action->connection
 #else
