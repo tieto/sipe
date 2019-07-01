@@ -101,11 +101,14 @@ tests_LDADD     = \
 endif
 endif
 
+# D-Bus functionality no longer available in 3.x.x API
+if !SIPE_PURPLE3
 if SIPE_DBUS
 libsipe_backend_la_SOURCES += \
 	purple-dbus.c \
 	purple-dbus.h \
 	purple-dbus-bindings.c
+endif
 endif
 
 if SIPE_MIME_GMIME

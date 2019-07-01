@@ -27,6 +27,7 @@
 #include <glib.h>
 
 #include "sipe-common.h"
+#include "sipe-backend.h"
 
 /* Flag needed for correct version of PURPLE_INIT_PLUGIN() */
 #ifndef PURPLE_PLUGINS
@@ -47,6 +48,10 @@
 
 #define _PurpleMessageFlags PurpleMessageFlags
 #include "purple-private.h"
+
+#ifdef HAVE_DBUS
+#include "purple-dbus.h"
+#endif
 
 #if !PURPLE_VERSION_CHECK(2,7,0)
 #error purple >= 2.7.0 is required to build SIPE
@@ -196,6 +201,18 @@ static void sipe_purple_plugin_destroy(SIPE_UNUSED_PARAMETER PurplePlugin *plugi
 	sipe_prpl_info.user_splits = NULL;
 }
 
+static gboolean plugin_load(PurplePlugin *plugin)
+{
+#ifdef HAVE_DBUS
+	if (purple_dbus_get_init_error() == NULL) {
+		SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_plugin_load: registering D-Bus bindings");
+		purple_dbus_register_bindings(plugin, sipe_purple_dbus_bindings);
+	}
+#endif
+
+	return sipe_purple_plugin_load(plugin);
+}
+
 static GList *purple_actions(SIPE_UNUSED_PARAMETER PurplePlugin *plugin,
 			     SIPE_UNUSED_PARAMETER gpointer context)
 {
@@ -218,7 +235,7 @@ static PurplePluginInfo sipe_purple_info = {
 	SIPE_PURPLE_PLUGIN_DESCRIPTION,                   /**< description    */
 	SIPE_PURPLE_PLUGIN_AUTHORS,                       /**< authors        */
 	PACKAGE_URL,                                      /**< homepage       */
-	sipe_purple_plugin_load,                          /**< load           */
+	plugin_load,                                      /**< load           */
 	sipe_purple_plugin_unload,                        /**< unload         */
 	sipe_purple_plugin_destroy,                       /**< destroy        */
 	NULL,                                             /**< ui_info        */

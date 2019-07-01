@@ -36,10 +36,6 @@
 #include "request.h"
 #include "version.h"
 
-#ifdef HAVE_DBUS
-#include "purple-dbus.h"
-#endif
-
 #if PURPLE_VERSION_CHECK(3,0,0)
 #define PURPLE_TYPE_STRING G_TYPE_STRING
 #define SIPE_PURPLE_ACTION_TO_CONNECTION              action->connection
@@ -655,13 +651,6 @@ PurpleMediaCaps sipe_purple_get_media_caps(SIPE_UNUSED_PARAMETER PurpleAccount *
 /* PurplePluginInfo function calls & data structure */
 gboolean sipe_purple_plugin_load(SIPE_UNUSED_PARAMETER PurplePlugin *plugin)
 {
-#ifdef HAVE_DBUS
-	if (purple_dbus_get_init_error() == NULL) {
-		SIPE_DEBUG_INFO_NOFORMAT("sipe_purple_plugin_load: registering D-Bus bindings");
-		purple_dbus_register_bindings(plugin, sipe_purple_dbus_bindings);
-	}
-#endif
-
 #ifdef HAVE_VV
 	{
 		struct sigaction action;
