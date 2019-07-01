@@ -247,6 +247,38 @@ void sipe_backend_buddy_remove(SIPE_UNUSED_PARAMETER struct sipe_core_public *si
 	purple_blist_remove_buddy(who);
 }
 
+struct authorization_cb_data {
+	sipe_backend_buddy_request_authorization_cb auth_cb;
+	sipe_backend_buddy_request_authorization_cb deny_cb;
+	gpointer data;
+};
+
+static void authorization_auth_cb(
+#if PURPLE_VERSION_CHECK(3,0,0)
+	SIPE_UNUSED_PARAMETER const char *response,
+#endif
+	void *user_data)
+{
+	struct authorization_cb_data *cb_data = user_data;
+	sipe_backend_buddy_request_authorization_cb callback = cb_data->auth_cb;
+	void *data = cb_data->data;
+	g_free(user_data);
+	(*callback)(data);
+}
+
+static void authorization_deny_cb(
+#if PURPLE_VERSION_CHECK(3,0,0)
+	SIPE_UNUSED_PARAMETER const char *response,
+#endif
+	void *user_data)
+{
+	struct authorization_cb_data *cb_data = user_data;
+	sipe_backend_buddy_request_authorization_cb callback = cb_data->deny_cb;
+	void *data = cb_data->data;
+	g_free(user_data);
+	(*callback)(data);
+}
+
 void sipe_backend_buddy_request_authorization(struct sipe_core_public *sipe_public,
 					      const gchar *who,
 					      const gchar *alias,
@@ -256,6 +288,11 @@ void sipe_backend_buddy_request_authorization(struct sipe_core_public *sipe_publ
 					      gpointer data)
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
+	struct authorization_cb_data *cb_data = g_new(struct authorization_cb_data, 1);
+
+	cb_data->auth_cb = auth_cb;
+	cb_data->deny_cb = deny_cb;
+	cb_data->data    = data;
 
 	purple_account_request_authorization(
 		purple_private->account,
@@ -264,10 +301,9 @@ void sipe_backend_buddy_request_authorization(struct sipe_core_public *sipe_publ
 		alias,
 		NULL, /* message */
 		on_list,
-		(PurpleAccountRequestAuthorizationCb) auth_cb,
-		(PurpleAccountRequestAuthorizationCb) deny_cb,
-		data);
-
+		authorization_auth_cb,
+		authorization_deny_cb,
+		cb_data);
 }
 
 void sipe_backend_buddy_request_add(struct sipe_core_public *sipe_public,
