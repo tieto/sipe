@@ -816,6 +816,7 @@ gst_bus_cb(GstBus *bus, GstMessage *msg, struct sipe_media_stream *stream)
 		g_signal_handler_disconnect(bus,
 				stream->backend_private->gst_bus_cb_id);
 		stream->backend_private->gst_bus_cb_id = 0;
+		g_value_unset (&val);
 	}
 
 	gst_iterator_free(it);
