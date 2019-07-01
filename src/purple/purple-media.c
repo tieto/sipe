@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -36,10 +36,17 @@
 
 #include "mediamanager.h"
 #include "agent.h"
+#include "version.h"
 
 #ifdef _WIN32
 /* wrappers for write() & friends for socket handling */
 #include "win32/win32dep.h"
+#endif
+
+#if PURPLE_VERSION_CHECK(3,0,0)
+/* nothing here yet */
+#else
+#define purple_config_dir purple_user_dir
 #endif
 
 #include "sipe-backend.h"
@@ -408,7 +415,7 @@ ensure_codecs_conf()
 	const gchar *fs_codecs_conf = FS_CODECS_CONF;
 	GError *error = NULL;
 
-	filename = g_build_filename(purple_user_dir(), "fs-codec.conf", NULL);
+	filename = g_build_filename(purple_config_dir(), "fs-codec.conf", NULL);
 
 	g_file_set_contents(filename, fs_codecs_conf, strlen(fs_codecs_conf),
 			    &error);
