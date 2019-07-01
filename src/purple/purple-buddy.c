@@ -174,8 +174,8 @@ guint sipe_backend_buddy_get_status(struct sipe_core_public *sipe_public,
 {
 	struct sipe_backend_private *purple_private = sipe_public->backend_private;
 	PurpleBuddy *pbuddy = purple_blist_find_buddy(purple_private->account, uri);
-	const PurplePresence *presence = purple_buddy_get_presence(pbuddy);
-	const PurpleStatus *pstatus = purple_presence_get_active_status(presence);
+	PurplePresence *presence = purple_buddy_get_presence(pbuddy);
+	PurpleStatus *pstatus = purple_presence_get_active_status(presence);
 	return(sipe_purple_token_to_activity(purple_status_get_id(pstatus)));
 }
 
@@ -800,7 +800,7 @@ static void sipe_purple_buddy_copy_to_cb(PurpleBlistNode *node,
 		if (clone) {
 			const gchar *tmp;
 			const gchar *key;
-			const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
+			PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
 
 			tmp = purple_buddy_get_server_alias(buddy);
 			if (tmp) purple_buddy_set_server_alias(clone, tmp);

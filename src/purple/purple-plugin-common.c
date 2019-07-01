@@ -152,7 +152,7 @@ const char *sipe_purple_list_icon(SIPE_UNUSED_PARAMETER PurpleAccount *a,
 
 gchar *sipe_purple_status_text(PurpleBuddy *buddy)
 {
-	const PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
+	PurpleStatus *status = purple_presence_get_active_status(purple_buddy_get_presence(buddy));
 	return sipe_core_buddy_status(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
 				      purple_buddy_get_name(buddy),
 				      sipe_purple_token_to_activity(purple_status_get_id(status)),
@@ -163,7 +163,7 @@ void sipe_purple_tooltip_text(PurpleBuddy *buddy,
 			      PurpleNotifyUserInfo *user_info,
 			      SIPE_UNUSED_PARAMETER gboolean full)
 {
-	const PurplePresence *presence = purple_buddy_get_presence(buddy);
+	PurplePresence *presence = purple_buddy_get_presence(buddy);
 	sipe_core_buddy_tooltip_info(PURPLE_BUDDY_TO_SIPE_CORE_PUBLIC,
 				     purple_buddy_get_name(buddy),
 				     purple_status_get_name(purple_presence_get_active_status(presence)),
