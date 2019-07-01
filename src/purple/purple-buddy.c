@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 
 #include "version.h"
 #if PURPLE_VERSION_CHECK(3,0,0)
+#include "action.h"
 #include "account.h"
 #include "buddylist.h"
 #else
@@ -39,6 +40,7 @@
 #define purple_account_privacy_check(a, n)             purple_privacy_check(a, n)
 #define purple_account_privacy_deny_add(a, n, l)       purple_privacy_deny_add(a, n, l)
 #define purple_account_privacy_deny_remove(a, n, l)    purple_privacy_deny_remove(a, n, l)
+#define purple_action_menu_new(l, c, d, ch)            purple_menu_action_new(l, c, d, ch)
 #define purple_blist_find_buddies(a, n)                purple_find_buddies(a, n)
 #define purple_blist_find_buddy(a, n)                  purple_find_buddy(a, n)
 #define purple_blist_find_buddy_in_group(a, n, g)      purple_find_buddy_in_group(a, n, g)
@@ -49,6 +51,7 @@
 #define purple_group_set_name(g, n)                    purple_blist_rename_group(g, n)
 #define purple_notify_user_info_add_pair_html(i, k, v) purple_notify_user_info_add_pair(i, k, v)
 #define purple_protocol_got_user_status                purple_prpl_got_user_status
+#define PurpleActionMenu                               PurpleMenuAction
 #define PURPLE_IS_BUDDY(b)                             PURPLE_BLIST_NODE_IS_BUDDY(b)
 #define PURPLE_IS_GROUP(b)                             PURPLE_BLIST_NODE_IS_GROUP(b)
 #endif
@@ -739,7 +742,7 @@ struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_add(SIPE_UNUSED_PARAMETE
 {
 	return((struct sipe_backend_buddy_menu *)
 	       g_list_prepend((GList *) menu,
-			      purple_menu_action_new(label,
+			      purple_action_menu_new(label,
 						     PURPLE_CALLBACK(callback_map[type]),
 						     parameter, NULL)));
 }
@@ -750,7 +753,7 @@ struct sipe_backend_buddy_menu *sipe_backend_buddy_menu_separator(SIPE_UNUSED_PA
 {
 	return((struct sipe_backend_buddy_menu *)
 	       g_list_prepend((GList *) menu,
-			      purple_menu_action_new(label, NULL, NULL, NULL)));
+			      purple_action_menu_new(label, NULL, NULL, NULL)));
 }
 
 struct sipe_backend_buddy_menu *sipe_backend_buddy_sub_menu_add(SIPE_UNUSED_PARAMETER struct sipe_core_public *sipe_public,
@@ -760,7 +763,7 @@ struct sipe_backend_buddy_menu *sipe_backend_buddy_sub_menu_add(SIPE_UNUSED_PARA
 {
 	return((struct sipe_backend_buddy_menu *)
 	       g_list_prepend((GList *) menu,
-			      purple_menu_action_new(label,
+			      purple_action_menu_new(label,
 						     NULL,
 						     NULL,
 						     g_list_reverse((GList *) sub))));
@@ -837,7 +840,7 @@ static GList *sipe_purple_copy_to_menu(GList *menu,
 
 	for (g_node = purple_blist_get_root(); g_node; g_node = g_node->next) {
 		PurpleGroup *group = (PurpleGroup *)g_node;
-		PurpleMenuAction *act;
+		PurpleActionMenu *act;
 
 		if ((!PURPLE_IS_GROUP(g_node)) ||
 		    (group == gr_parent)       ||
@@ -846,7 +849,7 @@ static GList *sipe_purple_copy_to_menu(GList *menu,
 						     group))
 			continue;
 
-		act = purple_menu_action_new(purple_group_get_name(group),
+		act = purple_action_menu_new(purple_group_get_name(group),
 					     PURPLE_CALLBACK(sipe_purple_buddy_copy_to_cb),
 					     (gpointer) purple_group_get_name(group),
 					     NULL);
@@ -855,7 +858,7 @@ static GList *sipe_purple_copy_to_menu(GList *menu,
 
 	if (menu_groups)
 		menu = g_list_prepend(menu,
-				      purple_menu_action_new(_("Copy to"),
+				      purple_action_menu_new(_("Copy to"),
 							     NULL,
 							     NULL,
 							     g_list_reverse(menu_groups)));

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -41,6 +41,7 @@
 
 #include "version.h"
 #if PURPLE_VERSION_CHECK(3,0,0)
+#include "action.h"
 #include "buddylist.h"
 #include "conversations.h"
 #define BACKEND_SESSION_TO_PURPLE_CONV_CHAT(s)           ((PurpleChatConversation *) s)
@@ -48,6 +49,7 @@
 #define PURPLE_CONV_TO_SIPE_CORE_PUBLIC                  ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_conversation_get_connection(conv)))
 #else
 #include "blist.h"
+#define purple_action_menu_new(l, c, d, ch)              purple_menu_action_new(l, c, d, ch)
 #define purple_chat_conversation_add_user(c, n, m, f, b) purple_conv_chat_add_user(c, n, m, f, b)
 #define purple_chat_conversation_clear_users(c)          purple_conv_chat_clear_users(c)
 #define purple_chat_conversation_get_id(c)               purple_conv_chat_get_id(c)
@@ -60,6 +62,7 @@
 #define purple_conversation_get_connection(c)            purple_conversation_get_gc(c)
 #define purple_serv_got_chat_in(c, i, w, f, m, t)        serv_got_chat_in(c, i, w, f, m, t)
 #define purple_serv_got_joined_chat(c, i, n)             serv_got_joined_chat(c, i, n)
+#define PurpleActionMenu                                 PurpleMenuAction
 #define BACKEND_SESSION_TO_PURPLE_CONV_CHAT(s)           (PURPLE_CONV_CHAT(((PurpleConversation *)s)))
 #define PURPLE_CHAT_USER_NONE                            PURPLE_CBFLAGS_NONE
 #define PURPLE_CONV_TO_SIPE_CORE_PUBLIC                  ((struct sipe_core_public *) conv->account->gc->proto_data)
@@ -314,7 +317,7 @@ sipe_purple_chat_menu(PurpleChat *chat)
 	GList *menu = NULL;
 
 	if (conv) {
-		PurpleMenuAction *act = NULL;
+		PurpleActionMenu *act = NULL;
 		struct sipe_chat_session *chat_session;
 #ifdef HAVE_APPSHARE
 		sipe_appshare_role role;
@@ -327,12 +330,12 @@ sipe_purple_chat_menu(PurpleChat *chat)
 		switch (sipe_core_chat_lock_status(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
 						   chat_session)) {
 		case SIPE_CHAT_LOCK_STATUS_UNLOCKED:
-			act = purple_menu_action_new(_("Lock"),
+			act = purple_action_menu_new(_("Lock"),
 						     PURPLE_CALLBACK(sipe_purple_chat_menu_lock_cb),
 						     conv, NULL);
 			break;
 		case SIPE_CHAT_LOCK_STATUS_LOCKED:
-			act = purple_menu_action_new(_("Unlock"),
+			act = purple_action_menu_new(_("Unlock"),
 						     PURPLE_CALLBACK(sipe_purple_chat_menu_unlock_cb),
 						     conv, NULL);
 			break;
@@ -350,7 +353,7 @@ sipe_purple_chat_menu(PurpleChat *chat)
 #ifdef HAVE_VV
 			if (!sipe_core_media_get_call(PURPLE_CONV_TO_SIPE_CORE_PUBLIC)) {
 				act = NULL;
-				act = purple_menu_action_new(_("Join conference call"),
+				act = purple_action_menu_new(_("Join conference call"),
 							     PURPLE_CALLBACK(sipe_purple_chat_menu_join_call_cb),
 							     conv, NULL);
 				if (act)
@@ -360,14 +363,14 @@ sipe_purple_chat_menu(PurpleChat *chat)
 			role = sipe_core_conf_get_appshare_role(PURPLE_CONV_TO_SIPE_CORE_PUBLIC,
 								chat_session);
 			if (role == SIPE_APPSHARE_ROLE_NONE) {
-				act = purple_menu_action_new(_("Show presentation"),
+				act = purple_action_menu_new(_("Show presentation"),
 							     PURPLE_CALLBACK(sipe_purple_chat_menu_show_presentation_cb),
 							     conv, NULL);
 				menu = g_list_prepend(menu, act);
 			}
 #ifdef HAVE_APPSHARE_SERVER
 			if (role != SIPE_APPSHARE_ROLE_PRESENTER) {
-				act = purple_menu_action_new(_("Share my desktop"),
+				act = purple_action_menu_new(_("Share my desktop"),
 							     PURPLE_CALLBACK(sipe_purple_chat_menu_share_desktop_cb),
 							     conv, NULL);
 				menu = g_list_prepend(menu, act);
@@ -375,7 +378,7 @@ sipe_purple_chat_menu(PurpleChat *chat)
 #endif
 #endif
 #endif // HAVE_VV
-			act = purple_menu_action_new(_("Meeting entry info"),
+			act = purple_action_menu_new(_("Meeting entry info"),
 						     PURPLE_CALLBACK(sipe_purple_chat_menu_entry_info_cb),
 						     conv, NULL);
 			menu = g_list_append(menu, act);
