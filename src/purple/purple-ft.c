@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -369,7 +369,11 @@ sipe_backend_ft_start(struct sipe_file_transfer *ft, struct sipe_backend_fd *fd,
 	purple_xfer_start(FT_TO_PURPLE_XFER, fd ? fd->fd : -1, ip, port);
 }
 
-void sipe_purple_ft_send_file(PurpleConnection *gc,
+void sipe_purple_ft_send_file(
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      SIPE_UNUSED_PARAMETER PurpleProtocolXfer *xfer,
+#endif
+			      PurpleConnection *gc,
 			      const char *who,
 			      const char *file)
 {

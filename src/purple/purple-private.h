@@ -47,6 +47,7 @@
 
 /* Forward declarations */
 struct _PurpleProtocolAction;
+struct _PurpleProtocolXfer;
 #else
 #include "conversation.h"      /* PurpleTypingState */
 #include "plugin.h"            /* PurplePlugin */
@@ -120,7 +121,11 @@ void sipe_purple_dns_query_cancel_all(struct sipe_backend_private *purple_privat
  * @param who  string identifying receiver of the file
  * @param file local file system path of the file to send
  */
-void sipe_purple_ft_send_file(struct _PurpleConnection *gc,
+void sipe_purple_ft_send_file(
+#if PURPLE_VERSION_CHECK(3,0,0)
+			      struct _PurpleProtocolXfer *xfer,
+#endif
+			      struct _PurpleConnection *gc,
 			      const char *who,
 			      const char *file);
 

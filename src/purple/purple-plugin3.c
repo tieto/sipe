@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2015-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2015-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -51,7 +51,8 @@ typedef struct _NullProtocolClass {
 G_MODULE_EXPORT GType sipe_protocol_get_type(void);
 
 static void
-sipe_protocol_class_init(PurpleProtocolClass *klass)
+sipe_protocol_class_init(PurpleProtocolClass *klass,
+			 SIPE_UNUSED_PARAMETER void *unused)
 {
 	klass->login = sipe_purple_login;
 	klass->close = sipe_purple_close;
@@ -60,7 +61,8 @@ sipe_protocol_class_init(PurpleProtocolClass *klass)
 }
 
 static void
-sipe_protocol_init(PurpleProtocol *protocol)
+sipe_protocol_init(PurpleProtocol *protocol,
+		   SIPE_UNUSED_PARAMETER void *unused)
 {
 	sipe_core_init(LOCALEDIR);
 
@@ -78,7 +80,8 @@ get_actions(SIPE_UNUSED_PARAMETER PurpleConnection *gc)
 }
 
 static void
-sipe_protocol_client_iface_init(PurpleProtocolClientIface *client_iface)
+sipe_protocol_client_iface_init(PurpleProtocolClientIface *client_iface,
+				SIPE_UNUSED_PARAMETER void *unused)
 {
 	client_iface->get_actions = get_actions;
 	client_iface->status_text = sipe_purple_status_text;
@@ -90,7 +93,8 @@ sipe_protocol_client_iface_init(PurpleProtocolClientIface *client_iface)
 }
 
 static void
-sipe_protocol_server_iface_init(PurpleProtocolServerIface *server_iface)
+sipe_protocol_server_iface_init(PurpleProtocolServerIface *server_iface,
+				SIPE_UNUSED_PARAMETER void *unused)
 {
 	server_iface->get_info = sipe_purple_get_info;
 	server_iface->set_status = sipe_purple_set_status;
@@ -113,14 +117,16 @@ send_im(PurpleConnection *gc, PurpleMessage *msg)
 }
 
 static void
-sipe_protocol_im_iface_init(PurpleProtocolIMIface *im_iface)
+sipe_protocol_im_iface_init(PurpleProtocolIMIface *im_iface,
+			    SIPE_UNUSED_PARAMETER void *unused)
 {
 	im_iface->send = send_im;
 	im_iface->send_typing = sipe_purple_send_typing;
 }
 
 static void
-sipe_protocol_chat_iface_init(PurpleProtocolChatIface *chat_iface)
+sipe_protocol_chat_iface_init(PurpleProtocolChatIface *chat_iface,
+			      SIPE_UNUSED_PARAMETER void *unused)
 {
 	chat_iface->info = sipe_purple_chat_info;
 	chat_iface->info_defaults = sipe_purple_chat_info_defaults;
@@ -131,7 +137,8 @@ sipe_protocol_chat_iface_init(PurpleProtocolChatIface *chat_iface)
 }
 
 static void
-sipe_protocol_privacy_iface_init(PurpleProtocolPrivacyIface *privacy_iface)
+sipe_protocol_privacy_iface_init(PurpleProtocolPrivacyIface *privacy_iface,
+				 SIPE_UNUSED_PARAMETER void *unused)
 {
 	privacy_iface->add_permit = sipe_purple_add_permit;
 	privacy_iface->add_deny = sipe_purple_add_deny;
@@ -140,13 +147,15 @@ sipe_protocol_privacy_iface_init(PurpleProtocolPrivacyIface *privacy_iface)
 }
 
 static void
-sipe_protocol_xfer_iface_init(PurpleProtocolXferIface *xfer_iface)
+sipe_protocol_xfer_iface_init(PurpleProtocolXferInterface *xfer_iface,
+			      SIPE_UNUSED_PARAMETER void *unused)
 {
-	xfer_iface->send = sipe_purple_ft_send_file;
+	xfer_iface->send_file = sipe_purple_ft_send_file;
 }
 
 static void
-sipe_protocol_roomlist_iface_init(PurpleProtocolRoomlistIface *roomlist_iface)
+sipe_protocol_roomlist_iface_init(PurpleProtocolRoomlistIface *roomlist_iface,
+				  SIPE_UNUSED_PARAMETER void *unused)
 {
 	roomlist_iface->get_list = sipe_purple_roomlist_get_list;
 	roomlist_iface->cancel = sipe_purple_roomlist_cancel;
@@ -154,7 +163,8 @@ sipe_protocol_roomlist_iface_init(PurpleProtocolRoomlistIface *roomlist_iface)
 
 #ifdef HAVE_VV
 static void
-sipe_protocol_media_iface_init(PurpleProtocolMediaIface *media_iface)
+sipe_protocol_media_iface_init(PurpleProtocolMediaIface *media_iface,
+			       SIPE_UNUSED_PARAMETER void *unused)
 {
 	media_iface->initiate_session = sipe_purple_initiate_media;
 	media_iface->get_caps = sipe_purple_get_media_caps;
@@ -174,7 +184,7 @@ PURPLE_DEFINE_TYPE_EXTENDED(
 					  sipe_protocol_chat_iface_init)
 	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_PRIVACY_IFACE,
 					  sipe_protocol_privacy_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_XFER_IFACE,
+	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_XFER,
 					  sipe_protocol_xfer_iface_init)
 	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_ROOMLIST_IFACE,
 					  sipe_protocol_roomlist_iface_init)
