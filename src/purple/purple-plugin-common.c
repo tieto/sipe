@@ -971,7 +971,14 @@ GList * sipe_purple_account_options()
 gpointer sipe_purple_user_split()
 {
 	PurpleAccountUserSplit *split =
-			purple_account_user_split_new(_("Login\n   user  or  DOMAIN\\user  or\n   user@company.com"), NULL, ',');
+		purple_account_user_split_new(
+			_("Login\n   user  or  DOMAIN\\user  or\n   user@company.com"),
+			/*
+			 * pidgin works fine with NULL as default
+			 * finch returns string "(null)" for NULL
+			 */
+			"",
+			',');
 	purple_account_user_split_set_reverse(split, FALSE);
 
 	return split;
