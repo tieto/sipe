@@ -592,6 +592,9 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 %changelog
 * Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
+- switch to SPDX identifier GPL-2.0-or-later
+
+* Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
 - newer distros no longer package empathy
 
 * Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*

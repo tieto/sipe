@@ -289,6 +289,9 @@ make %{?_smp_mflags} check
 
 %changelog
 * Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
+- switch to SPDX identifier GPL-2.0-or-later
+
+* Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
 - raise BR telepathy-glib >= 0.24.0
 
 * Fri Dec 28 2018 J. D. User <jduser@noreply.com> 1.24.0-*git*
