@@ -267,6 +267,7 @@ dnl            EOL | 07/2020 | 12/2020 | 11/2024 | 04/2021 |    N/A |
 dnl ---------------|---------|---------|---------|---------|--------|
 dnl glib-2.0       |  2.42.x |  2.28.x |  2.48.x |  2.48.x | 2.18.x |
 dnl gmime-2.6      |     YES |      NO |     YES |     YES |     NO |
+dnl gss-ntlmssp    |      NO |      NO |      NO |   0.7.x |    N/A |
 dnl nice           | TOO OLD | TOO OLD |  0.1.13 |  0.1.13 |    N/A |
 dnl purple         |  2.11.x |   2.7.x |  2.12.x |  2.10.x | 2.13.x |
 dnl telepathy-glib |  0.24.x |      NO |  0.24.x |  0.24.x |    N/A |
