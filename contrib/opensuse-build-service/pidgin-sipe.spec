@@ -79,8 +79,13 @@
 
 
 %if 0%{?mageia}
-%define has_appstream 1
+%if %{mageia} > 6
+%define has_freerdp 1
+%define has_gssntlmssp 1
+%else
 %define has_appstream_legacy 1
+%endif
+%define has_appstream 1
 %define has_gstreamer 1
 %endif
 
@@ -591,6 +596,9 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %changelog
+* Tue Jul 02 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
+- add freerdp & gssntlmssp for Mageia 7+
+
 * Sun Jun 30 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
 - switch to SPDX identifier GPL-2.0-or-later
 
