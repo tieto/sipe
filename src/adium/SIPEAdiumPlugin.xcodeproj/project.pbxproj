@@ -90,9 +90,24 @@
 		B89F38821BDEB0D30017B509 /* sipe-ft-lync.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F38811BDEB0D30017B509 /* sipe-ft-lync.c */; };
 		B89F388D1BDEB0F00017B509 /* sipe-mime-common.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F388C1BDEB0F00017B509 /* sipe-mime-common.c */; };
 		B89F388F1BDEB10B0017B509 /* purple-plugin-common.c in Sources */ = {isa = PBXBuildFile; fileRef = B89F388E1BDEB10B0017B509 /* purple-plugin-common.c */; };
+		B8E5616722D21E8E00580386 /* sipe-rtf.l in Sources */ = {isa = PBXBuildFile; fileRef = B8E5616622D21E8E00580386 /* sipe-rtf.l */; };
 		C9FDAE7F109ADC54004EEEAF /* Kerberos.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C9FDAE7E109ADC54004EEEAF /* Kerberos.framework */; };
 		C9FDAEF6109ADF97004EEEAF /* sipe.png in Resources */ = {isa = PBXBuildFile; fileRef = C9FDAEF4109ADF97004EEEAF /* sipe.png */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXBuildRule section */
+		B8E5616822D21F3A00580386 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			fileType = sourcecode.lex;
+			isEditable = 1;
+			name = "Project Lex rule";
+			outputFiles = (
+				"$(DERIVED_FILE_DIR)/${INPUT_FILE_BASE}.c",
+			);
+			script = "# $(LEX) is actually flex\ncd ${DERIVED_FILE_DIR} && ${LEX} ${INPUT_FILE_PATH}";
+		};
+/* End PBXBuildRule section */
 
 /* Begin PBXContainerItemProxy section */
 		7BB8CBC1183AA605004351FF /* PBXContainerItemProxy */ = {
@@ -266,6 +281,7 @@
 		B89F38811BDEB0D30017B509 /* sipe-ft-lync.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-ft-lync.c"; sourceTree = "<group>"; };
 		B89F388C1BDEB0F00017B509 /* sipe-mime-common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "sipe-mime-common.c"; sourceTree = "<group>"; };
 		B89F388E1BDEB10B0017B509 /* purple-plugin-common.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = "purple-plugin-common.c"; sourceTree = "<group>"; };
+		B8E5616622D21E8E00580386 /* sipe-rtf.l */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.lex; path = "sipe-rtf.l"; sourceTree = "<group>"; };
 		C948843B109B2F8100ABFAF7 /* ESSIPEService.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPEService.h; sourceTree = "<group>"; };
 		C948843C109B2F8100ABFAF7 /* ESSIPEService.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ESSIPEService.m; sourceTree = "<group>"; };
 		C9488444109B352000ABFAF7 /* ESSIPELibpurpleServicePlugin.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ESSIPELibpurpleServicePlugin.h; sourceTree = "<group>"; };
@@ -491,6 +507,7 @@
 				1CE49FF114A17F4D00663393 /* sipe-notify.c */,
 				1CE49FB314A17CF000663393 /* sipe-ocs2005.c */,
 				1CE49FB214A17CF000663393 /* sipe-ocs2007.c */,
+				B8E5616622D21E8E00580386 /* sipe-rtf.l */,
 				B13FABC8119D585A001CE037 /* sipe-schedule.c */,
 				B13FABCA119D585A001CE037 /* sipe-session.c */,
 				B13FABCC119D585A001CE037 /* sipe-sign.c */,
@@ -552,6 +569,7 @@
 				7B5DD2EA16DB1DFD00B3D188 /* CopyFiles */,
 			);
 			buildRules = (
+				B8E5616822D21F3A00580386 /* PBXBuildRule */,
 			);
 			dependencies = (
 				7BB8CC2B183AC198004351FF /* PBXTargetDependency */,
@@ -704,6 +722,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1CF2612C12C2E73F0045B6CC /* ESPurpleSIPEAccount.m in Sources */,
+				B8E5616722D21E8E00580386 /* sipe-rtf.l in Sources */,
 				B89F388F1BDEB10B0017B509 /* purple-plugin-common.c in Sources */,
 				1CF2612D12C2E7420045B6CC /* ESSIPEService.m in Sources */,
 				B89F38821BDEB0D30017B509 /* sipe-ft-lync.c in Sources */,
