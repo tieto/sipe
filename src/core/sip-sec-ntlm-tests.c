@@ -804,6 +804,9 @@ Message (length 352):
 	SipSecBuffer in_buff;
 	SipSecBuffer out_buff;
 
+	memset(&in_buff,  0, sizeof(in_buff));
+	memset(&out_buff, 0, sizeof(out_buff));
+
 	in_buff.length = hex_str_to_buff(type2_hex, (guint8 **)&(in_buff.value));
 
 	sip_sec_ntlm_parse_challenge(in_buff,

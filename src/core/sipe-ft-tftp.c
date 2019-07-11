@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2010 Jakub Adam <jakub.adam@ktknet.cz>
  * Copyright (C) 2010 Tomáš Hrabčík <tomas.hrabcik@tieto.com>
  *
@@ -386,7 +386,7 @@ sipe_ft_tftp_read(struct sipe_file_transfer *ft, guchar **buffer,
 	gssize bytes_read;
 
 	if (ft_private->bytes_remaining_chunk == 0) {
-		guchar hdr_buf[SIPE_FT_CHUNK_HEADER_LENGTH];
+		guchar hdr_buf[SIPE_FT_CHUNK_HEADER_LENGTH] = { 0, 0, 0 };
 
 		/* read chunk header */
 		if (!read_exact(ft_private, hdr_buf, sizeof(hdr_buf))) {

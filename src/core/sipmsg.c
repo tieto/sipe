@@ -509,7 +509,7 @@ static gchar *sipmsg_get_x_mms_im_format(gchar *msgr) {
 	return x_mms_im_format;
 }
 
-gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format) {
+gchar *sipmsg_get_msgr_string(const gchar *x_mms_im_format) {
 	gchar *msgr_orig;
 	gsize msgr_utf16_len;
 	gchar *msgr_utf16;

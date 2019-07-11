@@ -328,7 +328,7 @@ sipe_im_invite(struct sipe_core_private *sipe_private,
 		gchar *tmp = NULL;
 
 		if (!g_str_has_prefix(content_type, "text/x-msmsgsinvite")) {
-			char *msgformat;
+			char *msgformat = NULL;
 			gchar *msgr_value;
 
 			sipe_parse_html(msg_body, &msgformat, &msgtext);
@@ -580,7 +580,7 @@ static void sipe_im_send_message(struct sipe_core_private *sipe_private,
 		content_type = "text/plain";
 
 	if (!g_str_has_prefix(content_type, "text/x-msmsgsinvite")) {
-		char *msgformat;
+		char *msgformat = NULL;
 		gchar *msgr_value;
 
 		sipe_parse_html(msg_body, &msgformat, &msgtext);

@@ -107,7 +107,7 @@ gchar *get_html_message(const gchar *ms_text_format, const gchar *body);
  * Returns UTF-16LE/'modified base64' encoded X-MMS-IM-Format
  * based on input x_mms_im_format.
  */
-gchar *sipmsg_get_msgr_string(gchar *x_mms_im_format);
+gchar *sipmsg_get_msgr_string(const gchar *x_mms_im_format);
 
 /**
  * Parses the Purple message formatting (html) into the MSN format.
