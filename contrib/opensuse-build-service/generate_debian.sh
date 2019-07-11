@@ -61,9 +61,6 @@ cp pidgin-sipe-freerdp2.dsc pidgin-sipe.dsc
 for os in \
     Debian_9.0 \
     xUbuntu_16.04 \
-    xUbuntu_16.10 \
-    xUbuntu_17.04 \
-    xUbuntu_17.10 \
 ; do \
     cp pidgin-sipe-gstreamer1.dsc pidgin-sipe-${os}.dsc; \
 done
