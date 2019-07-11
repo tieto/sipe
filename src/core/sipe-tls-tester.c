@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2016 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -49,6 +49,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <time.h>
 #include <unistd.h>
 #include <errno.h>
@@ -94,10 +95,10 @@ void sipe_backend_debug(sipe_debug_level level,
 }
 
 /* needed when linking against NSS */
-void md4sum(const guchar *data, gsize length, guchar *digest);
-void md4sum(SIPE_UNUSED_PARAMETER const guchar *data,
-	    SIPE_UNUSED_PARAMETER gsize length,
-	    SIPE_UNUSED_PARAMETER guchar *digest)
+void md4sum(const uint8_t *data, uint32_t length, uint8_t *digest);
+void md4sum(SIPE_UNUSED_PARAMETER const uint8_t *data,
+	    SIPE_UNUSED_PARAMETER uint32_t length,
+	    SIPE_UNUSED_PARAMETER uint8_t *digest)
 {
 }
 

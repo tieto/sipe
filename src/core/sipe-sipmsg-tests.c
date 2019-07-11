@@ -35,6 +35,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 
 #include <glib.h>
 
@@ -107,10 +108,10 @@ const gchar *sip_transport_ip_address(SIPE_UNUSED_PARAMETER struct sipe_core_pri
 }
 
 /* needed when linking against NSS */
-void md4sum(const guchar *data, gsize length, guchar *digest);
-void md4sum(SIPE_UNUSED_PARAMETER const guchar *data,
-	    SIPE_UNUSED_PARAMETER gsize length,
-	    SIPE_UNUSED_PARAMETER guchar *digest)
+void md4sum(const uint8_t *data, uint32_t length, uint8_t *digest);
+void md4sum(SIPE_UNUSED_PARAMETER const uint8_t *data,
+	    SIPE_UNUSED_PARAMETER uint32_t length,
+	    SIPE_UNUSED_PARAMETER uint8_t *digest)
 {
 }
 
