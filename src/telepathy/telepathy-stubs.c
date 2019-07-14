@@ -209,6 +209,9 @@ void sipe_backend_media_set_encryption_keys(SIPE_UNUSED_PARAMETER struct sipe_me
 					    SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 					    SIPE_UNUSED_PARAMETER const guchar *encryption_key,
 					    SIPE_UNUSED_PARAMETER const guchar *decryption_key) {}
+void sipe_backend_media_set_require_encryption(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+					       SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
+					       SIPE_UNUSED_PARAMETER const gboolean require_encryption) {}
 void sipe_backend_stream_hold(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
 			      SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 			      SIPE_UNUSED_PARAMETER gboolean local) {}

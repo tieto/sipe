@@ -138,6 +138,14 @@ sipe_backend_media_set_encryption_keys(struct sipe_media_call *media,
 }
 
 void
+sipe_backend_media_set_require_encryption(struct sipe_media_call *media,
+					  struct sipe_media_stream *stream,
+					  const gboolean require_encryption)
+{
+	_NIF();
+}
+
+void
 sipe_backend_stream_hold(struct sipe_media_call *media,
 			 struct sipe_media_stream *stream,
 			 gboolean local)

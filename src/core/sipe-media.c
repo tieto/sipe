@@ -779,6 +779,12 @@ update_call_from_remote_sdp(struct sipe_media_call_private* call_private,
 				SIPE_MEDIA_STREAM_PRIVATE->encryption_key,
 				media->encryption_key);
 		SIPE_MEDIA_STREAM_PRIVATE->encryption_key_id = media->encryption_key_id;
+	} else {
+		// We now know that the stream won't be encrypted.
+		// Allow unencrypted data to pass srtpdec freely
+		sipe_backend_media_set_require_encryption(SIPE_MEDIA_CALL,
+							  stream,
+							  FALSE);
 	}
 
 	result = sipe_backend_set_remote_codecs(SIPE_MEDIA_CALL, stream,
@@ -1415,6 +1421,13 @@ sipe_media_stream_add(struct sipe_media_call *call, const gchar *id,
 			stream_private->encryption_key[i] = rand() & 0xff;
 		}
 		stream_private->encryption_key_id = 1;
+		// We don't know yet whether the stream will be
+		// encrypted or not. Enable the require-encryption
+		// property at stream creation time anyway, we may
+		// disable it later if we don't receive encryption keys.
+		sipe_backend_media_set_require_encryption(call,
+							  SIPE_MEDIA_STREAM,
+							  TRUE);
 	}
 #endif
 

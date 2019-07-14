@@ -1092,12 +1092,25 @@ sipe_backend_media_set_encryption_keys(struct sipe_media_call *media,
 			"hmac-sha1-80",
 			(gchar *)decryption_key, SIPE_SRTP_KEY_LEN);
 }
+
+void
+sipe_backend_media_set_require_encryption(struct sipe_media_call *media,
+					  struct sipe_media_stream *stream,
+					  const gboolean require_encryption)
+{
+	purple_media_set_require_encryption(media->backend_private->m,
+			stream->id, media->with, require_encryption);
+}
 #else
 void
 sipe_backend_media_set_encryption_keys(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
 				       SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
 				       SIPE_UNUSED_PARAMETER const guchar *encryption_key,
 				       SIPE_UNUSED_PARAMETER const guchar *decryption_key)
+{}
+sipe_backend_media_set_require_encryption(SIPE_UNUSED_PARAMETER struct sipe_media_call *media,
+					  SIPE_UNUSED_PARAMETER struct sipe_media_stream *stream,
+					  SIPE_UNUSED_PARAMETER const gboolean require_encryption)
 {}
 #endif
 
