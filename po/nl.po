@@ -7,15 +7,15 @@
 # Translators:
 # fieona <sofiemuys@hotmail.com>, 2012
 # Stefan Becker <chemobejk@gmail.com>, 2011
-# Tonnes <tonnes.mb@gmail.com>, 2016-2017
+# Tonnes <tonnes.mb@gmail.com>, 2016-2018
 # Yves Jacmans <yves@jacmans.net>, 2017
 msgid ""
 msgstr ""
 "Project-Id-Version: pidgin sipe\n"
 "Report-Msgid-Bugs-To: https://sourceforge.net/p/sipe/bugs/\n"
 "POT-Creation-Date: 2010-11-30 23:36+0200\n"
-"PO-Revision-Date: 2018-10-18 16:09+0000\n"
-"Last-Translator: Stefan Becker <chemobejk@gmail.com>\n"
+"PO-Revision-Date: 2018-12-22 12:31+0000\n"
+"Last-Translator: Tonnes <tonnes.mb@gmail.com>\n"
 "Language-Team: Dutch (http://www.transifex.com/stefanb/pidgin-sipe/language/nl/)\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -105,36 +105,36 @@ msgstr "Kon het delen van toepassingen niet starten"
 
 #: ../src/core/sipe-appshare.c:753
 msgid "Could not create RDP server."
-msgstr ""
+msgstr "Kon RDP-server niet maken."
 
 #: ../src/core/sipe-appshare.c:770
 msgid "Could not initialize RDP server."
-msgstr ""
+msgstr "Kon RDP-server niet initialiseren."
 
 #: ../src/core/sipe-appshare.c:772
 msgid "Could not start RDP server."
-msgstr ""
+msgstr "Kon RDP-server niet starten."
 
 #: ../src/core/sipe-appshare.c:863
 #, c-format
 msgid "Sharing desktop with %s"
-msgstr ""
+msgstr "Bureaublad gedeeld met %s"
 
 #: ../src/core/sipe-appshare.c:867
 msgid "Stop presenting"
-msgstr ""
+msgstr "Presenteren stoppen"
 
 #: ../src/core/sipe-appshare.c:902
 msgid "Couldn't initialize application sharing"
-msgstr ""
+msgstr "Kon delen van toepassingen niet initialiseren"
 
 #: ../src/core/sipe-appshare.c:960
 msgid "Whole desktop"
-msgstr ""
+msgstr "Hele bureaublad"
 
 #: ../src/core/sipe-appshare.c:973
 msgid "Monitor to share"
-msgstr ""
+msgstr "Te delen monitor"
 
 #: ../src/core/sipe-buddy.c:543 ../src/core/sipe-buddy.c:2334
 msgid "Mobile"
@@ -240,15 +240,15 @@ msgstr "E-mail sturen..."
 
 #: ../src/core/sipe-buddy.c:2385
 msgid "Take desktop control"
-msgstr ""
+msgstr "Bureaubladbesturing overnemen"
 
 #: ../src/core/sipe-buddy.c:2390
 msgid "Give desktop control"
-msgstr ""
+msgstr "Bureaubladbesturing overgeven"
 
 #: ../src/core/sipe-buddy.c:2396 ../src/purple/purple-chat.c:370
 msgid "Share my desktop"
-msgstr ""
+msgstr "Mijn bureaublad delen"
 
 #: ../src/core/sipe-cal.c:907
 msgid "Free"
@@ -607,19 +607,19 @@ msgstr "Bericht met niet-herkende inhoud ontvangen van %s"
 
 #: ../src/core/sipe-media.c:870
 msgid "Couldn't create stream"
-msgstr ""
+msgstr "Kon geen stream maken"
 
 #: ../src/core/sipe-media.c:871
 msgid "Connection timed out"
-msgstr ""
+msgstr "Time-out bij verbinding"
 
 #: ../src/core/sipe-media.c:915
 msgid "Request timed out"
-msgstr ""
+msgstr "Time-out bij aanvraag"
 
 #: ../src/core/sipe-media.c:916
 msgid "Call could not be answered"
-msgstr ""
+msgstr "Oproep kon niet worden beantwoord"
 
 #: ../src/core/sipe-media.c:1007 ../src/core/sipe-media.c:1644
 #: ../src/core/sipe-media.c:1654 ../src/core/sipe-media.c:2074
@@ -824,7 +824,7 @@ msgstr "Alleen urgente onderbrekingen"
 #. SIPE_ACTIVITY_IN_PRES
 #: ../src/core/sipe-status.c:70
 msgid "Presenting"
-msgstr ""
+msgstr "Presenteren"
 
 #: ../src/core/sipe-subscriptions.c:193
 msgid "Presence subscription failed!"
@@ -1358,4 +1358,4 @@ msgstr "Schrijffout"
 
 #: ../src/purple/purple-user.c:140
 msgid "OK"
-msgstr ""
+msgstr "OK"
