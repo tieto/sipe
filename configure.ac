@@ -567,12 +567,24 @@ AM_CONDITIONAL(SIPE_HAVE_APPSHARE_SERVER, [test "x$ac_have_appshare_server" = xy
 AS_IF([test "x$ac_have_appshare_server" == xyes],
 	[AC_DEFINE(HAVE_APPSHARE_SERVER, 1, [Define if appshare server is enabled.])])
 
+dnl libpurple API relies on GParameter (deprecated in glib-2.0 >= 2.62.0)
+AS_IF([test "x$enable_purple" != xno],
+	[AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_60,
+		   [We need GParameter for which no replacement is available])
+	])
 dnl telepathy code parts rely on interfaces that require GValueArray. This
 dnl type has been declared "deprectated" in glib-2.0 >= 2.32.0, but there
 dnl is no backward compatible replacement implementation possible
+dnl telepathy-glib API relies on GTimeVal (deprecated in glib-2.0 >= 2.62.0)
 AS_IF([test "x$enable_telepathy" != xno],
 	[AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_30,
-                   [We need GValueArray for which no replacement is available])])
+		   [We need GValueArray for which no replacement is available])
+	])
+dnl libpurple 2.x API relies on G_CONST_RETURN (deprecated in glib-2.0 >= 2.30.0)
+AS_IF([test "x$purple_pkgconfig" == xpurple],
+	[AC_DEFINE(GLIB_VERSION_MIN_REQUIRED, GLIB_VERSION_2_28,
+		   [libpurple 2.x API uses G_CONST_RETURN])
+	])
 
 dnl i18n
 AC_MSG_CHECKING([locale_CPPFLAGS])
