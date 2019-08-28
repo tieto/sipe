@@ -2,6 +2,7 @@ version 1.25.0 "???" (????-??-??)
 	- Feature #107: Provide idle start time for a buddy (Stefan Becker)
 	- Feature #77: RTF support (incoming) (Stefan Becker)
 	  * the code only extracts plain text from incoming RTF
+	- Fixed #358: FTBFS with glib-2.0 >= 2.62.0 (Stefan Becker)
 	- Fixed #350: Inconsistent parsing of From:/To: headers (Stefan Becker)
 	- raise BR telepathy-glib >= 0.24.0 (Stefan Becker)
 	- switch from GPLv2+ to SPDX identifier GPL-2.0-or-later (Stefan Becker)
