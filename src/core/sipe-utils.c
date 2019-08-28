@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -290,12 +290,26 @@ void sipe_utils_message_debug(struct sipe_transport_connection *conn,
 
 	if (sipe_backend_debug_enabled()) {
 		/* unsafe debugging enabled - include message contents */
-		GTimeVal currtime;
 		gchar *time_str;
-		gchar *tmp;
+		gchar *tmp = NULL;
 
+#if GLIB_CHECK_VERSION(2,56,0)
+		// resolution is microseconds
+		GDateTime *datetime = g_date_time_new_now_utc();
+		gint       msecs    = 0;
+		if (datetime) {
+			tmp   = g_date_time_format(datetime, "%FT%T");
+			msecs = g_date_time_get_microsecond(datetime);
+			g_date_time_unref(datetime);
+		}
+		time_str = g_strdup_printf("%s.%06dZ", tmp ? tmp : "", msecs);
+		g_free(tmp);
+#else
+		GTimeVal currtime;
 		g_get_current_time(&currtime);
 		time_str = g_time_val_to_iso8601(&currtime);
+#endif
+
 		g_string_append_printf(str, "\nMESSAGE START %s %s(%p) - %s\n", marker, type, conn, time_str);
 		g_string_append(str, tmp = sipe_utils_str_replace(header, "\r\n", "\n"));
 		g_free(tmp);
@@ -332,8 +346,12 @@ sipe_strcase_equal(const gchar *left, const gchar *right)
 time_t
 sipe_utils_str_to_time(const gchar *timestamp)
 {
+#if GLIB_CHECK_VERSION(2,56,0)
+	GDateTime *datetime = NULL;
+#else
 	GTimeVal time;
 	gboolean success = FALSE;
+#endif
 
 	/* g_time_val_from_iso8601() warns about NULL pointer */
 	if (timestamp) {
@@ -345,27 +363,60 @@ sipe_utils_str_to_time(const gchar *timestamp)
 		if (((len = strlen(timestamp)) > 0) &&
 		    isdigit(timestamp[len-1])) {
 			gchar *tmp = g_strdup_printf("%sZ", timestamp);
-			success = g_time_val_from_iso8601(tmp, &time);
+#if GLIB_CHECK_VERSION(2,56,0)
+			datetime = g_date_time_new_from_iso8601(tmp, NULL);
+#else
+			success  = g_time_val_from_iso8601(tmp, &time);
+#endif
 			g_free(tmp);
 		} else {
-			success = g_time_val_from_iso8601(timestamp, &time);
+#if GLIB_CHECK_VERSION(2,56,0)
+			datetime = g_date_time_new_from_iso8601(timestamp, NULL);
+#else
+			success  = g_time_val_from_iso8601(timestamp, &time);
+#endif
 		}
 	}
 
-	if (!success) {
-		SIPE_DEBUG_ERROR("sipe_utils_str_to_time: failed to parse ISO8601 string '%s'",
-				 timestamp ? timestamp : "");
-		time.tv_sec = 0;
+#if GLIB_CHECK_VERSION(2,56,0)
+	if (datetime) {
+		time_t result = g_date_time_to_unix(datetime);
+		g_date_time_unref(datetime);
+		return(result);
 	}
+#else
+	if (success)
+		return(time.tv_sec);
+#endif
 
-	return time.tv_sec;
+	SIPE_DEBUG_ERROR("sipe_utils_str_to_time: failed to parse ISO8601 string '%s'",
+			 timestamp ? timestamp : "");
+	return(0);
 }
 
 gchar *
 sipe_utils_time_to_str(time_t timestamp)
 {
+	gchar *result = NULL;
+
+#if GLIB_CHECK_VERSION(2,56,0)
+	GDateTime *datetime = g_date_time_new_from_unix_utc(timestamp);
+	if (datetime) {
+                // resolution is seconds
+		result = g_date_time_format(datetime, "%FT%TZ");
+		g_date_time_unref(datetime);
+	}
+#else
 	GTimeVal time = { timestamp, 0 };
-	return g_time_val_to_iso8601(&time);
+	result = g_time_val_to_iso8601(&time);
+#endif
+
+	if (result)
+		return(result);
+
+	SIPE_DEBUG_ERROR("sipe_utils_time_to_str: failed to convert %lu to ISO8601 string",
+			 timestamp);
+	return(g_strdup(""));
 }
 
 const gchar *sipe_utils_time_to_debug_str(const struct tm *tm)
