@@ -235,6 +235,26 @@ endif
 
 check_PROGRAMS =
 
+check_PROGRAMS += sipe_generic_tests
+sipe_generic_tests_SOURCES = sipe-generic-tests.c
+sipe_generic_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
+sipe_generic_tests_LDADD = \
+	libsipe_core_la-sipe-utils.lo \
+	libsipe_core_la-uuid.lo
+if SIPE_OPENSSL
+sipe_generic_tests_LDADD += \
+	libsipe_core_crypto_la-sipe-crypt-openssl.lo \
+	libsipe_core_crypto_la-sipe-digest-openssl.lo \
+	$(OPENSSL_LIBS)
+else
+sipe_generic_tests_LDADD += \
+	libsipe_core_crypto_la-sipe-crypt-nss.lo \
+	libsipe_core_crypto_la-sipe-digest-nss.lo \
+	$(NSS_LIBS)
+endif
+sipe_generic_tests_LDADD += \
+	$(GLIB_LIBS)
+
 check_PROGRAMS += sipe_sipmsg_tests
 sipe_sipmsg_tests_SOURCES = sipe-sipmsg-tests.c
 sipe_sipmsg_tests_CFLAGS = $(libsipe_core_la_CFLAGS)
