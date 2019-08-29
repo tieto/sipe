@@ -36,4 +36,5 @@ MAINTAINERCLEANFILES = \
 	intltool-merge.in   \
 	intltool-update.in  \
 	mkinstalldirs \
-	test-driver
+	test-driver \
+	ylwrap
