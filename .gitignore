@@ -9,6 +9,7 @@
 .libs
 libtool
 config.*
+!config.rpath
 configure
 autom4te*
 *.swp
