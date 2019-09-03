@@ -1,6 +1,8 @@
 dnl ensure recent enough version of Autoconf
 AC_PREREQ([2.50])
 
+AC_CONFIG_MACRO_DIRS([m4])
+
 dnl Use 'VERSION' files to get version.
 m4_define([SIPE_VERSION_DATA], m4_include([VERSION]))
 
@@ -599,7 +601,6 @@ AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
 	Makefile
 	pixmaps/Makefile
-	m4macros/Makefile
 	po/Makefile.in
 	pixmaps/16/Makefile
 	pixmaps/22/Makefile

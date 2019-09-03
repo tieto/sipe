@@ -1,4 +1,4 @@
-SUBDIRS = src pixmaps m4macros po
+SUBDIRS = src pixmaps po
 
 EXTRA_DIST = \
 	contrib \
@@ -38,3 +38,8 @@ MAINTAINERCLEANFILES = \
 	mkinstalldirs \
 	test-driver \
 	ylwrap
+
+maintainer-clean-local:
+	-rm -rf m4
+
+ACLOCAL_AMFLAGS = -I m4
