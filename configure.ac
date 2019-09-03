@@ -53,7 +53,6 @@ LT_INIT([disable-static])
 dnl checks for tools
 IT_PROG_INTLTOOL([0.35.0])
 AC_PROG_INSTALL
-AC_PROG_RANLIB
 
 dnl ******************************
 dnl Win32
