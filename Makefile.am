@@ -19,23 +19,30 @@ CLEANFILES = \
 	intltool-merge
 
 MAINTAINERCLEANFILES = \
-	compile \
-	GITVERSION \
-	INSTALL \
 	aclocal.m4 \
-	ltmain.sh \
-	Makefile.in \
-	depcomp \
-	missing \
-	install-sh \
+	ABOUT-NLS \
+	compile \
 	configure \
-	config.sub \
 	config.guess \
 	config.h.in \
+	config.rpath \
+	config.sub \
+	depcomp \
+	GITVERSION \
+	INSTALL \
+	install-sh \
 	intltool-extract.in \
 	intltool-merge.in   \
 	intltool-update.in  \
+	ltmain.sh \
+	Makefile.in \
+	missing \
 	mkinstalldirs \
+	po/Makevars.template \
+	po/Rules-quot \
+	po/*.header \
+	po/*.sed \
+	po/*.sin \
 	test-driver \
 	ylwrap
 

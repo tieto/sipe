@@ -9,8 +9,8 @@
 .libs
 libtool
 config.*
-!config.rpath
 configure
+/ABOUT-NLS
 autom4te*
 *.swp
 aclocal.m4
@@ -30,8 +30,13 @@ missing
 mkinstalldirs
 /INSTALL
 pixmaps/*/im-sipe.*
+po/Makevars.template
 po/POTFILES
+po/Rules-quot
 po/stamp-it
+po/*.header
+po/*.sed
+po/*.sin
 *.gmo
 src/*/*.o
 src/adium/adium-frameworks

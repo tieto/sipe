@@ -140,6 +140,7 @@ check "intltoolize";		INTLTOOLIZE=${BIN};
 check "aclocal";		ACLOCAL=${BIN};
 check "autoheader";		AUTOHEADER=${BIN};
 check "automake";		AUTOMAKE=${BIN};
+check "autopoint";		AUTOPOINT=${BIN};
 check "autoconf";		AUTOCONF=${BIN};
 
 ###############################################################################
@@ -156,6 +157,7 @@ fi
 ###############################################################################
 # Run all of our helpers
 ###############################################################################
+run_or_die ${AUTOPOINT} "--force"
 run_or_die ${LIBTOOLIZE} ${LIBTOOLIZE_FLAGS:-"-c -f --automake"}
 run_or_die ${GLIB_GETTEXTIZE} ${GLIB_GETTEXTIZE_FLAGS:-"--force --copy"}
 run_or_die ${INTLTOOLIZE} ${INTLTOOLIZE_FLAGS:-"-c -f --automake"}
