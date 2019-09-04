@@ -289,7 +289,9 @@ packages
 
 Now you should be able to regenerate the files with
 
-	autoreconf --verbose --install --force
+	autopoint --force
+	AUTOPOINT="intltoolize --copy --force --automake" \
+		autoreconf --force --install
 
 After that go back to the configure step above.
 
