@@ -306,3 +306,24 @@ installed in /usr/local so the following command should work
 	./configure --prefix=/usr/local
 
 The rest of the steps are the same as in the previous section.
+
+
+Do It Yourself III: building from git checkout
+==============================================
+
+Building from a git checkout is meant for project maintainers, i.e. you
+need to generate the configure script first:
+
+	./autogen.sh
+
+The rest of the steps are the same as in the previous sections.
+
+To clean all artifacts and reset the source tree to pristine condition use
+
+	make maintainer-clean
+
+If you just want to quickly run a one-shot build from a git checkout then
+you can use the following helper script which executes all necessary steps
+in the correct order:
+
+	./git-build.sh
