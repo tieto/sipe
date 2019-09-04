@@ -327,3 +327,18 @@ you can use the following helper script which executes all necessary steps
 in the correct order:
 
 	./git-build.sh
+
+
+Contributing code
+=================
+
+If you want to contribute to the SIPE project please have a look at
+
+    http://sipe.sourceforge.net/git/
+
+Some of the instructions are unfortunately out-dated. If in doubt then
+*ASK* from the current maintainers before committing!
+
+Please also have a look at the Pidgin coding style guide
+
+    https://developer.pidgin.im/wiki/StyleGuide

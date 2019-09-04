@@ -10,8 +10,7 @@ EXTRA_DIST = \
 	siplcs.vcxproj \
 	siplcs.vcxproj.filters \
 	Makefile.mingw \
-	po/Makefile.mingw \
-	HACKING
+	po/Makefile.mingw
 
 CLEANFILES = \
 	intltool-extract \
