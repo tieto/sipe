@@ -1,5 +1,5 @@
 dnl ensure recent enough version of Autoconf
-AC_PREREQ([2.50])
+AC_PREREQ([2.69])
 
 AC_CONFIG_MACRO_DIRS([m4])
 
@@ -31,7 +31,7 @@ AS_IF([test "x"SIPE_GIT_COMMIT != x],
 ])
 
 dnl setup automake and require recent enough version
-AM_INIT_AUTOMAKE([1.9 dist-bzip2 dist-xz no-define tar-ustar])
+AM_INIT_AUTOMAKE([1.16 dist-bzip2 dist-xz no-define tar-ustar])
 
 AC_CANONICAL_HOST
 
@@ -51,7 +51,7 @@ dnl setup shared library generation
 LT_INIT([disable-static])
 
 dnl checks for tools
-IT_PROG_INTLTOOL([0.35.0])
+IT_PROG_INTLTOOL([0.41.0])
 AC_PROG_INSTALL
 
 dnl ******************************
@@ -269,6 +269,7 @@ dnl ---------------|---------|---------|---------|---------|--------|
 dnl glib-2.0       |  2.42.x |  2.28.x |  2.48.x |  2.48.x | 2.18.x |
 dnl gmime-2.6      |     YES |      NO |     YES |     YES |     NO |
 dnl gss-ntlmssp    |      NO |      NO |      NO |   0.7.x |    N/A |
+dnl intltool       |  0.50.2 |  0.41.0 |  0.51.0 |  0.51.0 | 0.40.4 |
 dnl nice           | TOO OLD | TOO OLD |  0.1.13 |  0.1.13 |    N/A |
 dnl purple         |  2.11.x |   2.7.x |  2.12.x |  2.10.x | 2.13.x |
 dnl telepathy-glib |  0.24.x |      NO |  0.24.x |  0.24.x |    N/A |
