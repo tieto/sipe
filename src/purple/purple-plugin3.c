@@ -80,7 +80,7 @@ get_actions(SIPE_UNUSED_PARAMETER PurpleConnection *gc)
 }
 
 static void
-sipe_protocol_client_iface_init(PurpleProtocolClientIface *client_iface,
+sipe_protocol_client_iface_init(PurpleProtocolClientInterface *client_iface,
 				SIPE_UNUSED_PARAMETER void *unused)
 {
 	client_iface->get_actions = get_actions;
@@ -93,7 +93,7 @@ sipe_protocol_client_iface_init(PurpleProtocolClientIface *client_iface,
 }
 
 static void
-sipe_protocol_server_iface_init(PurpleProtocolServerIface *server_iface,
+sipe_protocol_server_iface_init(PurpleProtocolServerInterface *server_iface,
 				SIPE_UNUSED_PARAMETER void *unused)
 {
 	server_iface->get_info = sipe_purple_get_info;
@@ -117,7 +117,7 @@ send_im(PurpleConnection *gc, PurpleMessage *msg)
 }
 
 static void
-sipe_protocol_im_iface_init(PurpleProtocolIMIface *im_iface,
+sipe_protocol_im_iface_init(PurpleProtocolIMInterface *im_iface,
 			    SIPE_UNUSED_PARAMETER void *unused)
 {
 	im_iface->send = send_im;
@@ -125,7 +125,7 @@ sipe_protocol_im_iface_init(PurpleProtocolIMIface *im_iface,
 }
 
 static void
-sipe_protocol_chat_iface_init(PurpleProtocolChatIface *chat_iface,
+sipe_protocol_chat_iface_init(PurpleProtocolChatInterface *chat_iface,
 			      SIPE_UNUSED_PARAMETER void *unused)
 {
 	chat_iface->info = sipe_purple_chat_info;
@@ -137,7 +137,7 @@ sipe_protocol_chat_iface_init(PurpleProtocolChatIface *chat_iface,
 }
 
 static void
-sipe_protocol_privacy_iface_init(PurpleProtocolPrivacyIface *privacy_iface,
+sipe_protocol_privacy_iface_init(PurpleProtocolPrivacyInterface *privacy_iface,
 				 SIPE_UNUSED_PARAMETER void *unused)
 {
 	privacy_iface->add_permit = sipe_purple_add_permit;
@@ -154,7 +154,7 @@ sipe_protocol_xfer_iface_init(PurpleProtocolXferInterface *xfer_iface,
 }
 
 static void
-sipe_protocol_roomlist_iface_init(PurpleProtocolRoomlistIface *roomlist_iface,
+sipe_protocol_roomlist_iface_init(PurpleProtocolRoomlistInterface *roomlist_iface,
 				  SIPE_UNUSED_PARAMETER void *unused)
 {
 	roomlist_iface->get_list = sipe_purple_roomlist_get_list;
@@ -163,7 +163,7 @@ sipe_protocol_roomlist_iface_init(PurpleProtocolRoomlistIface *roomlist_iface,
 
 #ifdef HAVE_VV
 static void
-sipe_protocol_media_iface_init(PurpleProtocolMediaIface *media_iface,
+sipe_protocol_media_iface_init(PurpleProtocolMediaInterface *media_iface,
 			       SIPE_UNUSED_PARAMETER void *unused)
 {
 	media_iface->initiate_session = sipe_purple_initiate_media;
@@ -174,22 +174,22 @@ sipe_protocol_media_iface_init(PurpleProtocolMediaIface *media_iface,
 PURPLE_DEFINE_TYPE_EXTENDED(
 	SipeProtocol, sipe_protocol, PURPLE_TYPE_PROTOCOL, 0,
 
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_CLIENT_IFACE,
+	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_CLIENT,
 					  sipe_protocol_client_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_SERVER_IFACE,
+	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_SERVER,
 					  sipe_protocol_server_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_IM_IFACE,
+	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_IM,
 					  sipe_protocol_im_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_CHAT_IFACE,
+	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_CHAT,
 					  sipe_protocol_chat_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_PRIVACY_IFACE,
+	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_PRIVACY,
 					  sipe_protocol_privacy_iface_init)
 	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_XFER,
 					  sipe_protocol_xfer_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_ROOMLIST_IFACE,
+	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_ROOMLIST,
 					  sipe_protocol_roomlist_iface_init)
 #ifdef HAVE_VV
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_MEDIA_IFACE,
+	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_MEDIA,
 					  sipe_protocol_media_iface_init)
 #endif /* HAVE_VV */
 )
