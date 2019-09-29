@@ -45,6 +45,7 @@
 #define purple_blist_find_buddy(a, n)                  purple_find_buddy(a, n)
 #define purple_blist_find_buddy_in_group(a, n, g)      purple_find_buddy_in_group(a, n, g)
 #define purple_blist_find_group(n)                     purple_find_group(n)
+#define purple_blist_get_default_root()                purple_blist_get_root()
 #define purple_buddy_set_local_alias(b, n)             purple_blist_alias_buddy(b, n)
 #define purple_buddy_set_server_alias(b, n)            purple_blist_server_alias_buddy(b, n)
 #define purple_buddy_set_name(b, n)                    purple_blist_rename_buddy(b, n)
@@ -874,7 +875,7 @@ static GList *sipe_purple_copy_to_menu(GList *menu,
 	PurpleGroup *gr_parent = purple_buddy_get_group(buddy);
 	PurpleBlistNode *g_node;
 
-	for (g_node = purple_blist_get_root(); g_node; g_node = g_node->next) {
+	for (g_node = purple_blist_get_default_root(); g_node; g_node = g_node->next) {
 		PurpleGroup *group = (PurpleGroup *)g_node;
 		PurpleActionMenu *act;
 
