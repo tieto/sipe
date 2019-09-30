@@ -223,6 +223,8 @@ plugin_load(PurplePlugin *plugin, GError **error)
 {
 	sipe_protocol_register_type(plugin);
 
+	sipe_purple_xfer_register(G_TYPE_MODULE(plugin));
+
 	sipe_protocol = purple_protocols_add(SIPE_TYPE_PROTOCOL, error);
 	if (!sipe_protocol) {
 		return FALSE;

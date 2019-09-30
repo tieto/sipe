@@ -129,6 +129,8 @@ void sipe_purple_ft_send_file(
 			      const char *who,
 			      const char *file);
 
+void sipe_purple_xfer_register(GTypeModule *module);
+
 /* libpurple chat callbacks */
 #define SIPE_PURPLE_COMPONENT_KEY_CONVERSATION "_conv"
 

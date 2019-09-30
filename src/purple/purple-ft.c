@@ -40,11 +40,22 @@
 #if PURPLE_VERSION_CHECK(3,0,0)
 #include "protocol.h"
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_connection_get_protocol_data(purple_account_get_connection(purple_xfer_get_account(xfer))))
+#define PURPLE_XFER_TO_SIPE_FILE_TRANSFER      (SIPE_PURPLE_XFER(xfer)->ft)
+
+#define SIPE_TYPE_PURPLE_XFER (sipe_purple_xfer_get_type())
+G_DECLARE_FINAL_TYPE(SipePurpleXfer, sipe_purple_xfer, SIPE, PURPLE_XFER, PurpleXfer);
+
+struct _SipePurpleXfer
+{
+	PurpleXfer parent;
+	struct sipe_file_transfer *ft;
+};
 #else
 #include "ft.h"
 #define g_timeout_add(t, f, d)                 purple_timeout_add(t, f, d)
 #define PurpleXferStatus                       PurpleXferStatusType
 #define PURPLE_XFER_TO_SIPE_CORE_PUBLIC        ((struct sipe_core_public *) purple_account_get_connection(xfer->account)->proto_data)
+#define PURPLE_XFER_TO_SIPE_FILE_TRANSFER      ((struct sipe_file_transfer *) purple_xfer_get_protocol_data(xfer))
 #define PURPLE_XFER_TYPE_RECEIVE               PURPLE_XFER_RECEIVE
 #define PURPLE_XFER_TYPE_SEND                  PURPLE_XFER_SEND
 #define purple_xfer_get_fd(xfer)               xfer->fd
@@ -68,7 +79,6 @@
 #include "purple-private.h"
 
 #define FT_TO_PURPLE_XFER                      ((PurpleXfer *) ft->backend_private)
-#define PURPLE_XFER_TO_SIPE_FILE_TRANSFER      ((struct sipe_file_transfer *) purple_xfer_get_protocol_data(xfer))
 
 void sipe_backend_ft_error(struct sipe_file_transfer *ft,
 			   const char *errmsg)
@@ -94,8 +104,6 @@ void sipe_backend_ft_deallocate(struct sipe_file_transfer *ft)
 	if (   status != PURPLE_XFER_STATUS_DONE
 		&& status != PURPLE_XFER_STATUS_CANCEL_LOCAL
 		&& status != PURPLE_XFER_STATUS_CANCEL_REMOTE) {
-		purple_xfer_set_cancel_recv_fnc(xfer, NULL);
-		purple_xfer_set_cancel_send_fnc(xfer, NULL);
 		purple_xfer_cancel_remote(xfer);
 	}
 }
@@ -167,7 +175,11 @@ ft_free_xfer_struct(PurpleXfer *xfer)
 		purple_xfer_set_watcher(xfer, 0);
 	}
 
+#if PURPLE_VERSION_CHECK(3,0,0)
+	SIPE_PURPLE_XFER(xfer)->ft = NULL;
+#else
 	purple_xfer_set_protocol_data(xfer, NULL);
+#endif
 }
 
 static void
@@ -278,6 +290,17 @@ static PurpleXfer *
 create_xfer(PurpleAccount *account, PurpleXferType type, const char *who,
 	    struct sipe_file_transfer *ft)
 {
+#if PURPLE_VERSION_CHECK(3,0,0)
+	SipePurpleXfer *xfer = g_object_new(SIPE_TYPE_PURPLE_XFER,
+					    "account", account,
+					    "type", type,
+					    "remote-user", who,
+					    NULL);
+	xfer->ft = ft;
+	ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
+
+	return PURPLE_XFER (xfer);
+#else
 	PurpleXfer *xfer = purple_xfer_new(account, type, who);
 	if (xfer) {
 		ft->backend_private = (struct sipe_backend_file_transfer *)xfer;
@@ -292,6 +315,7 @@ create_xfer(PurpleAccount *account, PurpleXferType type, const char *who,
 	}
 
 	return xfer;
+#endif
 }
 
 void sipe_backend_ft_incoming(struct sipe_core_public *sipe_public,
@@ -345,12 +369,14 @@ void
 sipe_backend_ft_start(struct sipe_file_transfer *ft, struct sipe_backend_fd *fd,
 		      const char* ip, unsigned port)
 {
+#if !PURPLE_VERSION_CHECK(3,0,0)
 	PurpleXferType type = purple_xfer_get_xfer_type(FT_TO_PURPLE_XFER);
 	if (type == PURPLE_XFER_TYPE_SEND && ft->ft_write) {
 		purple_xfer_set_write_fnc(FT_TO_PURPLE_XFER, ft_write);
 	} else if (type == PURPLE_XFER_TYPE_RECEIVE && ft->ft_read) {
 		purple_xfer_set_read_fnc(FT_TO_PURPLE_XFER, ft_read);
 	}
+#endif
 
 	if (ip && port && !sipe_backend_ft_is_incoming(ft)) {
 		/* Purple accepts ip & port only for incoming file transfers.
@@ -385,6 +411,71 @@ sipe_backend_ft_is_incoming(struct sipe_file_transfer *ft)
 {
 	return(purple_xfer_get_xfer_type(FT_TO_PURPLE_XFER) == PURPLE_XFER_TYPE_RECEIVE);
 }
+
+#if PURPLE_VERSION_CHECK(3,0,0)
+
+G_DEFINE_DYNAMIC_TYPE(SipePurpleXfer, sipe_purple_xfer, PURPLE_TYPE_XFER);
+
+static void
+sipe_purple_xfer_init(SIPE_UNUSED_PARAMETER SipePurpleXfer *xfer)
+{}
+
+static gssize
+sipe_purple_xfer_read(PurpleXfer *xfer, guchar **buffer, gsize size)
+{
+	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
+
+	if (ft->ft_read) {
+		return ft_read(buffer, size, xfer);
+	} else {
+		PurpleXferClass *xfer_class;
+
+		xfer_class = PURPLE_XFER_CLASS(sipe_purple_xfer_parent_class);
+		return xfer_class->read(xfer, buffer, size);
+	}
+}
+
+static gssize
+sipe_purple_xfer_write(PurpleXfer *xfer, const guchar *buffer, gsize size)
+{
+	struct sipe_file_transfer *ft = PURPLE_XFER_TO_SIPE_FILE_TRANSFER;
+
+	if (ft->ft_write) {
+		return ft_write(buffer, size, xfer);
+	} else {
+		PurpleXferClass *xfer_class;
+
+		xfer_class = PURPLE_XFER_CLASS(sipe_purple_xfer_parent_class);
+		return xfer_class->write(xfer, buffer, size);
+	}
+}
+
+static void
+sipe_purple_xfer_class_init(SipePurpleXferClass *klass)
+{
+	PurpleXferClass *xfer_class = PURPLE_XFER_CLASS(klass);
+
+	xfer_class->init = ft_init;
+	xfer_class->request_denied = ft_request_denied;
+	xfer_class->start = ft_start;
+	xfer_class->end = ft_end;
+	xfer_class->cancel_send = ft_cancelled;
+	xfer_class->cancel_recv = ft_cancelled;
+	xfer_class->read = sipe_purple_xfer_read;
+	xfer_class->write = sipe_purple_xfer_write;
+}
+
+static void
+sipe_purple_xfer_class_finalize(SIPE_UNUSED_PARAMETER SipePurpleXferClass *klass)
+{}
+
+void
+sipe_purple_xfer_register(GTypeModule *module)
+{
+	sipe_purple_xfer_register_type(module);
+}
+
+#endif
 
 /*
   Local Variables:
