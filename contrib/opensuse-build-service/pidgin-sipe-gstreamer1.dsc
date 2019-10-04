@@ -1,6 +1,6 @@
 Format: 3.0 (quilt)
 Source: pidgin-sipe
-Version: 1.24.0-1
+Version: 1.25.0-1
 Binary: pidgin-sipe
 Maintainer: pidgin-sipe <jduser@noreply.com>
 Architecture: any

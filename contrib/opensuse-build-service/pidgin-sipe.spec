@@ -152,7 +152,7 @@ Name:           pidgin-sipe
 %endif
 %endif
 Summary:        Pidgin protocol plugin to connect to MS Office Communicator
-Version:        1.24.0
+Version:        1.25.0
 Release:        1
 Source:         pidgin-sipe-%{version}.tar.gz
 Group:          %{pkg_group}
@@ -600,6 +600,9 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %changelog
+* DDD MMM DD 2019 J. D. User <jduser@noreply.com> 1.25.0
+- update to 1.25.0
+
 * Fri Oct 04 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
 - add BR libnm for Mageia 8+
 

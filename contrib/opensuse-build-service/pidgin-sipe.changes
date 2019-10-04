@@ -1,4 +1,16 @@
 -------------------------------------------------------------------
+Fri Oct 04 17:24:00 UTC 2019 - chemobejk@gmail.com
+
+- Update to version 1.25.0 "Buddy Idle Time, RTF" (2019-10-??)
+    - Feature #107: Provide idle start time for a buddy (Stefan Becker)
+    - Feature #77: RTF support (incoming) (Stefan Becker)
+      * the code only extracts plain text from incoming RTF
+    - Fixed #358: FTBFS with glib-2.0 >= 2.62.0 (Stefan Becker)
+    - Fixed #350: Inconsistent parsing of From:/To: headers (Stefan Becker)
+    - raise BR telepathy-glib >= 0.24.0 (Stefan Becker)
+    - switch from GPLv2+ to SPDX identifier GPL-2.0-or-later (Stefan Becker)
+
+-------------------------------------------------------------------
 Sat Nov 10 15:40:00 UTC 2018 - chemobejk@gmail.com
 
 - Update to version 1.24.0 "Application Sharing II" (2018-11-10)
