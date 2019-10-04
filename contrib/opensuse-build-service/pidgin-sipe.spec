@@ -203,6 +203,10 @@ BuildRequires:  pkgconfig(purple) >= 2.7.0
 %if 0%{?mageia}
 # It seems linking against -lpurple is severely broken on Mageia...
 BuildRequires:  pkgconfig(libgadu)
+%if %{mageia} > 7
+# -lpurple depends on this but doesn't have a dependency in -devel?
+BuildRequires:  pkgconfig(libnm)
+%endif
 %endif
 %if 0%{?has_appstream:1}
 %if 0%{?suse_version}
@@ -596,6 +600,9 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %changelog
+* Fri Oct 04 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
+- add BR libnm for Mageia 8+
+
 * Tue Jul 02 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*
 - add freerdp & gssntlmssp for Mageia 7+
 
