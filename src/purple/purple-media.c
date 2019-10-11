@@ -430,7 +430,7 @@ ensure_codecs_conf()
 
 static void
 append_relay(struct sipe_backend_media_relays *relay_info, const gchar *ip,
-	     guint port, gchar *type, gchar *username, gchar *password)
+	     guint port, const gchar *type, gchar *username, gchar *password)
 {
 	GstStructure *gst_relay_info;
 
@@ -468,7 +468,7 @@ sipe_backend_media_relays_convert(GSList *media_relays, gchar *username, gchar *
 
 #ifdef HAVE_PURPLE_NEW_TCP_ENUMS
 		if (relay->tcp_port != 0) {
-			gchar *type = "tcp";
+			const gchar *type = "tcp";
 			if (relay->tcp_port == 443)
 				type = "tls";
 			append_relay(relay_info, relay->hostname, relay->tcp_port,
@@ -837,7 +837,7 @@ sipe_backend_media_add_stream(struct sipe_media_stream *stream,
 	// Preallocate enough space for all potential parameters to fit.
 	GParameter *params = g_new0(GParameter, 7);
 	guint params_cnt = 0;
-	gchar *transmitter;
+	const gchar *transmitter;
 #ifdef HAVE_XDATA
 	PurpleMediaAppDataCallbacks callbacks = {
 			stream_readable_cb, stream_writable_cb

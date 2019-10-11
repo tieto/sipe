@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -90,7 +90,7 @@ GHashTable *sipe_purple_chat_info_defaults(PurpleConnection *gc,
 										 purple_private->account);
 		/* Group Chat rooms have a valid URI */
 		if (uri) {
-			g_hash_table_insert(defaults, "uri", (gpointer)uri);
+			g_hash_table_insert(defaults, (char *)"uri", (gpointer)uri);
 		}
 
 		/**
@@ -102,7 +102,7 @@ GHashTable *sipe_purple_chat_info_defaults(PurpleConnection *gc,
 		 */
 		if (conv) {
 			g_hash_table_insert(defaults,
-					    SIPE_PURPLE_COMPONENT_KEY_CONVERSATION,
+					    (char *)SIPE_PURPLE_COMPONENT_KEY_CONVERSATION,
 					    conv);
 		}
 	}
