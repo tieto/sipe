@@ -100,6 +100,7 @@ AS_IF([test "x$enable_quality_check" = xyes],
          QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall"
 
 	 dnl enable warnings supported by the GCC on the build system
+	 dnl @TODO: not included in -Wall: "-Wwrite-strings" \
 	 for newflag in \
 			"-Wextra" \
 			"-Waggregate-return" \
