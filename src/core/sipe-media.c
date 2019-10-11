@@ -694,7 +694,7 @@ sipe_invite_call(struct sipe_media_call_private *call_private, TransCallback tc)
 }
 
 static void
-send_response_with_session_description(struct sipe_media_call_private *call_private, int code, gchar *text)
+send_response_with_session_description(struct sipe_media_call_private *call_private, int code, const gchar *text)
 {
 	struct sdpmsg *msg = sipe_media_to_sdpmsg(call_private);
 	gchar *body = sdpmsg_to_string(msg);

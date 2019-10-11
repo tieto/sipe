@@ -753,7 +753,7 @@ static void sipe_subscribe_resource_uri_with_context(const gchar *name,
 						     gchar **resources_uri)
 {
 	struct sipe_buddy *sbuddy = (struct sipe_buddy *)value;
-	gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
+	const gchar *context = sbuddy && sbuddy->just_added ? "><context/></resource>" : "/>";
 	gchar *tmp = *resources_uri;
 
 	/* should be enough to include context one time */

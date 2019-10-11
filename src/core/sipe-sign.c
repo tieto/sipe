@@ -32,7 +32,7 @@
 
 static gchar * const empty_string = "";
 
-void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target,
+void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, const gchar * realm, const gchar * target,
 			    const gchar *protocol)
 {
 	const gchar * hdr;

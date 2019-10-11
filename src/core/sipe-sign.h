@@ -3,6 +3,7 @@
  *
  * pidgin-sipe
  *
+ * Copyright (C) 2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2008 Novell, Inc.
  *
  * This program is free software; you can redistribute it and/or modify
@@ -43,7 +44,7 @@ struct sipmsg_breakdown {
 	//response code
 };
 
-void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, gchar * realm, gchar * target,
+void sipmsg_breakdown_parse(struct sipmsg_breakdown * msg, const gchar * realm, const gchar * target,
 			    const gchar *protocol);
 gchar*
 sipmsg_breakdown_get_string(int version,

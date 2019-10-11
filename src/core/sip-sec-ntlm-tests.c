@@ -487,8 +487,8 @@ Response:
 	// Verify signature of SIPE message received from OCS 2007 after authenticating with pidgin-sipe
 	printf ("\n\nTesting MS-SIPE Example Message Signing\n");
 	{
-	char * msg2;
-	char * msg1 = "<NTLM><0878F41B><1><SIP Communications Service><ocs1.ocs.provo.novell.com><8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx><3><REGISTER><sip:gabriel@ocs.provo.novell.com><2947328781><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
+	const char * msg2;
+	const char * msg1 = "<NTLM><0878F41B><1><SIP Communications Service><ocs1.ocs.provo.novell.com><8592g5DCBa1694i5887m0D0Bt2247b3F38xAE9Fx><3><REGISTER><sip:gabriel@ocs.provo.novell.com><2947328781><B816D65C2300A32CFA6D371F2AF537FD><900><200>";
 	guchar exported_session_key2 [] = { 0x5F, 0x02, 0x91, 0x53, 0xBC, 0x02, 0x50, 0x58, 0x96, 0x95, 0x48, 0x61, 0x5E, 0x70, 0x99, 0xBA };
 
 	MAC (NEGOTIATE_FLAGS_CONNLESS & ~NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY,

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2011-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2011-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  *
  * This program is free software; you can redistribute it and/or modify
@@ -286,7 +286,7 @@ static void send_presence_soap(struct sipe_core_private *sipe_private,
 	gchar *tmp;
 	gchar *tmp2 = NULL;
 	gchar *res_note = NULL;
-	gchar *res_oof = NULL;
+	const gchar *res_oof = NULL;
 	const gchar *note_pub = NULL;
 	gchar *states = NULL;
 	gchar *calendar_data = NULL;

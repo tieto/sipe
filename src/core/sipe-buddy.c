@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -951,7 +951,7 @@ static gchar * prepare_buddy_search_query(GSList *query_rows, gboolean use_dlx) 
 	gchar *query = NULL;
 
 	while (query_rows) {
-		gchar *attr;
+		const gchar *attr;
 		gchar *value;
 		gchar *tmp = NULL;
 

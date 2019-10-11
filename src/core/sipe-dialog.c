@@ -242,8 +242,8 @@ void sipe_dialog_parse(struct sip_dialog *dialog,
 		       const struct sipmsg *msg,
 		       gboolean outgoing)
 {
-	gchar *us = outgoing ? "From" : "To";
-	gchar *them = outgoing ? "To" : "From";
+	const gchar *us = outgoing ? "From" : "To";
+	const gchar *them = outgoing ? "To" : "From";
 	const gchar *session_expires_header;
 
 	g_free(dialog->ourtag);

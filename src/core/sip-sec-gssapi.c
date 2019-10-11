@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2015 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009 pier11 <pier11@operamail.com>
  *
  *
@@ -67,12 +67,12 @@ typedef struct _context_gssapi {
 #ifdef HAVE_GSSAPI_ONLY
 static const gss_OID_desc gss_mech_ntlmssp = {
 	GSS_NTLMSSP_OID_LENGTH,
-	GSS_NTLMSSP_OID_STRING
+	(char *) GSS_NTLMSSP_OID_STRING /* read-only in reality */
 };
 
 static const gss_OID_desc gss_mech_spnego = {
 	6,
-	"\x2b\x06\x01\x05\x05\x02"
+	(char *) "\x2b\x06\x01\x05\x05\x02" /* read-only in reality */
 };
 
 /*
@@ -103,7 +103,7 @@ static gboolean spnego_mutual_flag = FALSE;
 #define SIP_SEC_FLAG_GSSAPI_SIP_NTLM           0x00010000
 #define SIP_SEC_FLAG_GSSAPI_NEGOTIATE_FALLBACK 0x00020000
 
-static void sip_sec_gssapi_print_gss_error0(char *func,
+static void sip_sec_gssapi_print_gss_error0(const char *func,
 					    OM_uint32 status,
 					    int type)
 {
@@ -128,7 +128,7 @@ static void sip_sec_gssapi_print_gss_error0(char *func,
 }
 
 /* Prints out errors of GSSAPI function invocation */
-static void sip_sec_gssapi_print_gss_error(char *func,
+static void sip_sec_gssapi_print_gss_error(const char *func,
 					   OM_uint32 ret,
 					   OM_uint32 minor)
 {
@@ -234,7 +234,7 @@ static gboolean gssntlm_reset_mic_sequence(context_gssapi context)
 
 	static const gss_OID_desc set_sequence_num_oid = {
 		GSS_NTLMSSP_SET_SEQ_NUM_OID_LENGTH,
-		GSS_NTLMSSP_SET_SEQ_NUM_OID_STRING
+		(char *) GSS_NTLMSSP_SET_SEQ_NUM_OID_STRING /* read-only in reality */
 	};
 
 	value.length = sizeof(sequence);

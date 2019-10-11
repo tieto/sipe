@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2010-2017 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2010-2019 SIPE Project <http://sipe.sourceforge.net/>
  * Copyright (C) 2009, 2010 pier11 <pier11@operamail.com>
  * Copyright (C) 2008 Novell, Inc.
  * Modify        2007, Anibal Avelar <avelar@gmail.com>
@@ -729,7 +729,7 @@ KXKEY ( guint32 flags,
 static void
 SIGNKEY (const unsigned char * random_session_key, gboolean client, unsigned char * result)
 {
-	char * magic = client
+	const char * magic = client
 		? "session key to client-to-server signing key magic constant"
 		: "session key to server-to-client signing key magic constant";
 
@@ -772,7 +772,7 @@ SEALKEY (guint32 flags, const unsigned char * random_session_key, gboolean clien
 {
 	if (IS_FLAG(flags, NTLMSSP_NEGOTIATE_EXTENDED_SESSIONSECURITY))
 	{
-		char * magic = client
+		const char * magic = client
 			? "session key to client-to-server sealing key magic constant"
 			: "session key to server-to-client sealing key magic constant";
 
@@ -1357,8 +1357,8 @@ sip_sec_ntlm_negotiate_flags_describe(guint32 flags)
 static gchar *
 sip_sec_ntlm_describe_version(struct version *ver) {
 	GString* str = g_string_new(NULL);
-	gchar *ver_desc = "";
-	gchar *ntlm_revision_desc = "";
+	const gchar *ver_desc = "";
+	const gchar *ntlm_revision_desc = "";
 
 	if (ver->product_major_version == 6) {
 		ver_desc = "Windows Vista, Windows Server 2008, Windows 7 or Windows Server 2008 R2";

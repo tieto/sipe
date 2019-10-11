@@ -474,7 +474,7 @@ buff_to_hex_str(const guint8 *buff, const size_t buff_len)
 }
 
 gboolean
-sipe_utils_parse_lines(GSList **list, gchar **lines, gchar *delimiter)
+sipe_utils_parse_lines(GSList **list, gchar **lines, const gchar *delimiter)
 {
 	int i;
 	gchar **parts;

@@ -3,7 +3,7 @@
  *
  * pidgin-sipe
  *
- * Copyright (C) 2009-2018 SIPE Project <http://sipe.sourceforge.net/>
+ * Copyright (C) 2009-2019 SIPE Project <http://sipe.sourceforge.net/>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -353,7 +353,7 @@ buff_to_hex_str(const guint8 *buff, const size_t buff_len);
  * @return @c FALSE if any of @c lines has incorrect format, @c TRUE otherwise
  */
 gboolean
-sipe_utils_parse_lines(GSList **list, gchar **lines, gchar *delimiter);
+sipe_utils_parse_lines(GSList **list, gchar **lines, const gchar *delimiter);
 
 /**
  * Adds a name-value pair to @c list
