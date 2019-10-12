@@ -600,7 +600,7 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %changelog
-* DDD MMM DD 2019 J. D. User <jduser@noreply.com> 1.25.0
+* Sat Oct 12 2019 J. D. User <jduser@noreply.com> 1.25.0
 - update to 1.25.0
 
 * Fri Oct 04 2019 J. D. User <jduser@noreply.com> 1.24.0-*git*

@@ -1,6 +1,6 @@
 pidgin-sipe (1.25.0-1) unstable; urgency=low
 
-  * New version 1.25.0 "Buddy Idle Time, RTF" (2019-10-??)
+  * New version 1.25.0 "Buddy Idle Time, RTF" (2019-10-12)
 	- Feature #107: Provide idle start time for a buddy (Stefan Becker)
 	- Feature #77: RTF support (incoming) (Stefan Becker)
 	  * the code only extracts plain text from incoming RTF
@@ -9,7 +9,7 @@ pidgin-sipe (1.25.0-1) unstable; urgency=low
 	- raise BR telepathy-glib >= 0.24.0 (Stefan Becker)
 	- switch from GPLv2+ to SPDX identifier GPL-2.0-or-later (Stefan Becker)
 
- -- Stefan Becker <chemobejk@gmail.com>  Fri, 04 Oct 2019 20:21:00 +0300
+ -- Stefan Becker <chemobejk@gmail.com>  Sat, 12 Oct 2019 11:43:00 +0300
 
 pidgin-sipe (1.24.0-1) unstable; urgency=low
 

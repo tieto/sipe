@@ -1,4 +1,4 @@
-version 1.25.0 "Buddy Idle Time, RTF" (2019-10-??)
+version 1.25.0 "Buddy Idle Time, RTF" (2019-10-12)
 	- Feature #107: Provide idle start time for a buddy (Stefan Becker)
 	- Feature #77: RTF support (incoming) (Stefan Becker)
 	  * the code only extracts plain text from incoming RTF
