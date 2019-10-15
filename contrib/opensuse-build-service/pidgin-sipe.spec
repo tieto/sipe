@@ -137,7 +137,7 @@
 %if 0%{?centos_version} || 0%{?scientificlinux_version}
 %define has_krb5devel 1
 %define rhel_base_version %{?centos_version}%{?scientificlinux_version}
-%if %{rhel_base_version} >= 700
+%if %{rhel_base_version} >= 800
 %define has_gstreamer 1
 %endif
 %endif
@@ -438,6 +438,7 @@ autoreconf --verbose --install --force
 %if 0%{?mageia}
 %configure2_5x \
     --with-krb5 \
+    --with-vv \
     --disable-telepathy
 %make_build
 %make_build check
@@ -450,6 +451,9 @@ autoreconf --verbose --install --force
 %endif
 %if !0%{?_without_kerberos:1}
     --with-krb5 \
+%endif
+%if 0%{?has_gstreamer:1}
+    --with-vv \
 %endif
     --enable-purple \
 %if 0%{?build_telepathy:1}
@@ -600,6 +604,9 @@ rm -r %{buildroot}%{_datadir}/telepathy
 
 
 %changelog
+* Tue Oct 15 2019 J. D. User <jduser@noreply.com> 1.25.0-*git*
+- make sure V&V features are really enabled when requested
+
 * Sat Oct 12 2019 J. D. User <jduser@noreply.com> 1.25.0
 - update to 1.25.0
 

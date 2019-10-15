@@ -222,6 +222,8 @@ This package provides common files for the SIPE protocol plugins:
 %configure \
 %if 0%{?_without_vv:1}
     --without-vv \
+%else
+    --with-vv \
 %endif
 %if !0%{?_without_kerberos:1}
     --with-krb5 \
@@ -288,6 +290,9 @@ make %{?_smp_mflags} check
 
 
 %changelog
+* Tue Oct 15 2019 J. D. User <jduser@noreply.com> 1.25.0-*git*
+- make sure V&V features are really enabled when requested
+
 * Sat Oct 12 2019 J. D. User <jduser@noreply.com> 1.25.0
 - update to 1.25.0
 

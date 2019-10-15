@@ -13,6 +13,11 @@ DEB_CONFIGURE_EXTRA_FLAGS += --enable-telepathy
 else
 DEB_CONFIGURE_EXTRA_FLAGS += --disable-telepathy
 endif
+ifneq ($(shell pkg-config --exists nice && echo FOUND),)
+DEB_CONFIGURE_EXTRA_FLAGS += --with-vv
+else
+DEB_CONFIGURE_EXTRA_FLAGS += --without-vv
+endif
 ifeq ($(HAVE_APPSTREAM),)
 DEB_CONFIGURE_EXTRA_FLAGS += --without-appstream
 endif
