@@ -4,17 +4,17 @@ pkgname=pidgin-sipe
 pkgver=1.25.0
 pkgrel=1
 pkgdesc="Libpurple protocol plugin to connect to MS Office Communicator"
-arch=('i686' 'x86_64')
+arch=('x86_64')
 license=('GPL-2.0-or-later')
-url="http://sipe.sourceforge.net/"
+url="https://sipe.sourceforge.net/"
 depends=('gmime' 'libpurple')
 makedepends=('intltool')
-optdepends=('krb5: Kerberos support')
+optdepends=('freerdp: Desktop sharing' 'krb5: Kerberos support')
 source=( ${pkgname}-${pkgver}.tar.gz )
 sha256sums=( '@@SHA256SUM@@' )
 
 build() {
-  cd ${pkgname}-${pkgver}
+  cd "${pkgname}-${pkgver}"
 
   ./configure --prefix=/usr
 
@@ -22,7 +22,7 @@ build() {
 }
 
 package() {
-  cd ${pkgname}-${pkgver}
+  cd "${pkgname}-${pkgver}"
 
-  make DESTDIR=${pkgdir} install
+  make DESTDIR="${pkgdir}" install
 }
