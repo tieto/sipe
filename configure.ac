@@ -87,49 +87,62 @@ AS_IF([test "x$enable_debug" = xyes],
 	[AC_DEFINE(DEBUG, 1, [Define if debugging is enabled.])])
 AC_SUBST(DEBUG_CFLAGS)
 
-dnl quality check mode
-dnl For people who are interested in finding bugs and not hiding them
+dnl
+dnl Quality check mode - try to find bugs instead of hiding them
+dnl
+dnl Developers & contributors:
+dnl
+dnl     You are *NOT* allowed to commit code to SIPE repository that only
+dnl     builds with --disable-quality-check!
+dnl
+dnl Distro package maintainers:
+dnl
+dnl     You may choose to add --disable-quality-check to the package build
+dnl     specification if you can't fix all build dependencies properly.
+dnl
 AC_ARG_ENABLE(quality-check,
 	[AS_HELP_STRING([--enable-quality-check],
 			[compile with compiler checks enabled @<:@default=yes@:>@])],
 	[],
 	[enable_quality_check=yes])
 
-AS_IF([test "x$enable_quality_check" = xyes],
-	[dnl default quality configuration
-         QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror -Wall"
+dnl default quality configuration
+QUALITY_CFLAGS="$QUALITY_CFLAGS -Wall"
 
-	 dnl enable warnings supported by the GCC on the build system
-	 dnl @TODO: not included in -Wall: "-Wwrite-strings" \
-	 for newflag in \
-			"-Wextra" \
-			"-Waggregate-return" \
-			"-Wcast-align" \
-			"-Wcast-function-type" \
-			"-Wdeclaration-after-statement" \
-			"-Wdeprecated-declarations" \
-			"-Wduplicate-decl-specifier" \
-			"-Winit-self" \
-			"-Wmaybe-uninitialized" \
-			"-Wmissing-declarations" \
-			"-Wmissing-prototypes" \
-			"-Wnested-externs" \
-			"-Wpointer-arith" \
-			"-Wundef" \
-			"-Wunused-but-set-variable" \
-	 ; do
-		 ac_save_CFLAGS="$CFLAGS"
-		 AC_MSG_CHECKING([if $CC supports $newflag])
-		 CFLAGS="$CFLAGS $QUALITY_CFLAGS $newflag"
-		 AC_COMPILE_IFELSE(
-			[AC_LANG_SOURCE([[]])],
-			[AC_MSG_RESULT(yes)
-			 QUALITY_CFLAGS="$QUALITY_CFLAGS $newflag"],
-			[AC_MSG_RESULT(no)]
-		 )
-		 CFLAGS="$ac_save_CFLAGS"
-	 done
-	])
+dnl convert warnings to errors
+AS_IF([test "x$enable_quality_check" = xyes],
+	[QUALITY_CFLAGS="$QUALITY_CFLAGS -Werror"])
+
+dnl enable warnings supported by the GCC on the build system
+dnl @TODO: not included in -Wall: "-Wwrite-strings" \
+for newflag in \
+	"-Wextra" \
+	"-Waggregate-return" \
+	"-Wcast-align" \
+	"-Wcast-function-type" \
+	"-Wdeclaration-after-statement" \
+	"-Wdeprecated-declarations" \
+	"-Wduplicate-decl-specifier" \
+	"-Winit-self" \
+	"-Wmaybe-uninitialized" \
+	"-Wmissing-declarations" \
+	"-Wmissing-prototypes" \
+	"-Wnested-externs" \
+	"-Wpointer-arith" \
+	"-Wundef" \
+	"-Wunused-but-set-variable" \
+; do
+	ac_save_CFLAGS="$CFLAGS"
+	AC_MSG_CHECKING([if $CC supports $newflag])
+	CFLAGS="$CFLAGS $newflag"
+	AC_COMPILE_IFELSE(
+		[AC_LANG_SOURCE([[]])],
+		[AC_MSG_RESULT(yes)
+			QUALITY_CFLAGS="$QUALITY_CFLAGS $newflag"],
+		[AC_MSG_RESULT(no)]
+	)
+	CFLAGS="$ac_save_CFLAGS"
+done
 AC_SUBST(QUALITY_CFLAGS)
 
 dnl check for availability of addition linker flags
