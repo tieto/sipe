@@ -1,3 +1,6 @@
+version 1.25.1 "???" (????-??-??)
+	- Fixed #359: Incorrect build due to false negative configure checks (Stefan Becker)
+
 version 1.25.0 "Buddy Idle Time, RTF" (2019-10-12)
 	- Feature #107: Provide idle start time for a buddy (Stefan Becker)
 	- Feature #77: RTF support (incoming) (Stefan Becker)
