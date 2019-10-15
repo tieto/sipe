@@ -27,11 +27,6 @@
 #include <glib.h>
 #include <gmodule.h>
 
-/* Flag needed for correct version of PURPLE_INIT_PLUGIN() */
-#ifndef PURPLE_PLUGINS
-#define PURPLE_PLUGINS
-#endif
-
 #include "protocol.h"
 
 #include "purple-private.h"
@@ -44,26 +39,33 @@ typedef struct _SipeProtocol {
 	PurpleProtocol parent;
 } SipeProtocol;
 
-typedef struct _NullProtocolClass {
+typedef struct _SipeProtocolClass {
 	PurpleProtocolClass parent_class;
 } SipeProtocolClass;
 
 G_MODULE_EXPORT GType sipe_protocol_get_type(void);
 
 static void
-sipe_protocol_class_init(PurpleProtocolClass *klass,
-			 SIPE_UNUSED_PARAMETER void *unused)
+sipe_protocol_class_init(SipeProtocolClass *klass)
 {
-	klass->login = sipe_purple_login;
-	klass->close = sipe_purple_close;
-	klass->status_types = sipe_purple_status_types;
-	klass->list_icon = sipe_purple_list_icon;
+	PurpleProtocolClass *protocol_class = PURPLE_PROTOCOL_CLASS(klass);
+
+	protocol_class->login = sipe_purple_login;
+	protocol_class->close = sipe_purple_close;
+	protocol_class->status_types = sipe_purple_status_types;
+	protocol_class->list_icon = sipe_purple_list_icon;
 }
 
 static void
-sipe_protocol_init(PurpleProtocol *protocol,
-		   SIPE_UNUSED_PARAMETER void *unused)
+sipe_protocol_class_finalize(SIPE_UNUSED_PARAMETER SipeProtocolClass *klass)
 {
+}
+
+static void
+sipe_protocol_init(SipeProtocol *self)
+{
+	PurpleProtocol *protocol = PURPLE_PROTOCOL(self);
+
 	sipe_core_init(LOCALEDIR);
 
 	protocol->id = SIPE_PURPLE_PLUGIN_ID;
@@ -171,26 +173,26 @@ sipe_protocol_media_iface_init(PurpleProtocolMediaInterface *media_iface,
 }
 #endif /* HAVE_VV */
 
-PURPLE_DEFINE_TYPE_EXTENDED(
+G_DEFINE_DYNAMIC_TYPE_EXTENDED(
 	SipeProtocol, sipe_protocol, PURPLE_TYPE_PROTOCOL, 0,
 
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_CLIENT,
-					  sipe_protocol_client_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_SERVER,
-					  sipe_protocol_server_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_IM,
-					  sipe_protocol_im_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_CHAT,
-					  sipe_protocol_chat_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_PRIVACY,
-					  sipe_protocol_privacy_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_XFER,
-					  sipe_protocol_xfer_iface_init)
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_ROOMLIST,
-					  sipe_protocol_roomlist_iface_init)
+	G_IMPLEMENT_INTERFACE_DYNAMIC(PURPLE_TYPE_PROTOCOL_CLIENT,
+				      sipe_protocol_client_iface_init)
+	G_IMPLEMENT_INTERFACE_DYNAMIC(PURPLE_TYPE_PROTOCOL_SERVER,
+				      sipe_protocol_server_iface_init)
+	G_IMPLEMENT_INTERFACE_DYNAMIC(PURPLE_TYPE_PROTOCOL_IM,
+				      sipe_protocol_im_iface_init)
+	G_IMPLEMENT_INTERFACE_DYNAMIC(PURPLE_TYPE_PROTOCOL_CHAT,
+				      sipe_protocol_chat_iface_init)
+	G_IMPLEMENT_INTERFACE_DYNAMIC(PURPLE_TYPE_PROTOCOL_PRIVACY,
+				      sipe_protocol_privacy_iface_init)
+	G_IMPLEMENT_INTERFACE_DYNAMIC(PURPLE_TYPE_PROTOCOL_XFER,
+				      sipe_protocol_xfer_iface_init)
+	G_IMPLEMENT_INTERFACE_DYNAMIC(PURPLE_TYPE_PROTOCOL_ROOMLIST,
+				      sipe_protocol_roomlist_iface_init)
 #ifdef HAVE_VV
-	PURPLE_IMPLEMENT_INTERFACE_STATIC(PURPLE_TYPE_PROTOCOL_MEDIA,
-					  sipe_protocol_media_iface_init)
+	G_IMPLEMENT_INTERFACE_DYNAMIC(PURPLE_TYPE_PROTOCOL_MEDIA,
+				      sipe_protocol_media_iface_init)
 #endif /* HAVE_VV */
 )
 
@@ -221,7 +223,7 @@ static PurpleProtocol *sipe_protocol = NULL;
 static gboolean
 plugin_load(PurplePlugin *plugin, GError **error)
 {
-	sipe_protocol_register_type(plugin);
+	sipe_protocol_register_type(G_TYPE_MODULE(plugin));
 
 	sipe_purple_xfer_register(G_TYPE_MODULE(plugin));
 

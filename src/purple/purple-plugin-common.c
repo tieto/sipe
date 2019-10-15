@@ -30,7 +30,6 @@
 #include "sipe-common.h"
 
 #include "account.h"
-#include "accountopt.h"
 #include "core.h"
 #include "notify.h"
 #include "request.h"
@@ -41,6 +40,7 @@
 #define PURPLE_TYPE_STRING G_TYPE_STRING
 #define SIPE_PURPLE_ACTION_TO_CONNECTION              action->connection
 #else
+#include "accountopt.h"
 #include "blist.h"
 #define g_source_remove(t)                            purple_timeout_remove(t)
 #define PURPLE_CONNECTION_FLAG_ALLOW_CUSTOM_SMILEY    PURPLE_CONNECTION_ALLOW_CUSTOM_SMILEY
