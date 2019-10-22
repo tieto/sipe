@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Handler for sfb: URIs
+Comment=Start Skype for Bussiness meeting in Pidgin
+Exec=/home/risbeove/bin/sfb-open %U
+MimeType=x-scheme-handler/sfb;
+NoDisplay=true
+Type=Application
+

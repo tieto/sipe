@@ -1,0 +1,91 @@
+#!/bin/bash
+# Debug message if /tmp/sfb-open.log exists
+if [ -f /tmp/sfb-open.log ]; then
+    echo "$0 $@" >> /tmp/sfb-open.log
+fi
+
+# Get meeting URL
+MEETURL=$(echo $1 | sed -n 's/^sfb:.*meeturl=\([^&]*\).*/\1/p' | sed 's/_/=/g;s/!/=/g' | base64 -d)
+if echo $MEETURL | grep origurl=; then
+    MEETURL=$(echo ${MEETURL#*origurl=} | sed 's/_/=/g;s/!/=/g' | base64 -d)
+fi
+if [ -f /tmp/sfb-open.log ]; then
+    echo "MEETURL = $MEETURL" >> /tmp/sfb-open.log
+fi
+
+if [ -n "$MEETURL" ]; then
+    # Start Pidgin if it is not running
+    if [ -z "$(pgrep pidgin)" ]; then
+        pidgin &
+        # Wait up to 120 seconds for pidgin to start and present a valid ACCOUNT number
+        SECONDS=0
+        while [ $SECONDS -lt 120 ]; do
+            ACCOUNT=$(purple-remote PurpleAccountsFindConnected?name=\&protocol=prpl-sipe)
+            if [ -n "$ACCOUNT" ] && [ $ACCOUNT -ne 0 ]; then
+                break
+            fi
+            sleep 1
+        done
+    fi
+
+    # Get SIPE Account number
+    ACCOUNT=$(purple-remote PurpleAccountsFindConnected?name=\&protocol=prpl-sipe)
+    if [ -f /tmp/sfb-open.log ]; then
+        echo ACCOUNT = $ACCOUNT >> /tmp/sfb-open.log
+    fi
+    if [ -z "$ACCOUNT" ] || [ $ACCOUNT -eq 0 ]; then
+        if [ -f /tmp/sfb-open.log ]; then
+            echo No Lync Account found >> /tmp/sfb-open.log
+	fi
+        exit 1
+    fi
+
+    # Join meeting
+    purple-remote SipeJoinConferenceWithUri?account=$ACCOUNT\&uri=$MEETURL
+fi
+
+# Close SfB tab in browser
+if hash xdotool 2>/dev/null; then
+    WID=$(xdotool search --name "Skype for Business Web App" | head -1)
+    if [ -n "$WID" ]; then
+        xdotool windowactivate --sync $WID
+        xdotool key --clearmodifiers ctrl+w
+    fi
+fi
+
+# Make Pidgin chat window active (Skip "Buddy List")
+if hash xdotool 2>/dev/null; then
+    for PIDGIN_PID in $(pgrep pidgin); do
+        for WID in $(xdotool search --onlyvisible --pid $PIDGIN_PID); do
+            if [ "$(xdotool getwindowname $WID)" != "Buddy List" ]; then
+                xdotool windowactivate --sync $WID
+            fi
+        done
+    done
+fi
+
+# Auto join meeting
+if hash xdotool 2>/dev/null; then
+    SECONDS=0
+    while [ $SECONDS -lt 120 ]; do
+        WID=$(xdotool search --name "Office Communicator" | head -1)
+        if [ -n "$WID" ]; then
+            xdotool windowactivate --sync $WID
+            xdotool key --clearmodifiers Return
+            break
+        fi
+    done
+fi
+
+# Auto join shared screen
+if hash xdotool 2>/dev/null; then
+    SECONDS=0
+    while [ $SECONDS -lt 30 ]; do
+        WID=$(xdotool search --name "Office Communicator" | head -1)
+        if [ -n "$WID" ]; then
+            xdotool windowactivate --sync $WID
+            xdotool key --clearmodifiers Return
+            break
+        fi
+    done
+fi
