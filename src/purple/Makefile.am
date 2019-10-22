@@ -152,6 +152,11 @@ TESTS = $(check_PROGRAMS)
 install-exec-local:
 	rm -f $(DESTDIR)$(libdir)/pidgin/libsipe.so
 
+desktopdir = $(datadir)/applications
+desktop_DATA = sipe-url-handler.desktop
+
+bin_SCRIPTS = sipe-url-handler
+
 if SIPE_WITH_APPSTREAM
 pidginmetainfofiledir   = $(datadir)/metainfo
 pidginmetainfofile_DATA = pidgin-sipe.metainfo.xml
