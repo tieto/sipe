@@ -1,17 +1,22 @@
 #!/bin/bash
-# Debug message if /tmp/sfb-open.log exists
-if [ -f /tmp/sfb-open.log ]; then
-    echo "$0 $@" >> /tmp/sfb-open.log
-fi
+
+LOG_FILE=/tmp/sipe-uri-handler.log
+
+log() {
+    # Debug message if $LOG_FILE exists
+    if [ -f $LOG_FILE ]; then
+        echo "$@" >> $LOG_FILE
+    fi
+}
+
+log "$0 $@"
 
 # Get meeting URL
 MEETURL=$(echo $1 | sed -n 's/^sfb:.*meeturl=\([^&]*\).*/\1/p' | sed 's/_/=/g;s/!/=/g' | base64 -d)
 if echo $MEETURL | grep origurl=; then
     MEETURL=$(echo ${MEETURL#*origurl=} | sed 's/_/=/g;s/!/=/g' | base64 -d)
 fi
-if [ -f /tmp/sfb-open.log ]; then
-    echo "MEETURL = $MEETURL" >> /tmp/sfb-open.log
-fi
+log "MEETURL = $MEETURL"
 
 if [ -n "$MEETURL" ]; then
     # Start Pidgin if it is not running
@@ -30,13 +35,9 @@ if [ -n "$MEETURL" ]; then
 
     # Get SIPE Account number
     ACCOUNT=$(purple-remote PurpleAccountsFindConnected?name=\&protocol=prpl-sipe)
-    if [ -f /tmp/sfb-open.log ]; then
-        echo ACCOUNT = $ACCOUNT >> /tmp/sfb-open.log
-    fi
+    log "ACCOUNT = $ACCOUNT"
     if [ -z "$ACCOUNT" ] || [ $ACCOUNT -eq 0 ]; then
-        if [ -f /tmp/sfb-open.log ]; then
-            echo No Lync Account found >> /tmp/sfb-open.log
-	fi
+        log "No SfB Account found"
         exit 1
     fi
 
